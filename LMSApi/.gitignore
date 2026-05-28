@@ -1,0 +1,5 @@
+**/obj/
+**/bin/
+Prompt.yaml
+
+**/appsettings.Development.json

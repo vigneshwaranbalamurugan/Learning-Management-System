@@ -1,0 +1,7 @@
+<Solution>
+  <Project Path="LMSApi.API/LMSApi.API.csproj" />
+  <Project Path="LMSApi.BALLibrary/LMSApi.BALLibrary.csproj" />
+  <Project Path="LMSApi.DALLibrary/LMSApi.DALLibrary.csproj" />
+  <Project Path="LMSApi.ModelLibrary/LMSApi.ModelLibrary.csproj" />
+  <Project Path="LMSApi.Tests/LMSApi.Tests.csproj" />
+</Solution>
