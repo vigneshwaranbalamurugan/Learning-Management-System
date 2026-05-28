@@ -1,0 +1,48 @@
+using LMSApi.BALLibrary.Interfaces;
+using LMSApi.ModelLibrary.DTOs;
+using Microsoft.AspNetCore.Mvc;
+
+namespace LMSApi.API.Controllers
+{
+	[ApiController]
+	[Route("api/[controller]")]
+	public class AuthController : ControllerBase
+	{
+		private readonly IAuthService _authService;
+
+		public AuthController(IAuthService authService)
+		{
+			_authService = authService;
+		}
+
+		[HttpPost("register")]
+		public async Task<ActionResult<RegisterResponse>> Register([FromBody] RegisterRequest request)
+		{
+			var result = await _authService.RegisterAsync(request);
+			return Ok(result);
+		}
+
+		[HttpGet("verify")]
+		public async Task<IActionResult> VerifyFromQuery([FromQuery] string email, [FromQuery] string token)
+		{
+	
+			var req = new VerifyEmailRequest { Email = email, Token = token };
+			var result = await _authService.VerifyEmailAsync(req);
+			return Ok(result);
+		}
+
+		[HttpPost("resend")]
+		public async Task<ActionResult<ResendVerificationResponse>> Resend([FromBody] ResendVerificationRequest request)
+		{
+			var result = await _authService.ReRequestEmailVerificationAsync(request);
+			return Ok(result);
+		}
+
+		[HttpPost("login")]
+		public async Task<ActionResult<LoginResponse>> Login([FromBody] LoginRequest request)
+		{
+			var result = await _authService.AuthenticateAsync(request);
+			return Ok(result);
+		}
+	}
+}
