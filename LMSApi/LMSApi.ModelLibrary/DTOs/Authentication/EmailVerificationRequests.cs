@@ -6,21 +6,21 @@ namespace LMSApi.ModelLibrary.DTOs
     {
 
         public string _email;
-        [Required]
+        [Required(ErrorMessage = "Email is required")]
         [EmailAddress(ErrorMessage = "Invalid email format")]
         public string Email { 
             get=> _email;
             set => _email = value?.Trim().ToLowerInvariant();
         }
 
-        [Required]
+        [Required(ErrorMessage = "Token is required")]
         public string Token { get; set; }
     }
 
     public class ResendVerificationRequest
     {
         public string _email;
-        [Required]
+        [Required(ErrorMessage = "Email is required")]
         [EmailAddress(ErrorMessage = "Invalid email format")]
         public string Email { 
             get=> _email;

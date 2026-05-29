@@ -67,8 +67,6 @@ namespace LMSApi.BALLibrary.Services
                 RoleId = roleId,
                 VerificationToken = Guid.NewGuid().ToString(),
                 VerificationTokenExpiry = DateTime.UtcNow.AddHours(24),
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow
             };
 
             await _userRepository.AddAsync(user);
@@ -97,7 +95,6 @@ namespace LMSApi.BALLibrary.Services
             user.VerificationToken = null;
             user.VerificationTokenExpiry = null;
             user.CurrentTokenType = null;
-            user.UpdatedAt = DateTime.UtcNow;
 
             await _userRepository.UpdateAsync(user);
             return new VerifyEmailResponse { IsVerified = true, Email = request.Email, Message = "Email verified successfully" };
@@ -113,7 +110,6 @@ namespace LMSApi.BALLibrary.Services
             user.VerificationToken = Guid.NewGuid().ToString();
             user.VerificationTokenExpiry = DateTime.UtcNow.AddHours(24);
             user.CurrentTokenType = TokenType.EmailVerification;
-            user.UpdatedAt = DateTime.UtcNow;
 
             await _userRepository.UpdateAsync(user);
 

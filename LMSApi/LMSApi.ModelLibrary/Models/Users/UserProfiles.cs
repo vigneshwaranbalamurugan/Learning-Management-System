@@ -10,6 +10,8 @@ namespace LMSApi.ModelLibrary.Models
         public string ProfilePictureUrl { get; set; }
         public DateTime DateOfBirth { get; set; }
         public string Location { get; set; }
+        public DateTime CreatedAt { get; set; }
+        public DateTime UpdatedAt { get; set; }
         
         // Navigation property
         public Users User { get; set; }

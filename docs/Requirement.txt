@@ -76,3 +76,15 @@ Concepts:
 16. Caching
 17. Dependency Injection
 18. Unit Testing
+19. Rate Limiting
+20. API Versioning
+21. Idempotency
+22. AutoMapper
+24. SignalR
+25. Swagger/OpenAPI
+
+
+
+Additional Notes:
+- Add Instructor Profiles
+- Add Student Profiless

@@ -1,10 +1,12 @@
 using LMSApi.DALLibrary.Contexts;
+using LMSApi.API.Extensions;
 using LMSApi.DALLibrary.Interfaces;
 using LMSApi.DALLibrary.Repositories;
 using LMSApi.BALLibrary.Interfaces;
 using LMSApi.BALLibrary.Services;
 using LMSApi.BALLibrary.Services.Authentication;
 using LMSApi.API.Middlewares;
+using Asp.Versioning;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
@@ -14,6 +16,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllers();
+builder.Services.AddCustomValidation();
 builder.Services.AddOpenApi();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
@@ -66,6 +69,27 @@ if (!string.IsNullOrEmpty(jwtKey))
     });
     builder.Services.AddAuthorization();
 }
+
+// API Versioning
+builder.Services.AddApiVersioning(options =>
+{
+    options.DefaultApiVersion = new ApiVersion(1, 0);
+
+    // If version not specified → use default
+    options.AssumeDefaultVersionWhenUnspecified = true;
+
+    // Adds supported/deprecated versions in response headers
+    options.ReportApiVersions = true;
+
+    // Read version from URL
+    options.ApiVersionReader = new UrlSegmentApiVersionReader();
+})
+.AddApiExplorer(options =>
+{
+    options.GroupNameFormat = "'v'VVV";
+
+    options.SubstituteApiVersionInUrl = true;
+});
 
 var app = builder.Build();
 
