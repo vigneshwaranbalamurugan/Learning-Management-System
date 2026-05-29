@@ -8,7 +8,7 @@ namespace LMSApi.ModelLibrary.Models
         public string LastName { get; set; }
         public string Bio { get; set; }
         public string ProfilePictureUrl { get; set; }
-        public DateTime DateOfBirth { get; set; }
+        public DateOnly DateOfBirth { get; set; }
         public string Location { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }

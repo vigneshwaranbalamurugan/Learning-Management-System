@@ -88,3 +88,24 @@ Concepts:
 Additional Notes:
 - Add Instructor Profiles
 - Add Student Profiless
+
+
+Next steps:
+1. Register
+2. Email Verification
+3. Login
+4. JWT Authentication
+5. JWT Authorization
+6. Refresh Tokens
+7. Global Exception Handling
+8. Logging
+9. API Versioning
+10. User Profile Modules
+11. Course Management Modules
+12, Course sections and content management
+13. Lessons
+14. Enrollments
+15. Progress Tracking
+16. Quizzes and Assignments
+17. Discussion Forums
+18. Cetficiates

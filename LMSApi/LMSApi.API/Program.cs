@@ -5,12 +5,12 @@ using LMSApi.DALLibrary.Repositories;
 using LMSApi.BALLibrary.Interfaces;
 using LMSApi.BALLibrary.Services;
 using LMSApi.BALLibrary.Services.Authentication;
+using LMSApi.BALLibrary.Services.Profile;
+using LMSApi.BALLibrary.Services.Upload;
 using LMSApi.API.Middlewares;
+using LMSApi.API.Handlers;
 using Asp.Versioning;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.IdentityModel.Tokens;
-using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -35,40 +35,22 @@ builder.Services.AddDbContext<LMSDbContext>(opts => opts.UseNpgsql(connection, n
 
 #region Dependency Injection for Repositories
 builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IUserProfileRepository, UserProfileRepository>();
 #endregion
 
 #region Dependency Injection for Services
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IProfileService, ProfileService>();
+builder.Services.AddScoped<IUploadService, UploadService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<INotificationHandler, EmailNotificationHandler>();
 builder.Services.AddScoped<INotificationHandler, SmsNotificationHandler>();
 builder.Services.AddSingleton<ITokenService, TokenService>();
 #endregion
 
-// JWT authentication
-var jwtKey = builder.Configuration["Jwt:Key"] ?? string.Empty;
-if (!string.IsNullOrEmpty(jwtKey))
-{
-    builder.Services.AddAuthentication(options =>
-    {
-        options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-        options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-    })
-    .AddJwtBearer(options =>
-    {
-        options.TokenValidationParameters = new TokenValidationParameters
-        {
-            ValidateIssuer = true,
-            ValidateAudience = true,
-            ValidateIssuerSigningKey = true,
-            ValidateLifetime = true,
-            ValidIssuer = builder.Configuration["Jwt:Issuer"] ?? "LMSApi",
-            ValidAudience = builder.Configuration["Jwt:Audience"] ?? "LMSApiUsers",
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey))
-        };
-    });
-    builder.Services.AddAuthorization();
-}
+builder.Services.AddScoped<ProfileImageUploadHandler>();
+
+builder.Services.AddJwtAuthentication(builder.Configuration);
 
 // API Versioning
 builder.Services.AddApiVersioning(options =>
@@ -90,6 +72,8 @@ builder.Services.AddApiVersioning(options =>
 
     options.SubstituteApiVersionInUrl = true;
 });
+
+builder.Services.AddRoleAuthorization();
 
 var app = builder.Build();
 

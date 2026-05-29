@@ -1,5 +1,6 @@
 using LMSApi.BALLibrary.Interfaces;
 using LMSApi.ModelLibrary.DTOs;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Asp.Versioning;
 
@@ -45,6 +46,13 @@ namespace LMSApi.API.Controllers
 		{
 			var result = await _authService.AuthenticateAsync(request);
 			return Ok(result);
+		}
+
+		[Authorize]
+		[HttpGet("protected")]
+		public async Task<ActionResult> Protected()
+		{
+			return Ok("This is a protected endpoint.");
 		}
 	}
 }

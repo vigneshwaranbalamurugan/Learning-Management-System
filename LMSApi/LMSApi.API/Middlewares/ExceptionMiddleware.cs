@@ -23,11 +23,11 @@ public class ExceptionHandlingMiddleware
         }catch (UnauthorizedAccessException ex)
         {
             _logger.LogWarning(ex, "Unauthorized access attempt.");
-            await HandleExceptionAsync(httpContext, HttpStatusCode.Unauthorized, "Unauthorized access. Please provide valid credentials.");
+            await HandleExceptionAsync(httpContext, HttpStatusCode.Unauthorized, ex.Message);
         }catch(KeyNotFoundException ex)
         {
             _logger.LogWarning(ex, "Resource not found.");
-            await HandleExceptionAsync(httpContext, HttpStatusCode.NotFound, "The requested resource was not found.");
+            await HandleExceptionAsync(httpContext, HttpStatusCode.NotFound, ex.Message);
         }catch(InvalidOperationException ex)
         {
             _logger.LogWarning(ex, "Invalid operation attempted.");
