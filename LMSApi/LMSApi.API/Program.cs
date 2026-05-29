@@ -7,6 +7,7 @@ using LMSApi.BALLibrary.Services;
 using LMSApi.BALLibrary.Services.Authentication;
 using LMSApi.BALLibrary.Services.Profile;
 using LMSApi.BALLibrary.Services.Upload;
+using LMSApi.BALLibrary.Mappers;
 using LMSApi.API.Middlewares;
 using LMSApi.API.Handlers;
 using Asp.Versioning;
@@ -47,6 +48,8 @@ builder.Services.AddScoped<INotificationHandler, EmailNotificationHandler>();
 builder.Services.AddScoped<INotificationHandler, SmsNotificationHandler>();
 builder.Services.AddSingleton<ITokenService, TokenService>();
 #endregion
+
+builder.Services.AddAutoMapper(typeof(ApplicationAssemblyReference).Assembly);
 
 builder.Services.AddScoped<ProfileImageUploadHandler>();
 

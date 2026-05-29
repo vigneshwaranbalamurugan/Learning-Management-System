@@ -2,6 +2,7 @@ using LMSApi.BALLibrary.Interfaces;
 using LMSApi.DALLibrary.Interfaces;
 using LMSApi.ModelLibrary.DTOs;
 using LMSApi.ModelLibrary.Models;
+using AutoMapper;
 
 namespace LMSApi.BALLibrary.Services.Profile
 {
@@ -10,20 +11,23 @@ namespace LMSApi.BALLibrary.Services.Profile
 		private readonly IUserRepository _userRepository;
 		private readonly IUserProfileRepository _userProfileRepository;
 		private readonly IUploadService _uploadService;
+        private readonly IMapper _mapper;
 
-		public ProfileService(IUserRepository userRepository, IUserProfileRepository userProfileRepository, IUploadService uploadService)
+    public ProfileService(IUserRepository userRepository, IUserProfileRepository userProfileRepository, IUploadService uploadService, IMapper mapper)
 		{
 			_userRepository = userRepository;
 			_userProfileRepository = userProfileRepository;
 			_uploadService = uploadService;
+			_mapper = mapper;
 		}
 
 		public async Task<ProfileResponse> GetProfileAsync(string email)
 		{
 			var user = await _userRepository.GetByEmailAsync(email);
 			var profile = await _userProfileRepository.GetByUserIdAsync(user.Id);
-
-			return MapToResponse(user.Email, profile);
+			return profile is null
+				? throw new InvalidOperationException("Profile not found for the user.")
+				: _mapper.Map<ProfileResponse>(profile);
 		}
 
 		public async Task<ProfileResponse> UpdateProfileAsync(string email, ProfileUpdateRequest request)
@@ -33,16 +37,7 @@ namespace LMSApi.BALLibrary.Services.Profile
 
 			if (profile is null)
 			{
-				profile = new UserProfiles
-				{
-					UserId = user.Id,
-					FirstName = string.Empty,
-					LastName = string.Empty,
-					Bio = string.Empty,
-					Location = string.Empty,
-					ProfilePictureUrl = string.Empty,
-					DateOfBirth = default
-				};
+				profile = CreateDefaultProfile(user.Id);
 				await _userProfileRepository.AddAsync(profile);
 			}
 
@@ -56,7 +51,7 @@ namespace LMSApi.BALLibrary.Services.Profile
 			}
 
 			await _userProfileRepository.UpdateAsync(profile);
-			return MapToResponse(user.Email, profile);
+			return _mapper.Map<ProfileResponse>(profile);
 		}
 
 		public async Task<ProfileResponse> UpdateProfileImageAsync(string email, Stream fileStream, string fileName, string contentType)
@@ -71,16 +66,7 @@ namespace LMSApi.BALLibrary.Services.Profile
 			var profile = await _userProfileRepository.GetByUserIdAsync(user.Id);
 			if (profile is null)
 			{
-				profile = new UserProfiles
-				{
-					UserId = user.Id,
-					FirstName = string.Empty,
-					LastName = string.Empty,
-					Bio = string.Empty,
-					Location = string.Empty,
-					ProfilePictureUrl = string.Empty,
-					DateOfBirth = default
-				};
+				profile = CreateDefaultProfile(user.Id);
 				await _userProfileRepository.AddAsync(profile);
 			}
 
@@ -88,21 +74,21 @@ namespace LMSApi.BALLibrary.Services.Profile
 			profile.ProfilePictureUrl = await _uploadService.UploadProfileImageAsync(fileStream, fileName, publicId);
 			await _userProfileRepository.UpdateAsync(profile);
 
-			return MapToResponse(user.Email, profile);
+			return _mapper.Map<ProfileResponse>(profile);
 		}
 
-		private static ProfileResponse MapToResponse(string email, UserProfiles? profile)
-		{
-			return new ProfileResponse
-			{
-				Email = email,
-				FirstName = profile?.FirstName ?? string.Empty,
-				LastName = profile?.LastName ?? string.Empty,
-				Bio = profile?.Bio ?? string.Empty,
-				DateOfBirth = profile?.DateOfBirth ?? default,
-				Location = profile?.Location ?? string.Empty,
-				ProfilePictureUrl = profile?.ProfilePictureUrl ?? string.Empty
-			};
-		}
+        private static UserProfiles CreateDefaultProfile(int userId)
+        {
+            return new UserProfiles
+            {
+                UserId = userId,
+                FirstName = string.Empty,
+                LastName = string.Empty,
+                Bio = string.Empty,
+                Location = string.Empty,
+                ProfilePictureUrl = string.Empty,
+                DateOfBirth = default
+            };
+        }
 	}
 }
