@@ -18,7 +18,6 @@ namespace LMSApi.API.Controllers
             _resourceService = resourceService;
         }
 
-        /// <summary>Get all resources for a given lesson.</summary>
         [Authorize]
         [HttpGet("lesson/{lessonId:int}")]
         public async Task<ActionResult<IEnumerable<ResourceResponse>>> GetByLesson(int lessonId)
@@ -27,7 +26,6 @@ namespace LMSApi.API.Controllers
             return Ok(result);
         }
 
-        /// <summary>Get a resource by id.</summary>
         [Authorize]
         [HttpGet("{id:int}")]
         public async Task<ActionResult<ResourceResponse>> GetById(int id)
@@ -36,7 +34,6 @@ namespace LMSApi.API.Controllers
             return Ok(result);
         }
 
-        /// <summary>Add a resource to a lesson. Instructor and Admin only.</summary>
         [Authorize(Roles = "Instructor,Admin")]
         [HttpPost]
         public async Task<ActionResult<ResourceResponse>> Add([FromBody] CreateResourceRequest request)
@@ -45,7 +42,6 @@ namespace LMSApi.API.Controllers
             return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
         }
 
-        /// <summary>Update a resource. Instructor and Admin only.</summary>
         [Authorize(Roles = "Instructor,Admin")]
         [HttpPut("{id:int}")]
         public async Task<ActionResult<ResourceResponse>> Update(int id, [FromBody] UpdateResourceRequest request)
@@ -54,7 +50,6 @@ namespace LMSApi.API.Controllers
             return Ok(result);
         }
 
-        /// <summary>Delete a resource. Instructor and Admin only.</summary>
         [Authorize(Roles = "Instructor,Admin")]
         [HttpDelete("{id:int}")]
         public async Task<IActionResult> Delete(int id)

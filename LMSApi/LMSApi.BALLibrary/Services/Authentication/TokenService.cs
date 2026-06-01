@@ -16,7 +16,7 @@ namespace LMSApi.BALLibrary.Services.Authentication
             _configuration = configuration;
         }
 
-        public (string Token, DateTime ExpiresAt) GenerateToken(string email)
+        public (string Token, DateTime ExpiresAt) GenerateToken(int userId, string email, string role)
         {
             try{
                 var key = _configuration["Jwt:Key"] ?? throw new InvalidOperationException("JWT key not configured");
@@ -32,7 +32,9 @@ namespace LMSApi.BALLibrary.Services.Authentication
                 {
                     new Claim(JwtRegisteredClaimNames.Sub, email),
                     new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-                    new Claim(ClaimTypes.Email, email)
+                    new Claim(ClaimTypes.Email, email),
+                    new Claim(ClaimTypes.NameIdentifier, userId.ToString()),
+                    new Claim(ClaimTypes.Role, role)
                 };
 
                 var expires = DateTime.UtcNow.AddMinutes(expiresMinutes);
@@ -50,7 +52,6 @@ namespace LMSApi.BALLibrary.Services.Authentication
             }
             catch (Exception ex)
             {
-                // Log the exception (not implemented here)
                 throw new InvalidOperationException("Failed to generate token", ex);
             }
         }

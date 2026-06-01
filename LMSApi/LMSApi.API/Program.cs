@@ -68,6 +68,7 @@ builder.Services.AddScoped<ILessonResourceService, LessonResourceService>();
 builder.Services.AddAutoMapper(typeof(ApplicationAssemblyReference).Assembly);
 
 builder.Services.AddScoped<ProfileImageUploadHandler>();
+builder.Services.AddScoped<CourseUploadHandler>();
 
 builder.Services.AddJwtAuthentication(builder.Configuration);
 

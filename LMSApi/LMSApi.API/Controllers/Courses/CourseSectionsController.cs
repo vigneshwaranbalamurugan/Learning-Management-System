@@ -18,7 +18,6 @@ namespace LMSApi.API.Controllers
             _sectionService = sectionService;
         }
 
-        /// <summary>Get all sections for a given course.</summary>
         [Authorize]
         [HttpGet("course/{courseId:int}")]
         public async Task<ActionResult<IEnumerable<SectionResponse>>> GetByCourse(int courseId)
@@ -27,7 +26,6 @@ namespace LMSApi.API.Controllers
             return Ok(result);
         }
 
-        /// <summary>Get a section by id.</summary>
         [Authorize]
         [HttpGet("{id:int}")]
         public async Task<ActionResult<SectionResponse>> GetById(int id)
@@ -36,7 +34,6 @@ namespace LMSApi.API.Controllers
             return Ok(result);
         }
 
-        /// <summary>Create a new section. Instructor and Admin only.</summary>
         [Authorize(Roles = "Instructor,Admin")]
         [HttpPost]
         public async Task<ActionResult<SectionResponse>> Create([FromBody] CreateSectionRequest request)
@@ -45,7 +42,6 @@ namespace LMSApi.API.Controllers
             return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
         }
 
-        /// <summary>Update a section. Instructor and Admin only.</summary>
         [Authorize(Roles = "Instructor,Admin")]
         [HttpPut("{id:int}")]
         public async Task<ActionResult<SectionResponse>> Update(int id, [FromBody] UpdateSectionRequest request)
@@ -54,7 +50,6 @@ namespace LMSApi.API.Controllers
             return Ok(result);
         }
 
-        /// <summary>Delete a section. Instructor and Admin only.</summary>
         [Authorize(Roles = "Instructor,Admin")]
         [HttpDelete("{id:int}")]
         public async Task<IActionResult> Delete(int id)

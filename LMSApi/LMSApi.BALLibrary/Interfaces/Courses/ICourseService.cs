@@ -6,8 +6,15 @@ namespace LMSApi.BALLibrary.Interfaces
     {
         Task<IEnumerable<CourseResponse>> GetAllCoursesAsync();
         Task<CourseDetailsResponse> GetCourseByIdAsync(int id);
-        Task<CourseResponse> CreateCourseAsync(CreateCourseRequest request);
-        Task<CourseResponse> UpdateCourseAsync(int id, UpdateCourseRequest request);
+        Task<CourseResponse> CreateCourseAsync(
+            int instructorId,
+            CreateCourseRequest request,
+            Stream? thumbnailStream = null, string? thumbnailFileName = null,
+            Stream? videoStream = null, string? videoFileName = null);
+        Task<CourseResponse> UpdateCourseAsync(
+            int id, UpdateCourseRequest request,
+            Stream? thumbnailStream = null, string? thumbnailFileName = null,
+            Stream? videoStream = null, string? videoFileName = null);
         Task DeleteCourseAsync(int id);
         Task<CourseResponse> PublishCourseAsync(int id);
         Task<CourseResponse> UnpublishCourseAsync(int id);

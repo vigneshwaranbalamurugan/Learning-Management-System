@@ -1,11 +1,13 @@
 using System.ComponentModel.DataAnnotations;
 using LMSApi.ModelLibrary.Enums;
 
-namespace LMSApi.ModelLibrary.DTOs
+namespace LMSApi.API.Handlers.Courses
 {
-    // ─── Requests ────────────────────────────────────────────────────────────
-
-    public class CreateCourseRequest
+    /// <summary>
+    /// Multipart/form-data wrapper for creating a course.
+    /// Contains all course fields plus optional thumbnail image and intro video files.
+    /// </summary>
+    public class CreateCourseFormRequest
     {
         [Required(ErrorMessage = "Category ID is required.")]
         public int CategoryId { get; set; }
@@ -28,9 +30,19 @@ namespace LMSApi.ModelLibrary.DTOs
 
         public CourseLevel Level { get; set; } = CourseLevel.Beginner;
         public CourseLanguage Language { get; set; } = CourseLanguage.English;
+
+        /// <summary>Optional course thumbnail image (JPG, JPEG, PNG).</summary>
+        public IFormFile? Thumbnail { get; set; }
+
+        /// <summary>Optional course intro video (MP4, MOV, AVI, WEBM).</summary>
+        public IFormFile? IntroVideo { get; set; }
     }
 
-    public class UpdateCourseRequest
+    /// <summary>
+    /// Multipart/form-data wrapper for updating a course.
+    /// All fields are optional. Include Thumbnail/IntroVideo only when replacing the file.
+    /// </summary>
+    public class UpdateCourseFormRequest
     {
         [MaxLength(300, ErrorMessage = "Title must not exceed 300 characters.")]
         public string? Title { get; set; }
@@ -49,36 +61,11 @@ namespace LMSApi.ModelLibrary.DTOs
         public TimeSpan? EstimatedDuration { get; set; }
         public CourseLevel? Level { get; set; }
         public CourseLanguage? Language { get; set; }
-    }
 
-    // ─── Responses ───────────────────────────────────────────────────────────
+        /// <summary>New thumbnail image to replace the existing one (JPG, JPEG, PNG). Leave empty to keep current.</summary>
+        public IFormFile? Thumbnail { get; set; }
 
-    public class CourseResponse
-    {
-        public int Id { get; set; }
-        public int InstructorId { get; set; }
-        public int CategoryId { get; set; }
-        public string CategoryName { get; set; }
-        public string Title { get; set; }
-        public string Slug { get; set; }
-        public string? Description { get; set; }
-        public decimal? Price { get; set; }
-        public bool IsPremium { get; set; }
-        public string? ThumbnailUrl { get; set; }
-        public CourseLevel Level { get; set; }
-        public CourseLanguage Language { get; set; }
-        public CourseStatus Status { get; set; }
-        public DateTime? PublishedAt { get; set; }
-        public DateTime CreatedAt { get; set; }
-        public DateTime UpdatedAt { get; set; }
-    }
-
-    public class CourseDetailsResponse : CourseResponse
-    {
-        public string? IntroVideoUrl { get; set; }
-        public string? Requirements { get; set; }
-        public string? LearningOutcomes { get; set; }
-        public TimeSpan EstimatedDuration { get; set; }
-        public IEnumerable<SectionResponse> Sections { get; set; } = [];
+        /// <summary>New intro video to replace the existing one (MP4, MOV, AVI, WEBM). Leave empty to keep current.</summary>
+        public IFormFile? IntroVideo { get; set; }
     }
 }

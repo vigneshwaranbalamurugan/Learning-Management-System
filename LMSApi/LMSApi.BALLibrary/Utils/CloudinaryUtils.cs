@@ -47,5 +47,48 @@ namespace LMSApi.BALLibrary.Utils
 
 			return result.SecureUrl?.ToString() ?? result.Url?.ToString() ?? throw new InvalidOperationException("Cloudinary upload did not return a usable URL.");
 		}
+		public static async Task<string> UploadCourseThumbnailAsync(IConfiguration configuration, Stream fileStream, string fileName, string publicId)
+		{
+			var cloudinary = CreateClient(configuration);
+			var folder = configuration["Cloudinary:CourseThumbnailFolder"] ?? "lms/course-thumbnails";
+
+			var uploadParams = new ImageUploadParams
+			{
+				File = new FileDescription(fileName, fileStream),
+				Folder = folder,
+				PublicId = publicId,
+				Overwrite = true,
+				UniqueFilename = true
+			};
+
+			var result = await cloudinary.UploadAsync(uploadParams);
+
+			if (result.Error != null)
+				throw new InvalidOperationException(result.Error.Message);
+
+			return result.SecureUrl?.ToString() ?? result.Url?.ToString() ?? throw new InvalidOperationException("Cloudinary upload did not return a usable URL.");
+		}
+
+		public static async Task<string> UploadCourseIntroVideoAsync(IConfiguration configuration, Stream fileStream, string fileName, string publicId)
+		{
+			var cloudinary = CreateClient(configuration);
+			var folder = configuration["Cloudinary:CourseVideoFolder"] ?? "lms/course-videos";
+
+			var uploadParams = new VideoUploadParams
+			{
+				File = new FileDescription(fileName, fileStream),
+				Folder = folder,
+				PublicId = publicId,
+				Overwrite = true,
+				UniqueFilename = true
+			};
+
+			var result = await cloudinary.UploadAsync(uploadParams);
+
+			if (result.Error != null)
+				throw new InvalidOperationException(result.Error.Message);
+
+			return result.SecureUrl?.ToString() ?? result.Url?.ToString() ?? throw new InvalidOperationException("Cloudinary upload did not return a usable URL.");
+		}
 	}
 }

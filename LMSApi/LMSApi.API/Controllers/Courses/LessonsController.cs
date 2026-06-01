@@ -18,7 +18,6 @@ namespace LMSApi.API.Controllers
             _lessonService = lessonService;
         }
 
-        /// <summary>Get all lessons for a given section, ordered by SortOrder.</summary>
         [Authorize]
         [HttpGet("section/{sectionId:int}")]
         public async Task<ActionResult<IEnumerable<LessonResponse>>> GetBySection(int sectionId)
@@ -27,7 +26,6 @@ namespace LMSApi.API.Controllers
             return Ok(result);
         }
 
-        /// <summary>Get a lesson by id.</summary>
         [Authorize]
         [HttpGet("{id:int}")]
         public async Task<ActionResult<LessonResponse>> GetById(int id)
@@ -36,7 +34,6 @@ namespace LMSApi.API.Controllers
             return Ok(result);
         }
 
-        /// <summary>Create a new lesson. Instructor and Admin only.</summary>
         [Authorize(Roles = "Instructor,Admin")]
         [HttpPost]
         public async Task<ActionResult<LessonResponse>> Create([FromBody] CreateLessonRequest request)
@@ -45,7 +42,6 @@ namespace LMSApi.API.Controllers
             return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
         }
 
-        /// <summary>Update a lesson. Instructor and Admin only.</summary>
         [Authorize(Roles = "Instructor,Admin")]
         [HttpPut("{id:int}")]
         public async Task<ActionResult<LessonResponse>> Update(int id, [FromBody] UpdateLessonRequest request)
@@ -54,7 +50,6 @@ namespace LMSApi.API.Controllers
             return Ok(result);
         }
 
-        /// <summary>Delete a lesson. Instructor and Admin only.</summary>
         [Authorize(Roles = "Instructor,Admin")]
         [HttpDelete("{id:int}")]
         public async Task<IActionResult> Delete(int id)
@@ -63,7 +58,6 @@ namespace LMSApi.API.Controllers
             return NoContent();
         }
 
-        /// <summary>Reorder lessons within a section. Instructor and Admin only.</summary>
         [Authorize(Roles = "Instructor,Admin")]
         [HttpPut("reorder")]
         public async Task<IActionResult> Reorder([FromBody] ReorderLessonsRequest request)

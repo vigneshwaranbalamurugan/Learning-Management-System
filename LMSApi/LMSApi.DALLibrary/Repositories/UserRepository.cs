@@ -13,7 +13,10 @@ namespace LMSApi.DALLibrary.Repositories
 
         public async Task<Users> GetByEmailAsync(string email)
         {
-            return await _context.Users.FirstOrDefaultAsync(u => u.Email == email)?? throw new KeyNotFoundException($"User with email '{email}' not found.");
+            return await _context.Users
+                .Include(u => u.Role)
+                .FirstOrDefaultAsync(u => u.Email == email)
+                ?? throw new KeyNotFoundException($"User with email '{email}' not found.");
         }
 
         public async Task<bool> IsEmailAlreadyRegisteredAsync(string email)

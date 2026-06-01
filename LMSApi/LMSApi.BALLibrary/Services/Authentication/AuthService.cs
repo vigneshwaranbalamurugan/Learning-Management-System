@@ -34,10 +34,13 @@ namespace LMSApi.BALLibrary.Services
 
             if (!user.IsEmailVerified) throw new InvalidOperationException("Email not verified");
 
+            if (user.Role == null)
+                throw new InvalidOperationException("User role is not configured.");
+
             user.LastLoginAt = DateTime.UtcNow;
             await _userRepository.UpdateAsync(user);
 
-            var (token, expires) = _tokenService.GenerateToken(user.Email);
+            var (token, expires) = _tokenService.GenerateToken(user.Id, user.Email, user.Role.RoleName);
             return new LoginResponse { Email = request.Email, Token = token, ExpiresAt = expires, Message = "Authenticated" };
         }
 
