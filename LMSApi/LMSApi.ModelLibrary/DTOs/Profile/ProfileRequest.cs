@@ -28,4 +28,5 @@ namespace LMSApi.ModelLibrary.DTOs
         public string? Location { get; set; }= string.Empty;
         public string? ProfilePictureUrl { get; set; } = string.Empty;
     }
+
 }

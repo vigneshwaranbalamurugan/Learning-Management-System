@@ -10,6 +10,13 @@ namespace LMSApi.DALLibrary.Contexts
         public DbSet<UserRoles> UserRoles { get; set; }
         public DbSet<UserProfiles> UserProfiles { get; set; }
 
+        // Course module
+        public DbSet<CourseCategories> CourseCategories { get; set; }
+        public DbSet<Courses> Courses { get; set; }
+        public DbSet<CourseSection> CourseSections { get; set; }
+        public DbSet<Lessons> Lessons { get; set; }
+        public DbSet<LessonResources> LessonResources { get; set; }
+
         public LMSDbContext(DbContextOptions<LMSDbContext> dbContextOptions):base(dbContextOptions)
         {
         }        
@@ -63,6 +70,18 @@ namespace LMSApi.DALLibrary.Contexts
                 case UserProfiles profile:
                     if (create) profile.CreatedAt = utcNow;
                     profile.UpdatedAt = utcNow;
+                    break;
+                case CourseCategories category:
+                    if (create) category.CreatedAt = utcNow;
+                    category.UpdatedAt = utcNow;
+                    break;
+                case Courses course:
+                    if (create) course.CreatedAt = utcNow;
+                    course.UpdatedAt = utcNow;
+                    break;
+                case CourseSection section:
+                    if (create) section.CreatedAt = utcNow;
+                    section.UpdatedAt = utcNow;
                     break;
             }
         }

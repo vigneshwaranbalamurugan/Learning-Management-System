@@ -2,11 +2,13 @@ using LMSApi.DALLibrary.Contexts;
 using LMSApi.API.Extensions;
 using LMSApi.DALLibrary.Interfaces;
 using LMSApi.DALLibrary.Repositories;
+using LMSApi.DALLibrary.Repositories.CourseModule;
 using LMSApi.BALLibrary.Interfaces;
 using LMSApi.BALLibrary.Services;
 using LMSApi.BALLibrary.Services.Authentication;
 using LMSApi.BALLibrary.Services.Profile;
 using LMSApi.BALLibrary.Services.Upload;
+using LMSApi.BALLibrary.Services.Courses;
 using LMSApi.BALLibrary.Mappers;
 using LMSApi.API.Middlewares;
 using LMSApi.API.Handlers;
@@ -37,6 +39,13 @@ builder.Services.AddDbContext<LMSDbContext>(opts => opts.UseNpgsql(connection, n
 #region Dependency Injection for Repositories
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IUserProfileRepository, UserProfileRepository>();
+
+// Course module repositories
+builder.Services.AddScoped<ICourseCategoryRepository, CourseCategoryRepository>();
+builder.Services.AddScoped<ICourseRepository, CourseRepository>();
+builder.Services.AddScoped<ICourseSectionRepository, CourseSectionRepository>();
+builder.Services.AddScoped<ILessonRepository, LessonRepository>();
+builder.Services.AddScoped<ILessonResourceRepository, LessonResourceRepository>();
 #endregion
 
 #region Dependency Injection for Services
@@ -47,6 +56,13 @@ builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<INotificationHandler, EmailNotificationHandler>();
 builder.Services.AddScoped<INotificationHandler, SmsNotificationHandler>();
 builder.Services.AddSingleton<ITokenService, TokenService>();
+
+// Course module services
+builder.Services.AddScoped<ICourseCategoryService, CourseCategoryService>();
+builder.Services.AddScoped<ICourseService, CourseService>();
+builder.Services.AddScoped<ICourseSectionService, CourseSectionService>();
+builder.Services.AddScoped<ILessonService, LessonService>();
+builder.Services.AddScoped<ILessonResourceService, LessonResourceService>();
 #endregion
 
 builder.Services.AddAutoMapper(typeof(ApplicationAssemblyReference).Assembly);

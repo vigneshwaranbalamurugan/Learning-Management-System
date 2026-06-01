@@ -17,7 +17,8 @@ namespace LMSApi.ModelLibrary.Models
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
 
-        // Navigation property
+        // Navigation properties
         public Courses Course { get; set; }
+        public ICollection<Lessons> Lessons { get; set; } = new List<Lessons>();
     }
 }

@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Asp.Versioning;
 using System.Security.Claims;
+using LMSApi.API.Controllers.Profile;
 
 namespace LMSApi.API.Controllers
 {
@@ -41,13 +42,13 @@ namespace LMSApi.API.Controllers
 
         [HttpPost("update-profile-image")]
         [Consumes("multipart/form-data")]
-        public async Task<ActionResult<ProfileResponse>> UpdateProfileImage([FromForm] IFormFile file)
+        public async Task<ActionResult<ProfileResponse>> UpdateProfileImage([FromForm] ProfileImageUploadRequest request)
         {
-            _profileImageUploadHandler.Validate(file);
+            _profileImageUploadHandler.Validate(request.File);
 
             var email = GetCurrentUserEmail();
-            await using var stream = file.OpenReadStream();
-            var result = await _profileService.UpdateProfileImageAsync(email, stream, "profile-" + email, file.ContentType ?? string.Empty);
+            await using var stream = request.File.OpenReadStream();
+            var result = await _profileService.UpdateProfileImageAsync(email, stream, "profile-" + email, request.File.ContentType ?? string.Empty);
             return Ok(result);
         }
 

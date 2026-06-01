@@ -1,0 +1,81 @@
+using System.ComponentModel.DataAnnotations;
+using LMSApi.ModelLibrary.Enums;
+
+namespace LMSApi.ModelLibrary.DTOs
+{
+    // ─── Requests ────────────────────────────────────────────────────────────
+
+    public class CreateLessonRequest
+    {
+        [Required(ErrorMessage = "Course section ID is required.")]
+        public int CourseSectionId { get; set; }
+
+        [Required(ErrorMessage = "Lesson title is required.")]
+        [MaxLength(300, ErrorMessage = "Title must not exceed 300 characters.")]
+        public string Title { get; set; }
+
+        [MaxLength(1000, ErrorMessage = "Description must not exceed 1000 characters.")]
+        public string? Description { get; set; }
+
+        public string? Content { get; set; }
+        public string? ExternalUrl { get; set; }
+        public string? VideoUrl { get; set; }
+
+        [Required(ErrorMessage = "Lesson type is required.")]
+        public LessonType Type { get; set; }
+
+        public TimeSpan? DurationInMinutes { get; set; }
+        public TimeSpan Duration { get; set; }
+
+        [Range(0, int.MaxValue, ErrorMessage = "Sort order must be zero or greater.")]
+        public int SortOrder { get; set; }
+    }
+
+    public class UpdateLessonRequest
+    {
+        [MaxLength(300, ErrorMessage = "Title must not exceed 300 characters.")]
+        public string? Title { get; set; }
+
+        [MaxLength(1000, ErrorMessage = "Description must not exceed 1000 characters.")]
+        public string? Description { get; set; }
+
+        public string? Content { get; set; }
+        public string? ExternalUrl { get; set; }
+        public string? VideoUrl { get; set; }
+        public LessonType? Type { get; set; }
+        public TimeSpan? DurationInMinutes { get; set; }
+        public TimeSpan? Duration { get; set; }
+
+        [Range(0, int.MaxValue)]
+        public int? SortOrder { get; set; }
+    }
+
+    public class ReorderLessonsRequest
+    {
+        [Required]
+        public List<LessonOrderItem> LessonOrders { get; set; } = [];
+    }
+
+    public class LessonOrderItem
+    {
+        public int LessonId { get; set; }
+        public int SortOrder { get; set; }
+    }
+
+    // ─── Responses ───────────────────────────────────────────────────────────
+
+    public class LessonResponse
+    {
+        public int Id { get; set; }
+        public int CourseSectionId { get; set; }
+        public string Title { get; set; }
+        public string? Description { get; set; }
+        public string? Content { get; set; }
+        public string? ExternalUrl { get; set; }
+        public string? VideoUrl { get; set; }
+        public LessonType Type { get; set; }
+        public TimeSpan? DurationInMinutes { get; set; }
+        public TimeSpan Duration { get; set; }
+        public int SortOrder { get; set; }
+    }
+}

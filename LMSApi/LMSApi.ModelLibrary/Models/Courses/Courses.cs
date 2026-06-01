@@ -28,5 +28,6 @@ namespace LMSApi.ModelLibrary.Models
         // Navigation properties
         public CourseCategories Category { get; set; }
         public Users Instructor { get; set; }
+        public ICollection<CourseSection> Sections { get; set; } = new List<CourseSection>();
     }
 }
