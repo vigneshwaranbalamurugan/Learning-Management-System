@@ -11,19 +11,24 @@ public static class ApiBehaviorExtensions
             options.InvalidModelStateResponseFactory = context =>
             {
                 var errors = context.ModelState
-                    .Where(x => x.Value.Errors.Count > 0)
+                    .Where(x => x.Value != null && x.Value.Errors.Count > 0)
                     .ToDictionary(
                         kvp => kvp.Key,
-                        kvp => kvp.Value.Errors
-                            .Select(e => e.ErrorMessage)
-                            .ToArray()
-                    );
+                        kvp => kvp.Value!.Errors
+                            .Select(e => string.IsNullOrWhiteSpace(e.ErrorMessage)
+                                ? "Invalid value."
+                                : e.ErrorMessage)
+                            .ToArray());
+
+                var traceId = context.HttpContext.TraceIdentifier;
 
                 var response = new
                 {
-                    success = false,
-                    message = "Validation failed",
-                    errors = errors
+                    success    = false,
+                    statusCode = 400,
+                    message    = "Validation failed. Please check the errors and try again.",
+                    traceId,
+                    errors
                 };
 
                 return new BadRequestObjectResult(response);

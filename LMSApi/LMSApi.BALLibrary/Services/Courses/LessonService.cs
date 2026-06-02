@@ -3,6 +3,7 @@ using LMSApi.BALLibrary.Interfaces;
 using LMSApi.DALLibrary.Interfaces;
 using LMSApi.ModelLibrary.DTOs;
 using LMSApi.ModelLibrary.Models;
+using LMSApi.ModelLibrary.Enums;
 using Microsoft.Extensions.Logging;
 
 namespace LMSApi.BALLibrary.Services.Courses
@@ -11,17 +12,20 @@ namespace LMSApi.BALLibrary.Services.Courses
     {
         private readonly ILessonRepository _lessonRepository;
         private readonly ICourseSectionRepository _sectionRepository;
+        private readonly IUploadService _uploadService;
         private readonly IMapper _mapper;
         private readonly ILogger<LessonService> _logger;
 
         public LessonService(
             ILessonRepository lessonRepository,
             ICourseSectionRepository sectionRepository,
+            IUploadService uploadService,
             IMapper mapper,
             ILogger<LessonService> logger)
         {
             _lessonRepository = lessonRepository;
             _sectionRepository = sectionRepository;
+            _uploadService = uploadService;
             _mapper = mapper;
             _logger = logger;
         }
@@ -38,20 +42,49 @@ namespace LMSApi.BALLibrary.Services.Courses
             return _mapper.Map<LessonResponse>(lesson);
         }
 
-        public async Task<LessonResponse> CreateLessonAsync(CreateLessonRequest request)
+        public async Task<LessonResponse> CreateLessonAsync(CreateLessonRequest request, Stream? fileStream = null, string? fileName = null)
         {
             // Validate parent section exists
             await _sectionRepository.GetByIdAsync(request.CourseSectionId);
 
             var lesson = _mapper.Map<Lessons>(request);
+            lesson.VideoUrl ??= string.Empty;
+            lesson.Content ??= string.Empty;
+            lesson.Description ??= string.Empty;
+
             await _lessonRepository.AddAsync(lesson);
+
+            var needsUpdate = false;
+
+            if (fileStream != null && fileName != null)
+            {
+                if (lesson.Type == LessonType.Video)
+                {
+                    lesson.VideoUrl = await _uploadService.UploadLessonVideoAsync(
+                        fileStream, fileName, $"lessons/{lesson.Id}/video");
+                    needsUpdate = true;
+                    _logger.LogInformation("Lesson video uploaded on create: LessonId={LessonId}", lesson.Id);
+                }
+                else if (lesson.Type == LessonType.Pdf)
+                {
+                    lesson.ExternalUrl = await _uploadService.UploadLessonPdfAsync(
+                        fileStream, fileName, $"lessons/{lesson.Id}/pdf");
+                    needsUpdate = true;
+                    _logger.LogInformation("Lesson PDF uploaded on create: LessonId={LessonId}", lesson.Id);
+                }
+            }
+
+            if (needsUpdate)
+            {
+                await _lessonRepository.UpdateAsync(lesson);
+            }
 
             _logger.LogInformation("Lesson Created: '{Title}' for SectionId={SectionId}", request.Title, request.CourseSectionId);
 
             return _mapper.Map<LessonResponse>(lesson);
         }
 
-        public async Task<LessonResponse> UpdateLessonAsync(int id, UpdateLessonRequest request)
+        public async Task<LessonResponse> UpdateLessonAsync(int id, UpdateLessonRequest request, Stream? fileStream = null, string? fileName = null)
         {
             var lesson = await _lessonRepository.GetByIdAsync(id);
 
@@ -64,6 +97,22 @@ namespace LMSApi.BALLibrary.Services.Courses
             if (request.DurationInMinutes.HasValue) lesson.DurationInMinutes = request.DurationInMinutes.Value;
             if (request.Duration.HasValue) lesson.Duration = request.Duration.Value;
             if (request.SortOrder.HasValue) lesson.SortOrder = request.SortOrder.Value;
+
+            if (fileStream != null && fileName != null)
+            {
+                if (lesson.Type == LessonType.Video)
+                {
+                    lesson.VideoUrl = await _uploadService.UploadLessonVideoAsync(
+                        fileStream, fileName, $"lessons/{lesson.Id}/video");
+                    _logger.LogInformation("Lesson video uploaded on update: LessonId={LessonId}", lesson.Id);
+                }
+                else if (lesson.Type == LessonType.Pdf)
+                {
+                    lesson.ExternalUrl = await _uploadService.UploadLessonPdfAsync(
+                        fileStream, fileName, $"lessons/{lesson.Id}/pdf");
+                    _logger.LogInformation("Lesson PDF uploaded on update: LessonId={LessonId}", lesson.Id);
+                }
+            }
 
             await _lessonRepository.UpdateAsync(lesson);
 

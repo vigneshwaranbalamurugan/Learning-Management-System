@@ -3,10 +3,6 @@ using LMSApi.ModelLibrary.Enums;
 
 namespace LMSApi.API.Handlers.Courses
 {
-    /// <summary>
-    /// Multipart/form-data wrapper for creating a course.
-    /// Contains all course fields plus optional thumbnail image and intro video files.
-    /// </summary>
     public class CreateCourseFormRequest
     {
         [Required(ErrorMessage = "Category ID is required.")]
@@ -62,10 +58,8 @@ namespace LMSApi.API.Handlers.Courses
         public CourseLevel? Level { get; set; }
         public CourseLanguage? Language { get; set; }
 
-        /// <summary>New thumbnail image to replace the existing one (JPG, JPEG, PNG). Leave empty to keep current.</summary>
         public IFormFile? Thumbnail { get; set; }
 
-        /// <summary>New intro video to replace the existing one (MP4, MOV, AVI, WEBM). Leave empty to keep current.</summary>
         public IFormFile? IntroVideo { get; set; }
     }
 }

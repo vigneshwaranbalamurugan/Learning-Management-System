@@ -9,5 +9,9 @@ namespace LMSApi.BALLibrary.Interfaces
 		bool IsAllowedCourseVideo(string fileName, string contentType);
 		Task<string> UploadCourseThumbnailAsync(Stream fileStream, string fileName, string publicId);
 		Task<string> UploadCourseIntroVideoAsync(Stream fileStream, string fileName, string publicId);
+
+		bool IsAllowedLessonPdf(string fileName, string contentType);
+		Task<string> UploadLessonVideoAsync(Stream fileStream, string fileName, string publicId);
+		Task<string> UploadLessonPdfAsync(Stream fileStream, string fileName, string publicId);
 	}
 }

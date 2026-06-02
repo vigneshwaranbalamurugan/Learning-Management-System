@@ -32,7 +32,85 @@ namespace LMSApi.API.Extensions
 						ValidateLifetime = true,
 						ValidIssuer = configuration["Jwt:Issuer"] ?? "LMSApi",
 						ValidAudience = configuration["Jwt:Audience"] ?? "LMSApiUsers",
-						IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey))
+						IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)),
+						ClockSkew = TimeSpan.Zero
+					};
+
+					options.Events = new JwtBearerEvents
+					{
+						OnAuthenticationFailed = context =>
+						{
+							context.Response.StatusCode = Microsoft.AspNetCore.Http.StatusCodes.Status401Unauthorized;
+							context.Response.ContentType = "application/json";
+
+							string message = "Authentication failed.";
+							if (context.Exception is SecurityTokenExpiredException)
+							{
+								message = "Token has expired. Please log in again.";
+							}
+							else if (context.Exception is SecurityTokenInvalidSignatureException)
+							{
+								message = "Invalid token signature.";
+							}
+							else
+							{
+								message = $"Token validation failed: {context.Exception.Message}";
+							}
+
+							var errorResponse = new
+							{
+								success = false,
+								statusCode = Microsoft.AspNetCore.Http.StatusCodes.Status401Unauthorized,
+								message = message,
+								traceId = context.HttpContext.TraceIdentifier
+							};
+
+							var json = System.Text.Json.JsonSerializer.Serialize(errorResponse);
+							return context.Response.WriteAsync(json);
+						},
+						OnChallenge = context =>
+						{
+							context.HandleResponse();
+
+							if (!context.Response.HasStarted)
+							{
+								context.Response.StatusCode = Microsoft.AspNetCore.Http.StatusCodes.Status401Unauthorized;
+								context.Response.ContentType = "application/json";
+
+								var authHeader = context.Request.Headers["Authorization"].ToString();
+								string message;
+
+								if (string.IsNullOrWhiteSpace(authHeader))
+								{
+									message = "Authorization token is missing. Please log in to access this resource.";
+								}
+								else if (context.AuthenticateFailure is SecurityTokenExpiredException)
+								{
+									message = "Token has expired. Please log in again.";
+								}
+								else if (context.AuthenticateFailure != null)
+								{
+									message = $"Invalid token: {context.AuthenticateFailure.Message}";
+								}
+								else
+								{
+									message = "Unauthorized access. Please provide a valid authentication token.";
+								}
+
+								var errorResponse = new
+								{
+									success = false,
+									statusCode = Microsoft.AspNetCore.Http.StatusCodes.Status401Unauthorized,
+									message = message,
+									traceId = context.HttpContext.TraceIdentifier
+								};
+
+								var json = System.Text.Json.JsonSerializer.Serialize(errorResponse);
+								return context.Response.WriteAsync(json);
+							}
+
+							return Task.CompletedTask;
+						}
 					};
 				});
 

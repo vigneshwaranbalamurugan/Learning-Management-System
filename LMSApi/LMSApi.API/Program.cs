@@ -69,6 +69,7 @@ builder.Services.AddAutoMapper(typeof(ApplicationAssemblyReference).Assembly);
 
 builder.Services.AddScoped<ProfileImageUploadHandler>();
 builder.Services.AddScoped<CourseUploadHandler>();
+builder.Services.AddScoped<LessonUploadHandler>();
 
 builder.Services.AddJwtAuthentication(builder.Configuration);
 
@@ -97,15 +98,17 @@ builder.Services.AddRoleAuthorization();
 
 var app = builder.Build();
 
+// ── Exception handling must be FIRST so it wraps every middleware below ──
+app.UseMiddleware<ExceptionHandlingMiddleware>();
+
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
     app.UseSwagger();
     app.UseSwaggerUI();
-    
 }
-app.UseMiddleware<ExceptionHandlingMiddleware>();
+
 app.UseHttpsRedirection();
 
 app.UseAuthentication();

@@ -50,10 +50,7 @@ namespace LMSApi.API.Controllers
             return Ok(result);
         }
 
-        /// <summary>
-        /// Get all courses belonging to the calling instructor.
-        /// Admins may pass any instructorId; Instructors always see their own courses only.
-        /// </summary>
+
         [Authorize(Roles = "Instructor,Admin")]
         [HttpGet("my-courses")]
         public async Task<ActionResult<IEnumerable<CourseResponse>>> GetMyCourses()
@@ -63,13 +60,6 @@ namespace LMSApi.API.Controllers
             return Ok(result);
         }
 
-        // ─── Mutations (Instructor / Admin) ─────────────────────────────────
-
-        /// <summary>
-        /// Create a new course. Accepts multipart/form-data.
-        /// InstructorId is taken automatically from your JWT token — do NOT send it in the form.
-        /// Include Thumbnail (optional image) and IntroVideo (optional video) alongside course fields.
-        /// </summary>
         [Authorize(Roles = "Instructor,Admin")]
         [HttpPost]
         [Consumes("multipart/form-data")]
@@ -108,11 +98,7 @@ namespace LMSApi.API.Controllers
             return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
         }
 
-        /// <summary>
-        /// Update a course. Accepts multipart/form-data.
-        /// Instructors can only update their own courses. Admins can update any course.
-        /// Include Thumbnail / IntroVideo only when you want to replace the file.
-        /// </summary>
+
         [Authorize(Roles = "Instructor,Admin")]
         [HttpPut("{id:int}")]
         [Consumes("multipart/form-data")]
