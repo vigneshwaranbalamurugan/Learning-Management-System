@@ -98,7 +98,11 @@ namespace LMSApi.API.Controllers
             return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
         }
 
-
+        /// <summary>
+        /// Update a course. Accepts multipart/form-data.
+        /// Instructors can only update their own courses. Admins can update any course.
+        /// Include Thumbnail / IntroVideo only when you want to replace the file.
+        /// </summary>
         [Authorize(Roles = "Instructor,Admin")]
         [HttpPut("{id:int}")]
         [Consumes("multipart/form-data")]

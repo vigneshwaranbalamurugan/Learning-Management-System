@@ -74,9 +74,10 @@ namespace LMSApi.BALLibrary.Services
 
             await _userRepository.AddAsync(user);
 
-            var relative = $"/api/auth/verify?email={Uri.EscapeDataString(request.Email)}&token={user.VerificationToken}";
+            var relative = $"/auth/verify?email={Uri.EscapeDataString(request.Email)}&token={user.VerificationToken}";
             var baseUrl = _configuration["App:BaseUrl"] ?? string.Empty;
-            var link = string.IsNullOrEmpty(baseUrl) ? relative : (baseUrl.TrimEnd('/') + relative);
+            var basePath = _configuration["App:BasePath"] ?? string.Empty;
+            var link = string.IsNullOrEmpty(baseUrl) ? relative : (baseUrl.TrimEnd('/') + basePath + relative);
 
             var html = EmailTemplate.GetVerificationTemplate(request.Email, link);
             Message msg = new EmailMessage(request.Email, "Please verify your email", html) { IsHtml = true };
@@ -116,9 +117,10 @@ namespace LMSApi.BALLibrary.Services
 
             await _userRepository.UpdateAsync(user);
 
-            var relative = $"/api/auth/verify?email={Uri.EscapeDataString(request.Email)}&token={user.VerificationToken}";
+            var relative = $"/auth/verify?email={Uri.EscapeDataString(request.Email)}&token={user.VerificationToken}";
             var baseUrl = _configuration["App:BaseUrl"] ?? string.Empty;
-            var link = string.IsNullOrEmpty(baseUrl) ? relative : (baseUrl.TrimEnd('/') + relative);
+            var basePath = _configuration["App:BasePath"] ?? string.Empty;
+            var link = string.IsNullOrEmpty(baseUrl) ? relative : (baseUrl.TrimEnd('/') + basePath + relative);
             var html = EmailTemplate.GetVerificationTemplate(request.Email, link);
             Message msg = new EmailMessage(request.Email, "Your verification link", html) { IsHtml = true };
             await _notificationService.Send(msg);

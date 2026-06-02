@@ -3,6 +3,7 @@ using System;
 using LMSApi.DALLibrary.Contexts;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace LMSApi.DALLibrary.Migrations
 {
     [DbContext(typeof(LMSDbContext))]
-    partial class LMSDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260602110620_CoursesAdd")]
+    partial class CoursesAdd
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -399,26 +402,26 @@ namespace LMSApi.DALLibrary.Migrations
                         new
                         {
                             Id = 1,
-                            CreatedAt = new DateTime(2026, 6, 2, 11, 26, 40, 751, DateTimeKind.Utc).AddTicks(3620),
+                            CreatedAt = new DateTime(2026, 6, 2, 11, 6, 19, 927, DateTimeKind.Utc).AddTicks(8990),
                             Description = "Learner account",
                             RoleName = "Learner",
-                            UpdatedAt = new DateTime(2026, 6, 2, 11, 26, 40, 751, DateTimeKind.Utc).AddTicks(3620)
+                            UpdatedAt = new DateTime(2026, 6, 2, 11, 6, 19, 927, DateTimeKind.Utc).AddTicks(8990)
                         },
                         new
                         {
                             Id = 2,
-                            CreatedAt = new DateTime(2026, 6, 2, 11, 26, 40, 751, DateTimeKind.Utc).AddTicks(3620),
+                            CreatedAt = new DateTime(2026, 6, 2, 11, 6, 19, 927, DateTimeKind.Utc).AddTicks(8990),
                             Description = "Instructor account",
                             RoleName = "Instructor",
-                            UpdatedAt = new DateTime(2026, 6, 2, 11, 26, 40, 751, DateTimeKind.Utc).AddTicks(3620)
+                            UpdatedAt = new DateTime(2026, 6, 2, 11, 6, 19, 927, DateTimeKind.Utc).AddTicks(8990)
                         },
                         new
                         {
                             Id = 3,
-                            CreatedAt = new DateTime(2026, 6, 2, 11, 26, 40, 751, DateTimeKind.Utc).AddTicks(3620),
+                            CreatedAt = new DateTime(2026, 6, 2, 11, 6, 19, 927, DateTimeKind.Utc).AddTicks(8990),
                             Description = "Admin account",
                             RoleName = "Admin",
-                            UpdatedAt = new DateTime(2026, 6, 2, 11, 26, 40, 751, DateTimeKind.Utc).AddTicks(3620)
+                            UpdatedAt = new DateTime(2026, 6, 2, 11, 6, 19, 927, DateTimeKind.Utc).AddTicks(8990)
                         });
                 });
 
@@ -491,14 +494,14 @@ namespace LMSApi.DALLibrary.Migrations
                         new
                         {
                             Id = 1,
-                            CreatedAt = new DateTime(2026, 6, 2, 11, 26, 40, 750, DateTimeKind.Utc).AddTicks(9980),
-                            Email = "admin@gmail.com",
+                            CreatedAt = new DateTime(2026, 6, 2, 11, 6, 19, 927, DateTimeKind.Utc).AddTicks(5370),
+                            Email = "Admin@gmail.com",
                             IsActive = true,
                             IsEmailVerified = true,
                             LastLoginAt = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             PasswordHash = "QWRtaW5AMTIz",
                             RoleId = 3,
-                            UpdatedAt = new DateTime(2026, 6, 2, 11, 26, 40, 751, DateTimeKind.Utc).AddTicks(20)
+                            UpdatedAt = new DateTime(2026, 6, 2, 11, 6, 19, 927, DateTimeKind.Utc).AddTicks(5370)
                         });
                 });
 

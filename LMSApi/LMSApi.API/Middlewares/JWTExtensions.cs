@@ -68,6 +68,22 @@ namespace LMSApi.API.Extensions
 							var json = System.Text.Json.JsonSerializer.Serialize(errorResponse);
 							return context.Response.WriteAsync(json);
 						},
+						OnForbidden = context =>
+						{
+							context.Response.StatusCode = Microsoft.AspNetCore.Http.StatusCodes.Status403Forbidden;
+							context.Response.ContentType = "application/json";
+
+							var errorResponse = new
+							{
+								success = false,
+								statusCode = Microsoft.AspNetCore.Http.StatusCodes.Status403Forbidden,
+								message = "You do not have permission to access this resource.",
+								traceId = context.HttpContext.TraceIdentifier
+							};
+
+							var json = System.Text.Json.JsonSerializer.Serialize(errorResponse);
+							return context.Response.WriteAsync(json);
+						},
 						OnChallenge = context =>
 						{
 							context.HandleResponse();

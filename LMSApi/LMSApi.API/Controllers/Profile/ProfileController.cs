@@ -44,11 +44,12 @@ namespace LMSApi.API.Controllers
         [Consumes("multipart/form-data")]
         public async Task<ActionResult<ProfileResponse>> UpdateProfileImage([FromForm] ProfileImageUploadRequest request)
         {
+            Console.WriteLine($"Received file: {request.File?.FileName}, size: {request.File?.Length} bytes, content type: {request.File?.ContentType}");
             _profileImageUploadHandler.Validate(request.File);
 
             var email = GetCurrentUserEmail();
             await using var stream = request.File.OpenReadStream();
-            var result = await _profileService.UpdateProfileImageAsync(email, stream, "profile-" + email, request.File.ContentType ?? string.Empty);
+            var result = await _profileService.UpdateProfileImageAsync(email, stream, "profile-" + email+".png", request.File.ContentType ?? string.Empty);
             return Ok(result);
         }
 

@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using LMSApi.ModelLibrary.Models;
+using LMSApi.ModelLibrary.Enums;
 
 namespace LMSApi.DALLibrary.Contexts.Configurations
 {
@@ -35,7 +36,7 @@ namespace LMSApi.DALLibrary.Contexts.Configurations
                 .HasMaxLength(1000);
 
             builder.Property(c => c.Status)
-                .HasDefaultValue(1); // Draft
+                .HasDefaultValue(CourseStatus.Draft);
 
             builder.Property(c => c.IsPremium)
                 .HasDefaultValue(false);

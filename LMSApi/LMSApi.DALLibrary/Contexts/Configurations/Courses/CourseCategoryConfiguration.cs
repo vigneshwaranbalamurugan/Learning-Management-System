@@ -16,10 +16,10 @@ namespace LMSApi.DALLibrary.Contexts.Configurations
 
             builder.Property(c => c.Name)
                 .IsRequired()
-                .HasMaxLength(150);
+                .HasMaxLength(50);
 
             builder.Property(c => c.Description)
-                .HasMaxLength(500);
+                .HasMaxLength(150);
 
             builder.Property(c => c.CreatedAt)
                 .HasDefaultValueSql("CURRENT_TIMESTAMP");

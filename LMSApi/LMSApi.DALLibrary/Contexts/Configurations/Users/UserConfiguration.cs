@@ -23,8 +23,8 @@ namespace LMSApi.DALLibrary.Contexts.Configurations
             builder.HasData(
                 new Users{
                     Id = 1,
-                    Email = "Admin@gmail.com",
-                    PasswordHash = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes("Admin@123")),
+                    Email = "admin@gmail.com",
+                    PasswordHash = "TPZPlYPS43ldK8EYFX67pHzyMNFmt69wd9N2cUNObYs=",
                     IsActive = true,
                     IsEmailVerified = true,
                     RoleId = 3,

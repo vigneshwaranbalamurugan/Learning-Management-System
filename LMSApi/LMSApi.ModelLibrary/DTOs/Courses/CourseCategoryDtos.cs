@@ -10,8 +10,9 @@ namespace LMSApi.ModelLibrary.DTOs
         [MaxLength(150, ErrorMessage = "Category name must not exceed 150 characters.")]
         public string Name { get; set; }
 
+        [Required(ErrorMessage = "Description is required.")]
         [MaxLength(500, ErrorMessage = "Description must not exceed 500 characters.")]
-        public string? Description { get; set; }
+        public string Description { get; set; }
     }
 
     public class UpdateCategoryRequest
@@ -19,8 +20,9 @@ namespace LMSApi.ModelLibrary.DTOs
         [MaxLength(150, ErrorMessage = "Category name must not exceed 150 characters.")]
         public string? Name { get; set; }
 
+        [Required(ErrorMessage = "Description is required.")]
         [MaxLength(500, ErrorMessage = "Description must not exceed 500 characters.")]
-        public string? Description { get; set; }
+        public string Description { get; set; }
     }
 
     // ─── Responses ───────────────────────────────────────────────────────────

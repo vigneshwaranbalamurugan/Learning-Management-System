@@ -61,8 +61,11 @@ namespace LMSApi.BALLibrary.Services.Upload
 		public bool IsAllowedProfileImage(string fileName, string contentType)
 		{
 			var extension = Path.GetExtension(fileName);
+			Console.WriteLine($"Checking profile image: {fileName}, extension: {extension}, content type: {contentType}");
 			return AllowedImageExtensions.Contains(extension)
-			       && (string.IsNullOrWhiteSpace(contentType) || AllowedImageContentTypes.Contains(contentType));
+			       && (string.IsNullOrWhiteSpace(contentType)
+			           || AllowedImageContentTypes.Contains(contentType)
+			           || contentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase));
 		}
 
 		public async Task<string> UploadProfileImageAsync(Stream fileStream, string fileName, string publicId)
@@ -91,7 +94,9 @@ namespace LMSApi.BALLibrary.Services.Upload
 		{
 			var extension = Path.GetExtension(fileName);
 			return AllowedImageExtensions.Contains(extension)
-			       && (string.IsNullOrWhiteSpace(contentType) || AllowedImageContentTypes.Contains(contentType));
+			       && (string.IsNullOrWhiteSpace(contentType)
+			           || AllowedImageContentTypes.Contains(contentType)
+			           || contentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase));
 		}
 
 		public Task<string> UploadCourseThumbnailAsync(Stream fileStream, string fileName, string publicId)
