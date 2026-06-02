@@ -30,7 +30,7 @@ namespace LMSApi.BALLibrary.Services.Authentication
 
                 var claims = new[]
                 {
-                    new Claim(JwtRegisteredClaimNames.Sub, email),
+                    new Claim(JwtRegisteredClaimNames.Sub, userId.ToString()),
                     new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
                     new Claim(ClaimTypes.Email, email),
                     new Claim(ClaimTypes.NameIdentifier, userId.ToString()),

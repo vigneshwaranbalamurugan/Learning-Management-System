@@ -1,5 +1,6 @@
 using LMSApi.BALLibrary.Interfaces;
 using LMSApi.API.Handlers;
+using LMSApi.API.Extensions;
 using LMSApi.ModelLibrary.DTOs;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -27,7 +28,7 @@ namespace LMSApi.API.Controllers
         [HttpGet("get-profile")]
         public async Task<ActionResult<ProfileResponse>> GetProfile()
         {
-            var email = GetCurrentUserEmail();
+            var email = User.GetEmail();
             var result = await _profileService.GetProfileAsync(email);
             return Ok(result);
         }
@@ -35,7 +36,7 @@ namespace LMSApi.API.Controllers
         [HttpPut("update-profile")]
         public async Task<ActionResult<ProfileResponse>> UpdateProfile([FromBody] ProfileUpdateRequest request)
         {
-            var email = GetCurrentUserEmail();
+            var email = User.GetEmail();
             var result = await _profileService.UpdateProfileAsync(email, request);
             return Ok(result);
         }
@@ -47,18 +48,11 @@ namespace LMSApi.API.Controllers
             Console.WriteLine($"Received file: {request.File?.FileName}, size: {request.File?.Length} bytes, content type: {request.File?.ContentType}");
             _profileImageUploadHandler.Validate(request.File);
 
-            var email = GetCurrentUserEmail();
+            var email = User.GetEmail();
             await using var stream = request.File.OpenReadStream();
             var result = await _profileService.UpdateProfileImageAsync(email, stream, "profile-" + email+".png", request.File.ContentType ?? string.Empty);
             return Ok(result);
         }
 
-        private string GetCurrentUserEmail()
-        {
-            return User.FindFirstValue(ClaimTypes.Email)
-                   ?? User.FindFirstValue("email")
-                   ?? throw new UnauthorizedAccessException("Authenticated user email was not found.");
-        }
     }
-
 }

@@ -1,6 +1,7 @@
 using Asp.Versioning;
 using LMSApi.API.Handlers.Courses;
 using LMSApi.API.Handlers;
+using LMSApi.API.Extensions;
 using LMSApi.BALLibrary.Interfaces;
 using LMSApi.ModelLibrary.DTOs;
 using Microsoft.AspNetCore.Authorization;
@@ -55,10 +56,11 @@ namespace LMSApi.API.Controllers
         [HttpGet("my-courses")]
         public async Task<ActionResult<IEnumerable<CourseResponse>>> GetMyCourses()
         {
-            var instructorId = GetCurrentUserId();
+            var instructorId = User.GetUserId();
             var result = await _courseService.GetCoursesByInstructorAsync(instructorId);
             return Ok(result);
         }
+
 
         [Authorize(Roles = "Instructor,Admin")]
         [HttpPost]
@@ -71,7 +73,7 @@ namespace LMSApi.API.Controllers
             if (form.IntroVideo != null)
                 _courseUploadHandler.ValidateIntroVideo(form.IntroVideo);
 
-            var instructorId = GetCurrentUserId();   // always from JWT
+            var instructorId = User.GetUserId();   // always from JWT
 
             var request = new CreateCourseRequest
             {
@@ -173,29 +175,15 @@ namespace LMSApi.API.Controllers
 
         // ─── Claim helpers ───────────────────────────────────────────────────
 
-        /// <summary>Extracts the authenticated user's DB id from the JWT NameIdentifier claim.</summary>
-        private int GetCurrentUserId()
-        {
-            var value = User.FindFirstValue(ClaimTypes.NameIdentifier)
-                        ?? throw new UnauthorizedAccessException("User ID claim not found in token.");
-
-            return int.TryParse(value, out var id)
-                ? id
-                : throw new UnauthorizedAccessException("User ID claim is not a valid integer.");
-        }
-
-        private bool IsAdmin() =>
-            User.IsInRole("Admin");
-
         /// <summary>
         /// Ensures the calling Instructor owns the course.
         /// Admins bypass this check entirely.
         /// </summary>
         private async Task EnforceOwnershipAsync(int courseId)
         {
-            if (IsAdmin()) return;   // Admins can do anything
+            if (User.IsAdmin()) return;   // Admins can do anything
 
-            var callerId = GetCurrentUserId();
+            var callerId = User.GetUserId();
             var course = await _courseService.GetCourseByIdAsync(courseId);
 
             if (course.InstructorId != callerId)

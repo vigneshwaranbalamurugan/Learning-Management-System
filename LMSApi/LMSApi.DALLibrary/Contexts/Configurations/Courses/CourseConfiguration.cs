@@ -38,6 +38,12 @@ namespace LMSApi.DALLibrary.Contexts.Configurations
             builder.Property(c => c.Status)
                 .HasDefaultValue(CourseStatus.Draft);
 
+            builder.Property(c=>c.Level)
+                .HasDefaultValue(CourseLevel.Beginner);
+
+            builder.Property(c => c.Language)
+                .HasDefaultValue(CourseLanguage.English);
+
             builder.Property(c => c.IsPremium)
                 .HasDefaultValue(false);
 

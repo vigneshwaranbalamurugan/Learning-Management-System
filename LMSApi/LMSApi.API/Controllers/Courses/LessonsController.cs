@@ -1,4 +1,5 @@
 using Asp.Versioning;
+using LMSApi.API.Extensions;
 using LMSApi.BALLibrary.Interfaces;
 using LMSApi.DALLibrary.Interfaces;
 using LMSApi.ModelLibrary.DTOs;
@@ -186,24 +187,11 @@ namespace LMSApi.API.Controllers
 
         // ─── Claim helpers ───────────────────────────────────────────────────
 
-        private int GetCurrentUserId()
-        {
-            var value = User.FindFirstValue(ClaimTypes.NameIdentifier)
-                        ?? throw new UnauthorizedAccessException("User ID claim not found in token.");
-
-            return int.TryParse(value, out var id)
-                ? id
-                : throw new UnauthorizedAccessException("User ID claim is not a valid integer.");
-        }
-
-        private bool IsAdmin() =>
-            User.IsInRole("Admin");
-
         private async Task EnforceSectionOwnershipAsync(int sectionId)
         {
-            if (IsAdmin()) return;
+            if (User.IsAdmin()) return;
 
-            var callerId = GetCurrentUserId();
+            var callerId = User.GetUserId();
             var section = await _sectionRepository.GetByIdAsync(sectionId);
             var course = await _courseService.GetCourseByIdAsync(section.CourseId);
 
@@ -213,9 +201,9 @@ namespace LMSApi.API.Controllers
 
         private async Task EnforceLessonOwnershipAsync(int lessonId)
         {
-            if (IsAdmin()) return;
+            if (User.IsAdmin()) return;
 
-            var callerId = GetCurrentUserId();
+            var callerId = User.GetUserId();
             var lesson = await _lessonService.GetLessonByIdAsync(lessonId);
             var section = await _sectionRepository.GetByIdAsync(lesson.CourseSectionId);
             var course = await _courseService.GetCourseByIdAsync(section.CourseId);
