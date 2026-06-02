@@ -56,6 +56,9 @@ namespace LMSApi.BALLibrary.Services.Courses
             Stream? thumbnailStream = null, string? thumbnailFileName = null,
             Stream? videoStream = null, string? videoFileName = null)
         {
+            if (request == null) throw new ArgumentNullException(nameof(request));
+            if (string.IsNullOrWhiteSpace(request.Title)) throw new ArgumentException("Course title cannot be null or empty.", nameof(request.Title));
+
             // Verify the calling user actually exists
             await _userRepository.GetByIdAsync(instructorId);
 
@@ -104,6 +107,8 @@ namespace LMSApi.BALLibrary.Services.Courses
             Stream? thumbnailStream = null, string? thumbnailFileName = null,
             Stream? videoStream = null, string? videoFileName = null)
         {
+            if (request == null) throw new ArgumentNullException(nameof(request));
+
             var course = await _courseRepository.GetByIdAsync(id);
 
             if (request.Title != null)
@@ -186,13 +191,13 @@ namespace LMSApi.BALLibrary.Services.Courses
         public async Task<IEnumerable<CourseResponse>> GetCoursesByInstructorAsync(int instructorId)
         {
             var courses = await _courseRepository.GetCoursesByInstructorAsync(instructorId);
-            return _mapper.Map<IEnumerable<CourseResponse>>(courses);
+            return courses == null ? Enumerable.Empty<CourseResponse>() : _mapper.Map<IEnumerable<CourseResponse>>(courses);
         }
 
         public async Task<IEnumerable<CourseResponse>> GetCoursesByCategoryAsync(int categoryId)
         {
             var courses = await _courseRepository.GetCoursesByCategoryAsync(categoryId);
-            return _mapper.Map<IEnumerable<CourseResponse>>(courses);
+            return courses == null ? Enumerable.Empty<CourseResponse>() : _mapper.Map<IEnumerable<CourseResponse>>(courses);
         }
 
         // ─── Helpers ──────────────────────────────────────────────────────────

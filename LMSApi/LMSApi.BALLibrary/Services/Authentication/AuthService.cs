@@ -26,6 +26,10 @@ namespace LMSApi.BALLibrary.Services
 
         public async Task<LoginResponse> AuthenticateAsync(LoginRequest request)
         {
+            if (request == null) throw new ArgumentNullException(nameof(request));
+            if (string.IsNullOrWhiteSpace(request.Email)) throw new ArgumentException("Email cannot be null or empty.", nameof(request.Email));
+            if (string.IsNullOrWhiteSpace(request.Password)) throw new ArgumentException("Password cannot be null or empty.", nameof(request.Password));
+
             var user = await _userRepository.GetByEmailAsync(request.Email);
             if (user == null) throw new KeyNotFoundException($"User with email {request.Email} not found");
 
@@ -46,6 +50,10 @@ namespace LMSApi.BALLibrary.Services
 
         public async Task<RegisterResponse> RegisterAsync(RegisterRequest request)
         {
+            if (request == null) throw new ArgumentNullException(nameof(request));
+            if (string.IsNullOrWhiteSpace(request.Email)) throw new ArgumentException("Email cannot be null or empty.", nameof(request.Email));
+            if (string.IsNullOrWhiteSpace(request.Password)) throw new ArgumentException("Password cannot be null or empty.", nameof(request.Password));
+
             if(request.Role != RegistrationRole.Learner && request.Role != RegistrationRole.Instructor)
                 throw new InvalidOperationException("Invalid registration role.Only Learner and Instructor roles are allowed");
 
@@ -88,6 +96,10 @@ namespace LMSApi.BALLibrary.Services
 
         public async Task<VerifyEmailResponse> VerifyEmailAsync(VerifyEmailRequest request)
         {
+            if (request == null) throw new ArgumentNullException(nameof(request));
+            if (string.IsNullOrWhiteSpace(request.Email)) throw new ArgumentException("Email cannot be null or empty.", nameof(request.Email));
+            if (string.IsNullOrWhiteSpace(request.Token)) throw new ArgumentException("Verification token cannot be null or empty.", nameof(request.Token));
+
             var user = await _userRepository.GetByEmailAsync(request.Email);
             if (user == null) throw new KeyNotFoundException($"User with email {request.Email} not found");
             if (user.IsEmailVerified) throw new InvalidOperationException($"Email {request.Email} is already verified");
@@ -106,6 +118,9 @@ namespace LMSApi.BALLibrary.Services
 
         public async Task<ResendVerificationResponse> ReRequestEmailVerificationAsync(ResendVerificationRequest request)
         {
+            if (request == null) throw new ArgumentNullException(nameof(request));
+            if (string.IsNullOrWhiteSpace(request.Email)) throw new ArgumentException("Email cannot be null or empty.", nameof(request.Email));
+
             var user = await _userRepository.GetByEmailAsync(request.Email);
             if (user == null) throw new KeyNotFoundException($"User with email {request.Email} not found");
             if (user.IsEmailVerified) throw new InvalidOperationException($"Email {request.Email} is already verified");

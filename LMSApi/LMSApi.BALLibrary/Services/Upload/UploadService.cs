@@ -57,9 +57,10 @@ namespace LMSApi.BALLibrary.Services.Upload
 			_configuration = configuration;
 		}
 
-		// ─── Profile image ────────────────────────────────────────────────────────
+				// ─── Profile image ────────────────────────────────────────────────────────
 		public bool IsAllowedProfileImage(string fileName, string contentType)
 		{
+			if (string.IsNullOrWhiteSpace(fileName)) return false;
 			var extension = Path.GetExtension(fileName);
 			Console.WriteLine($"Checking profile image: {fileName}, extension: {extension}, content type: {contentType}");
 			return AllowedImageExtensions.Contains(extension)
@@ -70,6 +71,10 @@ namespace LMSApi.BALLibrary.Services.Upload
 
 		public async Task<string> UploadProfileImageAsync(Stream fileStream, string fileName, string publicId)
 		{
+			if (fileStream == null) throw new ArgumentNullException(nameof(fileStream));
+			if (string.IsNullOrWhiteSpace(fileName)) throw new ArgumentException("File name cannot be null or empty.", nameof(fileName));
+			if (string.IsNullOrWhiteSpace(publicId)) throw new ArgumentException("Public ID cannot be null or empty.", nameof(publicId));
+
 			var extension = Path.GetExtension(fileName);
 			var contentType = extension.Equals(".png", StringComparison.OrdinalIgnoreCase)
 				? "image/png"
@@ -92,6 +97,7 @@ namespace LMSApi.BALLibrary.Services.Upload
 		// ─── Course thumbnail ─────────────────────────────────────────────────────
 		public bool IsAllowedCourseThumbnail(string fileName, string contentType)
 		{
+			if (string.IsNullOrWhiteSpace(fileName)) return false;
 			var extension = Path.GetExtension(fileName);
 			return AllowedImageExtensions.Contains(extension)
 			       && (string.IsNullOrWhiteSpace(contentType)
@@ -101,6 +107,10 @@ namespace LMSApi.BALLibrary.Services.Upload
 
 		public Task<string> UploadCourseThumbnailAsync(Stream fileStream, string fileName, string publicId)
 		{
+			if (fileStream == null) throw new ArgumentNullException(nameof(fileStream));
+			if (string.IsNullOrWhiteSpace(fileName)) throw new ArgumentException("File name cannot be null or empty.", nameof(fileName));
+			if (string.IsNullOrWhiteSpace(publicId)) throw new ArgumentException("Public ID cannot be null or empty.", nameof(publicId));
+
 			if (!IsAllowedCourseThumbnail(fileName, string.Empty))
 				throw new InvalidOperationException("Only JPG, JPEG, and PNG images are allowed as course thumbnails.");
 
@@ -110,6 +120,7 @@ namespace LMSApi.BALLibrary.Services.Upload
 		// ─── Course intro video ───────────────────────────────────────────────────
 		public bool IsAllowedCourseVideo(string fileName, string contentType)
 		{
+			if (string.IsNullOrWhiteSpace(fileName)) return false;
 			var extension = Path.GetExtension(fileName);
 			return AllowedVideoExtensions.Contains(extension)
 			       && (string.IsNullOrWhiteSpace(contentType) || AllowedVideoContentTypes.Contains(contentType));
@@ -117,6 +128,10 @@ namespace LMSApi.BALLibrary.Services.Upload
 
 		public Task<string> UploadCourseIntroVideoAsync(Stream fileStream, string fileName, string publicId)
 		{
+			if (fileStream == null) throw new ArgumentNullException(nameof(fileStream));
+			if (string.IsNullOrWhiteSpace(fileName)) throw new ArgumentException("File name cannot be null or empty.", nameof(fileName));
+			if (string.IsNullOrWhiteSpace(publicId)) throw new ArgumentException("Public ID cannot be null or empty.", nameof(publicId));
+
 			if (!IsAllowedCourseVideo(fileName, string.Empty))
 				throw new InvalidOperationException("Only MP4, MOV, AVI, and WEBM videos are allowed as course intro videos.");
 
@@ -126,6 +141,7 @@ namespace LMSApi.BALLibrary.Services.Upload
 		// ─── Lesson uploads ───────────────────────────────────────────────────────
 		public bool IsAllowedLessonPdf(string fileName, string contentType)
 		{
+			if (string.IsNullOrWhiteSpace(fileName)) return false;
 			var extension = Path.GetExtension(fileName);
 			return AllowedPdfExtensions.Contains(extension)
 			       && (string.IsNullOrWhiteSpace(contentType) || AllowedPdfContentTypes.Contains(contentType));
@@ -133,6 +149,10 @@ namespace LMSApi.BALLibrary.Services.Upload
 
 		public Task<string> UploadLessonVideoAsync(Stream fileStream, string fileName, string publicId)
 		{
+			if (fileStream == null) throw new ArgumentNullException(nameof(fileStream));
+			if (string.IsNullOrWhiteSpace(fileName)) throw new ArgumentException("File name cannot be null or empty.", nameof(fileName));
+			if (string.IsNullOrWhiteSpace(publicId)) throw new ArgumentException("Public ID cannot be null or empty.", nameof(publicId));
+
 			if (!IsAllowedCourseVideo(fileName, string.Empty))
 				throw new InvalidOperationException("Only MP4, MOV, AVI, and WEBM videos are allowed as lesson videos.");
 
@@ -141,6 +161,10 @@ namespace LMSApi.BALLibrary.Services.Upload
 
 		public Task<string> UploadLessonPdfAsync(Stream fileStream, string fileName, string publicId)
 		{
+			if (fileStream == null) throw new ArgumentNullException(nameof(fileStream));
+			if (string.IsNullOrWhiteSpace(fileName)) throw new ArgumentException("File name cannot be null or empty.", nameof(fileName));
+			if (string.IsNullOrWhiteSpace(publicId)) throw new ArgumentException("Public ID cannot be null or empty.", nameof(publicId));
+
 			if (!IsAllowedLessonPdf(fileName, string.Empty))
 				throw new InvalidOperationException("Only PDF files are allowed as lesson documents.");
 

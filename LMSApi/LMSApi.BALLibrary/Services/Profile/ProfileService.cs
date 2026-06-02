@@ -23,15 +23,24 @@ namespace LMSApi.BALLibrary.Services.Profile
 
 		public async Task<ProfileResponse> GetProfileAsync(string email)
 		{
+			if (string.IsNullOrWhiteSpace(email)) throw new ArgumentException("Email cannot be null or empty.", nameof(email));
+
 			var user = await _userRepository.GetByEmailAsync(email);
 			var profile = await _userProfileRepository.GetByUserIdAsync(user.Id);
-			return profile is null
-				? throw new InvalidOperationException("Profile not found for the user.")
-				: _mapper.Map<ProfileResponse>(profile);
+			if (profile is null)
+			{
+				profile = CreateDefaultProfile(user.Id);
+				await _userProfileRepository.AddAsync(profile);
+			}
+			return _mapper.Map<ProfileResponse>(profile);
 		}
 
 		public async Task<ProfileResponse> UpdateProfileAsync(string email, ProfileUpdateRequest request)
 		{
+			if (string.IsNullOrWhiteSpace(email)) throw new ArgumentException("Email cannot be null or empty.", nameof(email));
+			if (request == null) throw new ArgumentNullException(nameof(request));
+			if (string.IsNullOrWhiteSpace(request.FirstName)) throw new ArgumentException("First name cannot be null or empty.", nameof(request.FirstName));
+
 			var user = await _userRepository.GetByEmailAsync(email);
 			var profile = await _userProfileRepository.GetByUserIdAsync(user.Id);
 
@@ -56,6 +65,10 @@ namespace LMSApi.BALLibrary.Services.Profile
 
 		public async Task<ProfileResponse> UpdateProfileImageAsync(string email, Stream fileStream, string fileName, string contentType)
 		{
+			if (string.IsNullOrWhiteSpace(email)) throw new ArgumentException("Email cannot be null or empty.", nameof(email));
+			if (fileStream == null) throw new ArgumentNullException(nameof(fileStream));
+			if (string.IsNullOrWhiteSpace(fileName)) throw new ArgumentException("File name cannot be null or empty.", nameof(fileName));
+
 			var user = await _userRepository.GetByEmailAsync(email);
 
 			if (!_uploadService.IsAllowedProfileImage(fileName, contentType))

@@ -40,6 +40,9 @@ namespace LMSApi.BALLibrary.Services.Courses
 
         public async Task<SectionResponse> CreateSectionAsync(CreateSectionRequest request)
         {
+            if (request == null) throw new ArgumentNullException(nameof(request));
+            if (string.IsNullOrWhiteSpace(request.Title)) throw new ArgumentException("Section title cannot be null or empty.", nameof(request.Title));
+
             // Validate parent course exists
             await _courseRepository.GetByIdAsync(request.CourseId);
 
@@ -53,6 +56,8 @@ namespace LMSApi.BALLibrary.Services.Courses
 
         public async Task<SectionResponse> UpdateSectionAsync(int id, UpdateSectionRequest request)
         {
+            if (request == null) throw new ArgumentNullException(nameof(request));
+
             var section = await _sectionRepository.GetByIdAsync(id);
 
             if (request.Title != null) section.Title = request.Title;

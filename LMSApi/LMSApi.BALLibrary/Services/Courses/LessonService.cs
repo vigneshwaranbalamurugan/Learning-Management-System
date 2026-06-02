@@ -44,6 +44,9 @@ namespace LMSApi.BALLibrary.Services.Courses
 
         public async Task<LessonResponse> CreateLessonAsync(CreateLessonRequest request, Stream? fileStream = null, string? fileName = null)
         {
+            if (request == null) throw new ArgumentNullException(nameof(request));
+            if (string.IsNullOrWhiteSpace(request.Title)) throw new ArgumentException("Lesson title cannot be null or empty.", nameof(request.Title));
+
             // Validate parent section exists
             await _sectionRepository.GetByIdAsync(request.CourseSectionId);
 
@@ -86,6 +89,8 @@ namespace LMSApi.BALLibrary.Services.Courses
 
         public async Task<LessonResponse> UpdateLessonAsync(int id, UpdateLessonRequest request, Stream? fileStream = null, string? fileName = null)
         {
+            if (request == null) throw new ArgumentNullException(nameof(request));
+
             var lesson = await _lessonRepository.GetByIdAsync(id);
 
             if (request.Title != null) lesson.Title = request.Title;
@@ -131,6 +136,9 @@ namespace LMSApi.BALLibrary.Services.Courses
 
         public async Task ReorderLessonsAsync(ReorderLessonsRequest request)
         {
+            if (request == null) throw new ArgumentNullException(nameof(request));
+            if (request.LessonOrders == null) throw new ArgumentException("Lesson orders list cannot be null.", nameof(request.LessonOrders));
+
             foreach (var item in request.LessonOrders)
             {
                 var lesson = await _lessonRepository.GetByIdAsync(item.LessonId);

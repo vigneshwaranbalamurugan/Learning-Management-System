@@ -40,6 +40,10 @@ namespace LMSApi.BALLibrary.Services.Courses
 
         public async Task<ResourceResponse> AddResourceAsync(CreateResourceRequest request)
         {
+            if (request == null) throw new ArgumentNullException(nameof(request));
+            if (string.IsNullOrWhiteSpace(request.ResourceTitle)) throw new ArgumentException("Resource title cannot be null or empty.", nameof(request.ResourceTitle));
+            if (string.IsNullOrWhiteSpace(request.ResourceUrl)) throw new ArgumentException("Resource URL cannot be null or empty.", nameof(request.ResourceUrl));
+
             // Validate parent lesson exists
             await _lessonRepository.GetByIdAsync(request.LessonId);
 
@@ -55,6 +59,8 @@ namespace LMSApi.BALLibrary.Services.Courses
 
         public async Task<ResourceResponse> UpdateResourceAsync(int id, UpdateResourceRequest request)
         {
+            if (request == null) throw new ArgumentNullException(nameof(request));
+
             var resource = await _resourceRepository.GetByIdAsync(id);
 
             if (request.ResourceType.HasValue) resource.ResourceType = request.ResourceType.Value;
