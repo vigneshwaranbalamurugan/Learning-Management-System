@@ -7,13 +7,9 @@ namespace LMSApi.ModelLibrary.Models
         public int SectionId { get; set; }
         public string Title { get; set; }
         public string Description { get; set; }
-        public int TimeLimitMinutes { get; set; }
-        public int TotalMarks { get; set; }
-
-        public int PassingMarks { get; set; }
-        public int MaxAttempts { get; set; }
-
         public bool IsPublished { get; set; }
+        public TimeSpan EstimatedDuration { get; set; }
+        public int SortOrder { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
 

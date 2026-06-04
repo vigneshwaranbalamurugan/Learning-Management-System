@@ -5,15 +5,16 @@ using LMSApi.ModelLibrary.DTOs;
 using LMSApi.ModelLibrary.Enums;
 using LMSApi.ModelLibrary.Models;
 using Microsoft.Extensions.Logging;
-using CourseEntity = LMSApi.ModelLibrary.Models.Courses;
+using LMSApi.ModelLibrary.Models;
 
-namespace LMSApi.BALLibrary.Services.Courses
+namespace LMSApi.BALLibrary.Services
 {
     public class CourseService : ICourseService
     {
         private readonly ICourseRepository _courseRepository;
         private readonly ICourseCategoryRepository _categoryRepository;
         private readonly IUserRepository _userRepository;
+        private readonly IEnrollmentRepository _enrollmentRepository;
         private readonly IUploadService _uploadService;
         private readonly IMapper _mapper;
         private readonly ILogger<CourseService> _logger;
@@ -22,6 +23,7 @@ namespace LMSApi.BALLibrary.Services.Courses
             ICourseRepository courseRepository,
             ICourseCategoryRepository categoryRepository,
             IUserRepository userRepository,
+            IEnrollmentRepository enrollmentRepository,
             IUploadService uploadService,
             IMapper mapper,
             ILogger<CourseService> logger)
@@ -29,6 +31,7 @@ namespace LMSApi.BALLibrary.Services.Courses
             _courseRepository = courseRepository;
             _categoryRepository = categoryRepository;
             _userRepository = userRepository;
+            _enrollmentRepository = enrollmentRepository;
             _uploadService = uploadService;
             _mapper = mapper;
             _logger = logger;
@@ -58,28 +61,24 @@ namespace LMSApi.BALLibrary.Services.Courses
         {
             if (request == null) throw new ArgumentNullException(nameof(request));
             if (string.IsNullOrWhiteSpace(request.Title)) throw new ArgumentException("Course title cannot be null or empty.", nameof(request.Title));
-
+            if (request.CategoryId <= 0) throw new ArgumentException("Valid CategoryId must be provided.", nameof(request.CategoryId));
+            if (request.IsPremium && (!request.Price.HasValue || request.Price <= 0))
+                throw new ArgumentException("Price must be provided and greater than zero when IsPremium is true.", nameof(request.Price));
             // Verify the calling user actually exists
             await _userRepository.GetByIdAsync(instructorId);
 
             // Verify category exists
             await _categoryRepository.GetByIdAsync(request.CategoryId);
 
-            var course = _mapper.Map<CourseEntity>(request);
+            var course = _mapper.Map<Courses>(request);
             course.InstructorId = instructorId;    // always from token, never from client
             course.slug = GenerateSlug(request.Title);
             course.Status = CourseStatus.Draft;
-
-            // Persist first so we have a DB id for the Cloudinary public_id
-            await _courseRepository.AddAsync(course);
-
-            var needsUpdate = false;
 
             if (thumbnailStream != null && thumbnailFileName != null)
             {
                 course.ThumbnailUrl = await _uploadService.UploadCourseThumbnailAsync(
                     thumbnailStream, thumbnailFileName, $"courses/{course.Id}/thumbnail");
-                needsUpdate = true;
                 _logger.LogInformation("Thumbnail uploaded on create: CourseId={CourseId}", course.Id);
             }
 
@@ -87,13 +86,9 @@ namespace LMSApi.BALLibrary.Services.Courses
             {
                 course.IntroVideoUrl = await _uploadService.UploadCourseIntroVideoAsync(
                     videoStream, videoFileName, $"courses/{course.Id}/intro-video");
-                needsUpdate = true;
                 _logger.LogInformation("Intro video uploaded on create: CourseId={CourseId}", course.Id);
             }
-
-            if (needsUpdate)
-                await _courseRepository.UpdateAsync(course);
-
+            await _courseRepository.AddAsync(course);
             _logger.LogInformation("Course Created: '{Title}' by InstructorId={InstructorId}", request.Title, instructorId);
 
             return _mapper.Map<CourseResponse>(course);
@@ -113,6 +108,8 @@ namespace LMSApi.BALLibrary.Services.Courses
 
             if (request.Title != null)
             {
+                if (string.IsNullOrWhiteSpace(request.Title))
+                    throw new ArgumentException("Title cannot be empty.", nameof(request.Title));
                 course.Title = request.Title;
                 course.slug = GenerateSlug(request.Title);
             }
@@ -124,13 +121,26 @@ namespace LMSApi.BALLibrary.Services.Courses
             }
 
             if (request.Description != null) course.Description = request.Description;
+
+            bool finalIsPremium = request.IsPremium ?? course.IsPremium;
+            decimal finalPrice = request.Price ?? course.Price ?? 0m;
+
+            if (finalIsPremium && finalPrice <= 0)
+                throw new ArgumentException("Price must be provided and greater than zero when IsPremium is true.");
+
             if (request.Price.HasValue) course.Price = request.Price.Value;
             if (request.IsPremium.HasValue) course.IsPremium = request.IsPremium.Value;
+
             if (request.Requirements != null) course.Requirements = request.Requirements;
             if (request.LearningOutcomes != null) course.LearningOutcomes = request.LearningOutcomes;
             if (request.EstimatedDuration.HasValue) course.EstimatedDuration = request.EstimatedDuration.Value;
             if (request.Level.HasValue) course.Level = request.Level.Value;
             if (request.Language.HasValue) course.Language = request.Language.Value;
+
+            // ─── Hybrid Learning ─────────────────────────────────────────────────
+            if (request.CourseAccessType.HasValue) course.CourseAccessType = request.CourseAccessType.Value;
+            if (request.DefaultAssignmentDeadlineDays.HasValue)
+                course.DefaultAssignmentDeadlineDays = request.DefaultAssignmentDeadlineDays.Value;
 
             if (thumbnailStream != null && thumbnailFileName != null)
             {
@@ -154,17 +164,30 @@ namespace LMSApi.BALLibrary.Services.Courses
 
         public async Task DeleteCourseAsync(int id)
         {
-            await _courseRepository.GetByIdAsync(id);
+            await _courseRepository.GetByIdAsync(id); // throws if not found
+
+            var hasEnrollments = await _enrollmentRepository.HasEnrollmentsByCourseAsync(id);
+            if (hasEnrollments)
+            {
+                throw new InvalidOperationException($"Course '{id}' cannot be deleted because it has active enrollments.");
+            }
+
             await _courseRepository.DeleteAsync(id);
             _logger.LogInformation("Course Deleted: Id={Id}", id);
         }
 
         public async Task<CourseResponse> PublishCourseAsync(int id)
         {
-            var course = await _courseRepository.GetByIdAsync(id);
+            var course = await _courseRepository.GetCourseWithDetailsAsync(id)
+                ?? throw new KeyNotFoundException($"Course with id '{id}' not found.");
 
             if (course.Status == CourseStatus.Published)
                 throw new InvalidOperationException($"Course with id '{id}' is already published.");
+
+            // Validation: CohortBased courses must have at least one batch defined before publishing
+            if (course.CourseAccessType == CourseAccessType.CohortBased && !course.Batches.Any())
+                throw new InvalidOperationException(
+                    $"CohortBased course '{id}' cannot be published without at least one batch. Create a batch first.");
 
             course.Status = CourseStatus.Published;
             course.PublishedAt = DateTime.UtcNow;
@@ -173,6 +196,7 @@ namespace LMSApi.BALLibrary.Services.Courses
             _logger.LogInformation("Course Published: Id={Id}", id);
             return _mapper.Map<CourseResponse>(course);
         }
+
 
         public async Task<CourseResponse> UnpublishCourseAsync(int id)
         {

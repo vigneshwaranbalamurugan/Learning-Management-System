@@ -17,18 +17,26 @@ namespace LMSApi.ModelLibrary.DTOs
         [MaxLength(1000, ErrorMessage = "Description must not exceed 1000 characters.")]
         public string? Description { get; set; }
 
+        /// <summary>
+        /// Required for Article type lessons (HTML or Markdown body).
+        /// </summary>
         public string? Content { get; set; }
-        public string? ExternalUrl { get; set; }
-        public string? VideoUrl { get; set; }
+
+        /// <summary>
+        /// Required for Video, Pdf, and ExternalLink type lessons.
+        /// </summary>
+        public string? ContentUrl { get; set; }
 
         [Required(ErrorMessage = "Lesson type is required.")]
         public LessonType Type { get; set; }
 
         public TimeSpan? DurationInMinutes { get; set; }
-        public TimeSpan Duration { get; set; }
 
         [Range(0, int.MaxValue, ErrorMessage = "Sort order must be zero or greater.")]
         public int SortOrder { get; set; }
+
+        public bool IsPreview { get; set; }
+        public bool IsPublished { get; set; }
     }
 
     public class UpdateLessonRequest
@@ -40,14 +48,15 @@ namespace LMSApi.ModelLibrary.DTOs
         public string? Description { get; set; }
 
         public string? Content { get; set; }
-        public string? ExternalUrl { get; set; }
-        public string? VideoUrl { get; set; }
+        public string? ContentUrl { get; set; }
         public LessonType? Type { get; set; }
         public TimeSpan? DurationInMinutes { get; set; }
-        public TimeSpan? Duration { get; set; }
 
         [Range(0, int.MaxValue)]
         public int? SortOrder { get; set; }
+
+        public bool? IsPreview { get; set; }
+        public bool? IsPublished { get; set; }
     }
 
     public class ReorderLessonsRequest
@@ -71,11 +80,18 @@ namespace LMSApi.ModelLibrary.DTOs
         public string Title { get; set; }
         public string? Description { get; set; }
         public string? Content { get; set; }
-        public string? ExternalUrl { get; set; }
-        public string? VideoUrl { get; set; }
+        public string? ContentUrl { get; set; }
         public LessonType Type { get; set; }
         public TimeSpan? DurationInMinutes { get; set; }
-        public TimeSpan Duration { get; set; }
         public int SortOrder { get; set; }
+        public bool IsPreview { get; set; }
+        public bool IsPublished { get; set; }
+        public DateTime CreatedAt { get; set; }
+        public DateTime UpdatedAt { get; set; }
+    }
+
+    public class LessonDetailResponse : LessonResponse
+    {
+        public List<ResourceResponse> Resources { get; set; } = [];
     }
 }

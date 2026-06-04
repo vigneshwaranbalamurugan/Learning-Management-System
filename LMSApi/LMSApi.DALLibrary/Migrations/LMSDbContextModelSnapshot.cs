@@ -22,6 +22,59 @@ namespace LMSApi.DALLibrary.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("LMSApi.ModelLibrary.Models.CourseBatch", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("CourseId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.Property<DateTime>("EndDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("EnrollmentEndDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("EnrollmentStartDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("MaxStudents")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<DateTime>("StartDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Status")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(1);
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CourseId");
+
+                    b.ToTable("CourseBatches", (string)null);
+                });
+
             modelBuilder.Entity("LMSApi.ModelLibrary.Models.CourseCategories", b =>
                 {
                     b.Property<int>("Id")
@@ -79,32 +132,26 @@ namespace LMSApi.DALLibrary.Migrations
                         .HasMaxLength(1000)
                         .HasColumnType("character varying(1000)");
 
+                    b.Property<TimeSpan>("EstimatedDuration")
+                        .HasColumnType("interval");
+
                     b.Property<bool>("IsPublished")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")
                         .HasDefaultValue(false);
 
-                    b.Property<int>("MaxAttempts")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasDefaultValue(1);
-
-                    b.Property<int>("PassingMarks")
-                        .HasColumnType("integer");
-
                     b.Property<int>("SectionId")
                         .HasColumnType("integer");
 
-                    b.Property<int>("TimeLimitMinutes")
-                        .HasColumnType("integer");
+                    b.Property<int>("SortOrder")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(1);
 
                     b.Property<string>("Title")
                         .IsRequired()
                         .HasMaxLength(300)
                         .HasColumnType("character varying(300)");
-
-                    b.Property<int>("TotalMarks")
-                        .HasColumnType("integer");
 
                     b.Property<DateTime>("UpdatedAt")
                         .ValueGeneratedOnAdd()
@@ -129,10 +176,18 @@ namespace LMSApi.DALLibrary.Migrations
                     b.Property<int>("CategoryId")
                         .HasColumnType("integer");
 
+                    b.Property<int>("CourseAccessType")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(1);
+
                     b.Property<DateTime>("CreatedAt")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
                         .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.Property<int?>("DefaultAssignmentDeadlineDays")
+                        .HasColumnType("integer");
 
                     b.Property<string>("Description")
                         .IsRequired()
@@ -156,14 +211,18 @@ namespace LMSApi.DALLibrary.Migrations
                         .HasDefaultValue(false);
 
                     b.Property<int>("Language")
-                        .HasColumnType("integer");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(1);
 
                     b.Property<string>("LearningOutcomes")
                         .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<int>("Level")
-                        .HasColumnType("integer");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(1);
 
                     b.Property<decimal?>("Price")
                         .HasColumnType("decimal(18,2)");
@@ -210,6 +269,61 @@ namespace LMSApi.DALLibrary.Migrations
                         .IsUnique();
 
                     b.ToTable("Courses", (string)null);
+                });
+
+            modelBuilder.Entity("LMSApi.ModelLibrary.Models.Enrollments", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime?>("AccessExpiresAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("BatchId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("CompletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("CourseId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("EnrolledAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.Property<int>("EnrollmentStatus")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(1);
+
+                    b.Property<bool>("IsCompleted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
+                    b.Property<decimal>("ProgressPercentage")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("decimal(5,2)")
+                        .HasDefaultValue(0m);
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BatchId");
+
+                    b.HasIndex("CourseId");
+
+                    b.HasIndex("UserId", "CourseId")
+                        .IsUnique();
+
+                    b.ToTable("Enrollments", (string)null);
                 });
 
             modelBuilder.Entity("LMSApi.ModelLibrary.Models.LessonResources", b =>
@@ -262,26 +376,34 @@ namespace LMSApi.DALLibrary.Migrations
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<string>("Content")
-                        .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<string>("ContentUrl")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
 
                     b.Property<int>("CourseSectionId")
                         .HasColumnType("integer");
 
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<string>("Description")
-                        .IsRequired()
                         .HasMaxLength(1000)
                         .HasColumnType("character varying(1000)");
-
-                    b.Property<TimeSpan>("Duration")
-                        .HasColumnType("interval");
 
                     b.Property<TimeSpan?>("DurationInMinutes")
                         .HasColumnType("interval");
 
-                    b.Property<string>("ExternalUrl")
-                        .HasMaxLength(1000)
-                        .HasColumnType("character varying(1000)");
+                    b.Property<bool>("IsPreview")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
+                    b.Property<bool>("IsPublished")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
 
                     b.Property<int>("SortOrder")
                         .ValueGeneratedOnAdd()
@@ -296,16 +418,69 @@ namespace LMSApi.DALLibrary.Migrations
                     b.Property<int>("Type")
                         .HasColumnType("integer");
 
-                    b.Property<string>("VideoUrl")
-                        .IsRequired()
-                        .HasMaxLength(1000)
-                        .HasColumnType("character varying(1000)");
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
 
                     b.HasIndex("CourseSectionId");
 
                     b.ToTable("Lessons", (string)null);
+                });
+
+            modelBuilder.Entity("LMSApi.ModelLibrary.Models.StudentProgress", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime?>("CompletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("CourseId")
+                        .HasColumnType("integer");
+
+                    b.Property<bool>("IsCompleted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
+                    b.Property<DateTime>("LastAccessed")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("LastWatchedSecond")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("LessonId")
+                        .HasColumnType("integer");
+
+                    b.Property<double>("ProgressPercentage")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("double precision")
+                        .HasDefaultValue(0.0);
+
+                    b.Property<DateTime>("StartedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("StudentId")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal>("VideoWatchedPercentage")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("numeric(5,2)")
+                        .HasDefaultValue(0m);
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CourseId");
+
+                    b.HasIndex("LessonId");
+
+                    b.HasIndex("StudentId");
+
+                    b.ToTable("StudentProgress", (string)null);
                 });
 
             modelBuilder.Entity("LMSApi.ModelLibrary.Models.UserProfiles", b =>
@@ -399,26 +574,26 @@ namespace LMSApi.DALLibrary.Migrations
                         new
                         {
                             Id = 1,
-                            CreatedAt = new DateTime(2026, 6, 2, 11, 26, 40, 751, DateTimeKind.Utc).AddTicks(3620),
+                            CreatedAt = new DateTime(2026, 6, 4, 10, 45, 10, 238, DateTimeKind.Utc).AddTicks(9000),
                             Description = "Learner account",
                             RoleName = "Learner",
-                            UpdatedAt = new DateTime(2026, 6, 2, 11, 26, 40, 751, DateTimeKind.Utc).AddTicks(3620)
+                            UpdatedAt = new DateTime(2026, 6, 4, 10, 45, 10, 238, DateTimeKind.Utc).AddTicks(9000)
                         },
                         new
                         {
                             Id = 2,
-                            CreatedAt = new DateTime(2026, 6, 2, 11, 26, 40, 751, DateTimeKind.Utc).AddTicks(3620),
+                            CreatedAt = new DateTime(2026, 6, 4, 10, 45, 10, 238, DateTimeKind.Utc).AddTicks(9000),
                             Description = "Instructor account",
                             RoleName = "Instructor",
-                            UpdatedAt = new DateTime(2026, 6, 2, 11, 26, 40, 751, DateTimeKind.Utc).AddTicks(3620)
+                            UpdatedAt = new DateTime(2026, 6, 4, 10, 45, 10, 238, DateTimeKind.Utc).AddTicks(9000)
                         },
                         new
                         {
                             Id = 3,
-                            CreatedAt = new DateTime(2026, 6, 2, 11, 26, 40, 751, DateTimeKind.Utc).AddTicks(3620),
+                            CreatedAt = new DateTime(2026, 6, 4, 10, 45, 10, 238, DateTimeKind.Utc).AddTicks(9000),
                             Description = "Admin account",
                             RoleName = "Admin",
-                            UpdatedAt = new DateTime(2026, 6, 2, 11, 26, 40, 751, DateTimeKind.Utc).AddTicks(3620)
+                            UpdatedAt = new DateTime(2026, 6, 4, 10, 45, 10, 238, DateTimeKind.Utc).AddTicks(9000)
                         });
                 });
 
@@ -491,15 +666,26 @@ namespace LMSApi.DALLibrary.Migrations
                         new
                         {
                             Id = 1,
-                            CreatedAt = new DateTime(2026, 6, 2, 11, 26, 40, 750, DateTimeKind.Utc).AddTicks(9980),
+                            CreatedAt = new DateTime(2026, 6, 4, 10, 45, 10, 238, DateTimeKind.Utc).AddTicks(5270),
                             Email = "admin@gmail.com",
                             IsActive = true,
                             IsEmailVerified = true,
                             LastLoginAt = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            PasswordHash = "QWRtaW5AMTIz",
+                            PasswordHash = "TPZPlYPS43ldK8EYFX67pHzyMNFmt69wd9N2cUNObYs=",
                             RoleId = 3,
-                            UpdatedAt = new DateTime(2026, 6, 2, 11, 26, 40, 751, DateTimeKind.Utc).AddTicks(20)
+                            UpdatedAt = new DateTime(2026, 6, 4, 10, 45, 10, 238, DateTimeKind.Utc).AddTicks(5270)
                         });
+                });
+
+            modelBuilder.Entity("LMSApi.ModelLibrary.Models.CourseBatch", b =>
+                {
+                    b.HasOne("LMSApi.ModelLibrary.Models.Courses", "Course")
+                        .WithMany("Batches")
+                        .HasForeignKey("CourseId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Course");
                 });
 
             modelBuilder.Entity("LMSApi.ModelLibrary.Models.CourseSection", b =>
@@ -532,10 +718,36 @@ namespace LMSApi.DALLibrary.Migrations
                     b.Navigation("Instructor");
                 });
 
+            modelBuilder.Entity("LMSApi.ModelLibrary.Models.Enrollments", b =>
+                {
+                    b.HasOne("LMSApi.ModelLibrary.Models.CourseBatch", "Batch")
+                        .WithMany("Enrollments")
+                        .HasForeignKey("BatchId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("LMSApi.ModelLibrary.Models.Courses", "Course")
+                        .WithMany()
+                        .HasForeignKey("CourseId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("LMSApi.ModelLibrary.Models.Users", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Batch");
+
+                    b.Navigation("Course");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("LMSApi.ModelLibrary.Models.LessonResources", b =>
                 {
                     b.HasOne("LMSApi.ModelLibrary.Models.Lessons", "Lesson")
-                        .WithMany()
+                        .WithMany("Resources")
                         .HasForeignKey("LessonId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -552,6 +764,33 @@ namespace LMSApi.DALLibrary.Migrations
                         .IsRequired();
 
                     b.Navigation("CourseSection");
+                });
+
+            modelBuilder.Entity("LMSApi.ModelLibrary.Models.StudentProgress", b =>
+                {
+                    b.HasOne("LMSApi.ModelLibrary.Models.Courses", "Course")
+                        .WithMany()
+                        .HasForeignKey("CourseId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("LMSApi.ModelLibrary.Models.Lessons", "Lesson")
+                        .WithMany()
+                        .HasForeignKey("LessonId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("LMSApi.ModelLibrary.Models.Users", "Student")
+                        .WithMany()
+                        .HasForeignKey("StudentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Course");
+
+                    b.Navigation("Lesson");
+
+                    b.Navigation("Student");
                 });
 
             modelBuilder.Entity("LMSApi.ModelLibrary.Models.UserProfiles", b =>
@@ -576,6 +815,11 @@ namespace LMSApi.DALLibrary.Migrations
                     b.Navigation("Role");
                 });
 
+            modelBuilder.Entity("LMSApi.ModelLibrary.Models.CourseBatch", b =>
+                {
+                    b.Navigation("Enrollments");
+                });
+
             modelBuilder.Entity("LMSApi.ModelLibrary.Models.CourseSection", b =>
                 {
                     b.Navigation("Lessons");
@@ -583,7 +827,14 @@ namespace LMSApi.DALLibrary.Migrations
 
             modelBuilder.Entity("LMSApi.ModelLibrary.Models.Courses", b =>
                 {
+                    b.Navigation("Batches");
+
                     b.Navigation("Sections");
+                });
+
+            modelBuilder.Entity("LMSApi.ModelLibrary.Models.Lessons", b =>
+                {
+                    b.Navigation("Resources");
                 });
 
             modelBuilder.Entity("LMSApi.ModelLibrary.Models.UserRoles", b =>

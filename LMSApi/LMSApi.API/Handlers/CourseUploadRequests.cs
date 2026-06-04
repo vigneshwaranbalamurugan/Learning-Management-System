@@ -31,6 +31,16 @@ namespace LMSApi.API.Handlers.Courses
         public CourseLevel Level { get; set; } = CourseLevel.Beginner;
         public CourseLanguage Language { get; set; } = CourseLanguage.English;
 
+        // ─── Hybrid Learning ─────────────────────────────────────────────────
+        /// <summary>SelfPaced (default) or CohortBased.</summary>
+        public CourseAccessType CourseAccessType { get; set; } = CourseAccessType.SelfPaced;
+
+        /// <summary>
+        /// For SelfPaced: access expires this many days after enrollment.
+        /// Null means no expiry.
+        /// </summary>
+        public int? DefaultAssignmentDeadlineDays { get; set; }
+
         /// <summary>Optional course thumbnail image (JPG, JPEG, PNG).</summary>
         public IFormFile? Thumbnail { get; set; }
 
@@ -61,6 +71,10 @@ namespace LMSApi.API.Handlers.Courses
         public TimeSpan? EstimatedDuration { get; set; }
         public CourseLevel? Level { get; set; }
         public CourseLanguage? Language { get; set; }
+
+        // ─── Hybrid Learning ─────────────────────────────────────────────────
+        public CourseAccessType? CourseAccessType { get; set; }
+        public int? DefaultAssignmentDeadlineDays { get; set; }
 
         /// <summary>New thumbnail image to replace the existing one (JPG, JPEG, PNG). Leave empty to keep current.</summary>
         public IFormFile? Thumbnail { get; set; }

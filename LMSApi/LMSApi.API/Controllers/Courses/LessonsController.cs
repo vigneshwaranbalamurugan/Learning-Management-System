@@ -21,17 +21,20 @@ namespace LMSApi.API.Controllers
         private readonly ICourseSectionRepository _sectionRepository;
         private readonly ICourseService _courseService;
         private readonly LessonUploadHandler _lessonUploadHandler;
+        private readonly IStudentProgressService _progressService;
 
         public LessonsController(
             ILessonService lessonService,
             ICourseSectionRepository sectionRepository,
             ICourseService courseService,
-            LessonUploadHandler lessonUploadHandler)
+            LessonUploadHandler lessonUploadHandler,
+            IStudentProgressService progressService)
         {
             _lessonService = lessonService;
             _sectionRepository = sectionRepository;
             _courseService = courseService;
             _lessonUploadHandler = lessonUploadHandler;
+            _progressService = progressService;
         }
 
         [Authorize]
@@ -50,6 +53,14 @@ namespace LMSApi.API.Controllers
             return Ok(result);
         }
 
+        [Authorize]
+        [HttpGet("{id:int}/detail")]
+        public async Task<ActionResult<LessonDetailResponse>> GetDetail(int id)
+        {
+            var result = await _lessonService.GetLessonDetailAsync(id);
+            return Ok(result);
+        }
+
         [Authorize(Roles = "Instructor,Admin")]
         [HttpPost]
         [Consumes("multipart/form-data")]
@@ -58,28 +69,30 @@ namespace LMSApi.API.Controllers
             // 1. Enforce section ownership
             await EnforceSectionOwnershipAsync(form.CourseSectionId);
 
-            // 2. Validate file upload based on type
-            if (form.Type == LessonType.Video)
+            // 2. Validate required fields per lesson type
+            switch (form.Type)
             {
-                if (form.File == null)
-                    throw new InvalidOperationException("Video file is required for Video type lessons.");
-                _lessonUploadHandler.ValidateLessonVideo(form.File);
-            }
-            else if (form.Type == LessonType.Pdf)
-            {
-                if (form.File == null)
-                    throw new InvalidOperationException("PDF file is required for PDF type lessons.");
-                _lessonUploadHandler.ValidateLessonPdf(form.File);
-            }
-            else if (form.Type == LessonType.ExternalResource)
-            {
-                if (string.IsNullOrWhiteSpace(form.ExternalUrl))
-                    throw new InvalidOperationException("External URL is required for ExternalResource type lessons.");
-            }
-            else if (form.Type == LessonType.Text)
-            {
-                if (string.IsNullOrWhiteSpace(form.Content))
-                    throw new InvalidOperationException("Content is required for Text type lessons.");
+                case LessonType.Video:
+                    if (form.File == null)
+                        throw new InvalidOperationException("Video file is required for Video type lessons.");
+                    _lessonUploadHandler.ValidateLessonVideo(form.File);
+                    break;
+
+                case LessonType.Pdf:
+                    if (form.File == null)
+                        throw new InvalidOperationException("PDF file is required for Pdf type lessons.");
+                    _lessonUploadHandler.ValidateLessonPdf(form.File);
+                    break;
+
+                case LessonType.ExternalLink:
+                    if (string.IsNullOrWhiteSpace(form.ContentUrl))
+                        throw new InvalidOperationException("ContentUrl is required for ExternalLink type lessons.");
+                    break;
+
+                case LessonType.Article:
+                    if (string.IsNullOrWhiteSpace(form.Content))
+                        throw new InvalidOperationException("Content is required for Article type lessons.");
+                    break;
             }
 
             var request = new CreateLessonRequest
@@ -88,11 +101,12 @@ namespace LMSApi.API.Controllers
                 Title = form.Title,
                 Description = form.Description,
                 Content = form.Content,
-                ExternalUrl = form.ExternalUrl,
+                ContentUrl = form.ContentUrl,
                 Type = form.Type,
                 DurationInMinutes = form.DurationInMinutes,
-                Duration = form.Duration,
-                SortOrder = form.SortOrder
+                SortOrder = form.SortOrder,
+                IsPreview = form.IsPreview ?? false,
+                IsPublished = form.IsPublished ?? false
             };
 
             await using var fileStream = form.File?.OpenReadStream();
@@ -109,11 +123,11 @@ namespace LMSApi.API.Controllers
             // 1. Enforce lesson ownership
             await EnforceLessonOwnershipAsync(id);
 
-            // Fetch the current lesson to check its current type if not provided in form
+            // Fetch the current lesson to check its type if not changed by form
             var existingLesson = await _lessonService.GetLessonByIdAsync(id);
             var finalType = form.Type ?? existingLesson.Type;
 
-            // 2. Validate file upload based on type
+            // 2. Validate file upload based on resolved type
             if (form.File != null)
             {
                 if (finalType == LessonType.Video)
@@ -133,13 +147,18 @@ namespace LMSApi.API.Controllers
             // 3. Additional validations if changing type
             if (form.Type.HasValue)
             {
-                if (form.Type.Value == LessonType.ExternalResource && string.IsNullOrWhiteSpace(form.ExternalUrl) && string.IsNullOrWhiteSpace(existingLesson.ExternalUrl))
+                if (form.Type.Value == LessonType.ExternalLink
+                    && string.IsNullOrWhiteSpace(form.ContentUrl)
+                    && string.IsNullOrWhiteSpace(existingLesson.ContentUrl))
                 {
-                    throw new InvalidOperationException("External URL is required for ExternalResource type lessons.");
+                    throw new InvalidOperationException("ContentUrl is required for ExternalLink type lessons.");
                 }
-                if (form.Type.Value == LessonType.Text && string.IsNullOrWhiteSpace(form.Content) && string.IsNullOrWhiteSpace(existingLesson.Content))
+
+                if (form.Type.Value == LessonType.Article
+                    && string.IsNullOrWhiteSpace(form.Content)
+                    && string.IsNullOrWhiteSpace(existingLesson.Content))
                 {
-                    throw new InvalidOperationException("Content is required for Text type lessons.");
+                    throw new InvalidOperationException("Content is required for Article type lessons.");
                 }
             }
 
@@ -148,11 +167,12 @@ namespace LMSApi.API.Controllers
                 Title = form.Title,
                 Description = form.Description,
                 Content = form.Content,
-                ExternalUrl = form.ExternalUrl,
+                ContentUrl = form.ContentUrl,
                 Type = form.Type,
                 DurationInMinutes = form.DurationInMinutes,
-                Duration = form.Duration,
-                SortOrder = form.SortOrder
+                SortOrder = form.SortOrder,
+                IsPreview = form.IsPreview,
+                IsPublished = form.IsPublished
             };
 
             await using var fileStream = form.File?.OpenReadStream();
@@ -174,8 +194,7 @@ namespace LMSApi.API.Controllers
         [HttpPut("reorder")]
         public async Task<IActionResult> Reorder([FromBody] ReorderLessonsRequest request)
         {
-            // Ownership check for reordering lessons:
-            // The instructor must own all lessons being reordered.
+            // Ownership check: the instructor must own all lessons being reordered
             foreach (var item in request.LessonOrders)
             {
                 await EnforceLessonOwnershipAsync(item.LessonId);
@@ -183,6 +202,20 @@ namespace LMSApi.API.Controllers
 
             await _lessonService.ReorderLessonsAsync(request);
             return NoContent();
+        }
+
+        /// <summary>
+        /// Mark a lesson complete.
+        /// For Video lessons, pass WatchPercentage; auto-completes at ≥ 90%.
+        /// For Pdf / Article / ExternalLink, marking this endpoint always completes the lesson.
+        /// </summary>
+        [Authorize]
+        [HttpPost("{lessonId:int}/complete")]
+        public async Task<ActionResult<LessonProgressResponse>> Complete(int lessonId, [FromBody] CompleteLessonRequest? request)
+        {
+            var userId = User.GetUserId();
+            var result = await _progressService.MarkLessonCompleteAsync(userId, lessonId, request?.WatchPercentage);
+            return Ok(result);
         }
 
         // ─── Claim helpers ───────────────────────────────────────────────────

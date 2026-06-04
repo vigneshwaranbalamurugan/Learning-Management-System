@@ -5,20 +5,23 @@ using LMSApi.ModelLibrary.DTOs;
 using LMSApi.ModelLibrary.Models;
 using Microsoft.Extensions.Logging;
 
-namespace LMSApi.BALLibrary.Services.Courses
+namespace LMSApi.BALLibrary.Services
 {
     public class CourseCategoryService : ICourseCategoryService
     {
         private readonly ICourseCategoryRepository _categoryRepository;
+        private readonly ICourseRepository _courseRepository;
         private readonly IMapper _mapper;
         private readonly ILogger<CourseCategoryService> _logger;
 
         public CourseCategoryService(
             ICourseCategoryRepository categoryRepository,
+            ICourseRepository courseRepository,
             IMapper mapper,
             ILogger<CourseCategoryService> logger)
         {
             _categoryRepository = categoryRepository;
+            _courseRepository = courseRepository;
             _mapper = mapper;
             _logger = logger;
         }
@@ -75,6 +78,14 @@ namespace LMSApi.BALLibrary.Services.Courses
         public async Task DeleteCategoryAsync(int id)
         {
             await _categoryRepository.GetByIdAsync(id); // throws KeyNotFoundException if not found
+
+            // Business Logic: Block deletion if courses are linked
+            var linkedCourses = await _courseRepository.GetCoursesByCategoryAsync(id);
+            if (linkedCourses.Any())
+            {
+                throw new InvalidOperationException($"Category '{id}' cannot be deleted because it has {linkedCourses.Count()} assigned course(s).");
+            }
+
             await _categoryRepository.DeleteAsync(id);
 
             _logger.LogInformation("Category Deleted: Id={Id}", id);

@@ -53,6 +53,13 @@ namespace LMSApi.DALLibrary.Contexts.Configurations
             builder.Property(c => c.UpdatedAt)
                 .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
+            // ─── Hybrid Learning columns ──────────────────────────────────────
+            builder.Property(c => c.CourseAccessType)
+                .HasDefaultValue(CourseAccessType.SelfPaced);
+
+            builder.Property(c => c.DefaultAssignmentDeadlineDays)
+                .IsRequired(false);
+
             // Relationships
             builder.HasOne(c => c.Category)
                 .WithMany()

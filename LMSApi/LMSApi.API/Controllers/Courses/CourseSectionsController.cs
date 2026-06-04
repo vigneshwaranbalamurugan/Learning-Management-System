@@ -75,6 +75,21 @@ namespace LMSApi.API.Controllers
             return NoContent();
         }
 
+        [Authorize(Roles = "Instructor,Admin")]
+        [HttpPut("reorder")]
+        public async Task<IActionResult> Reorder([FromBody] ReorderSectionsRequest request)
+        {
+            if (request == null) throw new ArgumentNullException(nameof(request));
+
+            foreach (var item in request.SectionOrders)
+            {
+                await EnforceSectionOwnershipAsync(item.SectionId);
+            }
+
+            await _sectionService.ReorderSectionsAsync(request);
+            return NoContent();
+        }
+
         // ─── Claim helpers ───────────────────────────────────────────────────
 
         /// <summary>

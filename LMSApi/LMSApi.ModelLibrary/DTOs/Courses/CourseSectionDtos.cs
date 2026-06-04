@@ -16,17 +16,11 @@ namespace LMSApi.ModelLibrary.DTOs
         [MaxLength(1000, ErrorMessage = "Description must not exceed 1000 characters.")]
         public string? Description { get; set; }
 
-        [Range(0, int.MaxValue, ErrorMessage = "Time limit must be zero or greater.")]
-        public int TimeLimitMinutes { get; set; }
+        [Required(ErrorMessage = "Estimated duration is required.")]
+        public TimeSpan EstimatedDuration { get; set; }
 
-        [Range(0, int.MaxValue, ErrorMessage = "Total marks must be zero or greater.")]
-        public int TotalMarks { get; set; }
-
-        [Range(0, int.MaxValue, ErrorMessage = "Passing marks must be zero or greater.")]
-        public int PassingMarks { get; set; }
-
-        [Range(1, int.MaxValue, ErrorMessage = "Max attempts must be at least 1.")]
-        public int MaxAttempts { get; set; } = 1;
+        [Range(0, int.MaxValue, ErrorMessage = "Sort order must be zero or greater.")]
+        public int SortOrder { get; set; }
     }
 
     public class UpdateSectionRequest
@@ -37,19 +31,24 @@ namespace LMSApi.ModelLibrary.DTOs
         [MaxLength(1000, ErrorMessage = "Description must not exceed 1000 characters.")]
         public string? Description { get; set; }
 
-        [Range(0, int.MaxValue)]
-        public int? TimeLimitMinutes { get; set; }
+        public TimeSpan? EstimatedDuration { get; set; }
 
         [Range(0, int.MaxValue)]
-        public int? TotalMarks { get; set; }
-
-        [Range(0, int.MaxValue)]
-        public int? PassingMarks { get; set; }
-
-        [Range(1, int.MaxValue)]
-        public int? MaxAttempts { get; set; }
+        public int? SortOrder { get; set; }
 
         public bool? IsPublished { get; set; }
+    }
+
+    public class ReorderSectionsRequest
+    {
+        [Required]
+        public List<SectionOrderItem> SectionOrders { get; set; } = [];
+    }
+
+    public class SectionOrderItem
+    {
+        public int SectionId { get; set; }
+        public int SortOrder { get; set; }
     }
 
     // ─── Responses ───────────────────────────────────────────────────────────
@@ -60,10 +59,8 @@ namespace LMSApi.ModelLibrary.DTOs
         public int CourseId { get; set; }
         public string Title { get; set; }
         public string? Description { get; set; }
-        public int TimeLimitMinutes { get; set; }
-        public int TotalMarks { get; set; }
-        public int PassingMarks { get; set; }
-        public int MaxAttempts { get; set; }
+        public TimeSpan EstimatedDuration { get; set; }
+        public int SortOrder { get; set; }
         public bool IsPublished { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }

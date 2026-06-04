@@ -8,7 +8,7 @@ using LMSApi.BALLibrary.Services;
 using LMSApi.BALLibrary.Services.Authentication;
 using LMSApi.BALLibrary.Services.Profile;
 using LMSApi.BALLibrary.Services.Upload;
-using LMSApi.BALLibrary.Services.Courses;
+using LMSApi.BALLibrary.Services;
 using LMSApi.BALLibrary.Mappers;
 using LMSApi.API.Middlewares;
 using LMSApi.API.Handlers;
@@ -46,6 +46,11 @@ builder.Services.AddScoped<ICourseRepository, CourseRepository>();
 builder.Services.AddScoped<ICourseSectionRepository, CourseSectionRepository>();
 builder.Services.AddScoped<ILessonRepository, LessonRepository>();
 builder.Services.AddScoped<ILessonResourceRepository, LessonResourceRepository>();
+builder.Services.AddScoped<IStudentProgressRepository, StudentProgressRepository>();
+
+// Hybrid Learning repositories
+builder.Services.AddScoped<ICourseBatchRepository, CourseBatchRepository>();
+builder.Services.AddScoped<IEnrollmentRepository, EnrollmentRepository>();
 #endregion
 
 #region Dependency Injection for Services
@@ -63,6 +68,11 @@ builder.Services.AddScoped<ICourseService, CourseService>();
 builder.Services.AddScoped<ICourseSectionService, CourseSectionService>();
 builder.Services.AddScoped<ILessonService, LessonService>();
 builder.Services.AddScoped<ILessonResourceService, LessonResourceService>();
+builder.Services.AddScoped<IStudentProgressService, StudentProgressService>();
+
+// Hybrid Learning services
+builder.Services.AddScoped<IBatchService, BatchService>();
+builder.Services.AddScoped<IEnrollmentService, EnrollmentService>();
 #endregion
 
 builder.Services.AddAutoMapper(typeof(ApplicationAssemblyReference).Assembly);

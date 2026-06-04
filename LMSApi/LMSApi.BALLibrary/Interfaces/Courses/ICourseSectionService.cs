@@ -9,5 +9,6 @@ namespace LMSApi.BALLibrary.Interfaces
         Task<SectionResponse> CreateSectionAsync(CreateSectionRequest request);
         Task<SectionResponse> UpdateSectionAsync(int id, UpdateSectionRequest request);
         Task DeleteSectionAsync(int id);
+        Task ReorderSectionsAsync(ReorderSectionsRequest request);
     }
 }

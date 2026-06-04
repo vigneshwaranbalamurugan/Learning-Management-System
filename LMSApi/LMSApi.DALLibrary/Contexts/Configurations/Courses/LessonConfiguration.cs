@@ -19,19 +19,29 @@ namespace LMSApi.DALLibrary.Contexts.Configurations
             builder.Property(l => l.Description)
                 .HasMaxLength(1000);
 
-            builder.Property(l => l.VideoUrl)
+            builder.Property(l => l.ContentUrl)
                 .HasMaxLength(1000);
 
-            builder.Property(l => l.ExternalUrl)
-                .HasMaxLength(1000);
 
             builder.Property(l => l.SortOrder)
                 .HasDefaultValue(0);
+
+
+            builder.Property(l => l.IsPreview)
+                .HasDefaultValue(false);
+
+            builder.Property(l => l.IsPublished)
+                .HasDefaultValue(false);
 
             // Relationships
             builder.HasOne(l => l.CourseSection)
                 .WithMany(s => s.Lessons)
                 .HasForeignKey(l => l.CourseSectionId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.HasMany(l => l.Resources)
+                .WithOne(r => r.Lesson)
+                .HasForeignKey(r => r.LessonId)
                 .OnDelete(DeleteBehavior.Cascade);
         }
     }

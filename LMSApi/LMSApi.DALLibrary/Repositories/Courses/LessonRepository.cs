@@ -18,5 +18,13 @@ namespace LMSApi.DALLibrary.Repositories.CourseModule
                 .OrderBy(l => l.SortOrder)
                 .ToListAsync();
         }
+
+        public async Task<Lessons> GetLessonWithResourcesAsync(int lessonId)
+        {
+            return await _context.Lessons
+                .Include(l => l.Resources)
+                .FirstOrDefaultAsync(l => l.Id == lessonId)
+                ?? throw new KeyNotFoundException($"Lesson with id '{lessonId}' not found.");
+        }
     }
 }

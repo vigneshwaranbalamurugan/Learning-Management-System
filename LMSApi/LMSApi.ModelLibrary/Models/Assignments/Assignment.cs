@@ -8,8 +8,9 @@ namespace LMSApi.ModelLibrary.Models
         public string Title { get; set; }
         public string Description { get; set; }
         public int TotalMarks { get; set; }
+        public int PassingMarks { get; set; }
         public string AttachmentUrl { get; set; }
-        public DateTime DueDate { get; set; }
+        public TimeSpan DueDate { get; set; }
         public DateTime CreatedAt { get; set; }
         
         // Navigation property

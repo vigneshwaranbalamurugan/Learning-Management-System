@@ -4,8 +4,9 @@ using LMSApi.DALLibrary.Interfaces;
 using LMSApi.ModelLibrary.DTOs;
 using LMSApi.ModelLibrary.Models;
 using Microsoft.Extensions.Logging;
+using LMSApi.ModelLibrary.Enums;
 
-namespace LMSApi.BALLibrary.Services.Courses
+namespace LMSApi.BALLibrary.Services
 {
     public class CourseSectionService : ICourseSectionService
     {
@@ -43,8 +44,19 @@ namespace LMSApi.BALLibrary.Services.Courses
             if (request == null) throw new ArgumentNullException(nameof(request));
             if (string.IsNullOrWhiteSpace(request.Title)) throw new ArgumentException("Section title cannot be null or empty.", nameof(request.Title));
 
-            // Validate parent course exists
-            await _courseRepository.GetByIdAsync(request.CourseId);
+            // Validate parent course exists and is not published
+            var course = await _courseRepository.GetByIdAsync(request.CourseId);
+            if (course.Status == CourseStatus.Published)
+            {
+                throw new InvalidOperationException($"Cannot create a section for course '{request.CourseId}' because it is already published.");
+            }
+
+            // Auto-assign SortOrder if not provided (default 0)
+            if (request.SortOrder == 0)
+            {
+                var existingSections = await _sectionRepository.GetSectionsByCourseAsync(request.CourseId);
+                request.SortOrder = existingSections.Any() ? existingSections.Max(s => s.SortOrder) + 1 : 1;
+            }
 
             var section = _mapper.Map<CourseSection>(request);
             await _sectionRepository.AddAsync(section);
@@ -60,12 +72,16 @@ namespace LMSApi.BALLibrary.Services.Courses
 
             var section = await _sectionRepository.GetByIdAsync(id);
 
+            var course = await _courseRepository.GetByIdAsync(section.CourseId);
+            if (course.Status == CourseStatus.Published)
+            {
+                throw new InvalidOperationException($"Cannot update section '{id}' because its parent course is already published.");
+            }
+
             if (request.Title != null) section.Title = request.Title;
             if (request.Description != null) section.Description = request.Description;
-            if (request.TimeLimitMinutes.HasValue) section.TimeLimitMinutes = request.TimeLimitMinutes.Value;
-            if (request.TotalMarks.HasValue) section.TotalMarks = request.TotalMarks.Value;
-            if (request.PassingMarks.HasValue) section.PassingMarks = request.PassingMarks.Value;
-            if (request.MaxAttempts.HasValue) section.MaxAttempts = request.MaxAttempts.Value;
+            if (request.EstimatedDuration.HasValue) section.EstimatedDuration = request.EstimatedDuration.Value;
+            if (request.SortOrder.HasValue) section.SortOrder = request.SortOrder.Value;
             if (request.IsPublished.HasValue) section.IsPublished = request.IsPublished.Value;
 
             await _sectionRepository.UpdateAsync(section);
@@ -77,10 +93,31 @@ namespace LMSApi.BALLibrary.Services.Courses
 
         public async Task DeleteSectionAsync(int id)
         {
-            await _sectionRepository.GetByIdAsync(id);
+            var section = await _sectionRepository.GetByIdAsync(id);
+
+            var course = await _courseRepository.GetByIdAsync(section.CourseId);
+            if (course.Status == CourseStatus.Published)
+            {
+                throw new InvalidOperationException($"Cannot delete section '{id}' because its parent course is already published.");
+            }
             await _sectionRepository.DeleteAsync(id);
 
             _logger.LogInformation("Section Deleted: Id={Id}", id);
+        }
+
+        public async Task ReorderSectionsAsync(ReorderSectionsRequest request)
+        {
+            if (request == null) throw new ArgumentNullException(nameof(request));
+            if (request.SectionOrders == null) throw new ArgumentException("Section orders list cannot be null.", nameof(request.SectionOrders));
+
+            foreach (var item in request.SectionOrders)
+            {
+                var section = await _sectionRepository.GetByIdAsync(item.SectionId);
+                section.SortOrder = item.SortOrder;
+                await _sectionRepository.UpdateAsync(section);
+            }
+
+            _logger.LogInformation("Sections Reordered: {Count} sections updated", request.SectionOrders.Count);
         }
     }
 }

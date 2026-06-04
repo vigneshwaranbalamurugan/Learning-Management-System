@@ -10,7 +10,6 @@ using System.Security.Claims;
 
 namespace LMSApi.API.Controllers
 {
-    [Authorize]
     [ApiController]
     [ApiVersion("1.0")]
     [Route("api/v{version:apiVersion}/[controller]")]
@@ -86,12 +85,15 @@ namespace LMSApi.API.Controllers
                 LearningOutcomes  = form.LearningOutcomes,
                 EstimatedDuration = form.EstimatedDuration,
                 Level             = form.Level,
-                Language          = form.Language
+                Language          = form.Language,
+                // Hybrid Learning
+                CourseAccessType              = form.CourseAccessType,
+                DefaultAssignmentDeadlineDays = form.DefaultAssignmentDeadlineDays
             };
-
+            Console.WriteLine($"{form.Thumbnail?.FileName} - {form.IntroVideo?.FileName}");
             await using var thumbnailStream = form.Thumbnail?.OpenReadStream();
             await using var videoStream     = form.IntroVideo?.OpenReadStream();
-
+            Console.WriteLine($"Thumbnail Stream: {thumbnailStream != null}, Video Stream: {videoStream != null}");
             var result = await _courseService.CreateCourseAsync(
                 instructorId, request,
                 thumbnailStream, form.Thumbnail?.FileName,
@@ -130,7 +132,10 @@ namespace LMSApi.API.Controllers
                 LearningOutcomes  = form.LearningOutcomes,
                 EstimatedDuration = form.EstimatedDuration,
                 Level             = form.Level,
-                Language          = form.Language
+                Language          = form.Language,
+                // Hybrid Learning
+                CourseAccessType              = form.CourseAccessType,
+                DefaultAssignmentDeadlineDays = form.DefaultAssignmentDeadlineDays
             };
 
             await using var thumbnailStream = form.Thumbnail?.OpenReadStream();

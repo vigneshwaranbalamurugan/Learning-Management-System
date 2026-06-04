@@ -43,7 +43,9 @@ namespace LMSApi.DALLibrary.Repositories.CourseModule
                 .Include(c => c.Instructor)
                 .Include(c => c.Sections)
                     .ThenInclude(s => s.Lessons)
+                .Include(c => c.Batches)
                 .FirstOrDefaultAsync(c => c.Id == id);
         }
+
     }
 }

@@ -28,6 +28,15 @@ namespace LMSApi.ModelLibrary.DTOs
 
         public CourseLevel Level { get; set; } = CourseLevel.Beginner;
         public CourseLanguage Language { get; set; } = CourseLanguage.English;
+
+        // ─── Hybrid Learning ─────────────────────────────────────────────────
+        public CourseAccessType CourseAccessType { get; set; } = CourseAccessType.SelfPaced;
+
+        /// <summary>
+        /// Only used when CourseAccessType = SelfPaced.
+        /// Access expires this many days after enrollment. Null = never expires.
+        /// </summary>
+        public int? DefaultAssignmentDeadlineDays { get; set; }
     }
 
     public class UpdateCourseRequest
@@ -49,6 +58,10 @@ namespace LMSApi.ModelLibrary.DTOs
         public TimeSpan? EstimatedDuration { get; set; }
         public CourseLevel? Level { get; set; }
         public CourseLanguage? Language { get; set; }
+
+        // ─── Hybrid Learning ─────────────────────────────────────────────────
+        public CourseAccessType? CourseAccessType { get; set; }
+        public int? DefaultAssignmentDeadlineDays { get; set; }
     }
 
     // ─── Responses ───────────────────────────────────────────────────────────
@@ -71,6 +84,9 @@ namespace LMSApi.ModelLibrary.DTOs
         public DateTime? PublishedAt { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
+
+        // ─── Hybrid Learning ─────────────────────────────────────────────────
+        public CourseAccessType CourseAccessType { get; set; }
     }
 
     public class CourseDetailsResponse : CourseResponse
@@ -80,5 +96,9 @@ namespace LMSApi.ModelLibrary.DTOs
         public string? LearningOutcomes { get; set; }
         public TimeSpan EstimatedDuration { get; set; }
         public IEnumerable<SectionResponse> Sections { get; set; } = [];
+
+        // ─── Hybrid Learning ─────────────────────────────────────────────────
+        /// <summary>Populated for CohortBased courses; empty list for SelfPaced.</summary>
+        public IEnumerable<BatchSummaryResponse> AvailableBatches { get; set; } = [];
     }
 }

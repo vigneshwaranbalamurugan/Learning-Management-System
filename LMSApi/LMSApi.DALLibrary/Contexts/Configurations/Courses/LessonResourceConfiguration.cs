@@ -28,7 +28,7 @@ namespace LMSApi.DALLibrary.Contexts.Configurations
 
             // Relationships
             builder.HasOne(r => r.Lesson)
-                .WithMany()
+                .WithMany(l => l.Resources)
                 .HasForeignKey(r => r.LessonId)
                 .OnDelete(DeleteBehavior.Cascade);
         }

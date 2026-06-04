@@ -22,7 +22,7 @@ namespace LMSApi.DALLibrary.Contexts.Configurations
             builder.Property(s => s.IsPublished)
                 .HasDefaultValue(false);
 
-            builder.Property(s => s.MaxAttempts)
+            builder.Property(s => s.SortOrder)
                 .HasDefaultValue(1);
 
             builder.Property(s => s.CreatedAt)

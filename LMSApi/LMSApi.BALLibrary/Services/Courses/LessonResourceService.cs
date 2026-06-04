@@ -5,7 +5,7 @@ using LMSApi.ModelLibrary.DTOs;
 using LMSApi.ModelLibrary.Models;
 using Microsoft.Extensions.Logging;
 
-namespace LMSApi.BALLibrary.Services.Courses
+namespace LMSApi.BALLibrary.Services
 {
     public class LessonResourceService : ILessonResourceService
     {
@@ -52,7 +52,7 @@ namespace LMSApi.BALLibrary.Services.Courses
 
             await _resourceRepository.AddAsync(resource);
 
-            _logger.LogInformation("Resource Added: '{Title}' for LessonId={LessonId}", request.ResourceTitle, request.LessonId);
+            _logger.LogInformation("Resource Uploaded: '{Title}' for LessonId={LessonId}", request.ResourceTitle, request.LessonId);
 
             return _mapper.Map<ResourceResponse>(resource);
         }

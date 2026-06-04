@@ -16,6 +16,11 @@ namespace LMSApi.DALLibrary.Contexts
         public DbSet<CourseSection> CourseSections { get; set; }
         public DbSet<Lessons> Lessons { get; set; }
         public DbSet<LessonResources> LessonResources { get; set; }
+        public DbSet<StudentProgress> StudentProgresses { get; set; }
+
+        // Hybrid Learning module
+        public DbSet<CourseBatch> CourseBatches { get; set; }
+        public DbSet<Enrollments> Enrollments { get; set; }
 
         public LMSDbContext(DbContextOptions<LMSDbContext> dbContextOptions):base(dbContextOptions)
         {
@@ -82,6 +87,13 @@ namespace LMSApi.DALLibrary.Contexts
                 case CourseSection section:
                     if (create) section.CreatedAt = utcNow;
                     section.UpdatedAt = utcNow;
+                    break;
+                case CourseBatch batch:
+                    if (create) batch.CreatedAt = utcNow;
+                    batch.UpdatedAt = utcNow;
+                    break;
+                case StudentProgress progress:
+                    progress.LastAccessed = utcNow;
                     break;
             }
         }

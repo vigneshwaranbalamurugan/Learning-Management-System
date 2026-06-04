@@ -1,9 +1,13 @@
 namespace LMSApi.ModelLibrary.Enums
 {
- public enum ResourceType
+    public enum ResourceType
     {
-        Video,
+        Pdf,
         Document,
-        Link
+        Zip,
+        Presentation,
+        Link,
+        PracticeFile,
+        SourceCode
     }
 }
