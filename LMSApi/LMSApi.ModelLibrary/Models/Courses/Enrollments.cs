@@ -11,21 +11,8 @@ namespace LMSApi.ModelLibrary.Models
         public decimal ProgressPercentage { get; set; }
         public bool IsCompleted { get; set; }
         public DateTime? CompletedAt { get; set; }
-
-        // ─── Hybrid Learning fields ───────────────────────────────────────────
-        /// <summary>
-        /// Null for SelfPaced enrollments; required for CohortBased enrollments.
-        /// </summary>
         public int? BatchId { get; set; }
-
-        /// <summary>
-        /// When access to the course expires.
-        /// SelfPaced: auto-calculated as EnrolledAt + DefaultAssignmentDeadlineDays (null = never).
-        /// CohortBased: mirrors the batch EndDate.
-        /// </summary>
         public DateTime? AccessExpiresAt { get; set; }
-
-        /// <summary>Current lifecycle status of this enrollment.</summary>
         public EnrollmentStatus EnrollmentStatus { get; set; } = EnrollmentStatus.Active;
 
         // ─── Navigation properties ────────────────────────────────────────────

@@ -2,10 +2,7 @@ using LMSApi.BALLibrary.Interfaces;
 
 namespace LMSApi.API.Handlers
 {
-    /// <summary>
-    /// Validates course thumbnail (image) and intro video files before upload.
-    /// Mirrors ProfileImageUploadHandler.
-    /// </summary>
+
     public class CourseUploadHandler
     {
         private readonly IUploadService _uploadService;

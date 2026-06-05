@@ -6,5 +6,6 @@ namespace LMSApi.BALLibrary.Interfaces
     {
         Task<LessonProgressResponse> MarkLessonCompleteAsync(int userId, int lessonId, decimal? watchPercentage = null);
         Task<CourseProgressResponse> GetCourseProgressAsync(int userId, int courseId);
+        Task RecalculateCourseProgressAsync(int userId, int courseId);
     }
 }

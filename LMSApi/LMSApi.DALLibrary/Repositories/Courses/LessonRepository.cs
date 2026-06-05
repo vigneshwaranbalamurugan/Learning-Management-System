@@ -3,7 +3,7 @@ using LMSApi.DALLibrary.Interfaces;
 using LMSApi.ModelLibrary.Models;
 using Microsoft.EntityFrameworkCore;
 
-namespace LMSApi.DALLibrary.Repositories.CourseModule
+namespace LMSApi.DALLibrary.Repositories
 {
     public class LessonRepository : AbstractRepository<int, Lessons>, ILessonRepository
     {

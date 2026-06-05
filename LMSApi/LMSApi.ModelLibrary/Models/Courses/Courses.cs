@@ -24,15 +24,7 @@ namespace LMSApi.ModelLibrary.Models
         public DateTime PublishedAt { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
-
-        // ─── Hybrid Learning fields ───────────────────────────────────────────
-        /// <summary>SelfPaced (default) or CohortBased.</summary>
         public CourseAccessType CourseAccessType { get; set; } = CourseAccessType.SelfPaced;
-
-        /// <summary>
-        /// For SelfPaced: access expires this many days after enrollment.
-        /// Null means no expiry. Ignored for CohortBased (batch end date governs).
-        /// </summary>
         public int? DefaultAssignmentDeadlineDays { get; set; }
 
         // Navigation properties

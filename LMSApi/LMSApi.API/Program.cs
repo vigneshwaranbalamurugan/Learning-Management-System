@@ -2,13 +2,11 @@ using LMSApi.DALLibrary.Contexts;
 using LMSApi.API.Extensions;
 using LMSApi.DALLibrary.Interfaces;
 using LMSApi.DALLibrary.Repositories;
-using LMSApi.DALLibrary.Repositories.CourseModule;
 using LMSApi.BALLibrary.Interfaces;
 using LMSApi.BALLibrary.Services;
 using LMSApi.BALLibrary.Services.Authentication;
 using LMSApi.BALLibrary.Services.Profile;
 using LMSApi.BALLibrary.Services.Upload;
-using LMSApi.BALLibrary.Services;
 using LMSApi.BALLibrary.Mappers;
 using LMSApi.API.Middlewares;
 using LMSApi.API.Handlers;
@@ -51,6 +49,15 @@ builder.Services.AddScoped<IStudentProgressRepository, StudentProgressRepository
 // Hybrid Learning repositories
 builder.Services.AddScoped<ICourseBatchRepository, CourseBatchRepository>();
 builder.Services.AddScoped<IEnrollmentRepository, EnrollmentRepository>();
+
+// Quiz module repositories
+builder.Services.AddScoped<IQuizRepository, QuizRepository>();
+builder.Services.AddScoped<IQuizAttemptRepository, QuizAttemptRepository>();
+builder.Services.AddScoped<IQuizQuestionRepository, QuizQuestionRepository>();
+builder.Services.AddScoped<IQuizOptionRepository, QuizOptionRepository>();
+builder.Services.AddScoped<IQuizAnswerRepository, QuizAnswerRepository>();
+builder.Services.AddScoped<IAssignmentRepository, AssignmentRepository>();
+builder.Services.AddScoped<IAssignmentSubmissionRepository, AssignmentSubmissionRepository>();
 #endregion
 
 #region Dependency Injection for Services
@@ -69,10 +76,14 @@ builder.Services.AddScoped<ICourseSectionService, CourseSectionService>();
 builder.Services.AddScoped<ILessonService, LessonService>();
 builder.Services.AddScoped<ILessonResourceService, LessonResourceService>();
 builder.Services.AddScoped<IStudentProgressService, StudentProgressService>();
+builder.Services.AddScoped<IAssignmentService, AssignmentService>();
 
 // Hybrid Learning services
 builder.Services.AddScoped<IBatchService, BatchService>();
 builder.Services.AddScoped<IEnrollmentService, EnrollmentService>();
+
+// Quiz module services
+builder.Services.AddScoped<IQuizService, QuizService>();
 #endregion
 
 builder.Services.AddAutoMapper(typeof(ApplicationAssemblyReference).Assembly);

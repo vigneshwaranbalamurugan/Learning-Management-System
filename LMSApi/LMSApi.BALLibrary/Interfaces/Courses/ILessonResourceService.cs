@@ -6,8 +6,8 @@ namespace LMSApi.BALLibrary.Interfaces
     {
         Task<IEnumerable<ResourceResponse>> GetResourcesByLessonAsync(int lessonId);
         Task<ResourceResponse> GetResourceByIdAsync(int id);
-        Task<ResourceResponse> AddResourceAsync(CreateResourceRequest request);
-        Task<ResourceResponse> UpdateResourceAsync(int id, UpdateResourceRequest request);
+        Task<ResourceResponse> AddResourceAsync(CreateResourceRequest request, System.IO.Stream? fileStream = null, string? fileName = null);
+        Task<ResourceResponse> UpdateResourceAsync(int id, UpdateResourceRequest request, System.IO.Stream? fileStream = null, string? fileName = null);
         Task DeleteResourceAsync(int id);
     }
 }

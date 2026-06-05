@@ -109,3 +109,4 @@ Next steps:
 16. Quizzes and Assignments
 17. Discussion Forums
 18. Cetficiates
+19. SignalR for real-time updates

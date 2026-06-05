@@ -1,5 +1,4 @@
 using Asp.Versioning;
-using LMSApi.API.Handlers.Courses;
 using LMSApi.API.Handlers;
 using LMSApi.API.Extensions;
 using LMSApi.BALLibrary.Interfaces;
@@ -24,7 +23,6 @@ namespace LMSApi.API.Controllers
             _courseUploadHandler = courseUploadHandler;
         }
 
-        // ─── Queries (all authenticated users) ──────────────────────────────
 
         /// <summary>Get all published courses.</summary>
         [HttpGet]
@@ -102,11 +100,6 @@ namespace LMSApi.API.Controllers
             return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
         }
 
-        /// <summary>
-        /// Update a course. Accepts multipart/form-data.
-        /// Instructors can only update their own courses. Admins can update any course.
-        /// Include Thumbnail / IntroVideo only when you want to replace the file.
-        /// </summary>
         [Authorize(Roles = "Instructor,Admin")]
         [HttpPut("{id:int}")]
         [Consumes("multipart/form-data")]
@@ -178,7 +171,6 @@ namespace LMSApi.API.Controllers
             return Ok(result);
         }
 
-        // ─── Claim helpers ───────────────────────────────────────────────────
 
         /// <summary>
         /// Ensures the calling Instructor owns the course.

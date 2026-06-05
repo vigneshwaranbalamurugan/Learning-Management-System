@@ -4,7 +4,7 @@ using LMSApi.ModelLibrary.Enums;
 using LMSApi.ModelLibrary.Models;
 using Microsoft.EntityFrameworkCore;
 
-namespace LMSApi.DALLibrary.Repositories.CourseModule
+namespace LMSApi.DALLibrary.Repositories
 {
     public class CourseRepository : AbstractRepository<int, Courses>, ICourseRepository
     {
@@ -43,6 +43,8 @@ namespace LMSApi.DALLibrary.Repositories.CourseModule
                 .Include(c => c.Instructor)
                 .Include(c => c.Sections)
                     .ThenInclude(s => s.Lessons)
+                .Include(c => c.Sections)
+                    .ThenInclude(s => s.Quizzes)
                 .Include(c => c.Batches)
                 .FirstOrDefaultAsync(c => c.Id == id);
         }

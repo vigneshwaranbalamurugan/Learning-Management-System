@@ -1,8 +1,10 @@
 using Asp.Versioning;
 using LMSApi.API.Extensions;
+using LMSApi.API.Handlers;
 using LMSApi.BALLibrary.Interfaces;
 using LMSApi.DALLibrary.Interfaces;
 using LMSApi.ModelLibrary.DTOs;
+using LMSApi.ModelLibrary.Enums;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
@@ -18,20 +20,21 @@ namespace LMSApi.API.Controllers
         private readonly ILessonService _lessonService;
         private readonly ICourseSectionRepository _sectionRepository;
         private readonly ICourseService _courseService;
+        private readonly LessonUploadHandler _lessonUploadHandler;
 
         public LessonResourcesController(
             ILessonResourceService resourceService,
             ILessonService lessonService,
             ICourseSectionRepository sectionRepository,
-            ICourseService courseService)
+            ICourseService courseService,
+            LessonUploadHandler lessonUploadHandler)
         {
             _resourceService = resourceService;
             _lessonService = lessonService;
             _sectionRepository = sectionRepository;
             _courseService = courseService;
+            _lessonUploadHandler = lessonUploadHandler;
         }
-
-        // ─── Queries (all authenticated users) ──────────────────────────────
 
         [Authorize]
         [HttpGet("lesson/{lessonId:int}")]
@@ -49,25 +52,83 @@ namespace LMSApi.API.Controllers
             return Ok(result);
         }
 
-        // ─── Mutations (Instructor = own courses only; Admin = all) ─────────
-
         [Authorize(Roles = "Instructor,Admin")]
         [HttpPost]
-        public async Task<ActionResult<ResourceResponse>> Add([FromBody] CreateResourceRequest request)
+        [Consumes("multipart/form-data")]
+        public async Task<ActionResult<ResourceResponse>> Add([FromForm] CreateResourceFormRequest form)
         {
-            await EnforceLessonOwnershipAsync(request.LessonId);
+            await EnforceLessonOwnershipAsync(form.LessonId);
 
-            var result = await _resourceService.AddResourceAsync(request);
+            if (form.ResourceType == ResourceType.Pdf)
+            {
+                if (form.File == null)
+                    throw new InvalidOperationException("PDF file is required for PDF type resources.");
+                _lessonUploadHandler.ValidateLessonPdf(form.File);
+            }
+            else if (form.ResourceType == ResourceType.ExternalLink)
+            {
+                if (string.IsNullOrWhiteSpace(form.ResourceUrl))
+                    throw new InvalidOperationException("Resource URL is required for ExternalLink type resources.");
+            }
+
+            var request = new CreateResourceRequest
+            {
+                LessonId = form.LessonId,
+                ResourceType = form.ResourceType,
+                ResourceTitle = form.ResourceTitle,
+                ResourceUrl = form.ResourceUrl,
+                Description = form.Description
+            };
+
+            await using var fileStream = form.File?.OpenReadStream();
+
+            var result = await _resourceService.AddResourceAsync(request, fileStream, form.File?.FileName);
             return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
         }
 
         [Authorize(Roles = "Instructor,Admin")]
         [HttpPut("{id:int}")]
-        public async Task<ActionResult<ResourceResponse>> Update(int id, [FromBody] UpdateResourceRequest request)
+        [Consumes("multipart/form-data")]
+        public async Task<ActionResult<ResourceResponse>> Update(int id, [FromForm] UpdateResourceFormRequest form)
         {
             await EnforceResourceOwnershipAsync(id);
 
-            var result = await _resourceService.UpdateResourceAsync(id, request);
+            var existingResource = await _resourceService.GetResourceByIdAsync(id);
+            var finalType = form.ResourceType ?? existingResource.ResourceType;
+
+            if (form.File != null)
+            {
+                if (finalType == ResourceType.Pdf)
+                {
+                    _lessonUploadHandler.ValidateLessonPdf(form.File);
+                }
+                else
+                {
+                    throw new InvalidOperationException($"Files cannot be uploaded to resources of type {finalType}.");
+                }
+            }
+
+            if (form.ResourceType.HasValue)
+            {
+                if (form.ResourceType.Value == ResourceType.ExternalLink
+                    && string.IsNullOrWhiteSpace(form.ResourceUrl)
+                    && string.IsNullOrWhiteSpace(existingResource.ResourceUrl))
+                {
+                    throw new InvalidOperationException("Resource URL is required for ExternalLink type resources.");
+                }
+            }
+
+            var request = new UpdateResourceRequest
+            {
+                ResourceType = form.ResourceType,
+                ResourceTitle = form.ResourceTitle,
+                ResourceUrl = form.ResourceUrl,
+                Description = form.Description
+            };
+
+            await using var fileStream = form.File?.OpenReadStream();
+
+            var result = await _resourceService.UpdateResourceAsync(id, request, fileStream, form.File?.FileName);
             return Ok(result);
         }
 
@@ -81,11 +142,6 @@ namespace LMSApi.API.Controllers
             return NoContent();
         }
 
-
-        /// <summary>
-        /// Resolves lesson → section → course and verifies the calling Instructor is the creator.
-        /// Admins bypass this check.
-        /// </summary>
         private async Task EnforceLessonOwnershipAsync(int lessonId)
         {
             if (User.IsAdmin()) return;
@@ -99,10 +155,6 @@ namespace LMSApi.API.Controllers
                 throw new UnauthorizedAccessException("You do not have permission to add resources to this lesson.");
         }
 
-        /// <summary>
-        /// Resolves resource → lesson → section → course and verifies the calling Instructor is the creator.
-        /// Admins bypass this check.
-        /// </summary>
         private async Task EnforceResourceOwnershipAsync(int resourceId)
         {
             if (User.IsAdmin()) return;

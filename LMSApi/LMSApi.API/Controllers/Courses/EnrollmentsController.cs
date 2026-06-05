@@ -19,14 +19,8 @@ namespace LMSApi.API.Controllers
         {
             _enrollmentService = enrollmentService;
         }
-
-        // ─── Student: enroll in a course ────────────────────────────────────
-
-        /// <summary>
-        /// Enroll the authenticated student in a course.
-        /// For SelfPaced courses: leave BatchId null.
-        /// For CohortBased courses: provide the BatchId.
-        /// </summary>
+        
+        /// <summary>Enroll the authenticated student in a course. Accepts an optional BatchId for CohortBased courses.</summary>
         [HttpPost("courses/{courseId:int}/enroll")]
         public async Task<ActionResult<EnrollmentResponse>> Enroll(
             int courseId,
@@ -37,7 +31,6 @@ namespace LMSApi.API.Controllers
             return CreatedAtAction(nameof(GetMyEnrollments), null, result);
         }
 
-        // ─── Student: view own enrollments ──────────────────────────────────
 
         /// <summary>Get all enrollments for the authenticated student.</summary>
         [HttpGet("enrollments/my")]

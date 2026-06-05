@@ -90,7 +90,6 @@ namespace LMSApi.API.Controllers
             return NoContent();
         }
 
-        // ─── Claim helpers ───────────────────────────────────────────────────
 
         /// <summary>
         /// Ensures the calling Instructor owns the course.

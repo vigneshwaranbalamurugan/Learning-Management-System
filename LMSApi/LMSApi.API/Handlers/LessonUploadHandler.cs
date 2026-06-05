@@ -4,9 +4,6 @@ using Microsoft.Extensions.Configuration;
 
 namespace LMSApi.API.Handlers
 {
-    /// <summary>
-    /// Validates lesson video and PDF files before upload.
-    /// </summary>
     public class LessonUploadHandler
     {
         private readonly IUploadService _uploadService;

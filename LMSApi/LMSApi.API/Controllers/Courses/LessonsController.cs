@@ -4,7 +4,6 @@ using LMSApi.BALLibrary.Interfaces;
 using LMSApi.DALLibrary.Interfaces;
 using LMSApi.ModelLibrary.DTOs;
 using LMSApi.ModelLibrary.Enums;
-using LMSApi.API.Handlers.Courses;
 using LMSApi.API.Handlers;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -204,11 +203,6 @@ namespace LMSApi.API.Controllers
             return NoContent();
         }
 
-        /// <summary>
-        /// Mark a lesson complete.
-        /// For Video lessons, pass WatchPercentage; auto-completes at ≥ 90%.
-        /// For Pdf / Article / ExternalLink, marking this endpoint always completes the lesson.
-        /// </summary>
         [Authorize]
         [HttpPost("{lessonId:int}/complete")]
         public async Task<ActionResult<LessonProgressResponse>> Complete(int lessonId, [FromBody] CompleteLessonRequest? request)
@@ -218,7 +212,6 @@ namespace LMSApi.API.Controllers
             return Ok(result);
         }
 
-        // ─── Claim helpers ───────────────────────────────────────────────────
 
         private async Task EnforceSectionOwnershipAsync(int sectionId)
         {

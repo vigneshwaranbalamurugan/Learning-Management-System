@@ -15,6 +15,7 @@ namespace LMSApi.BALLibrary.Services
         private readonly ICourseRepository _courseRepository;
         private readonly IEnrollmentRepository _enrollmentRepository;
         private readonly ICourseSectionRepository _sectionRepository;
+        private readonly IQuizAttemptRepository _quizAttemptRepository;
         private readonly IMapper _mapper;
         private readonly ILogger<StudentProgressService> _logger;
 
@@ -24,6 +25,7 @@ namespace LMSApi.BALLibrary.Services
             ICourseRepository courseRepository,
             IEnrollmentRepository enrollmentRepository,
             ICourseSectionRepository sectionRepository,
+            IQuizAttemptRepository quizAttemptRepository,
             IMapper mapper,
             ILogger<StudentProgressService> logger)
         {
@@ -32,6 +34,7 @@ namespace LMSApi.BALLibrary.Services
             _courseRepository = courseRepository;
             _enrollmentRepository = enrollmentRepository;
             _sectionRepository = sectionRepository;
+            _quizAttemptRepository = quizAttemptRepository;
             _mapper = mapper;
             _logger = logger;
         }
@@ -115,9 +118,20 @@ namespace LMSApi.BALLibrary.Services
             if (course == null) throw new KeyNotFoundException($"Course with id '{courseId}' not found.");
 
             var totalLessons = course.Sections.SelectMany(s => s.Lessons).Count();
-            var completedCount = await _progressRepository.GetCompletedLessonsCountAsync(userId, courseId);
+            var totalQuizzes = course.Sections.SelectMany(s => s.Quizzes).Count(q => q.IsPublished);
+            var totalItems = totalLessons + totalQuizzes;
 
-            var progressPercent = totalLessons > 0 ? (decimal)completedCount / totalLessons * 100m : 0m;
+            var completedLessonsCount = await _progressRepository.GetCompletedLessonsCountAsync(userId, courseId);
+            var publishedQuizIds = course.Sections.SelectMany(s => s.Quizzes).Where(q => q.IsPublished).Select(q => q.Id).ToList();
+            var passedQuizzesCount = 0;
+            if (publishedQuizIds.Any())
+            {
+                passedQuizzesCount = await _quizAttemptRepository.GetPassedQuizzesCountAsync(userId, publishedQuizIds);
+            }
+
+            var completedCount = completedLessonsCount + passedQuizzesCount;
+
+            var progressPercent = totalItems > 0 ? (decimal)completedCount / totalItems * 100m : 0m;
             progressPercent = Math.Round(progressPercent, 2);
 
             return new CourseProgressResponse
@@ -125,8 +139,17 @@ namespace LMSApi.BALLibrary.Services
                 CourseId = courseId,
                 ProgressPercentage = progressPercent,
                 CompletedLessonsCount = completedCount,
-                TotalLessonsCount = totalLessons
+                TotalLessonsCount = totalItems
             };
+        }
+
+        public async Task RecalculateCourseProgressAsync(int userId, int courseId)
+        {
+            var enrollment = await _enrollmentRepository.GetByUserAndCourseAsync(userId, courseId);
+            if (enrollment != null)
+            {
+                await UpdateCourseEnrollmentProgressAsync(userId, courseId, enrollment);
+            }
         }
 
         private async Task UpdateCourseEnrollmentProgressAsync(int userId, int courseId, Enrollments enrollment)
@@ -134,19 +157,26 @@ namespace LMSApi.BALLibrary.Services
             var course = await _courseRepository.GetCourseWithDetailsAsync(courseId);
             if (course == null) return;
 
-            // Get total lessons count in the course
             var totalLessons = course.Sections.SelectMany(s => s.Lessons).Count();
-            if (totalLessons == 0) return;
+            var totalQuizzes = course.Sections.SelectMany(s => s.Quizzes).Count(q => q.IsPublished);
+            var totalItems = totalLessons + totalQuizzes;
+            if (totalItems == 0) return;
 
-            // Get completed lessons count
-            var completedCount = await _progressRepository.GetCompletedLessonsCountAsync(userId, courseId);
+            var completedLessonsCount = await _progressRepository.GetCompletedLessonsCountAsync(userId, courseId);
+            var publishedQuizIds = course.Sections.SelectMany(s => s.Quizzes).Where(q => q.IsPublished).Select(q => q.Id).ToList();
+            var passedQuizzesCount = 0;
+            if (publishedQuizIds.Any())
+            {
+                passedQuizzesCount = await _quizAttemptRepository.GetPassedQuizzesCountAsync(userId, publishedQuizIds);
+            }
 
-            var progressPercent = (decimal)completedCount / totalLessons * 100m;
-            // Round to 2 decimal places to match numeric(5,2)
+            var completedCount = completedLessonsCount + passedQuizzesCount;
+
+            var progressPercent = (decimal)completedCount / totalItems * 100m;
             progressPercent = Math.Round(progressPercent, 2);
 
             enrollment.ProgressPercentage = progressPercent;
-            enrollment.IsCompleted = completedCount == totalLessons;
+            enrollment.IsCompleted = completedCount == totalItems;
             if (enrollment.IsCompleted)
             {
                 enrollment.CompletedAt ??= DateTime.UtcNow;
@@ -157,7 +187,7 @@ namespace LMSApi.BALLibrary.Services
             }
 
             await _enrollmentRepository.UpdateAsync(enrollment);
-            _logger.LogInformation("Course Progress Updated: CourseId={CourseId}, StudentId={StudentId}, Progress={Progress}%", courseId, userId, progressPercent);
+            _logger.LogInformation("Course Progress Recalculated: CourseId={CourseId}, StudentId={StudentId}, Progress={Progress}%", courseId, userId, progressPercent);
         }
     }
 }

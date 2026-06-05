@@ -17,8 +17,7 @@ namespace LMSApi.ModelLibrary.DTOs
         [MaxLength(300, ErrorMessage = "Resource title must not exceed 300 characters.")]
         public string ResourceTitle { get; set; }
 
-        [Required(ErrorMessage = "Resource URL is required.")]
-        public string ResourceUrl { get; set; }
+        public string? ResourceUrl { get; set; }
 
         [MaxLength(1000, ErrorMessage = "Description must not exceed 1000 characters.")]
         public string? Description { get; set; }

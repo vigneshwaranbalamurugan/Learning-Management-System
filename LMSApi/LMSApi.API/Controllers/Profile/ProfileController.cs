@@ -6,7 +6,6 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Asp.Versioning;
 using System.Security.Claims;
-using LMSApi.API.Controllers.Profile;
 
 namespace LMSApi.API.Controllers
 {

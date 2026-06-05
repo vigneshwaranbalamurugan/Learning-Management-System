@@ -6,7 +6,7 @@ namespace LMSApi.ModelLibrary.Models
     {
         public int Id { get; set; }
         public int LessonId { get; set; }
-        public ResourceType ResourceType { get; set; } // e.g., Video, Document, Link
+        public ResourceType ResourceType { get; set; } // e.g., Pdf, ExternalLink
         public string ResourceTitle { get; set; }
         public string ResourceUrl { get; set; }
         public string Description { get; set; }

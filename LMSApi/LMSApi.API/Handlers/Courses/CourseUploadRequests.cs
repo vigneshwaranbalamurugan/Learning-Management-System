@@ -1,12 +1,8 @@
 using System.ComponentModel.DataAnnotations;
 using LMSApi.ModelLibrary.Enums;
 
-namespace LMSApi.API.Handlers.Courses
+namespace LMSApi.API.Handlers
 {
-    /// <summary>
-    /// Multipart/form-data wrapper for creating a course.
-    /// Contains all course fields plus optional thumbnail image and intro video files.
-    /// </summary>
     public class CreateCourseFormRequest
     {
         [Required(ErrorMessage = "Category ID is required.")]
@@ -31,14 +27,9 @@ namespace LMSApi.API.Handlers.Courses
         public CourseLevel Level { get; set; } = CourseLevel.Beginner;
         public CourseLanguage Language { get; set; } = CourseLanguage.English;
 
-        // ─── Hybrid Learning ─────────────────────────────────────────────────
         /// <summary>SelfPaced (default) or CohortBased.</summary>
         public CourseAccessType CourseAccessType { get; set; } = CourseAccessType.SelfPaced;
 
-        /// <summary>
-        /// For SelfPaced: access expires this many days after enrollment.
-        /// Null means no expiry.
-        /// </summary>
         public int? DefaultAssignmentDeadlineDays { get; set; }
 
         /// <summary>Optional course thumbnail image (JPG, JPEG, PNG).</summary>
@@ -48,10 +39,6 @@ namespace LMSApi.API.Handlers.Courses
         public IFormFile? IntroVideo { get; set; }
     }
 
-    /// <summary>
-    /// Multipart/form-data wrapper for updating a course.
-    /// All fields are optional. Include Thumbnail/IntroVideo only when replacing the file.
-    /// </summary>
     public class UpdateCourseFormRequest
     {
         [MaxLength(300, ErrorMessage = "Title must not exceed 300 characters.")]

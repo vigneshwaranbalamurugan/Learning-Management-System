@@ -22,6 +22,17 @@ namespace LMSApi.DALLibrary.Contexts
         public DbSet<CourseBatch> CourseBatches { get; set; }
         public DbSet<Enrollments> Enrollments { get; set; }
 
+        // Quiz module
+        public DbSet<Quzzes> Quizzes { get; set; }
+        public DbSet<QuizQuestions> QuizQuestions { get; set; }
+        public DbSet<QuizOptions> QuizOptions { get; set; }
+        public DbSet<QuizAttempts> QuizAttempts { get; set; }
+        public DbSet<QuizAnswers> QuizAnswers { get; set; }
+
+        // Assignment module
+        public DbSet<Assignments> Assignments { get; set; }
+        public DbSet<AssignmentSubmissions> AssignmentSubmissions { get; set; }
+
         public LMSDbContext(DbContextOptions<LMSDbContext> dbContextOptions):base(dbContextOptions)
         {
         }        
@@ -94,6 +105,9 @@ namespace LMSApi.DALLibrary.Contexts
                     break;
                 case StudentProgress progress:
                     progress.LastAccessed = utcNow;
+                    break;
+                case Assignments assignment:
+                    if (create) assignment.CreatedAt = utcNow;
                     break;
             }
         }

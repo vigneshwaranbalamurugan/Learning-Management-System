@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 using LMSApi.ModelLibrary.Enums;
 using Microsoft.AspNetCore.Http;
 
-namespace LMSApi.API.Handlers.Courses
+namespace LMSApi.API.Handlers
 {
     public class CreateLessonFormRequest
     {
@@ -16,13 +16,9 @@ namespace LMSApi.API.Handlers.Courses
         [MaxLength(1000, ErrorMessage = "Description must not exceed 1000 characters.")]
         public string? Description { get; set; }
 
-        /// <summary>Article body (HTML/Markdown). Required when Type = Article.</summary>
+        // Markdown content for Article lessons.
         public string? Content { get; set; }
-
-        /// <summary>
-        /// External URL. Required when Type = ExternalLink.
-        /// Ignored when a file is uploaded (Video / Pdf).
-        /// </summary>
+        // External URL for ExternalLink lessons.
         public string? ContentUrl { get; set; }
 
         [Required(ErrorMessage = "Lesson type is required.")]
@@ -36,7 +32,7 @@ namespace LMSApi.API.Handlers.Courses
         public bool? IsPreview { get; set; }
         public bool? IsPublished { get; set; }
 
-        /// <summary>Uploaded file (video or PDF) depending on the LessonType.</summary>
+        /// <summary>Uploaded file (video or PDF) depending on the LessonType.</summary>    
         public IFormFile? File { get; set; }
     }
 

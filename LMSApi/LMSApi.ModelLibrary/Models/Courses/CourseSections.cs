@@ -16,5 +16,7 @@ namespace LMSApi.ModelLibrary.Models
         // Navigation properties
         public Courses Course { get; set; }
         public ICollection<Lessons> Lessons { get; set; } = new List<Lessons>();
+        public ICollection<Quzzes> Quizzes { get; set; } = new List<Quzzes>();
+        public ICollection<Assignments> Assignments { get; set; } = new List<Assignments>();
     }
 }

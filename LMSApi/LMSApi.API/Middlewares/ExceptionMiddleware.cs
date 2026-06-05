@@ -1,6 +1,8 @@
+using System.Data.Common;
 using System.Net;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
 
 namespace LMSApi.API.Middlewares
 {
@@ -82,14 +84,37 @@ namespace LMSApi.API.Middlewares
             }
             catch (DbUpdateException ex)
             {
-                _logger.LogError(ex, "Database update error. Path={Path}", context.Request.Path);
+                _logger.LogError(ex, "Database update error. Path={Path} InnerMessage={Inner}",
+                    context.Request.Path, ex.InnerException?.Message);
 
-                // Surface a user-safe message; hide raw SQL details in production
-                var msg = _env.IsDevelopment()
+                // Hide raw SQL/constraint details from the client in production
+                var dbUpdateMsg = _env.IsDevelopment()
                     ? $"Database error: {ex.InnerException?.Message ?? ex.Message}"
                     : "A database error occurred. Please try again later.";
 
-                await WriteErrorAsync(context, HttpStatusCode.InternalServerError, msg);
+                await WriteErrorAsync(context, HttpStatusCode.InternalServerError, dbUpdateMsg);
+            }
+
+            // ── Npgsql-level errors: connection failures, timeouts, constraint violations ──
+            catch (NpgsqlException ex)
+            {
+                _logger.LogError(ex, "PostgreSQL error. Path={Path} SqlState={SqlState} InnerMessage={Inner}",
+                    context.Request.Path, ex.SqlState, ex.InnerException?.Message ?? ex.Message);
+
+                await WriteErrorAsync(
+                    context, HttpStatusCode.InternalServerError,
+                    "A database error occurred. Please try again later.");
+            }
+
+            // ── Generic ADO.NET base — catches any other provider-level DB error ──
+            catch (DbException ex)
+            {
+                _logger.LogError(ex, "Database exception. Path={Path} InnerMessage={Inner}",
+                    context.Request.Path, ex.InnerException?.Message ?? ex.Message);
+
+                await WriteErrorAsync(
+                    context, HttpStatusCode.InternalServerError,
+                    "A database error occurred. Please try again later.");
             }
 
             // ── Catch-all: truly unexpected server errors ────────────────────

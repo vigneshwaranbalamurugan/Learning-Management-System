@@ -21,7 +21,6 @@ namespace LMSApi.API.Controllers
             _courseService = courseService;
         }
 
-        // ─── Public ─────────────────────────────────────────────────────────
 
         /// <summary>Get all batches for a specific course (public).</summary>
         [HttpGet("/api/v{version:apiVersion}/courses/{courseId:int}/batches")]
@@ -31,7 +30,6 @@ namespace LMSApi.API.Controllers
             return Ok(result);
         }
 
-        // ─── Admin / Instructor ─────────────────────────────────────────────
 
         /// <summary>Create a new batch for a CohortBased course. Instructor (own only) or Admin.</summary>
         [Authorize(Roles = "Instructor,Admin")]
@@ -63,8 +61,7 @@ namespace LMSApi.API.Controllers
             return NoContent();
         }
 
-        // ─── Claim helpers ───────────────────────────────────────────────────
-
+        // Enforce that the caller is either an Admin or the Instructor who owns the course associated with the batch. Throws 403 if not authorized.
         private async Task EnforceCourseOwnershipAsync(int courseId)
         {
             if (User.IsAdmin()) return;
@@ -76,6 +73,7 @@ namespace LMSApi.API.Controllers
                 throw new UnauthorizedAccessException("You do not have permission to modify batches in this course.");
         }
 
+        // Enforce that the caller is either an Admin or the Instructor who owns the course associated with the batch. Throws 403 if not authorized.
         private async Task EnforceBatchOwnershipAsync(int batchId)
         {
             if (User.IsAdmin()) return;

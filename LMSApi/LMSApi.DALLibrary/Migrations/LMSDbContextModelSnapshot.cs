@@ -22,6 +22,128 @@ namespace LMSApi.DALLibrary.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("LMSApi.ModelLibrary.Models.AssignmentSubmissions", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("AssignmentId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("AttemptNumber")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(1);
+
+                    b.Property<string>("Feedback")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("GradedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool?>("IsPassed")
+                        .HasColumnType("boolean");
+
+                    b.Property<int?>("MarksAwarded")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("text")
+                        .HasDefaultValue("Pending");
+
+                    b.Property<int>("StudentId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("SubmissionText")
+                        .HasColumnType("text");
+
+                    b.Property<string>("SubmittedAssignmentUrl")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("SubmittedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AssignmentId");
+
+                    b.HasIndex("StudentId");
+
+                    b.ToTable("AssignmentSubmissions", (string)null);
+                });
+
+            modelBuilder.Entity("LMSApi.ModelLibrary.Models.Assignments", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("AttachmentUrl")
+                        .HasColumnType("text");
+
+                    b.Property<int>("CourseSectionId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<int>("DurationLimitInDays")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0);
+
+                    b.Property<string>("Instructions")
+                        .HasMaxLength(5000)
+                        .HasColumnType("character varying(5000)");
+
+                    b.Property<bool>("IsCompulsory")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
+                    b.Property<bool>("IsLateSubmissionAllowed")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
+                    b.Property<int>("MaxSubmissions")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(1);
+
+                    b.Property<int>("PassingMarks")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)");
+
+                    b.Property<int>("TotalMarks")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CourseSectionId");
+
+                    b.ToTable("Assignments", (string)null);
+                });
+
             modelBuilder.Entity("LMSApi.ModelLibrary.Models.CourseBatch", b =>
                 {
                     b.Property<int>("Id")
@@ -428,6 +550,207 @@ namespace LMSApi.DALLibrary.Migrations
                     b.ToTable("Lessons", (string)null);
                 });
 
+            modelBuilder.Entity("LMSApi.ModelLibrary.Models.QuizAnswers", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("AttemptId")
+                        .HasColumnType("integer");
+
+                    b.Property<bool>("IsCorrect")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
+                    b.Property<int>("QuestionId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("SelectedOptionId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AttemptId");
+
+                    b.HasIndex("QuestionId");
+
+                    b.HasIndex("SelectedOptionId");
+
+                    b.ToTable("QuizAnswers", (string)null);
+                });
+
+            modelBuilder.Entity("LMSApi.ModelLibrary.Models.QuizAttempts", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime?>("CompletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsPassed")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
+                    b.Property<int>("QuizId")
+                        .HasColumnType("integer");
+
+                    b.Property<double>("Score")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("double precision")
+                        .HasDefaultValue(0.0);
+
+                    b.Property<DateTime>("StartedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("text")
+                        .HasDefaultValue("InProgress");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("QuizId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("QuizAttempts", (string)null);
+                });
+
+            modelBuilder.Entity("LMSApi.ModelLibrary.Models.QuizOptions", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("IsCorrect")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
+                    b.Property<string>("OptionText")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<int>("QuestionId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("QuestionId");
+
+                    b.ToTable("QuizOptions", (string)null);
+                });
+
+            modelBuilder.Entity("LMSApi.ModelLibrary.Models.QuizQuestions", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Explanation")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<int>("Mark")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("QuestionText")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<int>("QuestionType")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("QuizId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("SortOrder")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0);
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("QuizId");
+
+                    b.ToTable("QuizQuestions", (string)null);
+                });
+
+            modelBuilder.Entity("LMSApi.ModelLibrary.Models.Quzzes", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime?>("AvailableFrom")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<DateTime?>("AvailableUntil")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<int>("CourseSectionId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<bool>("IsPublished")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
+                    b.Property<int>("MaxAttempts")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(1);
+
+                    b.Property<int>("Order")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0);
+
+                    b.Property<int>("PassingMarks")
+                        .HasColumnType("integer");
+
+                    b.Property<TimeSpan>("TimeLimit")
+                        .HasColumnType("interval");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CourseSectionId");
+
+                    b.ToTable("Quizzes", (string)null);
+                });
+
             modelBuilder.Entity("LMSApi.ModelLibrary.Models.StudentProgress", b =>
                 {
                     b.Property<int>("Id")
@@ -574,26 +897,26 @@ namespace LMSApi.DALLibrary.Migrations
                         new
                         {
                             Id = 1,
-                            CreatedAt = new DateTime(2026, 6, 4, 10, 45, 10, 238, DateTimeKind.Utc).AddTicks(9000),
+                            CreatedAt = new DateTime(2026, 6, 5, 6, 21, 56, 775, DateTimeKind.Utc).AddTicks(4920),
                             Description = "Learner account",
                             RoleName = "Learner",
-                            UpdatedAt = new DateTime(2026, 6, 4, 10, 45, 10, 238, DateTimeKind.Utc).AddTicks(9000)
+                            UpdatedAt = new DateTime(2026, 6, 5, 6, 21, 56, 775, DateTimeKind.Utc).AddTicks(4920)
                         },
                         new
                         {
                             Id = 2,
-                            CreatedAt = new DateTime(2026, 6, 4, 10, 45, 10, 238, DateTimeKind.Utc).AddTicks(9000),
+                            CreatedAt = new DateTime(2026, 6, 5, 6, 21, 56, 775, DateTimeKind.Utc).AddTicks(4920),
                             Description = "Instructor account",
                             RoleName = "Instructor",
-                            UpdatedAt = new DateTime(2026, 6, 4, 10, 45, 10, 238, DateTimeKind.Utc).AddTicks(9000)
+                            UpdatedAt = new DateTime(2026, 6, 5, 6, 21, 56, 775, DateTimeKind.Utc).AddTicks(4930)
                         },
                         new
                         {
                             Id = 3,
-                            CreatedAt = new DateTime(2026, 6, 4, 10, 45, 10, 238, DateTimeKind.Utc).AddTicks(9000),
+                            CreatedAt = new DateTime(2026, 6, 5, 6, 21, 56, 775, DateTimeKind.Utc).AddTicks(4930),
                             Description = "Admin account",
                             RoleName = "Admin",
-                            UpdatedAt = new DateTime(2026, 6, 4, 10, 45, 10, 238, DateTimeKind.Utc).AddTicks(9000)
+                            UpdatedAt = new DateTime(2026, 6, 5, 6, 21, 56, 775, DateTimeKind.Utc).AddTicks(4930)
                         });
                 });
 
@@ -666,15 +989,45 @@ namespace LMSApi.DALLibrary.Migrations
                         new
                         {
                             Id = 1,
-                            CreatedAt = new DateTime(2026, 6, 4, 10, 45, 10, 238, DateTimeKind.Utc).AddTicks(5270),
+                            CreatedAt = new DateTime(2026, 6, 5, 6, 21, 56, 775, DateTimeKind.Utc).AddTicks(1650),
                             Email = "admin@gmail.com",
                             IsActive = true,
                             IsEmailVerified = true,
                             LastLoginAt = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             PasswordHash = "TPZPlYPS43ldK8EYFX67pHzyMNFmt69wd9N2cUNObYs=",
                             RoleId = 3,
-                            UpdatedAt = new DateTime(2026, 6, 4, 10, 45, 10, 238, DateTimeKind.Utc).AddTicks(5270)
+                            UpdatedAt = new DateTime(2026, 6, 5, 6, 21, 56, 775, DateTimeKind.Utc).AddTicks(1650)
                         });
+                });
+
+            modelBuilder.Entity("LMSApi.ModelLibrary.Models.AssignmentSubmissions", b =>
+                {
+                    b.HasOne("LMSApi.ModelLibrary.Models.Assignments", "Assignment")
+                        .WithMany("Submissions")
+                        .HasForeignKey("AssignmentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("LMSApi.ModelLibrary.Models.Users", "Student")
+                        .WithMany()
+                        .HasForeignKey("StudentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Assignment");
+
+                    b.Navigation("Student");
+                });
+
+            modelBuilder.Entity("LMSApi.ModelLibrary.Models.Assignments", b =>
+                {
+                    b.HasOne("LMSApi.ModelLibrary.Models.CourseSection", "CourseSection")
+                        .WithMany("Assignments")
+                        .HasForeignKey("CourseSectionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("CourseSection");
                 });
 
             modelBuilder.Entity("LMSApi.ModelLibrary.Models.CourseBatch", b =>
@@ -766,6 +1119,85 @@ namespace LMSApi.DALLibrary.Migrations
                     b.Navigation("CourseSection");
                 });
 
+            modelBuilder.Entity("LMSApi.ModelLibrary.Models.QuizAnswers", b =>
+                {
+                    b.HasOne("LMSApi.ModelLibrary.Models.QuizAttempts", "Attempt")
+                        .WithMany("Answers")
+                        .HasForeignKey("AttemptId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("LMSApi.ModelLibrary.Models.QuizQuestions", "Question")
+                        .WithMany()
+                        .HasForeignKey("QuestionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("LMSApi.ModelLibrary.Models.QuizOptions", "SelectedOption")
+                        .WithMany()
+                        .HasForeignKey("SelectedOptionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Attempt");
+
+                    b.Navigation("Question");
+
+                    b.Navigation("SelectedOption");
+                });
+
+            modelBuilder.Entity("LMSApi.ModelLibrary.Models.QuizAttempts", b =>
+                {
+                    b.HasOne("LMSApi.ModelLibrary.Models.Quzzes", "Quiz")
+                        .WithMany("Attempts")
+                        .HasForeignKey("QuizId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("LMSApi.ModelLibrary.Models.Users", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Quiz");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("LMSApi.ModelLibrary.Models.QuizOptions", b =>
+                {
+                    b.HasOne("LMSApi.ModelLibrary.Models.QuizQuestions", "Question")
+                        .WithMany("Answers")
+                        .HasForeignKey("QuestionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Question");
+                });
+
+            modelBuilder.Entity("LMSApi.ModelLibrary.Models.QuizQuestions", b =>
+                {
+                    b.HasOne("LMSApi.ModelLibrary.Models.Quzzes", "Quiz")
+                        .WithMany("Questions")
+                        .HasForeignKey("QuizId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Quiz");
+                });
+
+            modelBuilder.Entity("LMSApi.ModelLibrary.Models.Quzzes", b =>
+                {
+                    b.HasOne("LMSApi.ModelLibrary.Models.CourseSection", "CourseSection")
+                        .WithMany("Quizzes")
+                        .HasForeignKey("CourseSectionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("CourseSection");
+                });
+
             modelBuilder.Entity("LMSApi.ModelLibrary.Models.StudentProgress", b =>
                 {
                     b.HasOne("LMSApi.ModelLibrary.Models.Courses", "Course")
@@ -815,6 +1247,11 @@ namespace LMSApi.DALLibrary.Migrations
                     b.Navigation("Role");
                 });
 
+            modelBuilder.Entity("LMSApi.ModelLibrary.Models.Assignments", b =>
+                {
+                    b.Navigation("Submissions");
+                });
+
             modelBuilder.Entity("LMSApi.ModelLibrary.Models.CourseBatch", b =>
                 {
                     b.Navigation("Enrollments");
@@ -822,7 +1259,11 @@ namespace LMSApi.DALLibrary.Migrations
 
             modelBuilder.Entity("LMSApi.ModelLibrary.Models.CourseSection", b =>
                 {
+                    b.Navigation("Assignments");
+
                     b.Navigation("Lessons");
+
+                    b.Navigation("Quizzes");
                 });
 
             modelBuilder.Entity("LMSApi.ModelLibrary.Models.Courses", b =>
@@ -835,6 +1276,23 @@ namespace LMSApi.DALLibrary.Migrations
             modelBuilder.Entity("LMSApi.ModelLibrary.Models.Lessons", b =>
                 {
                     b.Navigation("Resources");
+                });
+
+            modelBuilder.Entity("LMSApi.ModelLibrary.Models.QuizAttempts", b =>
+                {
+                    b.Navigation("Answers");
+                });
+
+            modelBuilder.Entity("LMSApi.ModelLibrary.Models.QuizQuestions", b =>
+                {
+                    b.Navigation("Answers");
+                });
+
+            modelBuilder.Entity("LMSApi.ModelLibrary.Models.Quzzes", b =>
+                {
+                    b.Navigation("Attempts");
+
+                    b.Navigation("Questions");
                 });
 
             modelBuilder.Entity("LMSApi.ModelLibrary.Models.UserRoles", b =>

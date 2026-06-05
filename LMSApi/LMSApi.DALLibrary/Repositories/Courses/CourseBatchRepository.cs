@@ -4,7 +4,7 @@ using LMSApi.ModelLibrary.Enums;
 using LMSApi.ModelLibrary.Models;
 using Microsoft.EntityFrameworkCore;
 
-namespace LMSApi.DALLibrary.Repositories.CourseModule
+namespace LMSApi.DALLibrary.Repositories
 {
     public class CourseBatchRepository : AbstractRepository<int, CourseBatch>, ICourseBatchRepository
     {
