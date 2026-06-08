@@ -36,8 +36,9 @@ namespace LMSApi.API.Controllers
             [FromBody] EnrollRequest request)
         {
             var userId = User.GetUserId();
-            var orderId = await _enrollmentService.EnrollInPremiumCourseAsync(userId, courseId, request.BatchId);
-            return Ok(new { RazorpayOrderId = orderId });
+            var providerName = request.ProviderName ?? "Razorpay"; // Default to Razorpay if not specified
+            var orderId = await _enrollmentService.EnrollInPremiumCourseAsync(userId, courseId, request.BatchId, providerName);
+            return Ok(new { ProviderOrderId = orderId, ProviderName = providerName });
         }
 
         [HttpPost("courses/{courseId:int}/enroll/verify")]
@@ -50,9 +51,10 @@ namespace LMSApi.API.Controllers
                 userId, 
                 courseId, 
                 request.BatchId, 
-                request.RazorpayOrderId, 
-                request.RazorpayPaymentId, 
-                request.RazorpaySignature);
+                request.ProviderName, 
+                request.ProviderOrderId, 
+                request.ProviderPaymentId, 
+                request.ProviderSignature);
             return CreatedAtAction(nameof(GetMyEnrollments), null, result);
         }
 

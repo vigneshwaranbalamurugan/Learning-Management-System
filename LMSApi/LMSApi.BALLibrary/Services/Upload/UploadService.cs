@@ -50,6 +50,12 @@ namespace LMSApi.BALLibrary.Services.Upload
 			"application/pdf"
 		};
 
+		// ─── Assignment Attachments ───────────────────────────────────────────────
+		private static readonly HashSet<string> AllowedAssignmentExtensions = new(StringComparer.OrdinalIgnoreCase)
+		{
+			".pdf", ".doc", ".docx", ".zip", ".jpg", ".jpeg", ".png", ".txt"
+		};
+
 		private readonly IConfiguration _configuration;
 
 		public UploadService(IConfiguration configuration)
@@ -169,6 +175,26 @@ namespace LMSApi.BALLibrary.Services.Upload
 				throw new InvalidOperationException("Only PDF files are allowed as lesson documents.");
 
 			return CloudinaryUtils.UploadLessonPdfAsync(_configuration, fileStream, fileName, publicId);
+		}
+
+		// ─── Assignment Attachments ───────────────────────────────────────────────
+		public bool IsAllowedAssignmentAttachment(string fileName, string contentType)
+		{
+			if (string.IsNullOrWhiteSpace(fileName)) return false;
+			var extension = Path.GetExtension(fileName);
+			return AllowedAssignmentExtensions.Contains(extension);
+		}
+
+		public Task<string> UploadAssignmentAttachmentAsync(Stream fileStream, string fileName, string publicId)
+		{
+			if (fileStream == null) throw new ArgumentNullException(nameof(fileStream));
+			if (string.IsNullOrWhiteSpace(fileName)) throw new ArgumentException("File name cannot be null or empty.", nameof(fileName));
+			if (string.IsNullOrWhiteSpace(publicId)) throw new ArgumentException("Public ID cannot be null or empty.", nameof(publicId));
+
+			if (!IsAllowedAssignmentAttachment(fileName, string.Empty))
+				throw new InvalidOperationException("Invalid file type for assignment attachment.");
+
+			return CloudinaryUtils.UploadAssignmentAttachmentAsync(_configuration, fileStream, fileName, publicId);
 		}
 	}
 }

@@ -8,8 +8,8 @@ namespace LMSApi.ModelLibrary.Models
         public int UserId { get; set; }
         public int CourseId { get; set; }
         public int EnrollmentId { get; set; }
-        public string RazorpayOrderId { get; set; }
-        public string? RazorpayPaymentId { get; set; }
+        public string ProviderOrderId { get; set; }
+        public string? ProviderPaymentId { get; set; }
         public decimal Amount { get; set; }
         public string Currency { get; set; } = "INR";
         public PaymentStatus Status { get; set; }

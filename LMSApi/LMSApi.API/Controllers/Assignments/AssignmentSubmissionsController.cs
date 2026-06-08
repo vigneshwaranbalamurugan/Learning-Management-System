@@ -7,6 +7,11 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace LMSApi.API.Controllers
 {
+    public class AssignmentSubmissionFormRequest : AssignmentSubmissionRequest
+    {
+        public IFormFile? AttachmentFile { get; set; }
+    }
+
     [ApiController]
     [ApiVersion("1.0")]
     [Route("api/v{version:apiVersion}/[controller]")]
@@ -21,11 +26,28 @@ namespace LMSApi.API.Controllers
 
         /// <summary>Submit an assignment (enrolled students).</summary>
         [Authorize]
+        [Consumes("multipart/form-data")]
         [HttpPost]
-        public async Task<ActionResult<AssignmentSubmissionResponse>> Submit([FromBody] AssignmentSubmissionRequest request)
+        public async Task<ActionResult<AssignmentSubmissionResponse>> Submit([FromForm] AssignmentSubmissionFormRequest form)
         {
             var studentId = User.GetUserId();
-            var result = await _assignmentService.SubmitAssignmentAsync(studentId, request);
+            
+            var request = new AssignmentSubmissionRequest
+            {
+                AssignmentId = form.AssignmentId,
+                SubmissionText = form.SubmissionText,
+                AttachmentType = form.AttachmentType,
+                SubmittedAssignmentUrl = form.SubmittedAssignmentUrl
+            };
+            
+            await using var attachmentStream = form.AttachmentFile?.OpenReadStream();
+            
+            var result = await _assignmentService.SubmitAssignmentAsync(
+                studentId, 
+                request, 
+                attachmentStream, 
+                form.AttachmentFile?.FileName);
+                
             return Ok(result);
         }
 

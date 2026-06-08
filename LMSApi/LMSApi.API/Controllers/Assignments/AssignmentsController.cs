@@ -2,11 +2,23 @@ using Asp.Versioning;
 using LMSApi.API.Extensions;
 using LMSApi.BALLibrary.Interfaces;
 using LMSApi.ModelLibrary.DTOs;
+using LMSApi.API.Handlers;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using LMSApi.ModelLibrary.Enums;
 
 namespace LMSApi.API.Controllers
 {
+    public class CreateAssignmentFormRequest : CreateAssignmentRequest
+    {
+        public IFormFile? AttachmentFile { get; set; }
+    }
+
+    public class UpdateAssignmentFormRequest : UpdateAssignmentRequest
+    {
+        public IFormFile? AttachmentFile { get; set; }
+    }
+
     [ApiController]
     [ApiVersion("1.0")]
     [Route("api/v{version:apiVersion}/[controller]")]
@@ -15,15 +27,18 @@ namespace LMSApi.API.Controllers
         private readonly IAssignmentService _assignmentService;
         private readonly ICourseSectionService _sectionService;
         private readonly ICourseService _courseService;
+        private readonly AssignmentUploadHandler _assignmentUploadHandler;
 
         public AssignmentsController(
             IAssignmentService assignmentService,
             ICourseSectionService sectionService,
-            ICourseService courseService)
+            ICourseService courseService,
+            AssignmentUploadHandler assignmentUploadHandler)
         {
             _assignmentService = assignmentService;
             _sectionService = sectionService;
             _courseService = courseService;
+            _assignmentUploadHandler = assignmentUploadHandler;
         }
 
         /// <summary>List all assignments in a section.</summary>
@@ -46,21 +61,73 @@ namespace LMSApi.API.Controllers
 
         /// <summary>Create a new assignment (Instructor/Admin only).</summary>
         [Authorize(Roles = "Instructor,Admin")]
+        [Consumes("multipart/form-data")]
         [HttpPost]
-        public async Task<ActionResult<AssignmentResponse>> Create([FromBody] CreateAssignmentRequest request)
+        public async Task<ActionResult<AssignmentResponse>> Create([FromForm] CreateAssignmentFormRequest form)
         {
-            await EnforceSectionOwnershipAsync(request.CourseSectionId);
-            var result = await _assignmentService.CreateAssignmentAsync(request);
+            await EnforceSectionOwnershipAsync(form.CourseSectionId);
+            if (form.AttachmentType==AssignmentAttachmentType.File)
+                _assignmentUploadHandler.ValidateAssignmentAttachment(form.AttachmentFile);
+
+            var request = new CreateAssignmentRequest
+            {
+                CourseSectionId = form.CourseSectionId,
+                Title = form.Title,
+                Description = form.Description,
+                Instructions = form.Instructions,
+                IsCompulsory = form.IsCompulsory,
+                TotalMarks = form.TotalMarks,
+                PassingMarks = form.PassingMarks,
+                AttachmentType = form.AttachmentType,
+                AttachmentUrl = form.AttachmentUrl,
+                DeadlineInDays = form.DeadlineInDays,
+                MaxSubmissions = form.MaxSubmissions,
+                IsLateSubmissionAllowed = form.IsLateSubmissionAllowed
+            };
+            Console.WriteLine("Assignment creation request received: " + form.AttachmentFile.Name);
+            await using var attachmentStream = form.AttachmentFile?.OpenReadStream();
+
+            var result = await _assignmentService.CreateAssignmentAsync(
+                request, 
+                attachmentStream, 
+                form.AttachmentFile?.FileName);
+                
             return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
         }
 
         /// <summary>Update an existing assignment (Instructor/Admin only).</summary>
         [Authorize(Roles = "Instructor,Admin")]
         [HttpPut("{id:int}")]
-        public async Task<ActionResult<AssignmentResponse>> Update(int id, [FromBody] UpdateAssignmentRequest request)
+        public async Task<ActionResult<AssignmentResponse>> Update(int id, [FromForm] UpdateAssignmentFormRequest form)
         {
             await EnforceAssignmentOwnershipAsync(id);
-            var result = await _assignmentService.UpdateAssignmentAsync(id, request);
+
+            if (form.AttachmentFile != null)
+                _assignmentUploadHandler.ValidateAssignmentAttachment(form.AttachmentFile);
+
+            var request = new UpdateAssignmentRequest
+            {
+                Title = form.Title,
+                Description = form.Description,
+                Instructions = form.Instructions,
+                IsCompulsory = form.IsCompulsory,
+                TotalMarks = form.TotalMarks,
+                PassingMarks = form.PassingMarks,
+                AttachmentType = form.AttachmentType,
+                AttachmentUrl = form.AttachmentUrl,
+                DeadlineInDays = form.DeadlineInDays,
+                MaxSubmissions = form.MaxSubmissions,
+                IsLateSubmissionAllowed = form.IsLateSubmissionAllowed
+            };
+
+            await using var attachmentStream = form.AttachmentFile?.OpenReadStream();
+
+            var result = await _assignmentService.UpdateAssignmentAsync(
+                id, 
+                request, 
+                attachmentStream, 
+                form.AttachmentFile?.FileName);
+
             return Ok(result);
         }
 

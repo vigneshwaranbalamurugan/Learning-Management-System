@@ -1,3 +1,5 @@
+using LMSApi.ModelLibrary.Enums;
+
 namespace LMSApi.ModelLibrary.Models
 {
     public class Assignments
@@ -10,6 +12,7 @@ namespace LMSApi.ModelLibrary.Models
         public bool IsCompulsory { get; set; }
         public int TotalMarks { get; set; }
         public int PassingMarks { get; set; }
+        public AssignmentAttachmentType AttachmentType { get; set; } = AssignmentAttachmentType.None;
         public string? AttachmentUrl { get; set; }
 
         /// <summary>

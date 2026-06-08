@@ -48,6 +48,20 @@ namespace LMSApi.API.Controllers
 			return Ok(result);
 		}
 
+		[HttpPost("forgot-password")]
+		public async Task<ActionResult<ForgotPasswordResponse>> ForgotPassword([FromBody] ForgotPasswordRequest request)
+		{
+			var result = await _authService.ForgotPasswordAsync(request);
+			return Ok(result);
+		}
+
+		[HttpPost("reset-password")]
+		public async Task<ActionResult<ResetPasswordResponse>> ResetPassword([FromBody] ResetPasswordRequest request)
+		{
+			var result = await _authService.ResetPasswordAsync(request);
+			return Ok(result);
+		}
+
 		[Authorize]
 		[HttpGet("protected")]
 		public async Task<ActionResult> Protected()

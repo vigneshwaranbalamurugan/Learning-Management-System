@@ -17,6 +17,8 @@ namespace LMSApi.DALLibrary.Contexts
         public DbSet<Lessons> Lessons { get; set; }
         public DbSet<LessonResources> LessonResources { get; set; }
         public DbSet<StudentProgress> StudentProgresses { get; set; }
+        public DbSet<WishList> WishLists { get; set; }
+        public DbSet<Reviews> Reviews { get; set; }
 
         // Hybrid Learning module
         public DbSet<CourseBatch> CourseBatches { get; set; }
@@ -109,6 +111,14 @@ namespace LMSApi.DALLibrary.Contexts
                     break;
                 case Assignments assignment:
                     if (create) assignment.CreatedAt = utcNow;
+                    break;
+                case WishList wishlist:
+                    if (create) wishlist.AddedAt = utcNow;
+                    wishlist.UpdatedAt = utcNow;
+                    break;
+                case Reviews review:
+                    if (create) review.CreatedAt = utcNow;
+                    review.UpdatedAt = utcNow;
                     break;
             }
         }

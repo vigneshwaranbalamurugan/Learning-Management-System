@@ -17,6 +17,7 @@ namespace LMSApi.Tests.Services.Courses
     public class EnrollmentServiceTests : BaseServiceTest
     {
         private Mock<ILogger<EnrollmentService>> _mockLogger = null!;
+        private Mock<IPaymentService> _mockPaymentService = null!;
         private IEnrollmentService _enrollmentService = null!;
 
         [SetUp]
@@ -25,6 +26,7 @@ namespace LMSApi.Tests.Services.Courses
             base.SetUp();
 
             _mockLogger = new Mock<ILogger<EnrollmentService>>();
+            _mockPaymentService = new Mock<IPaymentService>();
             
             var enrollmentRepository = new EnrollmentRepository(DbContext);
             var courseRepository = new CourseRepository(DbContext);
@@ -37,7 +39,8 @@ namespace LMSApi.Tests.Services.Courses
                 batchRepository,
                 paymentRepository,
                 Mapper,
-                _mockLogger.Object
+                _mockLogger.Object,
+                _mockPaymentService.Object
             );
         }
 

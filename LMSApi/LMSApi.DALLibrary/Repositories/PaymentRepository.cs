@@ -53,12 +53,12 @@ namespace LMSApi.DALLibrary.Repositories
             await _context.SaveChangesAsync();
         }
 
-        public async Task<Payments?> GetByRazorpayOrderIdAsync(string razorpayOrderId)
+        public async Task<Payments?> GetByProviderOrderIdAsync(string providerOrderId)
         {
             return await _context.Payments
                 .Include(p => p.User)
                 .Include(p => p.Course)
-                .FirstOrDefaultAsync(p => p.RazorpayOrderId == razorpayOrderId);
+                .FirstOrDefaultAsync(p => p.ProviderOrderId == providerOrderId);
         }
 
         public async Task<IEnumerable<Payments>> GetPaymentsByUserAsync(int userId)

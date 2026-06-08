@@ -28,6 +28,8 @@ namespace LMSApi.ModelLibrary.DTOs
         [Range(0, int.MaxValue, ErrorMessage = "PassingMarks must be >= 0.")]
         public int PassingMarks { get; set; }
 
+        public AssignmentAttachmentType AttachmentType { get; set; } = AssignmentAttachmentType.None;
+
         public string? AttachmentUrl { get; set; }
 
         /// <summary>Days from enrollment date. 0 = no deadline.</summary>
@@ -59,6 +61,8 @@ namespace LMSApi.ModelLibrary.DTOs
         [Range(0, int.MaxValue)]
         public int? PassingMarks { get; set; }
 
+        public AssignmentAttachmentType? AttachmentType { get; set; }
+
         public string? AttachmentUrl { get; set; }
 
         [Range(0, int.MaxValue)]
@@ -87,6 +91,7 @@ namespace LMSApi.ModelLibrary.DTOs
         public bool IsCompulsory { get; set; }
         public int TotalMarks { get; set; }
         public int PassingMarks { get; set; }
+        public AssignmentAttachmentType AttachmentType { get; set; }
         public string? AttachmentUrl { get; set; }
         public int DeadlineInDays { get; set; }
         public int MaxSubmissions { get; set; }
@@ -103,6 +108,8 @@ namespace LMSApi.ModelLibrary.DTOs
         public int AssignmentId { get; set; }
 
         public string? SubmissionText { get; set; }
+
+        public AssignmentSubmissonAttachmentType? AttachmentType { get; set; }
 
         public string? SubmittedAssignmentUrl { get; set; }
     }
@@ -126,6 +133,7 @@ namespace LMSApi.ModelLibrary.DTOs
         public int AssignmentId { get; set; }
         public int StudentId { get; set; }
         public string? SubmissionText { get; set; }
+        public AssignmentSubmissonAttachmentType? AttachmentType { get; set; }
         public string? SubmittedAssignmentUrl { get; set; }
         public int? MarksAwarded { get; set; }
         public string? Feedback { get; set; }

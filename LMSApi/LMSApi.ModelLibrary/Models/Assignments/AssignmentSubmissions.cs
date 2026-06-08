@@ -8,6 +8,7 @@ namespace LMSApi.ModelLibrary.Models
         public int AssignmentId { get; set; }
         public int StudentId { get; set; }
         public string? SubmissionText { get; set; }
+        public AssignmentSubmissonAttachmentType? AttachmentType { get; set; }
         public string? SubmittedAssignmentUrl { get; set; }
         public int? MarksAwarded { get; set; }
         public string? Feedback { get; set; }

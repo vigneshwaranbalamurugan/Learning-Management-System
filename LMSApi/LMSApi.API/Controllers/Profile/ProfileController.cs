@@ -45,6 +45,7 @@ namespace LMSApi.API.Controllers
         public async Task<ActionResult<ProfileResponse>> UpdateProfileImage([FromForm] ProfileImageUploadRequest request)
         {
             Console.WriteLine($"Received file: {request.File?.FileName}, size: {request.File?.Length} bytes, content type: {request.File?.ContentType}");
+            if (request.File == null) return BadRequest("File is required.");
             _profileImageUploadHandler.Validate(request.File);
 
             var email = User.GetEmail();

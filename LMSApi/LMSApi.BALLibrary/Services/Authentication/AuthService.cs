@@ -142,5 +142,61 @@ namespace LMSApi.BALLibrary.Services
 
             return new ResendVerificationResponse { IsSent = true, Email = request.Email, Message = "Verification email sent to your inbox." };
         }
+        public async Task<ForgotPasswordResponse> ForgotPasswordAsync(ForgotPasswordRequest request)
+        {
+            if (request == null) throw new ArgumentNullException(nameof(request));
+            if (string.IsNullOrWhiteSpace(request.Email)) throw new ArgumentException("Email cannot be null or empty.", nameof(request.Email));
+
+            var user = await _userRepository.GetByEmailAsync(request.Email);
+            if (user == null) 
+            {
+                // To prevent email enumeration, return a success message even if the user is not found.
+                return new ForgotPasswordResponse { Email = request.Email, Message = "If an account with that email exists, a password reset link has been sent." };
+            }
+
+            user.VerificationToken = Guid.NewGuid().ToString();
+            user.VerificationTokenExpiry = DateTime.UtcNow.AddHours(24);
+            user.CurrentTokenType = TokenType.PasswordReset;
+
+            await _userRepository.UpdateAsync(user);
+
+            var relative = $"/auth/reset-password?email={Uri.EscapeDataString(request.Email)}&token={user.VerificationToken}";
+            var baseUrl = _configuration["App:BaseUrl"] ?? string.Empty;
+            var basePath = _configuration["App:BasePath"] ?? string.Empty;
+            var link = string.IsNullOrEmpty(baseUrl) ? relative : (baseUrl.TrimEnd('/') + basePath + relative);
+            var html = EmailTemplate.GetPasswordResetTemplate(request.Email, link);
+            
+            Message msg = new EmailMessage(request.Email, "Reset Your Password", html) { IsHtml = true };
+            await _notificationService.Send(msg);
+
+            return new ForgotPasswordResponse { Email = request.Email, Message = "If an account with that email exists, a password reset link has been sent." };
+        }
+
+        public async Task<ResetPasswordResponse> ResetPasswordAsync(ResetPasswordRequest request)
+        {
+            if (request == null) throw new ArgumentNullException(nameof(request));
+            if (string.IsNullOrWhiteSpace(request.Email)) throw new ArgumentException("Email cannot be null or empty.", nameof(request.Email));
+            if (string.IsNullOrWhiteSpace(request.Token)) throw new ArgumentException("Token cannot be null or empty.", nameof(request.Token));
+            if (string.IsNullOrWhiteSpace(request.NewPassword)) throw new ArgumentException("New Password cannot be null or empty.", nameof(request.NewPassword));
+
+            var user = await _userRepository.GetByEmailAsync(request.Email);
+            if (user == null) throw new KeyNotFoundException($"User with email {request.Email} not found");
+
+            if (user.CurrentTokenType != TokenType.PasswordReset) throw new InvalidOperationException("No password reset in progress");
+            if (user.VerificationToken != request.Token) throw new UnauthorizedAccessException("Invalid password reset token");
+            if (user.VerificationTokenExpiry == null || user.VerificationTokenExpiry < DateTime.UtcNow) throw new InvalidOperationException("Password reset token expired");
+
+            var (passwordHash, passwordSalt) = PasswordHashing.HashPassword(request.NewPassword);
+            user.PasswordHash = passwordHash;
+            user.PasswordSalt = passwordSalt;
+
+            user.VerificationToken = null;
+            user.VerificationTokenExpiry = null;
+            user.CurrentTokenType = null;
+
+            await _userRepository.UpdateAsync(user);
+
+            return new ResetPasswordResponse { Email = request.Email, Message = "Password has been successfully reset." };
+        }
     }
 }

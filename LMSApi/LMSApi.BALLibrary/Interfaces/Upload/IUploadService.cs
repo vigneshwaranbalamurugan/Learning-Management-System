@@ -13,5 +13,7 @@ namespace LMSApi.BALLibrary.Interfaces
 		bool IsAllowedLessonPdf(string fileName, string contentType);
 		Task<string> UploadLessonVideoAsync(Stream fileStream, string fileName, string publicId);
 		Task<string> UploadLessonPdfAsync(Stream fileStream, string fileName, string publicId);
+		bool IsAllowedAssignmentAttachment(string fileName, string contentType);
+		Task<string> UploadAssignmentAttachmentAsync(Stream fileStream, string fileName, string publicId);
 	}
 }

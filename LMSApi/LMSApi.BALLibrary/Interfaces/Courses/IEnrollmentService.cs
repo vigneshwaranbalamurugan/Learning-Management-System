@@ -6,8 +6,8 @@ namespace LMSApi.BALLibrary.Interfaces
     {
         
         Task<EnrollmentResponse> EnrollInFreeCourseAsync(int userId, int courseId, int? batchId);
-        Task<string> EnrollInPremiumCourseAsync(int userId, int courseId, int? batchId);
-        Task<EnrollmentResponse> VerifyPaymentAndEnrollAsync(int userId, int courseId, int? batchId, string razorpayOrderId, string razorpayPaymentId, string razorpaySignature);
+        Task<string> EnrollInPremiumCourseAsync(int userId, int courseId, int? batchId, string providerName);
+        Task<EnrollmentResponse> VerifyPaymentAndEnrollAsync(int userId, int courseId, int? batchId, string providerName, string providerOrderId, string providerPaymentId, string providerSignature);
         
         Task<DateTime?> CalculateAssignmentDeadlineAsync(int userId, int assignmentId);
         Task<bool> ValidateCourseAccessAsync(int enrollmentId);

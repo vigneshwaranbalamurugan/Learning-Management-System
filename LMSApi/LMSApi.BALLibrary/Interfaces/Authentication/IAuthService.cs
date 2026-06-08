@@ -8,5 +8,7 @@ namespace LMSApi.BALLibrary.Interfaces
         Task<RegisterResponse> RegisterAsync(RegisterRequest request);
         Task<VerifyEmailResponse> VerifyEmailAsync(VerifyEmailRequest request);
         Task<ResendVerificationResponse> ReRequestEmailVerificationAsync(ResendVerificationRequest request);
+        Task<ForgotPasswordResponse> ForgotPasswordAsync(ForgotPasswordRequest request);
+        Task<ResetPasswordResponse> ResetPasswordAsync(ResetPasswordRequest request);
     }
 }

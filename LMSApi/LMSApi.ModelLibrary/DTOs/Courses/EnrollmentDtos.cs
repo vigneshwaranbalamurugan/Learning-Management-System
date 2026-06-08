@@ -11,16 +11,23 @@ namespace LMSApi.ModelLibrary.DTOs
         /// Required for CohortBased courses. Must be null for SelfPaced courses.
         /// </summary>
         public int? BatchId { get; set; }
+        
+        /// <summary>
+        /// e.g. "Razorpay" or "Stripe"
+        /// </summary>
+        public string? ProviderName { get; set; }
     }
 
     public class VerifyPaymentRequest
     {
         [Required]
-        public string RazorpayOrderId { get; set; }
+        public string ProviderName { get; set; } = string.Empty;
         [Required]
-        public string RazorpayPaymentId { get; set; }
+        public string ProviderOrderId { get; set; } = string.Empty;
         [Required]
-        public string RazorpaySignature { get; set; }
+        public string ProviderPaymentId { get; set; } = string.Empty;
+        [Required]
+        public string ProviderSignature { get; set; } = string.Empty;
         
         public int? BatchId { get; set; }
     }

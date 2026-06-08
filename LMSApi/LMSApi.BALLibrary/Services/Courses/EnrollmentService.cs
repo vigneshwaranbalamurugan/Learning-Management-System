@@ -16,6 +16,7 @@ namespace LMSApi.BALLibrary.Services
         private readonly IPaymentRepository _paymentRepository;
         private readonly IMapper _mapper;
         private readonly ILogger<EnrollmentService> _logger;
+        private readonly IPaymentService _paymentService;
 
         public EnrollmentService(
             IEnrollmentRepository enrollmentRepository,
@@ -23,13 +24,16 @@ namespace LMSApi.BALLibrary.Services
             ICourseBatchRepository batchRepository,
             IPaymentRepository paymentRepository,
             IMapper mapper,
-            ILogger<EnrollmentService> logger)
+            ILogger<EnrollmentService> logger,
+            IPaymentService paymentService)
         {
             _enrollmentRepository = enrollmentRepository;
             _courseRepository = courseRepository;
             _batchRepository = batchRepository;
+            _paymentRepository = paymentRepository;
             _mapper = mapper;
             _logger = logger;
+            _paymentService = paymentService;
         }
 
         public async Task<EnrollmentResponse> EnrollInFreeCourseAsync(int userId, int courseId, int? batchId)
@@ -68,7 +72,7 @@ namespace LMSApi.BALLibrary.Services
             return _mapper.Map<EnrollmentResponse>(saved);
         }
 
-        public async Task<string> EnrollInPremiumCourseAsync(int userId, int courseId, int? batchId)
+        public async Task<string> EnrollInPremiumCourseAsync(int userId, int courseId, int? batchId, string providerName)
         {
             var course = await _courseRepository.GetByIdAsync(courseId);
             if (!course.IsPremium)
@@ -84,37 +88,32 @@ namespace LMSApi.BALLibrary.Services
                     throw new InvalidOperationException("Invalid or full batch.");
             }
 
-            // TODO: User to implement Razorpay Order Creation via Razorpay SDK here.
-            // Example:
-            // var order = razorpayClient.Order.Create(options);
-            // var orderId = order["id"].ToString();
-            string razorpayOrderId = "order_mock_" + Guid.NewGuid().ToString("N").Substring(0, 10);
+            string receiptId = $"rcpt_{userId}_{courseId}";
+            string providerOrderId = await _paymentService.CreateOrderAsync(providerName, course.Price ?? 0, "INR", receiptId);
 
             var payment = new Payments
             {
                 UserId = userId,
                 CourseId = courseId,
                 Amount = course.Price ?? 0,
-                RazorpayOrderId = razorpayOrderId,
+                ProviderOrderId = providerOrderId,
                 Status = PaymentStatus.Pending
             };
 
             await _paymentRepository.AddAsync(payment);
 
-            _logger.LogInformation("Payment Created: OrderId={OrderId}, UserId={UserId}", razorpayOrderId, userId);
+            _logger.LogInformation("Payment Created: OrderId={OrderId}, UserId={UserId}", providerOrderId, userId);
 
-            return razorpayOrderId;
+            return providerOrderId;
         }
 
-        public async Task<EnrollmentResponse> VerifyPaymentAndEnrollAsync(int userId, int courseId, int? batchId, string razorpayOrderId, string razorpayPaymentId, string razorpaySignature)
+        public async Task<EnrollmentResponse> VerifyPaymentAndEnrollAsync(int userId, int courseId, int? batchId, string providerName, string providerOrderId, string providerPaymentId, string providerSignature)
         {
-            var payment = await _paymentRepository.GetByRazorpayOrderIdAsync(razorpayOrderId);
+            var payment = await _paymentRepository.GetByProviderOrderIdAsync(providerOrderId);
             if (payment == null || payment.UserId != userId || payment.CourseId != courseId)
                 throw new InvalidOperationException("Invalid payment record.");
 
-            // TODO: User to implement Signature verification via Razorpay SDK here.
-            // Example: Utils.verifyPaymentSignature(attributes);
-            bool isSignatureValid = true; 
+            bool isSignatureValid = _paymentService.VerifySignature(providerName, providerOrderId, providerPaymentId, providerSignature);
 
             if (!isSignatureValid)
             {
@@ -123,7 +122,7 @@ namespace LMSApi.BALLibrary.Services
                 throw new InvalidOperationException("Payment signature verification failed.");
             }
 
-            payment.RazorpayPaymentId = razorpayPaymentId;
+            payment.ProviderPaymentId = providerPaymentId;
             payment.Status = PaymentStatus.Completed;
             payment.PaidAt = DateTime.UtcNow;
             payment.RawResponse = "Success"; // Optional raw response storage

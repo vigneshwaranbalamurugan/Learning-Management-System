@@ -4,7 +4,7 @@ namespace LMSApi.DALLibrary.Interfaces
 {
     public interface IPaymentRepository : IRepository<int, Payments>
     {
-        Task<Payments?> GetByRazorpayOrderIdAsync(string razorpayOrderId);
+        Task<Payments?> GetByProviderOrderIdAsync(string providerOrderId);
         Task<IEnumerable<Payments>> GetPaymentsByUserAsync(int userId);
     }
 }

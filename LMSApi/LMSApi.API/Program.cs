@@ -59,6 +59,8 @@ builder.Services.AddScoped<IQuizOptionRepository, QuizOptionRepository>();
 builder.Services.AddScoped<IQuizAnswerRepository, QuizAnswerRepository>();
 builder.Services.AddScoped<IAssignmentRepository, AssignmentRepository>();
 builder.Services.AddScoped<IAssignmentSubmissionRepository, AssignmentSubmissionRepository>();
+builder.Services.AddScoped<IWishListRepository, WishListRepository>();
+builder.Services.AddScoped<IReviewRepository, ReviewRepository>();
 #endregion
 
 #region Dependency Injection for Services
@@ -83,14 +85,24 @@ builder.Services.AddScoped<IAssignmentService, AssignmentService>();
 builder.Services.AddScoped<IBatchService, BatchService>();
 builder.Services.AddScoped<IEnrollmentService, EnrollmentService>();
 
+// Payment Services
+builder.Services.AddScoped<IPaymentProvider, RazorpayPaymentProvider>();
+builder.Services.AddScoped<IPaymentProvider, StripePaymentProvider>();
+builder.Services.AddScoped<IPaymentService, PaymentService>();
+
 // Quiz module services
 builder.Services.AddScoped<IQuizService, QuizService>();
+
+// Wishlist and Reviews
+builder.Services.AddScoped<IWishListService, WishListService>();
+builder.Services.AddScoped<IReviewService, ReviewService>();
 #endregion
 
 builder.Services.AddAutoMapper(typeof(ApplicationAssemblyReference).Assembly);
 
 builder.Services.AddScoped<ProfileImageUploadHandler>();
 builder.Services.AddScoped<CourseUploadHandler>();
+builder.Services.AddScoped<AssignmentUploadHandler>();
 builder.Services.AddScoped<LessonUploadHandler>();
 
 builder.Services.AddJwtAuthentication(builder.Configuration);

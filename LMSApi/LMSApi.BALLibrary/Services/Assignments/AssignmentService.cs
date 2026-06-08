@@ -16,6 +16,7 @@ namespace LMSApi.BALLibrary.Services
         private readonly IEnrollmentRepository _enrollmentRepository;
         private readonly ICourseRepository _courseRepository;
         private readonly IStudentProgressService _progressService;
+        private readonly IUploadService _uploadService;
         private readonly IMapper _mapper;
         private readonly ILogger<AssignmentService> _logger;
 
@@ -26,6 +27,7 @@ namespace LMSApi.BALLibrary.Services
             IEnrollmentRepository enrollmentRepository,
             ICourseRepository courseRepository,
             IStudentProgressService progressService,
+            IUploadService uploadService,
             IMapper mapper,
             ILogger<AssignmentService> logger)
         {
@@ -35,6 +37,7 @@ namespace LMSApi.BALLibrary.Services
             _enrollmentRepository = enrollmentRepository;
             _courseRepository = courseRepository;
             _progressService = progressService;
+            _uploadService = uploadService;
             _mapper = mapper;
             _logger = logger;
         }
@@ -53,7 +56,7 @@ namespace LMSApi.BALLibrary.Services
             return _mapper.Map<AssignmentResponse>(assignment);
         }
 
-        public async Task<AssignmentResponse> CreateAssignmentAsync(CreateAssignmentRequest request)
+        public async Task<AssignmentResponse> CreateAssignmentAsync(CreateAssignmentRequest request, Stream? attachmentStream = null, string? attachmentFileName = null)
         {
             if (request == null) throw new ArgumentNullException(nameof(request));
             if (string.IsNullOrWhiteSpace(request.Title))
@@ -62,6 +65,21 @@ namespace LMSApi.BALLibrary.Services
             ValidateMarks(request.TotalMarks, request.PassingMarks);
 
             var assignment = _mapper.Map<Assignments>(request);
+
+            if (request.AttachmentType == AssignmentAttachmentType.File && attachmentStream != null && !string.IsNullOrWhiteSpace(attachmentFileName))
+            {
+                var publicId = $"assignment_{Guid.NewGuid()}";
+                assignment.AttachmentUrl = await _uploadService.UploadAssignmentAttachmentAsync(
+                    attachmentStream, attachmentFileName, publicId);
+            }
+            else if (request.AttachmentType == AssignmentAttachmentType.Link)
+            {
+                assignment.AttachmentUrl = request.AttachmentUrl;
+            }
+            else
+            {
+                assignment.AttachmentUrl = null;
+            }
 
             var section = await _sectionRepository.GetByIdAsync(request.CourseSectionId);
             var course = await _courseRepository.GetByIdAsync(section.CourseId);
@@ -78,7 +96,7 @@ namespace LMSApi.BALLibrary.Services
             return _mapper.Map<AssignmentResponse>(assignment);
         }
 
-        public async Task<AssignmentResponse> UpdateAssignmentAsync(int id, UpdateAssignmentRequest request)
+        public async Task<AssignmentResponse> UpdateAssignmentAsync(int id, UpdateAssignmentRequest request, Stream? attachmentStream = null, string? attachmentFileName = null)
         {
             if (request == null) throw new ArgumentNullException(nameof(request));
 
@@ -88,7 +106,31 @@ namespace LMSApi.BALLibrary.Services
             if (request.Description != null) assignment.Description = request.Description;
             if (request.Instructions != null) assignment.Instructions = request.Instructions;
             if (request.IsCompulsory.HasValue) assignment.IsCompulsory = request.IsCompulsory.Value;
-            if (request.AttachmentUrl != null) assignment.AttachmentUrl = request.AttachmentUrl;
+
+            if (request.AttachmentType.HasValue)
+            {
+                assignment.AttachmentType = request.AttachmentType.Value;
+
+                if (request.AttachmentType.Value == AssignmentAttachmentType.File && attachmentStream != null && !string.IsNullOrWhiteSpace(attachmentFileName))
+                {
+                    var publicId = $"assignment_{Guid.NewGuid()}";
+                    assignment.AttachmentUrl = await _uploadService.UploadAssignmentAttachmentAsync(
+                        attachmentStream, attachmentFileName, publicId);
+                }
+                else if (request.AttachmentType.Value == AssignmentAttachmentType.Link)
+                {
+                    assignment.AttachmentUrl = request.AttachmentUrl;
+                }
+                else if (request.AttachmentType.Value == AssignmentAttachmentType.None)
+                {
+                    assignment.AttachmentUrl = null;
+                }
+            }
+            else if (request.AttachmentUrl != null) 
+            {
+                assignment.AttachmentUrl = request.AttachmentUrl;
+            }
+
             if (request.DeadlineInDays.HasValue) assignment.DeadlineInDays = request.DeadlineInDays.Value;
             if (request.MaxSubmissions.HasValue) assignment.MaxSubmissions = request.MaxSubmissions.Value;
             if (request.IsLateSubmissionAllowed.HasValue) assignment.IsLateSubmissionAllowed = request.IsLateSubmissionAllowed.Value;
@@ -139,16 +181,16 @@ namespace LMSApi.BALLibrary.Services
 
         // ─── Submission Workflow ────────────────────────────────────────────
 
-        public async Task<AssignmentSubmissionResponse> SubmitAssignmentAsync(int studentId, AssignmentSubmissionRequest request)
+        public async Task<AssignmentSubmissionResponse> SubmitAssignmentAsync(int studentId, AssignmentSubmissionRequest request, Stream? attachmentStream = null, string? attachmentFileName = null)
         {
             if (request == null) throw new ArgumentNullException(nameof(request));
 
             // 1. Verify assignment exists
             var assignment = await _assignmentRepository.GetByIdAsync(request.AssignmentId);
 
-            // 2. Verify at least one of text or URL is provided
-            if (string.IsNullOrWhiteSpace(request.SubmissionText) && string.IsNullOrWhiteSpace(request.SubmittedAssignmentUrl))
-                throw new ArgumentException("Submission must include either text or a file/link URL.");
+            // 2. Verify at least one of text or URL or file is provided
+            if (string.IsNullOrWhiteSpace(request.SubmissionText) && string.IsNullOrWhiteSpace(request.SubmittedAssignmentUrl) && attachmentStream == null)
+                throw new ArgumentException("Submission must include either text, a file, or a link URL.");
 
             // 3. Verify student is enrolled
             var section = await _sectionRepository.GetByIdAsync(assignment.CourseSectionId);
@@ -186,11 +228,26 @@ namespace LMSApi.BALLibrary.Services
                 AssignmentId = request.AssignmentId,
                 StudentId = studentId,
                 SubmissionText = request.SubmissionText,
-                SubmittedAssignmentUrl = request.SubmittedAssignmentUrl,
+                AttachmentType = request.AttachmentType,
                 SubmittedAt = DateTime.UtcNow,
                 Status = SubmissionStatus.Submitted,
                 AttemptNumber = attemptCount + 1
             };
+
+            if (request.AttachmentType == AssignmentSubmissonAttachmentType.File && attachmentStream != null && !string.IsNullOrWhiteSpace(attachmentFileName))
+            {
+                var publicId = $"submission_{Guid.NewGuid()}";
+                submission.SubmittedAssignmentUrl = await _uploadService.UploadAssignmentAttachmentAsync(
+                    attachmentStream, attachmentFileName, publicId);
+            }
+            else if (request.AttachmentType == AssignmentSubmissonAttachmentType.Link)
+            {
+                submission.SubmittedAssignmentUrl = request.SubmittedAssignmentUrl;
+            }
+            else
+            {
+                submission.SubmittedAssignmentUrl = request.SubmittedAssignmentUrl;
+            }
 
             await _submissionRepository.AddAsync(submission);
 
