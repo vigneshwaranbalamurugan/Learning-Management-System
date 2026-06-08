@@ -27,9 +27,9 @@ namespace LMSApi.ModelLibrary.DTOs
 
         [Range(0, int.MaxValue, ErrorMessage = "Order must be zero or greater.")]
         public int Order { get; set; }
-
-        public DateTime? AvailableFrom { get; set; }
-        public DateTime? AvailableUntil { get; set; }
+        
+        [Range(0, int.MaxValue, ErrorMessage = "Deadline must be zero or greater.")]
+        public int DeadlineInDays { get; set; }
     }
 
     public class UpdateQuizRequest
@@ -47,8 +47,8 @@ namespace LMSApi.ModelLibrary.DTOs
         [Range(0, int.MaxValue)]
         public int? Order { get; set; }
 
-        public DateTime? AvailableFrom { get; set; }
-        public DateTime? AvailableUntil { get; set; }
+        [Range(0, int.MaxValue, ErrorMessage = "Deadline must be zero or greater.")]
+        public int? DeadlineInDays { get; set; }
     }
 
     public class PublishQuizRequest
@@ -71,8 +71,7 @@ namespace LMSApi.ModelLibrary.DTOs
         public int MaxAttempts { get; set; }
         public int Order { get; set; }
         public bool IsPublished { get; set; }
-        public DateTime? AvailableFrom { get; set; }
-        public DateTime? AvailableUntil { get; set; }
+        public int DeadlineInDays { get; set; }
         public int QuestionCount { get; set; }
     }
 
@@ -88,8 +87,7 @@ namespace LMSApi.ModelLibrary.DTOs
         public int MaxAttempts { get; set; }
         public int Order { get; set; }
         public bool IsPublished { get; set; }
-        public DateTime? AvailableFrom { get; set; }
-        public DateTime? AvailableUntil { get; set; }
+        public int DeadlineInDays { get; set; }
         public List<QuizQuestionResponse> Questions { get; set; } = [];
     }
 
@@ -104,8 +102,13 @@ namespace LMSApi.ModelLibrary.DTOs
         public int PassingMarks { get; set; }
         public int MaxAttempts { get; set; }
         public int Order { get; set; }
-        public DateTime? AvailableFrom { get; set; }
-        public DateTime? AvailableUntil { get; set; }
+        public int DeadlineInDays { get; set; }
         public List<QuizStudentQuestionResponse> Questions { get; set; } = [];
+    }
+
+    public class BulkUploadResult
+    {
+        public int TotalImported { get; set; }
+        public List<string> Errors { get; set; } = [];
     }
 }

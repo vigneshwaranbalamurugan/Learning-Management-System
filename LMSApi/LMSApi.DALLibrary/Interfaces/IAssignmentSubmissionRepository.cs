@@ -24,5 +24,11 @@ namespace LMSApi.DALLibrary.Interfaces
 
         /// <summary>Calls PostgreSQL function calculate_assignment_completion.</summary>
         Task<bool> HasStudentPassedMandatoryAssignmentsAsync(int studentId, int sectionId);
+
+        /// <summary>Returns the count of assignments the student has passed.</summary>
+        Task<int> GetPassedAssignmentsCountAsync(int studentId, List<int> assignmentIds);
+
+        /// <summary>Returns all submissions for a list of assignments.</summary>
+        Task<IEnumerable<AssignmentSubmissions>> GetSubmissionsForAssignmentsAsync(int studentId, List<int> assignmentIds);
     }
 }

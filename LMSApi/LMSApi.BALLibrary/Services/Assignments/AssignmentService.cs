@@ -14,6 +14,7 @@ namespace LMSApi.BALLibrary.Services
         private readonly IAssignmentSubmissionRepository _submissionRepository;
         private readonly ICourseSectionRepository _sectionRepository;
         private readonly IEnrollmentRepository _enrollmentRepository;
+        private readonly ICourseRepository _courseRepository;
         private readonly IStudentProgressService _progressService;
         private readonly IMapper _mapper;
         private readonly ILogger<AssignmentService> _logger;
@@ -23,6 +24,7 @@ namespace LMSApi.BALLibrary.Services
             IAssignmentSubmissionRepository submissionRepository,
             ICourseSectionRepository sectionRepository,
             IEnrollmentRepository enrollmentRepository,
+            ICourseRepository courseRepository,
             IStudentProgressService progressService,
             IMapper mapper,
             ILogger<AssignmentService> logger)
@@ -31,6 +33,7 @@ namespace LMSApi.BALLibrary.Services
             _submissionRepository = submissionRepository;
             _sectionRepository = sectionRepository;
             _enrollmentRepository = enrollmentRepository;
+            _courseRepository = courseRepository;
             _progressService = progressService;
             _mapper = mapper;
             _logger = logger;
@@ -60,6 +63,13 @@ namespace LMSApi.BALLibrary.Services
 
             var assignment = _mapper.Map<Assignments>(request);
 
+            var section = await _sectionRepository.GetByIdAsync(request.CourseSectionId);
+            var course = await _courseRepository.GetByIdAsync(section.CourseId);
+            if (course.CourseAccessType == CourseAccessType.SelfPaced && course.Status == CourseStatus.Published)
+            {
+                assignment.IsPublished = true;
+            }
+
             await _assignmentRepository.AddAsync(assignment);
 
             _logger.LogInformation("Assignment Created: '{Title}' for SectionId={SectionId}",
@@ -79,9 +89,16 @@ namespace LMSApi.BALLibrary.Services
             if (request.Instructions != null) assignment.Instructions = request.Instructions;
             if (request.IsCompulsory.HasValue) assignment.IsCompulsory = request.IsCompulsory.Value;
             if (request.AttachmentUrl != null) assignment.AttachmentUrl = request.AttachmentUrl;
-            if (request.DurationLimitInDays.HasValue) assignment.DurationLimitInDays = request.DurationLimitInDays.Value;
+            if (request.DeadlineInDays.HasValue) assignment.DeadlineInDays = request.DeadlineInDays.Value;
             if (request.MaxSubmissions.HasValue) assignment.MaxSubmissions = request.MaxSubmissions.Value;
             if (request.IsLateSubmissionAllowed.HasValue) assignment.IsLateSubmissionAllowed = request.IsLateSubmissionAllowed.Value;
+
+            var section = await _sectionRepository.GetByIdAsync(assignment.CourseSectionId);
+            var course = await _courseRepository.GetByIdAsync(section.CourseId);
+            if (course.CourseAccessType == CourseAccessType.SelfPaced && course.Status == CourseStatus.Published)
+            {
+                assignment.IsPublished = true;
+            }
 
             if (request.TotalMarks.HasValue) assignment.TotalMarks = request.TotalMarks.Value;
             if (request.PassingMarks.HasValue) assignment.PassingMarks = request.PassingMarks.Value;
@@ -99,6 +116,25 @@ namespace LMSApi.BALLibrary.Services
         {
             await _assignmentRepository.DeleteAsync(id);
             _logger.LogInformation("Assignment Deleted: Id={Id}", id);
+        }
+
+        public async Task<AssignmentResponse> PublishAssignmentAsync(int id, bool publish)
+        {
+            var assignment = await _assignmentRepository.GetByIdAsync(id);
+            var section = await _sectionRepository.GetByIdAsync(assignment.CourseSectionId);
+            var course = await _courseRepository.GetByIdAsync(section.CourseId);
+
+            if (course.CourseAccessType == CourseAccessType.SelfPaced)
+            {
+                throw new InvalidOperationException("Cannot manually change publish status of an assignment in a Self-Paced course.");
+            }
+
+            assignment.IsPublished = publish;
+            await _assignmentRepository.UpdateAsync(assignment);
+
+            _logger.LogInformation("Assignment Published status updated: Id={Id}, IsPublished={IsPublished}", id, assignment.IsPublished);
+
+            return _mapper.Map<AssignmentResponse>(assignment);
         }
 
         // ─── Submission Workflow ────────────────────────────────────────────
@@ -126,12 +162,16 @@ namespace LMSApi.BALLibrary.Services
                 throw new UnauthorizedAccessException("Student must be enrolled in the course to submit this assignment.");
 
             // 4. Verify submission deadline
-            if (assignment.DurationLimitInDays > 0 && enrollment != null)
+            if (assignment.DeadlineInDays > 0)
             {
-                var deadline = enrollment.EnrolledAt.AddDays(assignment.DurationLimitInDays);
-                if (DateTime.UtcNow > deadline && !assignment.IsLateSubmissionAllowed)
-                    throw new InvalidOperationException(
-                        $"The submission deadline was {deadline:yyyy-MM-dd}. Late submissions are not allowed.");
+                if (enrollment != null)
+                {
+                    // This is basic. More robust logic resides in calculating against batch start date if applicable.
+                    var deadline = enrollment.EnrolledAt.AddDays(assignment.DeadlineInDays);
+                    if (DateTime.UtcNow > deadline && !assignment.IsLateSubmissionAllowed)
+                        throw new InvalidOperationException(
+                            $"The submission deadline was {deadline:yyyy-MM-dd}. Late submissions are not allowed.");
+                }
             }
 
             // 5. Verify attempt limit using PG function
@@ -213,12 +253,12 @@ namespace LMSApi.BALLibrary.Services
             var latest = submissions.FirstOrDefault(); // already ordered desc
             DateTime? deadline = null;
 
-            if (assignment.DurationLimitInDays > 0)
+            if (assignment.DeadlineInDays > 0)
             {
                 var section = await _sectionRepository.GetByIdAsync(assignment.CourseSectionId);
                 var enrollment = await _enrollmentRepository.GetByUserAndCourseAsync(studentId, section.CourseId);
                 if (enrollment != null)
-                    deadline = enrollment.EnrolledAt.AddDays(assignment.DurationLimitInDays);
+                    deadline = enrollment.EnrolledAt.AddDays(assignment.DeadlineInDays);
             }
 
             return new AssignmentStatusResponse

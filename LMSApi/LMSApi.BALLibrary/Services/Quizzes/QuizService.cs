@@ -5,6 +5,8 @@ using LMSApi.ModelLibrary.DTOs;
 using LMSApi.ModelLibrary.Models;
 using LMSApi.ModelLibrary.Enums;
 using Microsoft.Extensions.Logging;
+using ClosedXML.Excel;
+using System.IO;
 
 namespace LMSApi.BALLibrary.Services
 {
@@ -17,6 +19,7 @@ namespace LMSApi.BALLibrary.Services
         private readonly IQuizAnswerRepository _answerRepository;
         private readonly ICourseSectionRepository _sectionRepository;
         private readonly IEnrollmentRepository _enrollmentRepository;
+        private readonly ICourseRepository _courseRepository;
         private readonly IStudentProgressService _progressService;
         private readonly IMapper _mapper;
         private readonly ILogger<QuizService> _logger;
@@ -29,6 +32,7 @@ namespace LMSApi.BALLibrary.Services
             IQuizAnswerRepository answerRepository,
             ICourseSectionRepository sectionRepository,
             IEnrollmentRepository enrollmentRepository,
+            ICourseRepository courseRepository,
             IStudentProgressService progressService,
             IMapper mapper,
             ILogger<QuizService> logger)
@@ -40,6 +44,7 @@ namespace LMSApi.BALLibrary.Services
             _answerRepository = answerRepository;
             _sectionRepository = sectionRepository;
             _enrollmentRepository = enrollmentRepository;
+            _courseRepository = courseRepository;
             _progressService = progressService;
             _mapper = mapper;
             _logger = logger;
@@ -73,7 +78,18 @@ namespace LMSApi.BALLibrary.Services
             }
 
             var quiz = _mapper.Map<Quzzes>(request);
-            quiz.IsPublished = false; // defaults to unpublished
+            
+            var section = await _sectionRepository.GetByIdAsync(request.CourseSectionId);
+            var course = await _courseRepository.GetByIdAsync(section.CourseId);
+            
+            if (course.CourseAccessType == CourseAccessType.SelfPaced && course.Status == CourseStatus.Published)
+            {
+                quiz.IsPublished = true;
+            }
+            else
+            {
+                quiz.IsPublished = false; // defaults to unpublished
+            }
 
             await _quizRepository.AddAsync(quiz);
 
@@ -94,9 +110,15 @@ namespace LMSApi.BALLibrary.Services
             if (request.PassingMarks.HasValue) quiz.PassingMarks = request.PassingMarks.Value;
             if (request.MaxAttempts.HasValue) quiz.MaxAttempts = request.MaxAttempts.Value;
             if (request.Order.HasValue) quiz.Order = request.Order.Value;
-            if (request.AvailableFrom.HasValue) quiz.AvailableFrom = request.AvailableFrom.Value;
-            if (request.AvailableUntil.HasValue) quiz.AvailableUntil = request.AvailableUntil.Value;
-
+            if (request.DeadlineInDays.HasValue) quiz.DeadlineInDays = request.DeadlineInDays.Value;
+            var section = await _sectionRepository.GetByIdAsync(quiz.CourseSectionId);
+            var course = await _courseRepository.GetByIdAsync(section.CourseId);
+            
+            if (course.CourseAccessType == CourseAccessType.SelfPaced && course.Status == CourseStatus.Published)
+            {
+                quiz.IsPublished = true;
+            }
+            
             if (quiz.IsPublished)
             {
                 ValidateQuizMarks(quiz);
@@ -118,6 +140,14 @@ namespace LMSApi.BALLibrary.Services
         public async Task<QuizResponse> PublishQuizAsync(int quizId, PublishQuizRequest request)
         {
             var quiz = await _quizRepository.GetQuizWithQuestionsAsync(quizId);
+
+            var section = await _sectionRepository.GetByIdAsync(quiz.CourseSectionId);
+            var course = await _courseRepository.GetByIdAsync(section.CourseId);
+            
+            if (course.CourseAccessType == CourseAccessType.SelfPaced)
+            {
+                throw new InvalidOperationException("Cannot manually publish or unpublish items in a Self-Paced course. Their publish status is bound to the Course.");
+            }
 
             if (request.Publish)
             {
@@ -261,6 +291,122 @@ namespace LMSApi.BALLibrary.Services
             }
         }
 
+        public async Task<BulkUploadResult> BulkUploadQuestionsAsync(int quizId, Stream excelStream)
+        {
+            var result = new BulkUploadResult();
+            var quiz = await _quizRepository.GetQuizWithQuestionsAsync(quizId);
+            if (quiz == null) throw new KeyNotFoundException($"Quiz with id '{quizId}' not found.");
+
+            try
+            {
+                using var workbook = new XLWorkbook(excelStream);
+                var worksheet = workbook.Worksheets.FirstOrDefault();
+                if (worksheet == null)
+                {
+                    result.Errors.Add("No worksheets found in the Excel file.");
+                    return result;
+                }
+
+                var rows = worksheet.RowsUsed().Skip(1); // Skip header row
+                int rowIndex = 2; // Real Excel row number for error reporting
+
+                int maxSortOrder = quiz.Questions.Any() ? quiz.Questions.Max(q => q.SortOrder) : 0;
+
+                foreach (var row in rows)
+                {
+                    try
+                    {
+                        string questionText = row.Cell(1).GetString().Trim();
+                        if (string.IsNullOrEmpty(questionText)) continue; // Skip empty rows silently
+
+                        string questionTypeStr = row.Cell(2).GetString().Trim();
+                        if (!Enum.TryParse<QuestionType>(questionTypeStr, true, out var qType))
+                        {
+                            result.Errors.Add($"Row {rowIndex}: Invalid QuestionType '{questionTypeStr}'. Must be MultipleChoice, TrueFalse, etc.");
+                            rowIndex++;
+                            continue;
+                        }
+
+                        if (!row.Cell(3).TryGetValue<int>(out int mark) || mark <= 0)
+                        {
+                            result.Errors.Add($"Row {rowIndex}: Mark must be a valid positive integer.");
+                            rowIndex++;
+                            continue;
+                        }
+
+                        string explanation = row.Cell(4).GetString().Trim();
+
+                        maxSortOrder++;
+
+                        var question = new QuizQuestions
+                        {
+                            QuizId = quizId,
+                            QuestionText = questionText,
+                            QuestionType = qType,
+                            Mark = mark,
+                            Explanation = explanation,
+                            SortOrder = maxSortOrder,
+                            Answers = new List<QuizOptions>()
+                        };
+
+                        // Extract up to 4 options (Cols: 5/6, 7/8, 9/10, 11/12)
+                        var optionRequestsForValidation = new List<CreateQuizOptionRequest>();
+                        for (int i = 0; i < 4; i++)
+                        {
+                            int textCol = 5 + (i * 2);
+                            int isCorrectCol = 6 + (i * 2);
+
+                            string optText = row.Cell(textCol).GetString().Trim();
+                            if (!string.IsNullOrEmpty(optText))
+                            {
+                                // ClosedXML might fail to parse 'GetBoolean()' if it's text. Try parsing manually if needed.
+                                bool isCorrect = false;
+                                if (row.Cell(isCorrectCol).DataType == XLDataType.Boolean)
+                                    isCorrect = row.Cell(isCorrectCol).GetBoolean();
+                                else
+                                    bool.TryParse(row.Cell(isCorrectCol).GetString(), out isCorrect);
+
+                                question.Answers.Add(new QuizOptions
+                                {
+                                    OptionText = optText,
+                                    IsCorrect = isCorrect
+                                });
+
+                                optionRequestsForValidation.Add(new CreateQuizOptionRequest
+                                {
+                                    OptionText = optText,
+                                    IsCorrect = isCorrect
+                                });
+                            }
+                        }
+
+                        ValidateQuestionOptions(qType, optionRequestsForValidation);
+
+                        await _questionRepository.AddAsync(question);
+                        result.TotalImported++;
+                    }
+                    catch (Exception ex)
+                    {
+                        result.Errors.Add($"Row {rowIndex}: {ex.Message}");
+                    }
+                    
+                    rowIndex++;
+                }
+
+                if (result.TotalImported > 0)
+                {
+                    _logger.LogInformation("Bulk uploaded {Count} questions to Quiz {QuizId}.", result.TotalImported, quizId);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error reading Excel file for quiz {QuizId}.", quizId);
+                result.Errors.Add("Failed to parse Excel file. Ensure it is a valid .xlsx file.");
+            }
+
+            return result;
+        }
+
         // ─── Student Quiz-Taking ────────────────────────────────────────────
 
         public async Task<QuizStudentDetailResponse> GetQuizForStudentAsync(int quizId)
@@ -296,13 +442,13 @@ namespace LMSApi.BALLibrary.Services
 
             // Verify availability dates
             var now = DateTime.UtcNow;
-            if (quiz.AvailableFrom.HasValue && now < quiz.AvailableFrom.Value)
+            if (quiz.DeadlineInDays > 0)
             {
-                throw new InvalidOperationException("This quiz is not yet available.");
-            }
-            if (quiz.AvailableUntil.HasValue && now > quiz.AvailableUntil.Value)
-            {
-                throw new InvalidOperationException("This quiz is no longer available.");
+                var deadline = enrollment!.EnrolledAt.AddDays(quiz.DeadlineInDays);
+                if (now > deadline)
+                {
+                    throw new InvalidOperationException("This quiz is no longer available.");
+                }
             }
 
             // Verify max attempts using PG function
@@ -359,12 +505,20 @@ namespace LMSApi.BALLibrary.Services
             }
 
             var now = DateTime.UtcNow;
-            if (quiz.AvailableUntil.HasValue && now > quiz.AvailableUntil.Value)
+            
+            var section = await _sectionRepository.GetByIdAsync(quiz.CourseSectionId);
+            var enrollment = await _enrollmentRepository.GetByUserAndCourseAsync(userId, section.CourseId);
+            
+            if (enrollment != null && quiz.DeadlineInDays > 0)
             {
-                attempt.Status = AttemptStatus.Expired;
-                attempt.CompletedAt = DateTime.UtcNow;
-                await _attemptRepository.UpdateAsync(attempt);
-                throw new InvalidOperationException("This quiz is no longer available.");
+                var deadline = enrollment.EnrolledAt.AddDays(quiz.DeadlineInDays);
+                if (now > deadline)
+                {
+                    attempt.Status = AttemptStatus.Expired;
+                    attempt.CompletedAt = DateTime.UtcNow;
+                    await _attemptRepository.UpdateAsync(attempt);
+                    throw new InvalidOperationException("This quiz is no longer available.");
+                }
             }
 
             // Save answers
@@ -406,7 +560,7 @@ namespace LMSApi.BALLibrary.Services
                 request.QuizId, userId, attempt.Score, attempt.IsPassed);
 
             // Recalculate Course progress
-            var section = await _sectionRepository.GetByIdAsync(quiz.CourseSectionId);
+             section = await _sectionRepository.GetByIdAsync(quiz.CourseSectionId);
             if (section != null)
             {
                 await _progressService.RecalculateCourseProgressAsync(userId, section.CourseId);

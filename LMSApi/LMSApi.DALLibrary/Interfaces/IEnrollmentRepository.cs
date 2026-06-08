@@ -15,5 +15,12 @@ namespace LMSApi.DALLibrary.Interfaces
 
         /// <summary>Checks if a course has any enrollments.</summary>
         Task<bool> HasEnrollmentsByCourseAsync(int courseId);
+
+        Task<bool> IsAlreadyEnrolledAsync(int userId, int courseId);
+        Task<Enrollments?> GetActiveEnrollmentAsync(int userId, int courseId);
+        Task<int> GetAvailableSeatsAsync(int batchId);
+        Task<Enrollments> CreateEnrollmentAsync(Enrollments enrollment);
+        Task<bool> ValidateBatchEnrollmentAsync(int batchId);
+        Task<DateTime?> GetCourseAccessAsync(int enrollmentId);
     }
 }

@@ -60,10 +60,6 @@ namespace LMSApi.BALLibrary.Services
             var section = await _sectionRepository.GetByIdAsync(request.CourseSectionId);
 
             var course = await _courseRepository.GetByIdAsync(section.CourseId);
-            if (course.Status == CourseStatus.Published)
-            {
-                throw new InvalidOperationException($"Cannot create a lesson for section '{request.CourseSectionId}' because the parent course is already published.");
-            }
 
             // Auto-assign SortOrder if not provided (default 0)
             if (request.SortOrder == 0)
@@ -77,6 +73,11 @@ namespace LMSApi.BALLibrary.Services
             lesson.Description ??= string.Empty;
             lesson.CreatedAt = DateTime.UtcNow;
             lesson.UpdatedAt = DateTime.UtcNow;
+
+            if (course.CourseAccessType == CourseAccessType.SelfPaced && course.Status == CourseStatus.Published)
+            {
+                lesson.IsPublished = true;
+            }
 
             await _lessonRepository.AddAsync(lesson);
 
@@ -119,10 +120,6 @@ namespace LMSApi.BALLibrary.Services
 
             var section = await _sectionRepository.GetByIdAsync(lesson.CourseSectionId);
             var course = await _courseRepository.GetByIdAsync(section.CourseId);
-            if (course.Status == CourseStatus.Published)
-            {
-                throw new InvalidOperationException($"Cannot update lesson '{id}' because its parent course is already published.");
-            }
 
             if (request.Title != null) lesson.Title = request.Title;
             if (request.Description != null) lesson.Description = request.Description;
@@ -132,7 +129,19 @@ namespace LMSApi.BALLibrary.Services
             if (request.DurationInMinutes.HasValue) lesson.DurationInMinutes = request.DurationInMinutes.Value;
             if (request.SortOrder.HasValue) lesson.SortOrder = request.SortOrder.Value;
             if (request.IsPreview.HasValue) lesson.IsPreview = request.IsPreview.Value;
-            if (request.IsPublished.HasValue) lesson.IsPublished = request.IsPublished.Value;
+            if (request.IsPublished.HasValue) 
+            {
+                if (course.CourseAccessType == CourseAccessType.SelfPaced)
+                {
+                    throw new InvalidOperationException("Cannot manually change publish status of a lesson in a Self-Paced course.");
+                }
+                lesson.IsPublished = request.IsPublished.Value;
+            }
+
+            if (course.CourseAccessType == CourseAccessType.SelfPaced && course.Status == CourseStatus.Published)
+            {
+                lesson.IsPublished = true;
+            }
 
             lesson.UpdatedAt = DateTime.UtcNow;
 
@@ -166,10 +175,6 @@ namespace LMSApi.BALLibrary.Services
 
             var section = await _sectionRepository.GetByIdAsync(lesson.CourseSectionId);
             var course = await _courseRepository.GetByIdAsync(section.CourseId);
-            if (course.Status == CourseStatus.Published)
-            {
-                throw new InvalidOperationException($"Cannot delete lesson '{id}' because its parent course is already published.");
-            }
             await _lessonRepository.DeleteAsync(id);
 
             _logger.LogInformation("Lesson Deleted: Id={Id}", id);

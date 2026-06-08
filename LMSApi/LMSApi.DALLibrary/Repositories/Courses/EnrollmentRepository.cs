@@ -47,5 +47,60 @@ namespace LMSApi.DALLibrary.Repositories
         {
             return await _context.Enrollments.AnyAsync(e => e.CourseId == courseId);
         }
+
+        public async Task<bool> IsAlreadyEnrolledAsync(int userId, int courseId)
+        {
+            return await _context.Enrollments
+                .AnyAsync(e => e.UserId == userId && e.CourseId == courseId && e.EnrollmentStatus == LMSApi.ModelLibrary.Enums.EnrollmentStatus.Active);
+        }
+
+        public async Task<Enrollments?> GetActiveEnrollmentAsync(int userId, int courseId)
+        {
+            return await _context.Enrollments
+                .FirstOrDefaultAsync(e => e.UserId == userId && e.CourseId == courseId && e.EnrollmentStatus == LMSApi.ModelLibrary.Enums.EnrollmentStatus.Active);
+        }
+
+        public async Task<int> GetAvailableSeatsAsync(int batchId)
+        {
+            // Will call Postgres function `calculate_available_seats`
+            // For now, EF Core raw SQL mapping or manual calculation
+            using (var command = _context.Database.GetDbConnection().CreateCommand())
+            {
+                command.CommandText = "SELECT calculate_available_seats(@batchId)";
+                var param = command.CreateParameter();
+                param.ParameterName = "@batchId";
+                param.Value = batchId;
+                command.Parameters.Add(param);
+                
+                await _context.Database.OpenConnectionAsync();
+                var result = await command.ExecuteScalarAsync();
+                return result != DBNull.Value ? Convert.ToInt32(result) : 0;
+            }
+        }
+
+        public async Task<Enrollments> CreateEnrollmentAsync(Enrollments enrollment)
+        {
+            await _context.Enrollments.AddAsync(enrollment);
+            await _context.SaveChangesAsync();
+            return enrollment;
+        }
+
+        public async Task<bool> ValidateBatchEnrollmentAsync(int batchId)
+        {
+            var batch = await _context.CourseBatches.FindAsync(batchId);
+            if (batch == null) return false;
+            
+            if (DateTime.UtcNow < batch.EnrollmentStartDate || DateTime.UtcNow > batch.EnrollmentEndDate)
+                return false;
+
+            var availableSeats = await GetAvailableSeatsAsync(batchId);
+            return availableSeats > 0;
+        }
+
+        public async Task<DateTime?> GetCourseAccessAsync(int enrollmentId)
+        {
+            var enrollment = await _context.Enrollments.FindAsync(enrollmentId);
+            return enrollment?.AccessExpiresAt;
+        }
     }
 }

@@ -41,21 +41,21 @@ namespace LMSApi.DALLibrary.Repositories
         public async Task<double> CalculateScoreAsync(int attemptId)
         {
             return await _context.Database
-                .SqlQuery<double>($"SELECT calculate_quiz_score({attemptId})")
+                .SqlQuery<double>($"SELECT calculate_quiz_score({attemptId}) AS \"Value\"")
                 .FirstOrDefaultAsync();
         }
 
         public async Task<bool> CalculatePassStatusAsync(int attemptId)
         {
             return await _context.Database
-                .SqlQuery<bool>($"SELECT calculate_pass_status({attemptId})")
+                .SqlQuery<bool>($"SELECT calculate_pass_status({attemptId}) AS \"Value\"")
                 .FirstOrDefaultAsync();
         }
 
         public async Task<int> GetRemainingAttemptsAsync(int quizId, int userId)
         {
             return await _context.Database
-                .SqlQuery<int>($"SELECT get_remaining_attempts({quizId}, {userId})")
+                .SqlQuery<int>($"SELECT get_remaining_attempts({quizId}, {userId}) AS \"Value\"")
                 .FirstOrDefaultAsync();
         }
 
@@ -68,6 +68,15 @@ namespace LMSApi.DALLibrary.Repositories
                 .Select(a => a.QuizId)
                 .Distinct()
                 .CountAsync();
+        }
+
+        public async Task<IEnumerable<QuizAttempts>> GetAttemptsForQuizzesAsync(int userId, List<int> quizIds)
+        {
+            if (quizIds == null || !quizIds.Any()) return new List<QuizAttempts>();
+
+            return await _context.QuizAttempts
+                .Where(a => quizIds.Contains(a.QuizId) && a.UserId == userId)
+                .ToListAsync();
         }
 
         public async Task<QuizAttempts?> GetInProgressAttemptAsync(int quizId, int userId)

@@ -74,6 +74,16 @@ namespace LMSApi.API.Controllers
             return NoContent();
         }
 
+        /// <summary>Publish or unpublish an assignment (Instructor/Admin only).</summary>
+        [Authorize(Roles = "Instructor,Admin")]
+        [HttpPost("{id:int}/publish")]
+        public async Task<ActionResult<AssignmentResponse>> Publish(int id, [FromBody] PublishAssignmentRequest request)
+        {
+            await EnforceAssignmentOwnershipAsync(id);
+            var result = await _assignmentService.PublishAssignmentAsync(id, request.Publish);
+            return Ok(result);
+        }
+
         // ─── Private Ownership Helpers ───────────────────────────────────────
 
         private async Task EnforceSectionOwnershipAsync(int sectionId)

@@ -26,10 +26,11 @@ namespace LMSApi.DALLibrary.Repositories
                 .ToListAsync();
         }
 
-        public async Task<int> GetCompletedLessonsCountAsync(int userId, int courseId)
+        public async Task<int> GetCompletedLessonsCountAsync(int userId, List<int> lessonIds)
         {
+            if (lessonIds == null || !lessonIds.Any()) return 0;
             return await _context.StudentProgresses
-                .CountAsync(p => p.StudentId == userId && p.CourseId == courseId && p.IsCompleted);
+                .CountAsync(p => p.StudentId == userId && lessonIds.Contains(p.LessonId) && p.IsCompleted);
         }
     }
 }

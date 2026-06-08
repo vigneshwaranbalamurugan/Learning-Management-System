@@ -19,5 +19,6 @@ namespace LMSApi.ModelLibrary.Models
         public Users User { get; set; } = null!;
         public Courses Course { get; set; } = null!;
         public CourseBatch? Batch { get; set; }
+        public Payments? Payment { get; set; }
     }
 }

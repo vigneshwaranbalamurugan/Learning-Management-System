@@ -69,5 +69,25 @@ namespace LMSApi.DALLibrary.Repositories
                 .SqlQuery<bool>($"SELECT calculate_assignment_completion({studentId}, {sectionId})")
                 .FirstOrDefaultAsync();
         }
+
+        public async Task<int> GetPassedAssignmentsCountAsync(int studentId, List<int> assignmentIds)
+        {
+            if (assignmentIds == null || !assignmentIds.Any()) return 0;
+
+            return await _context.AssignmentSubmissions
+                .Where(s => s.StudentId == studentId && assignmentIds.Contains(s.AssignmentId) && s.IsPassed == true)
+                .Select(s => s.AssignmentId)
+                .Distinct()
+                .CountAsync();
+        }
+
+        public async Task<IEnumerable<AssignmentSubmissions>> GetSubmissionsForAssignmentsAsync(int studentId, List<int> assignmentIds)
+        {
+            if (assignmentIds == null || !assignmentIds.Any()) return new List<AssignmentSubmissions>();
+
+            return await _context.AssignmentSubmissions
+                .Where(s => s.StudentId == studentId && assignmentIds.Contains(s.AssignmentId))
+                .ToListAsync();
+        }
     }
 }

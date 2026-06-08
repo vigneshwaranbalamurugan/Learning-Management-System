@@ -16,6 +16,7 @@ namespace LMSApi.BALLibrary.Interfaces
         Task<QuizQuestionResponse> AddQuestionAsync(CreateQuizQuestionRequest request);
         Task<QuizQuestionResponse> UpdateQuestionAsync(int id, UpdateQuizQuestionRequest request);
         Task DeleteQuestionAsync(int id);
+        Task<BulkUploadResult> BulkUploadQuestionsAsync(int quizId, Stream excelStream);
 
         // ─── Student Quiz-Taking ────────────────────────────────────────────
         Task<QuizStudentDetailResponse> GetQuizForStudentAsync(int quizId);

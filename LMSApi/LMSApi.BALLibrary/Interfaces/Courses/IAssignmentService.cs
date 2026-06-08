@@ -10,6 +10,7 @@ namespace LMSApi.BALLibrary.Interfaces
         Task<AssignmentResponse> CreateAssignmentAsync(CreateAssignmentRequest request);
         Task<AssignmentResponse> UpdateAssignmentAsync(int id, UpdateAssignmentRequest request);
         Task DeleteAssignmentAsync(int id);
+        Task<AssignmentResponse> PublishAssignmentAsync(int id, bool publish);
 
         // ─── Submission Workflow ────────────────────────────────────────────
         Task<AssignmentSubmissionResponse> SubmitAssignmentAsync(int studentId, AssignmentSubmissionRequest request);

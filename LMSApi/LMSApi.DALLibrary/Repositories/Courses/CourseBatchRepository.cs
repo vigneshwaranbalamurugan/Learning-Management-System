@@ -66,7 +66,7 @@ namespace LMSApi.DALLibrary.Repositories
         {
             // EF Core 7+ SqlQuery<T> for scalar results
             var result = await _context.Database
-                .SqlQuery<int>($"SELECT get_batch_available_seats({batchId})")
+                .SqlQuery<int>($"SELECT get_batch_available_seats({batchId}) AS \"Value\"")
                 .FirstOrDefaultAsync();
 
             return result;

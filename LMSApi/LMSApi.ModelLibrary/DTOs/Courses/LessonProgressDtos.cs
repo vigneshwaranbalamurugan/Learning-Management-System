@@ -24,5 +24,31 @@ namespace LMSApi.ModelLibrary.DTOs
         public decimal ProgressPercentage { get; set; }
         public int CompletedLessonsCount { get; set; }
         public int TotalLessonsCount { get; set; }
+
+        public IEnumerable<SectionProgressResponse> Sections { get; set; } = [];
+    }
+
+    public class SectionProgressResponse
+    {
+        public int SectionId { get; set; }
+        public string Title { get; set; }
+        public decimal ProgressPercentage { get; set; }
+        public IEnumerable<LessonProgressResponse> Lessons { get; set; } = [];
+        public IEnumerable<QuizProgressResponse> Quizzes { get; set; } = [];
+        public IEnumerable<AssignmentProgressResponse> Assignments { get; set; } = [];
+    }
+
+    public class QuizProgressResponse
+    {
+        public int QuizId { get; set; }
+        public bool IsPassed { get; set; }
+        public int AttemptsMade { get; set; }
+    }
+
+    public class AssignmentProgressResponse
+    {
+        public int AssignmentId { get; set; }
+        public bool IsPassed { get; set; }
+        public string Status { get; set; }
     }
 }

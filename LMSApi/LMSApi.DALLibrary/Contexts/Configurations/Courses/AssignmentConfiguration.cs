@@ -27,7 +27,7 @@ namespace LMSApi.DALLibrary.Contexts.Configurations
             builder.Property(a => a.AttachmentUrl)
                 .IsRequired(false);
 
-            builder.Property(a => a.DurationLimitInDays)
+            builder.Property(a => a.DeadlineInDays)
                 .HasDefaultValue(0);
 
             builder.Property(a => a.MaxSubmissions)
@@ -37,6 +37,9 @@ namespace LMSApi.DALLibrary.Contexts.Configurations
                 .HasDefaultValue(false);
 
             builder.Property(a => a.IsCompulsory)
+                .HasDefaultValue(false);
+
+            builder.Property(a => a.IsPublished)
                 .HasDefaultValue(false);
 
             builder.Property(a => a.CreatedAt)

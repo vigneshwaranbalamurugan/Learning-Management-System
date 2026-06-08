@@ -7,14 +7,18 @@ namespace LMSApi.ModelLibrary.Models
         public int Id { get; set; }
         public int UserId { get; set; }
         public int CourseId { get; set; }
+        public int EnrollmentId { get; set; }
+        public string RazorpayOrderId { get; set; }
+        public string? RazorpayPaymentId { get; set; }
         public decimal Amount { get; set; }
-        public PaymentMethod PaymentMethod { get; set; } // e.g., Credit Card, PayPal
-        public DateTime PaymentDate { get; set; }
-        public string TransactionId { get; set; }
+        public string Currency { get; set; } = "INR";
         public PaymentStatus Status { get; set; }
+        public DateTime? PaidAt { get; set; }
+        public string? RawResponse { get; set; }
 
         // Navigation properties
-        public Users User { get; set; }
-        public Courses Course { get; set; }
+        public Users User { get; set; } = null!;
+        public Courses Course { get; set; } = null!;
+        public Enrollments Enrollment { get; set; } = null!;
     }
 }

@@ -20,14 +20,39 @@ namespace LMSApi.API.Controllers
             _enrollmentService = enrollmentService;
         }
         
-        /// <summary>Enroll the authenticated student in a course. Accepts an optional BatchId for CohortBased courses.</summary>
-        [HttpPost("courses/{courseId:int}/enroll")]
-        public async Task<ActionResult<EnrollmentResponse>> Enroll(
+        [HttpPost("courses/{courseId:int}/enroll/free")]
+        public async Task<ActionResult<EnrollmentResponse>> EnrollFree(
             int courseId,
             [FromBody] EnrollRequest request)
         {
             var userId = User.GetUserId();
-            var result = await _enrollmentService.EnrollAsync(userId, courseId, request.BatchId);
+            var result = await _enrollmentService.EnrollInFreeCourseAsync(userId, courseId, request.BatchId);
+            return CreatedAtAction(nameof(GetMyEnrollments), null, result);
+        }
+
+        [HttpPost("courses/{courseId:int}/enroll/premium")]
+        public async Task<ActionResult<object>> EnrollPremium(
+            int courseId,
+            [FromBody] EnrollRequest request)
+        {
+            var userId = User.GetUserId();
+            var orderId = await _enrollmentService.EnrollInPremiumCourseAsync(userId, courseId, request.BatchId);
+            return Ok(new { RazorpayOrderId = orderId });
+        }
+
+        [HttpPost("courses/{courseId:int}/enroll/verify")]
+        public async Task<ActionResult<EnrollmentResponse>> VerifyPayment(
+            int courseId,
+            [FromBody] VerifyPaymentRequest request)
+        {
+            var userId = User.GetUserId();
+            var result = await _enrollmentService.VerifyPaymentAndEnrollAsync(
+                userId, 
+                courseId, 
+                request.BatchId, 
+                request.RazorpayOrderId, 
+                request.RazorpayPaymentId, 
+                request.RazorpaySignature);
             return CreatedAtAction(nameof(GetMyEnrollments), null, result);
         }
 

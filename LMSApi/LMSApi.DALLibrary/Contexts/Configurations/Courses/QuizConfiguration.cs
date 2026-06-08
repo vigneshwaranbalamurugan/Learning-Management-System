@@ -29,11 +29,8 @@ namespace LMSApi.DALLibrary.Contexts.Configurations
             builder.Property(q => q.MaxAttempts)
                 .HasDefaultValue(1);
 
-            builder.Property(q => q.AvailableFrom)
-                .IsRequired(false).HasColumnType("timestamp without time zone");
-
-            builder.Property(q => q.AvailableUntil)
-                .IsRequired(false).HasColumnType("timestamp without time zone");
+            builder.Property(q => q.DeadlineInDays)
+                .HasDefaultValue(0);
 
             // Relationships
             builder.HasOne(q => q.CourseSection)

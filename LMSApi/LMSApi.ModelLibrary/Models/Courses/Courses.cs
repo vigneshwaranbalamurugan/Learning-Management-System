@@ -13,6 +13,7 @@ namespace LMSApi.ModelLibrary.Models
         public string Description { get; set; }
         public decimal? Price { get; set; }
         public bool IsPremium { get; set; }
+        public bool IsPublished { get; set; }
         public string ThumbnailUrl { get; set; }
         public string IntroVideoUrl { get; set; }
         public string Requirements { get; set; }

@@ -13,6 +13,18 @@ namespace LMSApi.ModelLibrary.DTOs
         public int? BatchId { get; set; }
     }
 
+    public class VerifyPaymentRequest
+    {
+        [Required]
+        public string RazorpayOrderId { get; set; }
+        [Required]
+        public string RazorpayPaymentId { get; set; }
+        [Required]
+        public string RazorpaySignature { get; set; }
+        
+        public int? BatchId { get; set; }
+    }
+
     // ─── Responses ───────────────────────────────────────────────────────────
 
     public class EnrollmentResponse

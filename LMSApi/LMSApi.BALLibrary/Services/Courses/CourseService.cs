@@ -88,6 +88,11 @@ namespace LMSApi.BALLibrary.Services
                     videoStream, videoFileName, $"courses/{course.Id}/intro-video");
                 _logger.LogInformation("Intro video uploaded on create: CourseId={CourseId}", course.Id);
             }
+            course.ThumbnailUrl ??= string.Empty;
+            course.IntroVideoUrl ??= string.Empty;
+            course.Requirements ??= string.Empty;
+            course.LearningOutcomes ??= string.Empty;
+            course.Description ??= string.Empty;
             await _courseRepository.AddAsync(course);
             _logger.LogInformation("Course Created: '{Title}' by InstructorId={InstructorId}", request.Title, instructorId);
 
@@ -191,6 +196,18 @@ namespace LMSApi.BALLibrary.Services
 
             course.Status = CourseStatus.Published;
             course.PublishedAt = DateTime.UtcNow;
+
+            if (course.CourseAccessType == CourseAccessType.SelfPaced)
+            {
+                foreach (var section in course.Sections)
+                {
+                    section.IsPublished = true;
+                    foreach (var lesson in section.Lessons) lesson.IsPublished = true;
+                    foreach (var quiz in section.Quizzes) quiz.IsPublished = true;
+                    foreach (var assignment in section.Assignments) assignment.IsPublished = true;
+                }
+            }
+
             await _courseRepository.UpdateAsync(course);
 
             _logger.LogInformation("Course Published: Id={Id}", id);

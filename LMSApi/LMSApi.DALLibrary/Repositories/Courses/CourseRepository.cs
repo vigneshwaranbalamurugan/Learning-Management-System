@@ -45,6 +45,8 @@ namespace LMSApi.DALLibrary.Repositories
                     .ThenInclude(s => s.Lessons)
                 .Include(c => c.Sections)
                     .ThenInclude(s => s.Quizzes)
+                .Include(c => c.Sections)
+                    .ThenInclude(s => s.Assignments)
                 .Include(c => c.Batches)
                 .FirstOrDefaultAsync(c => c.Id == id);
         }

@@ -6,6 +6,6 @@ namespace LMSApi.DALLibrary.Interfaces
     {
         Task<StudentProgress?> GetProgressByUserAndLessonAsync(int userId, int lessonId);
         Task<IEnumerable<StudentProgress>> GetProgressByUserAndCourseAsync(int userId, int courseId);
-        Task<int> GetCompletedLessonsCountAsync(int userId, int courseId);
+        Task<int> GetCompletedLessonsCountAsync(int userId, List<int> lessonIds);
     }
 }

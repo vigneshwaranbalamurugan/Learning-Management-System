@@ -32,7 +32,7 @@ namespace LMSApi.ModelLibrary.DTOs
 
         /// <summary>Days from enrollment date. 0 = no deadline.</summary>
         [Range(0, int.MaxValue)]
-        public int DurationLimitInDays { get; set; }
+        public int DeadlineInDays { get; set; }
 
         [Range(1, int.MaxValue, ErrorMessage = "MaxSubmissions must be at least 1.")]
         public int MaxSubmissions { get; set; } = 1;
@@ -62,7 +62,7 @@ namespace LMSApi.ModelLibrary.DTOs
         public string? AttachmentUrl { get; set; }
 
         [Range(0, int.MaxValue)]
-        public int? DurationLimitInDays { get; set; }
+        public int? DeadlineInDays { get; set; }
 
         [Range(1, int.MaxValue)]
         public int? MaxSubmissions { get; set; }
@@ -71,6 +71,11 @@ namespace LMSApi.ModelLibrary.DTOs
     }
 
     // ─── Assignment Responses ────────────────────────────────────────────────
+
+    public class PublishAssignmentRequest
+    {
+        public bool Publish { get; set; }
+    }
 
     public class AssignmentResponse
     {
@@ -83,9 +88,10 @@ namespace LMSApi.ModelLibrary.DTOs
         public int TotalMarks { get; set; }
         public int PassingMarks { get; set; }
         public string? AttachmentUrl { get; set; }
-        public int DurationLimitInDays { get; set; }
+        public int DeadlineInDays { get; set; }
         public int MaxSubmissions { get; set; }
         public bool IsLateSubmissionAllowed { get; set; }
+        public bool IsPublished { get; set; }
         public DateTime CreatedAt { get; set; }
     }
 

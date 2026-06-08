@@ -16,12 +16,13 @@ namespace LMSApi.ModelLibrary.Models
         /// Number of days from enrollment date within which the student must submit.
         /// 0 means no deadline.
         /// </summary>
-        public int DurationLimitInDays { get; set; }
+        public int DeadlineInDays { get; set; }
 
         /// <summary>Maximum number of submission attempts allowed per student.</summary>
         public int MaxSubmissions { get; set; } = 1;
 
         public bool IsLateSubmissionAllowed { get; set; }
+        public bool IsPublished { get; set; }
 
         public DateTime CreatedAt { get; set; }
 

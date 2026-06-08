@@ -44,12 +44,8 @@ namespace LMSApi.BALLibrary.Services
             if (request == null) throw new ArgumentNullException(nameof(request));
             if (string.IsNullOrWhiteSpace(request.Title)) throw new ArgumentException("Section title cannot be null or empty.", nameof(request.Title));
 
-            // Validate parent course exists and is not published
+            // Validate parent course exists
             var course = await _courseRepository.GetByIdAsync(request.CourseId);
-            if (course.Status == CourseStatus.Published)
-            {
-                throw new InvalidOperationException($"Cannot create a section for course '{request.CourseId}' because it is already published.");
-            }
 
             // Auto-assign SortOrder if not provided (default 0)
             if (request.SortOrder == 0)
@@ -59,6 +55,12 @@ namespace LMSApi.BALLibrary.Services
             }
 
             var section = _mapper.Map<CourseSection>(request);
+
+            if (course.CourseAccessType == CourseAccessType.SelfPaced && course.Status == CourseStatus.Published)
+            {
+                section.IsPublished = true;
+            }
+
             await _sectionRepository.AddAsync(section);
 
             _logger.LogInformation("Section Created: '{Title}' for CourseId={CourseId}", request.Title, request.CourseId);
@@ -73,16 +75,24 @@ namespace LMSApi.BALLibrary.Services
             var section = await _sectionRepository.GetByIdAsync(id);
 
             var course = await _courseRepository.GetByIdAsync(section.CourseId);
-            if (course.Status == CourseStatus.Published)
-            {
-                throw new InvalidOperationException($"Cannot update section '{id}' because its parent course is already published.");
-            }
 
             if (request.Title != null) section.Title = request.Title;
             if (request.Description != null) section.Description = request.Description;
             if (request.EstimatedDuration.HasValue) section.EstimatedDuration = request.EstimatedDuration.Value;
             if (request.SortOrder.HasValue) section.SortOrder = request.SortOrder.Value;
-            if (request.IsPublished.HasValue) section.IsPublished = request.IsPublished.Value;
+            if (request.IsPublished.HasValue) 
+            {
+                if (course.CourseAccessType == CourseAccessType.SelfPaced)
+                {
+                    throw new InvalidOperationException("Cannot manually change publish status of a section in a Self-Paced course.");
+                }
+                section.IsPublished = request.IsPublished.Value;
+            }
+
+            if (course.CourseAccessType == CourseAccessType.SelfPaced && course.Status == CourseStatus.Published)
+            {
+                section.IsPublished = true;
+            }
 
             await _sectionRepository.UpdateAsync(section);
 
@@ -96,10 +106,6 @@ namespace LMSApi.BALLibrary.Services
             var section = await _sectionRepository.GetByIdAsync(id);
 
             var course = await _courseRepository.GetByIdAsync(section.CourseId);
-            if (course.Status == CourseStatus.Published)
-            {
-                throw new InvalidOperationException($"Cannot delete section '{id}' because its parent course is already published.");
-            }
             await _sectionRepository.DeleteAsync(id);
 
             _logger.LogInformation("Section Deleted: Id={Id}", id);

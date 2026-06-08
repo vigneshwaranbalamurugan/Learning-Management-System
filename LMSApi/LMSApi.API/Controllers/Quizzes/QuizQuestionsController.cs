@@ -3,6 +3,7 @@ using LMSApi.API.Extensions;
 using LMSApi.BALLibrary.Interfaces;
 using LMSApi.ModelLibrary.DTOs;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace LMSApi.API.Controllers
@@ -35,6 +36,30 @@ namespace LMSApi.API.Controllers
 
             var result = await _quizService.AddQuestionAsync(request);
             return Created($"api/v1/quizquestions/{result.Id}", result);
+        }
+
+        [Authorize(Roles = "Instructor,Admin")]
+        [HttpPost("quiz/{quizId:int}/bulk")]
+        public async Task<ActionResult<BulkUploadResult>> BulkUploadQuestions(int quizId, IFormFile file)
+        {
+            if (file == null || file.Length == 0)
+                return BadRequest("File is empty or not provided.");
+
+            var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
+            if (extension != ".xlsx")
+                return BadRequest("Invalid file format. Please upload an .xlsx file.");
+
+            await EnforceQuizOwnershipAsync(quizId);
+
+            using var stream = file.OpenReadStream();
+            var result = await _quizService.BulkUploadQuestionsAsync(quizId, stream);
+
+            if (result.TotalImported == 0 && result.Errors.Any())
+            {
+                return BadRequest(result);
+            }
+
+            return Ok(result);
         }
 
         [Authorize(Roles = "Instructor,Admin")]

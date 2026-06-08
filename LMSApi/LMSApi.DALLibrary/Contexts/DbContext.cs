@@ -21,6 +21,7 @@ namespace LMSApi.DALLibrary.Contexts
         // Hybrid Learning module
         public DbSet<CourseBatch> CourseBatches { get; set; }
         public DbSet<Enrollments> Enrollments { get; set; }
+        public DbSet<Payments> Payments { get; set; }
 
         // Quiz module
         public DbSet<Quzzes> Quizzes { get; set; }

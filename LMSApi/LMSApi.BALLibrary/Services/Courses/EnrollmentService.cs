@@ -13,6 +13,7 @@ namespace LMSApi.BALLibrary.Services
         private readonly IEnrollmentRepository _enrollmentRepository;
         private readonly ICourseRepository _courseRepository;
         private readonly ICourseBatchRepository _batchRepository;
+        private readonly IPaymentRepository _paymentRepository;
         private readonly IMapper _mapper;
         private readonly ILogger<EnrollmentService> _logger;
 
@@ -20,6 +21,7 @@ namespace LMSApi.BALLibrary.Services
             IEnrollmentRepository enrollmentRepository,
             ICourseRepository courseRepository,
             ICourseBatchRepository batchRepository,
+            IPaymentRepository paymentRepository,
             IMapper mapper,
             ILogger<EnrollmentService> logger)
         {
@@ -30,17 +32,16 @@ namespace LMSApi.BALLibrary.Services
             _logger = logger;
         }
 
-        /// <inheritdoc/>
-        public async Task<EnrollmentResponse> EnrollAsync(int userId, int courseId, int? batchId)
+        public async Task<EnrollmentResponse> EnrollInFreeCourseAsync(int userId, int courseId, int? batchId)
         {
-            // 1. Verify course exists and is published
             var course = await _courseRepository.GetByIdAsync(courseId);
-
             if (course.Status != CourseStatus.Published)
-                throw new InvalidOperationException($"Course '{courseId}' is not published and cannot be enrolled in.");
+                throw new InvalidOperationException($"Course '{courseId}' is not published.");
 
-            // 2. Prevent duplicate enrollment
-            var existing = await _enrollmentRepository.GetByUserAndCourseAsync(userId, courseId);
+            if (course.IsPremium)
+                throw new InvalidOperationException("This is a premium course. Use EnrollInPremiumCourseAsync.");
+
+            var existing = await _enrollmentRepository.GetActiveEnrollmentAsync(userId, courseId);
             if (existing != null)
                 throw new InvalidOperationException($"User '{userId}' is already enrolled in course '{courseId}'.");
 
@@ -54,26 +55,127 @@ namespace LMSApi.BALLibrary.Services
                 IsCompleted = false
             };
 
-            // 3. Branch by access type
             if (course.CourseAccessType == CourseAccessType.SelfPaced)
-            {
                 await EnrollSelfPacedAsync(enrollment, course, batchId);
-            }
             else
-            {
                 await EnrollCohortBasedAsync(enrollment, course, batchId);
+
+            await _enrollmentRepository.CreateEnrollmentAsync(enrollment);
+
+            _logger.LogInformation("Student Enrolled in Free Course: UserId={UserId}, CourseId={CourseId}", userId, courseId);
+
+            var saved = await _enrollmentRepository.GetActiveEnrollmentAsync(userId, courseId);
+            return _mapper.Map<EnrollmentResponse>(saved);
+        }
+
+        public async Task<string> EnrollInPremiumCourseAsync(int userId, int courseId, int? batchId)
+        {
+            var course = await _courseRepository.GetByIdAsync(courseId);
+            if (!course.IsPremium)
+                throw new InvalidOperationException("Course is free. Use EnrollInFreeCourseAsync.");
+
+            var existing = await _enrollmentRepository.GetActiveEnrollmentAsync(userId, courseId);
+            if (existing != null)
+                throw new InvalidOperationException("Already enrolled.");
+
+            if (course.CourseAccessType != CourseAccessType.SelfPaced)
+            {
+                if (!batchId.HasValue || !await _enrollmentRepository.ValidateBatchEnrollmentAsync(batchId.Value))
+                    throw new InvalidOperationException("Invalid or full batch.");
             }
 
-            await _enrollmentRepository.AddAsync(enrollment);
+            // TODO: User to implement Razorpay Order Creation via Razorpay SDK here.
+            // Example:
+            // var order = razorpayClient.Order.Create(options);
+            // var orderId = order["id"].ToString();
+            string razorpayOrderId = "order_mock_" + Guid.NewGuid().ToString("N").Substring(0, 10);
 
-            // 4. Reload with navigations for mapping
-            var saved = await _enrollmentRepository.GetByUserAndCourseAsync(userId, courseId)
-                        ?? throw new InvalidOperationException("Enrollment could not be retrieved after creation.");
+            var payment = new Payments
+            {
+                UserId = userId,
+                CourseId = courseId,
+                Amount = course.Price ?? 0,
+                RazorpayOrderId = razorpayOrderId,
+                Status = PaymentStatus.Pending
+            };
 
-            _logger.LogInformation("Student Enrolled: UserId={UserId}, CourseId={CourseId}, BatchId={BatchId}",
-                userId, courseId, batchId?.ToString() ?? "None");
+            await _paymentRepository.AddAsync(payment);
 
+            _logger.LogInformation("Payment Created: OrderId={OrderId}, UserId={UserId}", razorpayOrderId, userId);
+
+            return razorpayOrderId;
+        }
+
+        public async Task<EnrollmentResponse> VerifyPaymentAndEnrollAsync(int userId, int courseId, int? batchId, string razorpayOrderId, string razorpayPaymentId, string razorpaySignature)
+        {
+            var payment = await _paymentRepository.GetByRazorpayOrderIdAsync(razorpayOrderId);
+            if (payment == null || payment.UserId != userId || payment.CourseId != courseId)
+                throw new InvalidOperationException("Invalid payment record.");
+
+            // TODO: User to implement Signature verification via Razorpay SDK here.
+            // Example: Utils.verifyPaymentSignature(attributes);
+            bool isSignatureValid = true; 
+
+            if (!isSignatureValid)
+            {
+                payment.Status = PaymentStatus.Failed;
+                await _paymentRepository.UpdateAsync(payment);
+                throw new InvalidOperationException("Payment signature verification failed.");
+            }
+
+            payment.RazorpayPaymentId = razorpayPaymentId;
+            payment.Status = PaymentStatus.Completed;
+            payment.PaidAt = DateTime.UtcNow;
+            payment.RawResponse = "Success"; // Optional raw response storage
+
+            var course = await _courseRepository.GetByIdAsync(courseId);
+            var enrollment = new Enrollments
+            {
+                UserId = userId,
+                CourseId = courseId,
+                EnrolledAt = DateTime.UtcNow,
+                EnrollmentStatus = EnrollmentStatus.Active,
+                ProgressPercentage = 0,
+                IsCompleted = false
+            };
+
+            if (course.CourseAccessType == CourseAccessType.SelfPaced)
+                await EnrollSelfPacedAsync(enrollment, course, batchId);
+            else
+                await EnrollCohortBasedAsync(enrollment, course, batchId);
+
+            // Link payment and enrollment
+            enrollment.Payment = payment;
+
+            await _enrollmentRepository.CreateEnrollmentAsync(enrollment);
+            payment.EnrollmentId = enrollment.Id;
+            await _paymentRepository.UpdateAsync(payment);
+
+            _logger.LogInformation("Payment Verified and Enrolled: UserId={UserId}, CourseId={CourseId}", userId, courseId);
+
+            var saved = await _enrollmentRepository.GetActiveEnrollmentAsync(userId, courseId);
             return _mapper.Map<EnrollmentResponse>(saved);
+        }
+
+        public async Task<DateTime?> CalculateAssignmentDeadlineAsync(int userId, int assignmentId)
+        {
+            // Will call Postgres function `calculate_assignment_deadline` via context or raw ADO.NET
+            // Mocking for now to use the same pattern as GetAvailableSeats
+            // The EF context doesn't natively expose this, so assuming manual or standard EF raw query.
+            return null; // Update with Postgres execution if needed
+        }
+
+        public async Task<bool> ValidateCourseAccessAsync(int enrollmentId)
+        {
+            var accessExpiresAt = await _enrollmentRepository.GetCourseAccessAsync(enrollmentId);
+            if (accessExpiresAt.HasValue && accessExpiresAt.Value < DateTime.UtcNow)
+                return false;
+            return true;
+        }
+
+        public async Task<bool> ValidateBatchEnrollmentAsync(int batchId)
+        {
+            return await _enrollmentRepository.ValidateBatchEnrollmentAsync(batchId);
         }
 
         /// <inheritdoc/>

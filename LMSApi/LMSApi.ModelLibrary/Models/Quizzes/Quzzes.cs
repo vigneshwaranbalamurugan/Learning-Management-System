@@ -12,8 +12,9 @@ namespace LMSApi.ModelLibrary.Models
         public int MaxAttempts { get; set; }
         public int Order { get; set; }
         public bool IsPublished { get; set; }
-        public DateTime? AvailableFrom { get; set; }
-        public DateTime? AvailableUntil { get; set; }
+        public int DeadlineInDays { get; set; }
+        public DateTime CreatedAt { get; set; }
+        public DateTime UpdatedAt { get; set; }
 
         // Navigation properties
         public CourseSection CourseSection { get; set; }

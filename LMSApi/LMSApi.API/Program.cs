@@ -49,6 +49,7 @@ builder.Services.AddScoped<IStudentProgressRepository, StudentProgressRepository
 // Hybrid Learning repositories
 builder.Services.AddScoped<ICourseBatchRepository, CourseBatchRepository>();
 builder.Services.AddScoped<IEnrollmentRepository, EnrollmentRepository>();
+builder.Services.AddScoped<IPaymentRepository, PaymentRepository>();
 
 // Quiz module repositories
 builder.Services.AddScoped<IQuizRepository, QuizRepository>();
