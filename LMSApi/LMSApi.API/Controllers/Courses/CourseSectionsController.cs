@@ -31,7 +31,9 @@ namespace LMSApi.API.Controllers
         [HttpGet("course/{courseId:int}")]
         public async Task<ActionResult<IEnumerable<SectionResponse>>> GetByCourse(int courseId)
         {
-            var result = await _sectionService.GetSectionsByCourseAsync(courseId);
+            var userId = User.GetUserId();
+            var isAdmin = User.IsAdmin();
+            var result = await _sectionService.GetSectionsByCourseAsync(courseId, userId, isAdmin);
             return Ok(result);
         }
 
@@ -39,7 +41,9 @@ namespace LMSApi.API.Controllers
         [HttpGet("{id:int}")]
         public async Task<ActionResult<SectionResponse>> GetById(int id)
         {
-            var result = await _sectionService.GetSectionByIdAsync(id);
+            var userId = User.GetUserId();
+            var isAdmin = User.IsAdmin();
+            var result = await _sectionService.GetSectionByIdAsync(id, userId, isAdmin);
             return Ok(result);
         }
 
@@ -76,6 +80,15 @@ namespace LMSApi.API.Controllers
         }
 
         [Authorize(Roles = "Instructor,Admin")]
+        [HttpPatch("{id:int}/publish")]
+        public async Task<ActionResult<SectionResponse>> Publish(int id, [FromBody] PublishSectionRequest request)
+        {
+            await EnforceSectionOwnershipAsync(id);
+            var result = await _sectionService.PublishSectionAsync(id, request);
+            return Ok(result);
+        }
+
+        [Authorize(Roles = "Instructor,Admin")]
         [HttpPut("reorder")]
         public async Task<IActionResult> Reorder([FromBody] ReorderSectionsRequest request)
         {
@@ -100,7 +113,7 @@ namespace LMSApi.API.Controllers
             if (User.IsAdmin()) return;
 
             var callerId = User.GetUserId();
-            var course = await _courseService.GetCourseByIdAsync(courseId);
+            var course = await _courseService.GetCourseByIdAsync(courseId, callerId, User.IsAdmin());
 
             if (course.InstructorId != callerId)
                 throw new UnauthorizedAccessException("You do not have permission to modify sections in this course.");
@@ -115,8 +128,8 @@ namespace LMSApi.API.Controllers
             if (User.IsAdmin()) return;
 
             var callerId = User.GetUserId();
-            var section = await _sectionService.GetSectionByIdAsync(sectionId);
-            var course = await _courseService.GetCourseByIdAsync(section.CourseId);
+            var section = await _sectionService.GetSectionByIdAsync(sectionId, callerId, User.IsAdmin());
+            var course = await _courseService.GetCourseByIdAsync(section.CourseId, callerId, User.IsAdmin());
 
             if (course.InstructorId != callerId)
                 throw new UnauthorizedAccessException("You do not have permission to modify this section.");

@@ -57,7 +57,7 @@ namespace LMSApi.DALLibrary.Contexts.Configurations
             builder.Property(c => c.CourseAccessType)
                 .HasDefaultValue(CourseAccessType.SelfPaced);
 
-            builder.Property(c => c.DefaultAssignmentDeadlineDays)
+            builder.Property(c => c.DefaultDeadlineDays)
                 .IsRequired(false);
 
             // Relationships

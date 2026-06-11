@@ -30,7 +30,9 @@ namespace LMSApi.API.Controllers
         [HttpGet("section/{sectionId:int}")]
         public async Task<ActionResult<IEnumerable<QuizResponse>>> GetBySection(int sectionId)
         {
-            var result = await _quizService.GetQuizzesBySectionAsync(sectionId);
+            var userId = User.GetUserId();
+            var isAdmin = User.IsAdmin();
+            var result = await _quizService.GetQuizzesBySectionAsync(sectionId, userId, isAdmin);
             return Ok(result);
         }
 
@@ -38,7 +40,9 @@ namespace LMSApi.API.Controllers
         [HttpGet("{id:int}")]
         public async Task<ActionResult<QuizDetailResponse>> GetById(int id)
         {
-            var result = await _quizService.GetQuizByIdAsync(id);
+            var userId = User.GetUserId();
+            var isAdmin = User.IsAdmin();
+            var result = await _quizService.GetQuizByIdAsync(id, userId, isAdmin);
             return Ok(result);
         }
 
@@ -85,8 +89,8 @@ namespace LMSApi.API.Controllers
             if (User.IsAdmin()) return;
 
             var callerId = User.GetUserId();
-            var section = await _sectionService.GetSectionByIdAsync(sectionId);
-            var course = await _courseService.GetCourseByIdAsync(section.CourseId);
+            var section = await _sectionService.GetSectionByIdAsync(sectionId, callerId, User.IsAdmin());
+            var course = await _courseService.GetCourseByIdAsync(section.CourseId, callerId, User.IsAdmin());
 
             if (course.InstructorId != callerId)
                 throw new UnauthorizedAccessException("You do not have permission to manage quizzes in this section.");
@@ -97,9 +101,9 @@ namespace LMSApi.API.Controllers
             if (User.IsAdmin()) return;
 
             var callerId = User.GetUserId();
-            var quiz = await _quizService.GetQuizByIdAsync(quizId);
-            var section = await _sectionService.GetSectionByIdAsync(quiz.CourseSectionId);
-            var course = await _courseService.GetCourseByIdAsync(section.CourseId);
+            var quiz = await _quizService.GetQuizByIdAsync(quizId, callerId, User.IsAdmin());
+            var section = await _sectionService.GetSectionByIdAsync(quiz.CourseSectionId, callerId, User.IsAdmin());
+            var course = await _courseService.GetCourseByIdAsync(section.CourseId, callerId, User.IsAdmin());
 
             if (course.InstructorId != callerId)
                 throw new UnauthorizedAccessException("You do not have permission to modify this quiz.");

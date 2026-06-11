@@ -40,7 +40,9 @@ namespace LMSApi.API.Controllers
         [HttpGet("section/{sectionId:int}")]
         public async Task<ActionResult<IEnumerable<LessonResponse>>> GetBySection(int sectionId)
         {
-            var result = await _lessonService.GetLessonsBySectionAsync(sectionId);
+            var userId = User.GetUserId();
+            var isAdmin = User.IsAdmin();
+            var result = await _lessonService.GetLessonsBySectionAsync(sectionId, userId, isAdmin);
             return Ok(result);
         }
 
@@ -48,7 +50,9 @@ namespace LMSApi.API.Controllers
         [HttpGet("{id:int}")]
         public async Task<ActionResult<LessonResponse>> GetById(int id)
         {
-            var result = await _lessonService.GetLessonByIdAsync(id);
+            var userId = User.GetUserId();
+            var isAdmin = User.IsAdmin();
+            var result = await _lessonService.GetLessonByIdAsync(id, userId, isAdmin);
             return Ok(result);
         }
 
@@ -56,7 +60,9 @@ namespace LMSApi.API.Controllers
         [HttpGet("{id:int}/detail")]
         public async Task<ActionResult<LessonDetailResponse>> GetDetail(int id)
         {
-            var result = await _lessonService.GetLessonDetailAsync(id);
+            var userId = User.GetUserId();
+            var isAdmin = User.IsAdmin();
+            var result = await _lessonService.GetLessonDetailAsync(id, userId, isAdmin);
             return Ok(result);
         }
 
@@ -105,7 +111,7 @@ namespace LMSApi.API.Controllers
                 DurationInMinutes = form.DurationInMinutes,
                 SortOrder = form.SortOrder,
                 IsPreview = form.IsPreview ?? false,
-                IsPublished = form.IsPublished ?? false
+                Status = form.Status ?? PublishStatus.Draft
             };
 
             await using var fileStream = form.File?.OpenReadStream();
@@ -171,7 +177,7 @@ namespace LMSApi.API.Controllers
                 DurationInMinutes = form.DurationInMinutes,
                 SortOrder = form.SortOrder,
                 IsPreview = form.IsPreview,
-                IsPublished = form.IsPublished
+                Status = form.Status
             };
 
             await using var fileStream = form.File?.OpenReadStream();
@@ -187,6 +193,15 @@ namespace LMSApi.API.Controllers
             await EnforceLessonOwnershipAsync(id);
             await _lessonService.DeleteLessonAsync(id);
             return NoContent();
+        }
+
+        [Authorize(Roles = "Instructor,Admin")]
+        [HttpPatch("{id:int}/publish")]
+        public async Task<ActionResult<LessonResponse>> Publish(int id, [FromBody] PublishLessonRequest request)
+        {
+            await EnforceLessonOwnershipAsync(id);
+            var result = await _lessonService.PublishLessonAsync(id, request);
+            return Ok(result);
         }
 
         [Authorize(Roles = "Instructor,Admin")]
@@ -219,7 +234,7 @@ namespace LMSApi.API.Controllers
 
             var callerId = User.GetUserId();
             var section = await _sectionRepository.GetByIdAsync(sectionId);
-            var course = await _courseService.GetCourseByIdAsync(section.CourseId);
+            var course = await _courseService.GetCourseByIdAsync(section.CourseId, callerId, User.IsAdmin());
 
             if (course.InstructorId != callerId)
                 throw new UnauthorizedAccessException("You do not have permission to modify lessons in this section.");
@@ -230,9 +245,9 @@ namespace LMSApi.API.Controllers
             if (User.IsAdmin()) return;
 
             var callerId = User.GetUserId();
-            var lesson = await _lessonService.GetLessonByIdAsync(lessonId);
+            var lesson = await _lessonService.GetLessonByIdAsync(lessonId, callerId, User.IsAdmin());
             var section = await _sectionRepository.GetByIdAsync(lesson.CourseSectionId);
-            var course = await _courseService.GetCourseByIdAsync(section.CourseId);
+            var course = await _courseService.GetCourseByIdAsync(section.CourseId, callerId, User.IsAdmin());
 
             if (course.InstructorId != callerId)
                 throw new UnauthorizedAccessException("You do not have permission to modify this lesson.");

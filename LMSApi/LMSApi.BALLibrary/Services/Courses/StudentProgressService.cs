@@ -121,9 +121,9 @@ namespace LMSApi.BALLibrary.Services
             if (course == null) throw new KeyNotFoundException($"Course with id '{courseId}' not found.");
 
             // Get all published items
-            var publishedLessonIds = course.Sections.SelectMany(s => s.Lessons).Where(l => l.IsPublished).Select(l => l.Id).ToList();
-            var publishedQuizIds = course.Sections.SelectMany(s => s.Quizzes).Where(q => q.IsPublished).Select(q => q.Id).ToList();
-            var publishedAssignmentIds = course.Sections.SelectMany(s => s.Assignments).Where(a => a.IsPublished).Select(a => a.Id).ToList();
+            var publishedLessonIds = course.Sections.SelectMany(s => s.Lessons).Where(l => l.Status == PublishStatus.Published).Select(l => l.Id).ToList();
+            var publishedQuizIds = course.Sections.SelectMany(s => s.Quizzes).Where(q => q.Status == PublishStatus.Published).Select(q => q.Id).ToList();
+            var publishedAssignmentIds = course.Sections.SelectMany(s => s.Assignments).Where(a => a.Status == PublishStatus.Published).Select(a => a.Id).ToList();
 
             var totalItems = publishedLessonIds.Count + publishedQuizIds.Count + publishedAssignmentIds.Count;
 
@@ -140,9 +140,9 @@ namespace LMSApi.BALLibrary.Services
 
             foreach (var section in course.Sections)
             {
-                var secLessons = section.Lessons.Where(l => l.IsPublished).ToList();
-                var secQuizzes = section.Quizzes.Where(q => q.IsPublished).ToList();
-                var secAssignments = section.Assignments.Where(a => a.IsPublished).ToList();
+                var secLessons = section.Lessons.Where(l => l.Status == PublishStatus.Published).ToList();
+                var secQuizzes = section.Quizzes.Where(q => q.Status == PublishStatus.Published).ToList();
+                var secAssignments = section.Assignments.Where(a => a.Status == PublishStatus.Published).ToList();
 
                 int secTotalItems = secLessons.Count + secQuizzes.Count + secAssignments.Count;
                 int secCompletedItems = 0;
@@ -253,9 +253,9 @@ namespace LMSApi.BALLibrary.Services
             var course = await _courseRepository.GetCourseWithDetailsAsync(courseId);
             if (course == null) return;
 
-            var publishedLessonIds = course.Sections.SelectMany(s => s.Lessons).Where(l => l.IsPublished).Select(l => l.Id).ToList();
-            var publishedQuizIds = course.Sections.SelectMany(s => s.Quizzes).Where(q => q.IsPublished).Select(q => q.Id).ToList();
-            var publishedAssignmentIds = course.Sections.SelectMany(s => s.Assignments).Where(a => a.IsPublished).Select(a => a.Id).ToList();
+            var publishedLessonIds = course.Sections.SelectMany(s => s.Lessons).Where(l => l.Status == PublishStatus.Published).Select(l => l.Id).ToList();
+            var publishedQuizIds = course.Sections.SelectMany(s => s.Quizzes).Where(q => q.Status == PublishStatus.Published).Select(q => q.Id).ToList();
+            var publishedAssignmentIds = course.Sections.SelectMany(s => s.Assignments).Where(a => a.Status == PublishStatus.Published).Select(a => a.Id).ToList();
 
             var totalItems = publishedLessonIds.Count + publishedQuizIds.Count + publishedAssignmentIds.Count;
             if (totalItems == 0) return;

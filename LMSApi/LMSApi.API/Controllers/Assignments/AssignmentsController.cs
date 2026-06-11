@@ -46,7 +46,9 @@ namespace LMSApi.API.Controllers
         [HttpGet("section/{sectionId:int}")]
         public async Task<ActionResult<IEnumerable<AssignmentResponse>>> GetBySection(int sectionId)
         {
-            var result = await _assignmentService.GetAssignmentsBySectionAsync(sectionId);
+            var userId = User.GetUserId();
+            var isAdmin = User.IsAdmin();
+            var result = await _assignmentService.GetAssignmentsBySectionAsync(sectionId, userId, isAdmin);
             return Ok(result);
         }
 
@@ -55,7 +57,9 @@ namespace LMSApi.API.Controllers
         [HttpGet("{id:int}")]
         public async Task<ActionResult<AssignmentResponse>> GetById(int id)
         {
-            var result = await _assignmentService.GetAssignmentByIdAsync(id);
+            var userId = User.GetUserId();
+            var isAdmin = User.IsAdmin();
+            var result = await _assignmentService.GetAssignmentByIdAsync(id, userId, isAdmin);
             return Ok(result);
         }
 
@@ -158,8 +162,8 @@ namespace LMSApi.API.Controllers
             if (User.IsAdmin()) return;
 
             var callerId = User.GetUserId();
-            var section = await _sectionService.GetSectionByIdAsync(sectionId);
-            var course = await _courseService.GetCourseByIdAsync(section.CourseId);
+            var section = await _sectionService.GetSectionByIdAsync(sectionId, callerId, User.IsAdmin());
+            var course = await _courseService.GetCourseByIdAsync(section.CourseId, callerId, User.IsAdmin());
 
             if (course.InstructorId != callerId)
                 throw new UnauthorizedAccessException("You do not have permission to manage assignments in this section.");
@@ -170,9 +174,9 @@ namespace LMSApi.API.Controllers
             if (User.IsAdmin()) return;
 
             var callerId = User.GetUserId();
-            var assignment = await _assignmentService.GetAssignmentByIdAsync(assignmentId);
-            var section = await _sectionService.GetSectionByIdAsync(assignment.CourseSectionId);
-            var course = await _courseService.GetCourseByIdAsync(section.CourseId);
+            var assignment = await _assignmentService.GetAssignmentByIdAsync(assignmentId, callerId, User.IsAdmin());
+            var section = await _sectionService.GetSectionByIdAsync(assignment.CourseSectionId, callerId, User.IsAdmin());
+            var course = await _courseService.GetCourseByIdAsync(section.CourseId, callerId, User.IsAdmin());
 
             if (course.InstructorId != callerId)
                 throw new UnauthorizedAccessException("You do not have permission to modify this assignment.");

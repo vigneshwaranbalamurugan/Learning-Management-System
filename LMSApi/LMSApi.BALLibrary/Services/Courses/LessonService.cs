@@ -33,21 +33,66 @@ namespace LMSApi.BALLibrary.Services
             _logger = logger;
         }
 
-        public async Task<IEnumerable<LessonResponse>> GetLessonsBySectionAsync(int sectionId)
+        public async Task<IEnumerable<LessonResponse>> GetLessonsBySectionAsync(int sectionId, int? currentUserId = null, bool isAdmin = false)
         {
+            var section = await _sectionRepository.GetByIdAsync(sectionId)
+                ?? throw new KeyNotFoundException($"Section with id '{sectionId}' not found.");
+
+            var course = await _courseRepository.GetByIdAsync(section.CourseId)
+                ?? throw new KeyNotFoundException($"Course with id '{section.CourseId}' not found.");
+
             var lessons = await _lessonRepository.GetLessonsBySectionAsync(sectionId);
+
+            if (currentUserId == null || (course.InstructorId != currentUserId && !isAdmin))
+            {
+                lessons = lessons.Where(l => l.Status == PublishStatus.Published);
+            }
+
             return _mapper.Map<IEnumerable<LessonResponse>>(lessons);
         }
 
-        public async Task<LessonResponse> GetLessonByIdAsync(int id)
+        public async Task<LessonResponse> GetLessonByIdAsync(int id, int? currentUserId = null, bool isAdmin = false)
         {
-            var lesson = await _lessonRepository.GetByIdAsync(id);
+            var lesson = await _lessonRepository.GetByIdAsync(id)
+                ?? throw new KeyNotFoundException($"Lesson with id '{id}' not found.");
+
+            var section = await _sectionRepository.GetByIdAsync(lesson.CourseSectionId)
+                ?? throw new KeyNotFoundException($"Section with id '{lesson.CourseSectionId}' not found.");
+
+            var course = await _courseRepository.GetByIdAsync(section.CourseId)
+                ?? throw new KeyNotFoundException($"Course with id '{section.CourseId}' not found.");
+
+            if (currentUserId == null || (course.InstructorId != currentUserId && !isAdmin))
+            {
+                if (lesson.Status != PublishStatus.Published)
+                {
+                    throw new KeyNotFoundException($"Lesson with id '{id}' not found.");
+                }
+            }
+
             return _mapper.Map<LessonResponse>(lesson);
         }
 
-        public async Task<LessonDetailResponse> GetLessonDetailAsync(int id)
+        public async Task<LessonDetailResponse> GetLessonDetailAsync(int id, int? currentUserId = null, bool isAdmin = false)
         {
-            var lesson = await _lessonRepository.GetLessonWithResourcesAsync(id);
+            var lesson = await _lessonRepository.GetLessonWithResourcesAsync(id)
+                ?? throw new KeyNotFoundException($"Lesson with id '{id}' not found.");
+
+            var section = await _sectionRepository.GetByIdAsync(lesson.CourseSectionId)
+                ?? throw new KeyNotFoundException($"Section with id '{lesson.CourseSectionId}' not found.");
+
+            var course = await _courseRepository.GetByIdAsync(section.CourseId)
+                ?? throw new KeyNotFoundException($"Course with id '{section.CourseId}' not found.");
+
+            if (currentUserId == null || (course.InstructorId != currentUserId && !isAdmin))
+            {
+                if (lesson.Status != PublishStatus.Published)
+                {
+                    throw new KeyNotFoundException($"Lesson with id '{id}' not found.");
+                }
+                lesson.Resources = lesson.Resources.Where(r => r.Status == PublishStatus.Published).ToList();
+            }
+
             return _mapper.Map<LessonDetailResponse>(lesson);
         }
 
@@ -76,7 +121,7 @@ namespace LMSApi.BALLibrary.Services
 
             if (course.CourseAccessType == CourseAccessType.SelfPaced && course.Status == CourseStatus.Published)
             {
-                lesson.IsPublished = true;
+                lesson.Status = PublishStatus.Published;
             }
 
             await _lessonRepository.AddAsync(lesson);
@@ -129,18 +174,18 @@ namespace LMSApi.BALLibrary.Services
             if (request.DurationInMinutes.HasValue) lesson.DurationInMinutes = request.DurationInMinutes.Value;
             if (request.SortOrder.HasValue) lesson.SortOrder = request.SortOrder.Value;
             if (request.IsPreview.HasValue) lesson.IsPreview = request.IsPreview.Value;
-            if (request.IsPublished.HasValue) 
+            if (request.Status.HasValue) 
             {
                 if (course.CourseAccessType == CourseAccessType.SelfPaced)
                 {
                     throw new InvalidOperationException("Cannot manually change publish status of a lesson in a Self-Paced course.");
                 }
-                lesson.IsPublished = request.IsPublished.Value;
+                lesson.Status = request.Status.Value;
             }
 
             if (course.CourseAccessType == CourseAccessType.SelfPaced && course.Status == CourseStatus.Published)
             {
-                lesson.IsPublished = true;
+                lesson.Status = PublishStatus.Published;
             }
 
             lesson.UpdatedAt = DateTime.UtcNow;
@@ -193,6 +238,25 @@ namespace LMSApi.BALLibrary.Services
             }
 
             _logger.LogInformation("Lessons Reordered: {Count} lessons updated", request.LessonOrders.Count);
+        }
+
+        public async Task<LessonResponse> PublishLessonAsync(int id, PublishLessonRequest request)
+        {
+            var lesson = await _lessonRepository.GetByIdAsync(id);
+            var section = await _sectionRepository.GetByIdAsync(lesson.CourseSectionId);
+            var course = await _courseRepository.GetByIdAsync(section.CourseId);
+
+            if (course.CourseAccessType == CourseAccessType.SelfPaced)
+            {
+                throw new InvalidOperationException("Cannot manually change publish status of a lesson in a Self-Paced course.");
+            }
+
+            lesson.Status = request.Publish ? PublishStatus.Published : PublishStatus.Draft;
+            await _lessonRepository.UpdateAsync(lesson);
+
+            _logger.LogInformation("Lesson publication status updated: LessonId={LessonId}, Status={Status}", id, lesson.Status);
+
+            return _mapper.Map<LessonResponse>(lesson);
         }
     }
 }

@@ -1,3 +1,4 @@
+using LMSApi.ModelLibrary.Enums;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using LMSApi.ModelLibrary.Models;
@@ -25,6 +26,9 @@ namespace LMSApi.DALLibrary.Contexts.Configurations
 
             builder.Property(r => r.UploadedAt)
                 .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+            builder.Property(r => r.Status)
+                .HasDefaultValue(PublishStatus.Draft);
 
             // Relationships
             builder.HasOne(r => r.Lesson)

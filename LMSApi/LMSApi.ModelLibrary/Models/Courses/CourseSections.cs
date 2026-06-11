@@ -1,3 +1,5 @@
+using LMSApi.ModelLibrary.Enums;
+
 namespace LMSApi.ModelLibrary.Models
 {
     public class CourseSection
@@ -7,7 +9,7 @@ namespace LMSApi.ModelLibrary.Models
         public int SectionId { get; set; }
         public string Title { get; set; }
         public string Description { get; set; }
-        public bool IsPublished { get; set; }
+        public PublishStatus Status { get; set; } = PublishStatus.Draft;
         public TimeSpan EstimatedDuration { get; set; }
         public int SortOrder { get; set; }
         public DateTime CreatedAt { get; set; }

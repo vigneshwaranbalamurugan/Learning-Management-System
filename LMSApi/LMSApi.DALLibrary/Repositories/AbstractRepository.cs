@@ -20,7 +20,7 @@ namespace LMSApi.DALLibrary.Repositories
 
         public virtual async Task<T> GetByIdAsync(K id)
         {
-            return await _context.Set<T>().FindAsync(id)?? throw new KeyNotFoundException($"Entity with id '{id}' not found.");
+            return await _context.Set<T>().FindAsync(id)?? throw new KeyNotFoundException($"{typeof(T).Name} with id '{id}' not found.");
         }
 
         public virtual async Task AddAsync(T entity)
@@ -42,6 +42,46 @@ namespace LMSApi.DALLibrary.Repositories
             {
                 _context.Set<T>().Remove(entity);
                 await _context.SaveChangesAsync();
+            }
+        }
+
+        public virtual async Task BeginTransactionAsync()
+        {
+            if (_context.Database.CurrentTransaction != null)
+                return;
+            
+            await _context.Database.BeginTransactionAsync();
+        }
+
+        public virtual async Task CommitTransactionAsync()
+        {
+            var transaction = _context.Database.CurrentTransaction;
+            if (transaction != null)
+            {
+                try
+                {
+                    await transaction.CommitAsync();
+                }
+                finally
+                {
+                    await transaction.DisposeAsync();
+                }
+            }
+        }
+
+        public virtual async Task RollbackTransactionAsync()
+        {
+            var transaction = _context.Database.CurrentTransaction;
+            if (transaction != null)
+            {
+                try
+                {
+                    await transaction.RollbackAsync();
+                }
+                finally
+                {
+                    await transaction.DisposeAsync();
+                }
             }
         }
     }

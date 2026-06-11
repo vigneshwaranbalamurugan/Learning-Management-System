@@ -52,15 +52,43 @@ namespace LMSApi.BALLibrary.Services
 
         // ─── Quiz CRUD ──────────────────────────────────────────────────────
 
-        public async Task<IEnumerable<QuizResponse>> GetQuizzesBySectionAsync(int sectionId)
+        public async Task<IEnumerable<QuizResponse>> GetQuizzesBySectionAsync(int sectionId, int? currentUserId = null, bool isAdmin = false)
         {
+            var section = await _sectionRepository.GetByIdAsync(sectionId)
+                ?? throw new KeyNotFoundException($"Section with id '{sectionId}' not found.");
+
+            var course = await _courseRepository.GetByIdAsync(section.CourseId)
+                ?? throw new KeyNotFoundException($"Course with id '{section.CourseId}' not found.");
+
             var quizzes = await _quizRepository.GetQuizzesBySectionAsync(sectionId);
+
+            if (currentUserId == null || (course.InstructorId != currentUserId && !isAdmin))
+            {
+                quizzes = quizzes.Where(q => q.Status == PublishStatus.Published);
+            }
+
             return _mapper.Map<IEnumerable<QuizResponse>>(quizzes);
         }
 
-        public async Task<QuizDetailResponse> GetQuizByIdAsync(int id)
+        public async Task<QuizDetailResponse> GetQuizByIdAsync(int id, int? currentUserId = null, bool isAdmin = false)
         {
-            var quiz = await _quizRepository.GetQuizWithQuestionsAsync(id);
+            var quiz = await _quizRepository.GetQuizWithQuestionsAsync(id)
+                ?? throw new KeyNotFoundException($"Quiz with id '{id}' not found.");
+
+            var section = await _sectionRepository.GetByIdAsync(quiz.CourseSectionId)
+                ?? throw new KeyNotFoundException($"Section with id '{quiz.CourseSectionId}' not found.");
+
+            var course = await _courseRepository.GetByIdAsync(section.CourseId)
+                ?? throw new KeyNotFoundException($"Course with id '{section.CourseId}' not found.");
+
+            if (currentUserId == null || (course.InstructorId != currentUserId && !isAdmin))
+            {
+                if (quiz.Status != PublishStatus.Published)
+                {
+                    throw new KeyNotFoundException($"Quiz with id '{id}' not found.");
+                }
+            }
+
             return _mapper.Map<QuizDetailResponse>(quiz);
         }
 
@@ -84,11 +112,11 @@ namespace LMSApi.BALLibrary.Services
             
             if (course.CourseAccessType == CourseAccessType.SelfPaced && course.Status == CourseStatus.Published)
             {
-                quiz.IsPublished = true;
+                quiz.Status = PublishStatus.Published;
             }
             else
             {
-                quiz.IsPublished = false; // defaults to unpublished
+                quiz.Status = PublishStatus.Draft; // defaults to unpublished
             }
 
             await _quizRepository.AddAsync(quiz);
@@ -107,19 +135,28 @@ namespace LMSApi.BALLibrary.Services
             if (request.Title != null) quiz.Title = request.Title;
             if (request.Description != null) quiz.Description = request.Description;
             if (request.TimeLimit.HasValue) quiz.TimeLimit = request.TimeLimit.Value;
-            if (request.PassingMarks.HasValue) quiz.PassingMarks = request.PassingMarks.Value;
+            if (request.PassingPercentage.HasValue) quiz.PassingPercentage = request.PassingPercentage.Value;
             if (request.MaxAttempts.HasValue) quiz.MaxAttempts = request.MaxAttempts.Value;
             if (request.Order.HasValue) quiz.Order = request.Order.Value;
             if (request.DeadlineInDays.HasValue) quiz.DeadlineInDays = request.DeadlineInDays.Value;
             var section = await _sectionRepository.GetByIdAsync(quiz.CourseSectionId);
             var course = await _courseRepository.GetByIdAsync(section.CourseId);
             
+            if (request.Status.HasValue)
+            {
+                if (course.CourseAccessType == CourseAccessType.SelfPaced)
+                {
+                    throw new InvalidOperationException("Cannot manually change publish status of a quiz in a Self-Paced course.");
+                }
+                quiz.Status = request.Status.Value;
+            }
+
             if (course.CourseAccessType == CourseAccessType.SelfPaced && course.Status == CourseStatus.Published)
             {
-                quiz.IsPublished = true;
+                quiz.Status = PublishStatus.Published;
             }
             
-            if (quiz.IsPublished)
+            if (quiz.Status == PublishStatus.Published)
             {
                 ValidateQuizMarks(quiz);
             }
@@ -158,10 +195,10 @@ namespace LMSApi.BALLibrary.Services
                 ValidateQuizMarks(quiz);
             }
 
-            quiz.IsPublished = request.Publish;
+            quiz.Status = request.Publish ? PublishStatus.Published : PublishStatus.Draft;
             await _quizRepository.UpdateAsync(quiz);
 
-            _logger.LogInformation("Quiz Published status updated: Id={Id}, IsPublished={IsPublished}", quizId, quiz.IsPublished);
+            _logger.LogInformation("Quiz Published status updated: Id={Id}, Status={Status}", quizId, quiz.Status);
 
             return _mapper.Map<QuizResponse>(quiz);
         }
@@ -204,7 +241,7 @@ namespace LMSApi.BALLibrary.Services
 
             // Reload quiz with questions to check publish constraints
             var reloadedQuiz = await _quizRepository.GetQuizWithQuestionsAsync(request.QuizId);
-            if (reloadedQuiz.IsPublished)
+            if (reloadedQuiz.Status == PublishStatus.Published)
             {
                 ValidateQuizMarks(reloadedQuiz);
             }
@@ -256,7 +293,7 @@ namespace LMSApi.BALLibrary.Services
 
             // Check published constraints
             var reloadedQuiz = await _quizRepository.GetQuizWithQuestionsAsync(question.QuizId);
-            if (reloadedQuiz.IsPublished)
+            if (reloadedQuiz.Status == PublishStatus.Published)
             {
                 ValidateQuizMarks(reloadedQuiz);
             }
@@ -275,7 +312,7 @@ namespace LMSApi.BALLibrary.Services
 
             // Check published constraints
             var reloadedQuiz = await _quizRepository.GetQuizWithQuestionsAsync(quizId);
-            if (reloadedQuiz.IsPublished)
+            if (reloadedQuiz.Status == PublishStatus.Published)
             {
                 try
                 {
@@ -283,10 +320,10 @@ namespace LMSApi.BALLibrary.Services
                 }
                 catch (Exception)
                 {
-                    // If deleting the question violates PassingMarks <= TotalMarks on a published quiz, we roll back or auto-unpublish
-                    reloadedQuiz.IsPublished = false;
+                    // If deleting the question violates some rule, we could roll back or auto-unpublish
+                    reloadedQuiz.Status = PublishStatus.Draft;
                     await _quizRepository.UpdateAsync(reloadedQuiz);
-                    _logger.LogWarning("Quiz unpublished due to PassingMarks violating TotalMarks after question deletion: QuizId={QuizId}", quizId);
+                    _logger.LogWarning("Quiz unpublished due to validation failure after question deletion: QuizId={QuizId}", quizId);
                 }
             }
         }
@@ -409,13 +446,20 @@ namespace LMSApi.BALLibrary.Services
 
         // ─── Student Quiz-Taking ────────────────────────────────────────────
 
-        public async Task<QuizStudentDetailResponse> GetQuizForStudentAsync(int quizId)
+        public async Task<QuizStudentDetailResponse> GetQuizForStudentAsync(int quizId, int userId)
         {
             var quiz = await _quizRepository.GetQuizWithQuestionsAsync(quizId);
-            if (!quiz.IsPublished)
+            if (quiz.Status != PublishStatus.Published)
             {
                 throw new InvalidOperationException("This quiz is not available.");
             }
+
+            var activeAttempt = await _attemptRepository.GetInProgressAttemptAsync(quizId, userId);
+            if (activeAttempt == null)
+            {
+                throw new InvalidOperationException("You must start a quiz attempt before retrieving the questions.");
+            }
+
             return _mapper.Map<QuizStudentDetailResponse>(quiz);
         }
 
@@ -423,7 +467,7 @@ namespace LMSApi.BALLibrary.Services
         {
             var quiz = await _quizRepository.GetQuizWithQuestionsAsync(quizId);
 
-            if (!quiz.IsPublished)
+            if (quiz.Status != PublishStatus.Published)
             {
                 throw new InvalidOperationException("Cannot start an attempt on an unpublished quiz.");
             }
@@ -523,6 +567,7 @@ namespace LMSApi.BALLibrary.Services
 
             // Save answers
             var answers = new List<QuizAnswers>();
+            double score = 0;
             foreach (var answer in request.Answers)
             {
                 var question = quiz.Questions.FirstOrDefault(q => q.Id == answer.QuestionId)
@@ -530,6 +575,11 @@ namespace LMSApi.BALLibrary.Services
 
                 var selectedOption = question.Answers.FirstOrDefault(o => o.Id == answer.SelectedOptionId)
                     ?? throw new ArgumentException($"Option with id '{answer.SelectedOptionId}' does not belong to question '{answer.QuestionId}'.");
+
+                if (selectedOption.IsCorrect)
+                {
+                    score += question.Mark;
+                }
 
                 answers.Add(new QuizAnswers
                 {
@@ -544,16 +594,11 @@ namespace LMSApi.BALLibrary.Services
 
             attempt.Status = AttemptStatus.Submitted;
             attempt.CompletedAt = DateTime.UtcNow;
-            await _attemptRepository.UpdateAsync(attempt);
 
-            // Run PostgreSQL function to calculate score
-            var score = await _attemptRepository.CalculateScoreAsync(attempt.Id);
+            double totalMarks = quiz.Questions.Sum(q => q.Mark);
             attempt.Score = score;
-            await _attemptRepository.UpdateAsync(attempt); // save score first so pass status can check it
+            attempt.IsPassed = totalMarks == 0 ? false : (score / totalMarks) * 100 >= quiz.PassingPercentage;
 
-            // Run PostgreSQL function to calculate pass status
-            var isPassed = await _attemptRepository.CalculatePassStatusAsync(attempt.Id);
-            attempt.IsPassed = isPassed;
             await _attemptRepository.UpdateAsync(attempt);
 
             _logger.LogInformation("Quiz Submitted: QuizId={QuizId}, UserId={UserId}, Score={Score}, Passed={Passed}",
@@ -598,10 +643,9 @@ namespace LMSApi.BALLibrary.Services
 
         private void ValidateQuizMarks(Quzzes quiz)
         {
-            var totalMarks = quiz.Questions.Sum(q => q.Mark);
-            if (quiz.PassingMarks > totalMarks)
+            if (quiz.PassingPercentage < 0 || quiz.PassingPercentage > 100)
             {
-                throw new InvalidOperationException($"Passing marks ({quiz.PassingMarks}) cannot be greater than the quiz total marks ({totalMarks}).");
+                throw new InvalidOperationException($"Passing percentage ({quiz.PassingPercentage}) must be between 0 and 100.");
             }
         }
 

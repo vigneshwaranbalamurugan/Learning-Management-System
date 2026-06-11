@@ -85,7 +85,6 @@ namespace LMSApi.Tests.Services.Courses
                 ThumbnailUrl = "url",
                 IntroVideoUrl = "url",
                 IsPremium = false,
-                IsPublished = false,
                 Requirements = "Reqs",
                 LearningOutcomes = "Outcomes",
                 EstimatedDuration = TimeSpan.Zero,
@@ -94,7 +93,7 @@ namespace LMSApi.Tests.Services.Courses
                 PublishedAt = DateTime.UtcNow,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow,
-                DefaultAssignmentDeadlineDays = 7,
+                DefaultDeadlineDays = 7,
                 CategoryId = cat.Id,
                 InstructorId = user.Id,
                 slug = "old",
@@ -123,7 +122,6 @@ namespace LMSApi.Tests.Services.Courses
                 ThumbnailUrl = "url",
                 IntroVideoUrl = "url",
                 IsPremium = false,
-                IsPublished = false,
                 Requirements = "Reqs",
                 LearningOutcomes = "Outcomes",
                 EstimatedDuration = TimeSpan.Zero,
@@ -132,23 +130,23 @@ namespace LMSApi.Tests.Services.Courses
                 PublishedAt = DateTime.UtcNow,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow,
-                DefaultAssignmentDeadlineDays = 7,
+                DefaultDeadlineDays = 7,
                 CategoryId = cat.Id,
                 InstructorId = user.Id,
                 slug = "to-publish",
                 Status = CourseStatus.Draft,
                 CourseAccessType = CourseAccessType.SelfPaced
             };
-            var section = new CourseSection { Title = "S1", Description = "Desc", SectionId = 1, IsPublished = false };
+            var section = new CourseSection { Title = "S1", Description = "Desc", SectionId = 1, Status = PublishStatus.Draft };
             course.Sections.Add(section);
             DbContext.Courses.Add(course);
             await DbContext.SaveChangesAsync();
 
-            var result = await _courseService.PublishCourseAsync(course.Id);
+            var result = await _courseService.PublishCourseAsync(course.Id, new PublishCourseRequest { Publish = true });
 
             Assert.That(result.Status, Is.EqualTo(CourseStatus.Published));
             var dbSection = await DbContext.CourseSections.FindAsync(section.Id);
-            Assert.That(dbSection!.IsPublished, Is.True);
+            Assert.That(dbSection!.Status, Is.EqualTo(PublishStatus.Published));
         }
 
         [Test]
@@ -163,7 +161,6 @@ namespace LMSApi.Tests.Services.Courses
                 ThumbnailUrl = "url",
                 IntroVideoUrl = "url",
                 IsPremium = false,
-                IsPublished = false,
                 Requirements = "Reqs",
                 LearningOutcomes = "Outcomes",
                 EstimatedDuration = TimeSpan.Zero,
@@ -172,7 +169,7 @@ namespace LMSApi.Tests.Services.Courses
                 PublishedAt = DateTime.UtcNow,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow,
-                DefaultAssignmentDeadlineDays = 7,
+                DefaultDeadlineDays = 7,
                 CategoryId = cat.Id,
                 InstructorId = user.Id,
                 slug = "cohort",
@@ -182,7 +179,7 @@ namespace LMSApi.Tests.Services.Courses
             DbContext.Courses.Add(course);
             await DbContext.SaveChangesAsync();
 
-            Assert.ThrowsAsync<InvalidOperationException>(() => _courseService.PublishCourseAsync(course.Id));
+            Assert.ThrowsAsync<InvalidOperationException>(() => _courseService.PublishCourseAsync(course.Id, new PublishCourseRequest { Publish = true }));
         }
 
         [Test]
@@ -197,7 +194,6 @@ namespace LMSApi.Tests.Services.Courses
                 ThumbnailUrl = "url",
                 IntroVideoUrl = "url",
                 IsPremium = false,
-                IsPublished = false,
                 Requirements = "Reqs",
                 LearningOutcomes = "Outcomes",
                 EstimatedDuration = TimeSpan.Zero,
@@ -206,7 +202,7 @@ namespace LMSApi.Tests.Services.Courses
                 PublishedAt = DateTime.UtcNow,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow,
-                DefaultAssignmentDeadlineDays = 7,
+                DefaultDeadlineDays = 7,
                 CategoryId = cat.Id,
                 InstructorId = user.Id,
                 slug = "with-enrollments"

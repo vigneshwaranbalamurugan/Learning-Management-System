@@ -13,11 +13,10 @@ namespace LMSApi.ModelLibrary.Models
         public string Description { get; set; }
         public decimal? Price { get; set; }
         public bool IsPremium { get; set; }
-        public bool IsPublished { get; set; }
         public string ThumbnailUrl { get; set; }
-        public string IntroVideoUrl { get; set; }
-        public string Requirements { get; set; }
-        public string LearningOutcomes { get; set; }
+        public string? IntroVideoUrl { get; set; }
+        public string? Requirements { get; set; }
+        public string? LearningOutcomes { get; set; }
         public TimeSpan EstimatedDuration { get; set; }
         public CourseLevel Level { get; set; }
         public CourseLanguage Language { get; set; }
@@ -26,7 +25,7 @@ namespace LMSApi.ModelLibrary.Models
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
         public CourseAccessType CourseAccessType { get; set; } = CourseAccessType.SelfPaced;
-        public int? DefaultAssignmentDeadlineDays { get; set; }
+        public int? DefaultDeadlineDays { get; set; }
 
         // Navigation properties
         public CourseCategories Category { get; set; }

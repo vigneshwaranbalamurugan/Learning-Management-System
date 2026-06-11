@@ -5,6 +5,11 @@ namespace LMSApi.ModelLibrary.DTOs
 {
     // ─── Requests ────────────────────────────────────────────────────────────
 
+    public class PublishLessonRequest
+    {
+        public bool Publish { get; set; }
+    }
+
     public class CreateLessonRequest
     {
         [Required(ErrorMessage = "Course section ID is required.")]
@@ -36,7 +41,7 @@ namespace LMSApi.ModelLibrary.DTOs
         public int SortOrder { get; set; }
 
         public bool IsPreview { get; set; }
-        public bool IsPublished { get; set; }
+        public PublishStatus Status { get; set; }
     }
 
     public class UpdateLessonRequest
@@ -56,7 +61,7 @@ namespace LMSApi.ModelLibrary.DTOs
         public int? SortOrder { get; set; }
 
         public bool? IsPreview { get; set; }
-        public bool? IsPublished { get; set; }
+        public PublishStatus? Status { get; set; }
     }
 
     public class ReorderLessonsRequest
@@ -85,7 +90,7 @@ namespace LMSApi.ModelLibrary.DTOs
         public TimeSpan? DurationInMinutes { get; set; }
         public int SortOrder { get; set; }
         public bool IsPreview { get; set; }
-        public bool IsPublished { get; set; }
+        public PublishStatus Status { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
     }

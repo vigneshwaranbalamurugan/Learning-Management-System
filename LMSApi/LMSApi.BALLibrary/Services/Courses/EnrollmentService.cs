@@ -49,27 +49,38 @@ namespace LMSApi.BALLibrary.Services
             if (existing != null)
                 throw new InvalidOperationException($"User '{userId}' is already enrolled in course '{courseId}'.");
 
-            var enrollment = new Enrollments
+            await _enrollmentRepository.BeginTransactionAsync();
+            try
             {
-                UserId = userId,
-                CourseId = courseId,
-                EnrolledAt = DateTime.UtcNow,
-                EnrollmentStatus = EnrollmentStatus.Active,
-                ProgressPercentage = 0,
-                IsCompleted = false
-            };
+                var enrollment = new Enrollments
+                {
+                    UserId = userId,
+                    CourseId = courseId,
+                    EnrolledAt = DateTime.UtcNow,
+                    EnrollmentStatus = EnrollmentStatus.Active,
+                    ProgressPercentage = 0,
+                    IsCompleted = false
+                };
 
-            if (course.CourseAccessType == CourseAccessType.SelfPaced)
-                await EnrollSelfPacedAsync(enrollment, course, batchId);
-            else
-                await EnrollCohortBasedAsync(enrollment, course, batchId);
+                if (course.CourseAccessType == CourseAccessType.SelfPaced)
+                    await EnrollSelfPacedAsync(enrollment, course, batchId);
+                else
+                    await EnrollCohortBasedAsync(enrollment, course, batchId);
 
-            await _enrollmentRepository.CreateEnrollmentAsync(enrollment);
+                await _enrollmentRepository.CreateEnrollmentAsync(enrollment);
 
-            _logger.LogInformation("Student Enrolled in Free Course: UserId={UserId}, CourseId={CourseId}", userId, courseId);
+                await _enrollmentRepository.CommitTransactionAsync();
 
-            var saved = await _enrollmentRepository.GetActiveEnrollmentAsync(userId, courseId);
-            return _mapper.Map<EnrollmentResponse>(saved);
+                _logger.LogInformation("Student Enrolled in Free Course: UserId={UserId}, CourseId={CourseId}", userId, courseId);
+
+                var saved = await _enrollmentRepository.GetActiveEnrollmentAsync(userId, courseId);
+                return _mapper.Map<EnrollmentResponse>(saved);
+            }
+            catch
+            {
+                await _enrollmentRepository.RollbackTransactionAsync();
+                throw;
+            }
         }
 
         public async Task<string> EnrollInPremiumCourseAsync(int userId, int courseId, int? batchId, string providerName)
@@ -122,38 +133,49 @@ namespace LMSApi.BALLibrary.Services
                 throw new InvalidOperationException("Payment signature verification failed.");
             }
 
-            payment.ProviderPaymentId = providerPaymentId;
-            payment.Status = PaymentStatus.Completed;
-            payment.PaidAt = DateTime.UtcNow;
-            payment.RawResponse = "Success"; // Optional raw response storage
-
-            var course = await _courseRepository.GetByIdAsync(courseId);
-            var enrollment = new Enrollments
+            await _enrollmentRepository.BeginTransactionAsync();
+            try
             {
-                UserId = userId,
-                CourseId = courseId,
-                EnrolledAt = DateTime.UtcNow,
-                EnrollmentStatus = EnrollmentStatus.Active,
-                ProgressPercentage = 0,
-                IsCompleted = false
-            };
+                payment.ProviderPaymentId = providerPaymentId;
+                payment.Status = PaymentStatus.Completed;
+                payment.PaidAt = DateTime.UtcNow;
+                payment.RawResponse = "Success"; // Optional raw response storage
 
-            if (course.CourseAccessType == CourseAccessType.SelfPaced)
-                await EnrollSelfPacedAsync(enrollment, course, batchId);
-            else
-                await EnrollCohortBasedAsync(enrollment, course, batchId);
+                var course = await _courseRepository.GetByIdAsync(courseId);
+                var enrollment = new Enrollments
+                {
+                    UserId = userId,
+                    CourseId = courseId,
+                    EnrolledAt = DateTime.UtcNow,
+                    EnrollmentStatus = EnrollmentStatus.Active,
+                    ProgressPercentage = 0,
+                    IsCompleted = false
+                };
 
-            // Link payment and enrollment
-            enrollment.Payment = payment;
+                if (course.CourseAccessType == CourseAccessType.SelfPaced)
+                    await EnrollSelfPacedAsync(enrollment, course, batchId);
+                else
+                    await EnrollCohortBasedAsync(enrollment, course, batchId);
 
-            await _enrollmentRepository.CreateEnrollmentAsync(enrollment);
-            payment.EnrollmentId = enrollment.Id;
-            await _paymentRepository.UpdateAsync(payment);
+                // Link payment and enrollment
+                enrollment.Payment = payment;
 
-            _logger.LogInformation("Payment Verified and Enrolled: UserId={UserId}, CourseId={CourseId}", userId, courseId);
+                await _enrollmentRepository.CreateEnrollmentAsync(enrollment);
+                payment.EnrollmentId = enrollment.Id;
+                await _paymentRepository.UpdateAsync(payment);
 
-            var saved = await _enrollmentRepository.GetActiveEnrollmentAsync(userId, courseId);
-            return _mapper.Map<EnrollmentResponse>(saved);
+                await _enrollmentRepository.CommitTransactionAsync();
+                
+                _logger.LogInformation("Payment Verified and Enrolled: UserId={UserId}, CourseId={CourseId}", userId, courseId);
+
+                var saved = await _enrollmentRepository.GetActiveEnrollmentAsync(userId, courseId);
+                return _mapper.Map<EnrollmentResponse>(saved);
+            }
+            catch
+            {
+                await _enrollmentRepository.RollbackTransactionAsync();
+                throw;
+            }
         }
 
         public async Task<DateTime?> CalculateAssignmentDeadlineAsync(int userId, int assignmentId)
@@ -199,10 +221,10 @@ namespace LMSApi.BALLibrary.Services
             enrollment.BatchId = null;
 
             // Auto-calculate AccessExpiresAt if the course has a deadline configured
-            if (course.DefaultAssignmentDeadlineDays.HasValue)
+            if (course.DefaultDeadlineDays.HasValue)
             {
                 enrollment.AccessExpiresAt = enrollment.EnrolledAt
-                    .AddDays(course.DefaultAssignmentDeadlineDays.Value);
+                    .AddDays(course.DefaultDeadlineDays.Value);
             }
             else
             {

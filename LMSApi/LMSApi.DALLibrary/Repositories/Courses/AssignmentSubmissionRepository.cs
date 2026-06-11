@@ -52,7 +52,7 @@ namespace LMSApi.DALLibrary.Repositories
         public async Task<int> GetSubmissionAttemptCountAsync(int assignmentId, int studentId)
         {
             return await _context.Database
-                .SqlQuery<int>($"SELECT get_submission_attempt_count({assignmentId}, {studentId})")
+                .SqlQuery<int>($"SELECT get_submission_attempt_count({assignmentId}, {studentId}) AS \"Value\"")
                 .FirstOrDefaultAsync();
         }
 

@@ -5,7 +5,6 @@ using LMSApi.ModelLibrary.DTOs;
 using LMSApi.ModelLibrary.Enums;
 using LMSApi.ModelLibrary.Models;
 using Microsoft.Extensions.Logging;
-using LMSApi.ModelLibrary.Models;
 
 namespace LMSApi.BALLibrary.Services
 {
@@ -43,10 +42,30 @@ namespace LMSApi.BALLibrary.Services
             return _mapper.Map<IEnumerable<CourseResponse>>(courses);
         }
 
-        public async Task<CourseDetailsResponse> GetCourseByIdAsync(int id)
+        public async Task<CourseDetailsResponse> GetCourseByIdAsync(int id, int? currentUserId = null, bool isAdmin = false)
         {
             var course = await _courseRepository.GetCourseWithDetailsAsync(id)
                 ?? throw new KeyNotFoundException($"Course with id '{id}' not found.");
+
+            if (currentUserId == null || (course.InstructorId != currentUserId && !isAdmin))
+            {
+                course.Sections = course.Sections
+                    .Where(s => s.Status == PublishStatus.Published)
+                    .Select(s =>
+                    {
+                        s.Lessons = s.Lessons
+                            .Where(l => l.Status == PublishStatus.Published)
+                            .Select(l =>
+                            {
+                                l.Resources = l.Resources.Where(r => r.Status == PublishStatus.Published).ToList();
+                                return l;
+                            }).ToList();
+                        s.Quizzes = s.Quizzes.Where(q => q.Status == PublishStatus.Published).ToList();
+                        s.Assignments = s.Assignments.Where(a => a.Status == PublishStatus.Published).ToList();
+                        return s;
+                    }).ToList();
+            }
+
             return _mapper.Map<CourseDetailsResponse>(course);
         }
 
@@ -92,7 +111,6 @@ namespace LMSApi.BALLibrary.Services
             course.IntroVideoUrl ??= string.Empty;
             course.Requirements ??= string.Empty;
             course.LearningOutcomes ??= string.Empty;
-            course.Description ??= string.Empty;
             await _courseRepository.AddAsync(course);
             _logger.LogInformation("Course Created: '{Title}' by InstructorId={InstructorId}", request.Title, instructorId);
 
@@ -119,7 +137,7 @@ namespace LMSApi.BALLibrary.Services
                 course.slug = GenerateSlug(request.Title);
             }
 
-            if (request.CategoryId.HasValue)
+            if (request.CategoryId.HasValue && request.CategoryId > 0 && request.CategoryId != course.CategoryId)
             {
                 await _categoryRepository.GetByIdAsync(request.CategoryId.Value);
                 course.CategoryId = request.CategoryId.Value;
@@ -138,14 +156,14 @@ namespace LMSApi.BALLibrary.Services
 
             if (request.Requirements != null) course.Requirements = request.Requirements;
             if (request.LearningOutcomes != null) course.LearningOutcomes = request.LearningOutcomes;
-            if (request.EstimatedDuration.HasValue) course.EstimatedDuration = request.EstimatedDuration.Value;
             if (request.Level.HasValue) course.Level = request.Level.Value;
             if (request.Language.HasValue) course.Language = request.Language.Value;
+            course.EstimatedDuration=request.EstimatedDuration;
 
             // ─── Hybrid Learning ─────────────────────────────────────────────────
             if (request.CourseAccessType.HasValue) course.CourseAccessType = request.CourseAccessType.Value;
-            if (request.DefaultAssignmentDeadlineDays.HasValue)
-                course.DefaultAssignmentDeadlineDays = request.DefaultAssignmentDeadlineDays.Value;
+            if (request.DefaultDeadlineDays.HasValue)
+                course.DefaultDeadlineDays = request.DefaultDeadlineDays.Value;
 
             if (thumbnailStream != null && thumbnailFileName != null)
             {
@@ -181,52 +199,60 @@ namespace LMSApi.BALLibrary.Services
             _logger.LogInformation("Course Deleted: Id={Id}", id);
         }
 
-        public async Task<CourseResponse> PublishCourseAsync(int id)
+        public async Task<CourseResponse> PublishCourseAsync(int id, PublishCourseRequest request)
         {
-            var course = await _courseRepository.GetCourseWithDetailsAsync(id)
-                ?? throw new KeyNotFoundException($"Course with id '{id}' not found.");
-
-            if (course.Status == CourseStatus.Published)
-                throw new InvalidOperationException($"Course with id '{id}' is already published.");
-
-            // Validation: CohortBased courses must have at least one batch defined before publishing
-            if (course.CourseAccessType == CourseAccessType.CohortBased && !course.Batches.Any())
-                throw new InvalidOperationException(
-                    $"CohortBased course '{id}' cannot be published without at least one batch. Create a batch first.");
-
-            course.Status = CourseStatus.Published;
-            course.PublishedAt = DateTime.UtcNow;
-
-            if (course.CourseAccessType == CourseAccessType.SelfPaced)
+            if (request.Publish)
             {
-                foreach (var section in course.Sections)
+                var course = await _courseRepository.GetCourseWithDetailsAsync(id)
+                    ?? throw new KeyNotFoundException($"Course with id '{id}' not found.");
+
+                if (course.Status == CourseStatus.Published)
+                    throw new InvalidOperationException($"Course with id '{id}' is already published.");
+
+                // Validation: CohortBased courses must have at least one batch defined before publishing
+                if (course.CourseAccessType == CourseAccessType.CohortBased && !course.Batches.Any())
+                    throw new InvalidOperationException(
+                        $"CohortBased course '{id}' cannot be published without at least one batch. Create a batch first.");
+
+                course.Status = CourseStatus.Published;
+                course.PublishedAt = DateTime.UtcNow;
+
+                if (course.CourseAccessType == CourseAccessType.SelfPaced)
                 {
-                    section.IsPublished = true;
-                    foreach (var lesson in section.Lessons) lesson.IsPublished = true;
-                    foreach (var quiz in section.Quizzes) quiz.IsPublished = true;
-                    foreach (var assignment in section.Assignments) assignment.IsPublished = true;
+                    foreach (var section in course.Sections)
+                    {
+                        section.Status = PublishStatus.Published;
+                        foreach (var lesson in section.Lessons)
+                        {
+                            lesson.Status = PublishStatus.Published;
+                            foreach (var resource in lesson.Resources)
+                            {
+                                resource.Status = PublishStatus.Published;
+                            }
+                        }
+                        foreach (var quiz in section.Quizzes) quiz.Status = PublishStatus.Published;
+                        foreach (var assignment in section.Assignments) assignment.Status = PublishStatus.Published;
+                    }
                 }
+
+                await _courseRepository.UpdateAsync(course);
+
+                _logger.LogInformation("Course Published: Id={Id}", id);
+                return _mapper.Map<CourseResponse>(course);
             }
+            else
+            {
+                var course = await _courseRepository.GetByIdAsync(id);
 
-            await _courseRepository.UpdateAsync(course);
+                if (course.Status != CourseStatus.Published)
+                    throw new InvalidOperationException($"Course with id '{id}' is not currently published.");
 
-            _logger.LogInformation("Course Published: Id={Id}", id);
-            return _mapper.Map<CourseResponse>(course);
-        }
+                course.Status = CourseStatus.Draft;
+                await _courseRepository.UpdateAsync(course);
 
-
-        public async Task<CourseResponse> UnpublishCourseAsync(int id)
-        {
-            var course = await _courseRepository.GetByIdAsync(id);
-
-            if (course.Status != CourseStatus.Published)
-                throw new InvalidOperationException($"Course with id '{id}' is not currently published.");
-
-            course.Status = CourseStatus.Draft;
-            await _courseRepository.UpdateAsync(course);
-
-            _logger.LogInformation("Course Unpublished: Id={Id}", id);
-            return _mapper.Map<CourseResponse>(course);
+                _logger.LogInformation("Course Unpublished: Id={Id}", id);
+                return _mapper.Map<CourseResponse>(course);
+            }
         }
 
         public async Task<IEnumerable<CourseResponse>> GetCoursesByInstructorAsync(int instructorId)

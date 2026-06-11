@@ -40,7 +40,9 @@ namespace LMSApi.API.Controllers
         [HttpGet("lesson/{lessonId:int}")]
         public async Task<ActionResult<IEnumerable<ResourceResponse>>> GetByLesson(int lessonId)
         {
-            var result = await _resourceService.GetResourcesByLessonAsync(lessonId);
+            var userId = User.GetUserId();
+            var isAdmin = User.IsAdmin();
+            var result = await _resourceService.GetResourcesByLessonAsync(lessonId, userId, isAdmin);
             return Ok(result);
         }
 
@@ -48,7 +50,9 @@ namespace LMSApi.API.Controllers
         [HttpGet("{id:int}")]
         public async Task<ActionResult<ResourceResponse>> GetById(int id)
         {
-            var result = await _resourceService.GetResourceByIdAsync(id);
+            var userId = User.GetUserId();
+            var isAdmin = User.IsAdmin();
+            var result = await _resourceService.GetResourceByIdAsync(id, userId, isAdmin);
             return Ok(result);
         }
 
@@ -77,7 +81,8 @@ namespace LMSApi.API.Controllers
                 ResourceType = form.ResourceType,
                 ResourceTitle = form.ResourceTitle,
                 ResourceUrl = form.ResourceUrl,
-                Description = form.Description
+                Description = form.Description,
+                Status = form.Status
             };
 
             await using var fileStream = form.File?.OpenReadStream();
@@ -123,7 +128,8 @@ namespace LMSApi.API.Controllers
                 ResourceType = form.ResourceType,
                 ResourceTitle = form.ResourceTitle,
                 ResourceUrl = form.ResourceUrl,
-                Description = form.Description
+                Description = form.Description,
+                Status = form.Status
             };
 
             await using var fileStream = form.File?.OpenReadStream();
@@ -142,14 +148,23 @@ namespace LMSApi.API.Controllers
             return NoContent();
         }
 
+        [Authorize(Roles = "Instructor,Admin")]
+        [HttpPatch("{id:int}/publish")]
+        public async Task<ActionResult<ResourceResponse>> Publish(int id, [FromBody] PublishResourceRequest request)
+        {
+            await EnforceResourceOwnershipAsync(id);
+            var result = await _resourceService.PublishResourceAsync(id, request);
+            return Ok(result);
+        }
+
         private async Task EnforceLessonOwnershipAsync(int lessonId)
         {
             if (User.IsAdmin()) return;
 
             var callerId = User.GetUserId();
-            var lesson = await _lessonService.GetLessonByIdAsync(lessonId);
+            var lesson = await _lessonService.GetLessonByIdAsync(lessonId, callerId, User.IsAdmin());
             var section = await _sectionRepository.GetByIdAsync(lesson.CourseSectionId);
-            var course = await _courseService.GetCourseByIdAsync(section.CourseId);
+            var course = await _courseService.GetCourseByIdAsync(section.CourseId, callerId, User.IsAdmin());
 
             if (course.InstructorId != callerId)
                 throw new UnauthorizedAccessException("You do not have permission to add resources to this lesson.");
@@ -160,10 +175,10 @@ namespace LMSApi.API.Controllers
             if (User.IsAdmin()) return;
 
             var callerId = User.GetUserId();
-            var resource = await _resourceService.GetResourceByIdAsync(resourceId);
-            var lesson = await _lessonService.GetLessonByIdAsync(resource.LessonId);
+            var resource = await _resourceService.GetResourceByIdAsync(resourceId, callerId, User.IsAdmin());
+            var lesson = await _lessonService.GetLessonByIdAsync(resource.LessonId, callerId, User.IsAdmin());
             var section = await _sectionRepository.GetByIdAsync(lesson.CourseSectionId);
-            var course = await _courseService.GetCourseByIdAsync(section.CourseId);
+            var course = await _courseService.GetCourseByIdAsync(section.CourseId, callerId, User.IsAdmin());
 
             if (course.InstructorId != callerId)
                 throw new UnauthorizedAccessException("You do not have permission to modify this resource.");

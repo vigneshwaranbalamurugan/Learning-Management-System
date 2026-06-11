@@ -21,6 +21,8 @@ namespace LMSApi.API.Handlers
         [MaxLength(1000, ErrorMessage = "Description must not exceed 1000 characters.")]
         public string? Description { get; set; }
 
+        public PublishStatus Status { get; set; }
+
         public IFormFile? File { get; set; }
     }
 
@@ -35,6 +37,8 @@ namespace LMSApi.API.Handlers
 
         [MaxLength(1000, ErrorMessage = "Description must not exceed 1000 characters.")]
         public string? Description { get; set; }
+
+        public PublishStatus? Status { get; set; }
 
         public IFormFile? File { get; set; }
     }

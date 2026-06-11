@@ -44,15 +44,43 @@ namespace LMSApi.BALLibrary.Services
 
         // ─── Assignment CRUD ────────────────────────────────────────────────
 
-        public async Task<IEnumerable<AssignmentResponse>> GetAssignmentsBySectionAsync(int sectionId)
+        public async Task<IEnumerable<AssignmentResponse>> GetAssignmentsBySectionAsync(int sectionId, int? currentUserId = null, bool isAdmin = false)
         {
+            var section = await _sectionRepository.GetByIdAsync(sectionId)
+                ?? throw new KeyNotFoundException($"Section with id '{sectionId}' not found.");
+
+            var course = await _courseRepository.GetByIdAsync(section.CourseId)
+                ?? throw new KeyNotFoundException($"Course with id '{section.CourseId}' not found.");
+
             var assignments = await _assignmentRepository.GetAssignmentsBySectionAsync(sectionId);
+
+            if (currentUserId == null || (course.InstructorId != currentUserId && !isAdmin))
+            {
+                assignments = assignments.Where(a => a.Status == PublishStatus.Published);
+            }
+
             return _mapper.Map<IEnumerable<AssignmentResponse>>(assignments);
         }
 
-        public async Task<AssignmentResponse> GetAssignmentByIdAsync(int id)
+        public async Task<AssignmentResponse> GetAssignmentByIdAsync(int id, int? currentUserId = null, bool isAdmin = false)
         {
-            var assignment = await _assignmentRepository.GetByIdAsync(id);
+            var assignment = await _assignmentRepository.GetByIdAsync(id)
+                ?? throw new KeyNotFoundException($"Assignment with id '{id}' not found.");
+
+            var section = await _sectionRepository.GetByIdAsync(assignment.CourseSectionId)
+                ?? throw new KeyNotFoundException($"Section with id '{assignment.CourseSectionId}' not found.");
+
+            var course = await _courseRepository.GetByIdAsync(section.CourseId)
+                ?? throw new KeyNotFoundException($"Course with id '{section.CourseId}' not found.");
+
+            if (currentUserId == null || (course.InstructorId != currentUserId && !isAdmin))
+            {
+                if (assignment.Status != PublishStatus.Published)
+                {
+                    throw new KeyNotFoundException($"Assignment with id '{id}' not found.");
+                }
+            }
+
             return _mapper.Map<AssignmentResponse>(assignment);
         }
 
@@ -85,7 +113,7 @@ namespace LMSApi.BALLibrary.Services
             var course = await _courseRepository.GetByIdAsync(section.CourseId);
             if (course.CourseAccessType == CourseAccessType.SelfPaced && course.Status == CourseStatus.Published)
             {
-                assignment.IsPublished = true;
+                assignment.Status = PublishStatus.Published;
             }
 
             await _assignmentRepository.AddAsync(assignment);
@@ -137,9 +165,19 @@ namespace LMSApi.BALLibrary.Services
 
             var section = await _sectionRepository.GetByIdAsync(assignment.CourseSectionId);
             var course = await _courseRepository.GetByIdAsync(section.CourseId);
+            
+            if (request.Status.HasValue)
+            {
+                if (course.CourseAccessType == CourseAccessType.SelfPaced)
+                {
+                    throw new InvalidOperationException("Cannot manually change publish status of an assignment in a Self-Paced course.");
+                }
+                assignment.Status = request.Status.Value;
+            }
+
             if (course.CourseAccessType == CourseAccessType.SelfPaced && course.Status == CourseStatus.Published)
             {
-                assignment.IsPublished = true;
+                assignment.Status = PublishStatus.Published;
             }
 
             if (request.TotalMarks.HasValue) assignment.TotalMarks = request.TotalMarks.Value;
@@ -171,10 +209,10 @@ namespace LMSApi.BALLibrary.Services
                 throw new InvalidOperationException("Cannot manually change publish status of an assignment in a Self-Paced course.");
             }
 
-            assignment.IsPublished = publish;
+            assignment.Status = publish ? PublishStatus.Published : PublishStatus.Draft;
             await _assignmentRepository.UpdateAsync(assignment);
 
-            _logger.LogInformation("Assignment Published status updated: Id={Id}, IsPublished={IsPublished}", id, assignment.IsPublished);
+            _logger.LogInformation("Assignment Published status updated: Id={Id}, Status={Status}", id, assignment.Status);
 
             return _mapper.Map<AssignmentResponse>(assignment);
         }
@@ -195,7 +233,6 @@ namespace LMSApi.BALLibrary.Services
             // 3. Verify student is enrolled
             var section = await _sectionRepository.GetByIdAsync(assignment.CourseSectionId);
             var enrollment = await _enrollmentRepository.GetByUserAndCourseAsync(studentId, section.CourseId);
-
             var isEnrolled = enrollment != null &&
                 (enrollment.EnrollmentStatus == EnrollmentStatus.Active ||
                  enrollment.EnrollmentStatus == EnrollmentStatus.Completed);
@@ -222,6 +259,10 @@ namespace LMSApi.BALLibrary.Services
                 throw new InvalidOperationException(
                     $"Maximum number of submissions ({assignment.MaxSubmissions}) has been reached for this assignment.");
 
+            if(request.AttachmentType == AssignmentSubmissonAttachmentType.File && attachmentStream == null)
+                throw new ArgumentException("Attachment file must be provided when AttachmentType is File.");
+            if(request.AttachmentType==AssignmentSubmissonAttachmentType.Link && request.SubmittedAssignmentUrl==null)
+                throw new ArgumentNullException("Attachment link must be provided when AttachmentType is Link ");
             // 6. Create submission
             var submission = new AssignmentSubmissions
             {

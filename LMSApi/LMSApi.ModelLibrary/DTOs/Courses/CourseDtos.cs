@@ -14,8 +14,9 @@ namespace LMSApi.ModelLibrary.DTOs
         [MaxLength(300, ErrorMessage = "Title must not exceed 300 characters.")]
         public string Title { get; set; }
 
+        [Required(ErrorMessage ="Description is required.")]
         [MaxLength(2000, ErrorMessage = "Description must not exceed 2000 characters.")]
-        public string? Description { get; set; }
+        public string Description { get; set; }
 
         [Range(0, double.MaxValue, ErrorMessage = "Price must be zero or greater.")]
         public decimal? Price { get; set; }
@@ -24,6 +25,8 @@ namespace LMSApi.ModelLibrary.DTOs
 
         public string? Requirements { get; set; }
         public string? LearningOutcomes { get; set; }
+
+        [Required(ErrorMessage="Estimated Duration is Required.")]
         public TimeSpan EstimatedDuration { get; set; }
 
         public CourseLevel Level { get; set; } = CourseLevel.Beginner;
@@ -36,35 +39,40 @@ namespace LMSApi.ModelLibrary.DTOs
         /// Only used when CourseAccessType = SelfPaced.
         /// Access expires this many days after enrollment. Null = never expires.
         /// </summary>
-        public int? DefaultAssignmentDeadlineDays { get; set; }
+        public int? DefaultDeadlineDays { get; set; }
     }
 
     public class UpdateCourseRequest
     {
         [MaxLength(300, ErrorMessage = "Title must not exceed 300 characters.")]
-        public string? Title { get; set; }
-
+        public string Title { get; set; }
+        [Required(ErrorMessage = "Category ID is required.")]
         public int? CategoryId { get; set; }
-
         [MaxLength(2000, ErrorMessage = "Description must not exceed 2000 characters.")]
-        public string? Description { get; set; }
+        public string Description { get; set; }
 
         [Range(0, double.MaxValue, ErrorMessage = "Price must be zero or greater.")]
         public decimal? Price { get; set; }
 
-        public bool? IsPremium { get; set; }
+        public bool? IsPremium { get; set; }=false;
         public string? Requirements { get; set; }
         public string? LearningOutcomes { get; set; }
-        public TimeSpan? EstimatedDuration { get; set; }
-        public CourseLevel? Level { get; set; }
-        public CourseLanguage? Language { get; set; }
+
+        public TimeSpan EstimatedDuration { get; set; }
+        public CourseLevel? Level { get; set; }=CourseLevel.Beginner;
+        public CourseLanguage? Language { get; set; }=CourseLanguage.English;
 
         // ─── Hybrid Learning ─────────────────────────────────────────────────
-        public CourseAccessType? CourseAccessType { get; set; }
-        public int? DefaultAssignmentDeadlineDays { get; set; }
+        public CourseAccessType? CourseAccessType { get; set; }= Enums.CourseAccessType.SelfPaced;
+        public int? DefaultDeadlineDays { get; set; }
     }
 
     // ─── Responses ───────────────────────────────────────────────────────────
+
+    public class PublishCourseRequest
+    {
+        public bool Publish { get; set; }
+    }
 
     public class CourseResponse
     {

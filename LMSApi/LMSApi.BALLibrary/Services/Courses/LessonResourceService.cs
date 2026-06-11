@@ -12,6 +12,8 @@ namespace LMSApi.BALLibrary.Services
     {
         private readonly ILessonResourceRepository _resourceRepository;
         private readonly ILessonRepository _lessonRepository;
+        private readonly ICourseSectionRepository _sectionRepository;
+        private readonly ICourseRepository _courseRepository;
         private readonly IUploadService _uploadService;
         private readonly IMapper _mapper;
         private readonly ILogger<LessonResourceService> _logger;
@@ -19,26 +21,64 @@ namespace LMSApi.BALLibrary.Services
         public LessonResourceService(
             ILessonResourceRepository resourceRepository,
             ILessonRepository lessonRepository,
+            ICourseSectionRepository sectionRepository,
+            ICourseRepository courseRepository,
             IUploadService uploadService,
             IMapper mapper,
             ILogger<LessonResourceService> logger)
         {
             _resourceRepository = resourceRepository;
             _lessonRepository = lessonRepository;
+            _sectionRepository = sectionRepository;
+            _courseRepository = courseRepository;
             _uploadService = uploadService;
             _mapper = mapper;
             _logger = logger;
         }
 
-        public async Task<IEnumerable<ResourceResponse>> GetResourcesByLessonAsync(int lessonId)
+        public async Task<IEnumerable<ResourceResponse>> GetResourcesByLessonAsync(int lessonId, int? currentUserId = null, bool isAdmin = false)
         {
+            var lesson = await _lessonRepository.GetByIdAsync(lessonId)
+                ?? throw new KeyNotFoundException($"Lesson with id '{lessonId}' not found.");
+
+            var section = await _sectionRepository.GetByIdAsync(lesson.CourseSectionId)
+                ?? throw new KeyNotFoundException($"Section with id '{lesson.CourseSectionId}' not found.");
+
+            var course = await _courseRepository.GetByIdAsync(section.CourseId)
+                ?? throw new KeyNotFoundException($"Course with id '{section.CourseId}' not found.");
+
             var resources = await _resourceRepository.GetResourcesByLessonAsync(lessonId);
+
+            if (currentUserId == null || (course.InstructorId != currentUserId && !isAdmin))
+            {
+                resources = resources.Where(r => r.Status == PublishStatus.Published);
+            }
+
             return _mapper.Map<IEnumerable<ResourceResponse>>(resources);
         }
 
-        public async Task<ResourceResponse> GetResourceByIdAsync(int id)
+        public async Task<ResourceResponse> GetResourceByIdAsync(int id, int? currentUserId = null, bool isAdmin = false)
         {
-            var resource = await _resourceRepository.GetByIdAsync(id);
+            var resource = await _resourceRepository.GetByIdAsync(id)
+                ?? throw new KeyNotFoundException($"Resource with id '{id}' not found.");
+
+            var lesson = await _lessonRepository.GetByIdAsync(resource.LessonId)
+                ?? throw new KeyNotFoundException($"Lesson with id '{resource.LessonId}' not found.");
+
+            var section = await _sectionRepository.GetByIdAsync(lesson.CourseSectionId)
+                ?? throw new KeyNotFoundException($"Section with id '{lesson.CourseSectionId}' not found.");
+
+            var course = await _courseRepository.GetByIdAsync(section.CourseId)
+                ?? throw new KeyNotFoundException($"Course with id '{section.CourseId}' not found.");
+
+            if (currentUserId == null || (course.InstructorId != currentUserId && !isAdmin))
+            {
+                if (resource.Status != PublishStatus.Published)
+                {
+                    throw new KeyNotFoundException($"Resource with id '{id}' not found.");
+                }
+            }
+
             return _mapper.Map<ResourceResponse>(resource);
         }
 
@@ -48,7 +88,9 @@ namespace LMSApi.BALLibrary.Services
             if (string.IsNullOrWhiteSpace(request.ResourceTitle)) throw new ArgumentException("Resource title cannot be null or empty.", nameof(request.ResourceTitle));
 
             // Validate parent lesson exists
-            await _lessonRepository.GetByIdAsync(request.LessonId);
+            var lesson = await _lessonRepository.GetByIdAsync(request.LessonId);
+            var section = await _sectionRepository.GetByIdAsync(lesson.CourseSectionId);
+            var course = await _courseRepository.GetByIdAsync(section.CourseId);
 
             string resourceUrl;
             if (request.ResourceType == ResourceType.ExternalLink)
@@ -77,6 +119,22 @@ namespace LMSApi.BALLibrary.Services
             var resource = _mapper.Map<LessonResources>(request);
             resource.ResourceUrl = resourceUrl;
             resource.UploadedAt = DateTime.UtcNow;
+
+            if (course.CourseAccessType == CourseAccessType.SelfPaced)
+            {
+                if (course.Status == CourseStatus.Published)
+                {
+                    resource.Status = PublishStatus.Published;
+                }
+                else
+                {
+                    resource.Status = PublishStatus.Draft;
+                }
+            }
+            else
+            {
+                resource.Status = request.Status;
+            }
 
             await _resourceRepository.AddAsync(resource);
 
@@ -125,9 +183,26 @@ namespace LMSApi.BALLibrary.Services
                 }
             }
 
+            var lesson = await _lessonRepository.GetByIdAsync(resource.LessonId);
+            var section = await _sectionRepository.GetByIdAsync(lesson.CourseSectionId);
+            var course = await _courseRepository.GetByIdAsync(section.CourseId);
+
             if (request.ResourceType.HasValue) resource.ResourceType = request.ResourceType.Value;
             if (request.ResourceTitle != null) resource.ResourceTitle = request.ResourceTitle;
             if (request.Description != null) resource.Description = request.Description;
+            if (request.Status.HasValue)
+            {
+                if (course.CourseAccessType == CourseAccessType.SelfPaced)
+                {
+                    throw new InvalidOperationException("Cannot manually change publish status of a resource in a Self-Paced course.");
+                }
+                resource.Status = request.Status.Value;
+            }
+
+            if (course.CourseAccessType == CourseAccessType.SelfPaced && course.Status == CourseStatus.Published)
+            {
+                resource.Status = PublishStatus.Published;
+            }
 
             await _resourceRepository.UpdateAsync(resource);
 
@@ -142,6 +217,26 @@ namespace LMSApi.BALLibrary.Services
             await _resourceRepository.DeleteAsync(id);
 
             _logger.LogInformation("Resource Deleted: Id={Id}", id);
+        }
+
+        public async Task<ResourceResponse> PublishResourceAsync(int id, PublishResourceRequest request)
+        {
+            var resource = await _resourceRepository.GetByIdAsync(id);
+            var lesson = await _lessonRepository.GetByIdAsync(resource.LessonId);
+            var section = await _sectionRepository.GetByIdAsync(lesson.CourseSectionId);
+            var course = await _courseRepository.GetByIdAsync(section.CourseId);
+
+            if (course.CourseAccessType == CourseAccessType.SelfPaced)
+            {
+                throw new InvalidOperationException("Cannot manually change publish status of a resource in a Self-Paced course.");
+            }
+
+            resource.Status = request.Publish ? PublishStatus.Published : PublishStatus.Draft;
+            await _resourceRepository.UpdateAsync(resource);
+
+            _logger.LogInformation("Resource publication status updated: ResourceId={ResourceId}, Status={Status}", id, resource.Status);
+
+            return _mapper.Map<ResourceResponse>(resource);
         }
     }
 }

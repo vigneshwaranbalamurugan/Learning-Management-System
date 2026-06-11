@@ -27,15 +27,37 @@ namespace LMSApi.BALLibrary.Services
             _logger = logger;
         }
 
-        public async Task<IEnumerable<SectionResponse>> GetSectionsByCourseAsync(int courseId)
+        public async Task<IEnumerable<SectionResponse>> GetSectionsByCourseAsync(int courseId, int? currentUserId = null, bool isAdmin = false)
         {
+            var course = await _courseRepository.GetByIdAsync(courseId)
+                ?? throw new KeyNotFoundException($"Course with id '{courseId}' not found.");
+
             var sections = await _sectionRepository.GetSectionsByCourseAsync(courseId);
+
+            if (currentUserId == null || (course.InstructorId != currentUserId && !isAdmin))
+            {
+                sections = sections.Where(s => s.Status == PublishStatus.Published);
+            }
+
             return _mapper.Map<IEnumerable<SectionResponse>>(sections);
         }
 
-        public async Task<SectionResponse> GetSectionByIdAsync(int id)
+        public async Task<SectionResponse> GetSectionByIdAsync(int id, int? currentUserId = null, bool isAdmin = false)
         {
-            var section = await _sectionRepository.GetByIdAsync(id);
+            var section = await _sectionRepository.GetByIdAsync(id)
+                ?? throw new KeyNotFoundException($"Section with id '{id}' not found.");
+
+            var course = await _courseRepository.GetByIdAsync(section.CourseId)
+                ?? throw new KeyNotFoundException($"Course with id '{section.CourseId}' not found.");
+
+            if (currentUserId == null || (course.InstructorId != currentUserId && !isAdmin))
+            {
+                if (section.Status != PublishStatus.Published)
+                {
+                    throw new KeyNotFoundException($"Section with id '{id}' not found.");
+                }
+            }
+
             return _mapper.Map<SectionResponse>(section);
         }
 
@@ -58,7 +80,7 @@ namespace LMSApi.BALLibrary.Services
 
             if (course.CourseAccessType == CourseAccessType.SelfPaced && course.Status == CourseStatus.Published)
             {
-                section.IsPublished = true;
+                section.Status = PublishStatus.Published;
             }
 
             await _sectionRepository.AddAsync(section);
@@ -80,18 +102,18 @@ namespace LMSApi.BALLibrary.Services
             if (request.Description != null) section.Description = request.Description;
             if (request.EstimatedDuration.HasValue) section.EstimatedDuration = request.EstimatedDuration.Value;
             if (request.SortOrder.HasValue) section.SortOrder = request.SortOrder.Value;
-            if (request.IsPublished.HasValue) 
+            if (request.Status.HasValue) 
             {
                 if (course.CourseAccessType == CourseAccessType.SelfPaced)
                 {
                     throw new InvalidOperationException("Cannot manually change publish status of a section in a Self-Paced course.");
                 }
-                section.IsPublished = request.IsPublished.Value;
+                section.Status = request.Status.Value;
             }
 
             if (course.CourseAccessType == CourseAccessType.SelfPaced && course.Status == CourseStatus.Published)
             {
-                section.IsPublished = true;
+                section.Status = PublishStatus.Published;
             }
 
             await _sectionRepository.UpdateAsync(section);
@@ -124,6 +146,24 @@ namespace LMSApi.BALLibrary.Services
             }
 
             _logger.LogInformation("Sections Reordered: {Count} sections updated", request.SectionOrders.Count);
+        }
+
+        public async Task<SectionResponse> PublishSectionAsync(int id, PublishSectionRequest request)
+        {
+            var section = await _sectionRepository.GetByIdAsync(id);
+            var course = await _courseRepository.GetByIdAsync(section.CourseId);
+
+            if (course.CourseAccessType == CourseAccessType.SelfPaced)
+            {
+                throw new InvalidOperationException("Cannot manually change publish status of a section in a Self-Paced course.");
+            }
+
+            section.Status = request.Publish ? PublishStatus.Published : PublishStatus.Draft;
+            await _sectionRepository.UpdateAsync(section);
+
+            _logger.LogInformation("Section publication status updated: SectionId={SectionId}, Status={Status}", id, section.Status);
+
+            return _mapper.Map<SectionResponse>(section);
         }
     }
 }

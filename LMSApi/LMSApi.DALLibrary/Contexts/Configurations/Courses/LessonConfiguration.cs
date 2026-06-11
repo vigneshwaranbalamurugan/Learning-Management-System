@@ -1,3 +1,4 @@
+using LMSApi.ModelLibrary.Enums;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using LMSApi.ModelLibrary.Models;
@@ -30,8 +31,8 @@ namespace LMSApi.DALLibrary.Contexts.Configurations
             builder.Property(l => l.IsPreview)
                 .HasDefaultValue(false);
 
-            builder.Property(l => l.IsPublished)
-                .HasDefaultValue(false);
+            builder.Property(l => l.Status)
+                .HasDefaultValue(PublishStatus.Draft);
 
             // Relationships
             builder.HasOne(l => l.CourseSection)

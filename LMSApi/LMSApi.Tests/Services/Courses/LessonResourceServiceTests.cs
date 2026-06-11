@@ -28,10 +28,14 @@ namespace LMSApi.Tests.Services.Courses
             
             var resourceRepository = new LessonResourceRepository(DbContext);
             var lessonRepository = new LessonRepository(DbContext);
+            var sectionRepository = new CourseSectionRepository(DbContext);
+            var courseRepository = new CourseRepository(DbContext);
 
             _resourceService = new LessonResourceService(
                 resourceRepository,
                 lessonRepository,
+                sectionRepository,
+                courseRepository,
                 _mockUploadService.Object,
                 Mapper,
                 _mockLogger.Object
@@ -47,7 +51,7 @@ namespace LMSApi.Tests.Services.Courses
             DbContext.CourseCategories.Add(cat);
             await DbContext.SaveChangesAsync();
 
-            var course = new LMSApi.ModelLibrary.Models.Courses { Title = "Course", Description = "Desc", Price = 0m, ThumbnailUrl = "url", IntroVideoUrl = "url", IsPremium = false, IsPublished = false, Requirements = "Reqs", LearningOutcomes = "Outcomes", EstimatedDuration = TimeSpan.Zero, Level = LMSApi.ModelLibrary.Enums.CourseLevel.Beginner, Language = LMSApi.ModelLibrary.Enums.CourseLanguage.English, PublishedAt = DateTime.UtcNow, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow, DefaultAssignmentDeadlineDays = 7, CategoryId = cat.Id, InstructorId = inst.Id, slug = Guid.NewGuid().ToString() };
+            var course = new LMSApi.ModelLibrary.Models.Courses { Title = "Course", Description = "Desc", Price = 0m, ThumbnailUrl = "url", IntroVideoUrl = "url", IsPremium = false, Requirements = "Reqs", LearningOutcomes = "Outcomes", EstimatedDuration = TimeSpan.Zero, Level = LMSApi.ModelLibrary.Enums.CourseLevel.Beginner, Language = LMSApi.ModelLibrary.Enums.CourseLanguage.English, PublishedAt = DateTime.UtcNow, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow, DefaultDeadlineDays = 7, CategoryId = cat.Id, InstructorId = inst.Id, slug = Guid.NewGuid().ToString() };
             DbContext.Courses.Add(course);
             await DbContext.SaveChangesAsync();
 

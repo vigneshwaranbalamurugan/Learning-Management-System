@@ -23,8 +23,8 @@ namespace LMSApi.DALLibrary.Contexts.Configurations
             builder.Property(q => q.Order)
                 .HasDefaultValue(0);
 
-            builder.Property(q => q.IsPublished)
-                .HasDefaultValue(false);
+            builder.Property(q => q.Status)
+                .HasDefaultValue(PublishStatus.Draft);
 
             builder.Property(q => q.MaxAttempts)
                 .HasDefaultValue(1);

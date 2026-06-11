@@ -30,7 +30,7 @@ namespace LMSApi.API.Handlers
         public int SortOrder { get; set; }
 
         public bool? IsPreview { get; set; }
-        public bool? IsPublished { get; set; }
+        public PublishStatus? Status { get; set; }
 
         /// <summary>Uploaded file (video or PDF) depending on the LessonType.</summary>    
         public IFormFile? File { get; set; }
@@ -53,7 +53,7 @@ namespace LMSApi.API.Handlers
         public int? SortOrder { get; set; }
 
         public bool? IsPreview { get; set; }
-        public bool? IsPublished { get; set; }
+        public PublishStatus? Status { get; set; }
 
         /// <summary>Uploaded file (video or PDF) depending on the LessonType.</summary>
         public IFormFile? File { get; set; }

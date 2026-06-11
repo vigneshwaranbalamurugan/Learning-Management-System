@@ -16,7 +16,7 @@ namespace LMSApi.ModelLibrary.Models
         public int SortOrder { get; set; }
 
         public bool IsPreview { get; set; }
-        public bool IsPublished { get; set; }
+        public PublishStatus Status { get; set; } = PublishStatus.Draft;
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
 

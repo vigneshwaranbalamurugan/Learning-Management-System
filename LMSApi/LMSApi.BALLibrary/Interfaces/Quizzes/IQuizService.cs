@@ -5,8 +5,8 @@ namespace LMSApi.BALLibrary.Interfaces
     public interface IQuizService
     {
         // ─── Quiz CRUD ──────────────────────────────────────────────────────
-        Task<IEnumerable<QuizResponse>> GetQuizzesBySectionAsync(int sectionId);
-        Task<QuizDetailResponse> GetQuizByIdAsync(int id);
+        Task<IEnumerable<QuizResponse>> GetQuizzesBySectionAsync(int sectionId, int? currentUserId = null, bool isAdmin = false);
+        Task<QuizDetailResponse> GetQuizByIdAsync(int id, int? currentUserId = null, bool isAdmin = false);
         Task<QuizResponse> CreateQuizAsync(CreateQuizRequest request);
         Task<QuizResponse> UpdateQuizAsync(int id, UpdateQuizRequest request);
         Task DeleteQuizAsync(int id);
@@ -19,7 +19,7 @@ namespace LMSApi.BALLibrary.Interfaces
         Task<BulkUploadResult> BulkUploadQuestionsAsync(int quizId, Stream excelStream);
 
         // ─── Student Quiz-Taking ────────────────────────────────────────────
-        Task<QuizStudentDetailResponse> GetQuizForStudentAsync(int quizId);
+        Task<QuizStudentDetailResponse> GetQuizForStudentAsync(int quizId, int userId);
         Task<StartAttemptResponse> StartAttemptAsync(int quizId, int userId);
         Task<QuizAttemptResponse> SubmitQuizAsync(int userId, SubmitQuizRequest request);
         Task<IEnumerable<QuizAttemptResponse>> GetUserAttemptsAsync(int quizId, int userId);

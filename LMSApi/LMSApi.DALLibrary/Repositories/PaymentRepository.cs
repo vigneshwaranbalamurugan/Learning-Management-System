@@ -69,5 +69,45 @@ namespace LMSApi.DALLibrary.Repositories
                 .OrderByDescending(p => p.PaidAt)
                 .ToListAsync();
         }
+
+        public async Task BeginTransactionAsync()
+        {
+            if (_context.Database.CurrentTransaction != null)
+                return;
+            
+            await _context.Database.BeginTransactionAsync();
+        }
+
+        public async Task CommitTransactionAsync()
+        {
+            var transaction = _context.Database.CurrentTransaction;
+            if (transaction != null)
+            {
+                try
+                {
+                    await transaction.CommitAsync();
+                }
+                finally
+                {
+                    await transaction.DisposeAsync();
+                }
+            }
+        }
+
+        public async Task RollbackTransactionAsync()
+        {
+            var transaction = _context.Database.CurrentTransaction;
+            if (transaction != null)
+            {
+                try
+                {
+                    await transaction.RollbackAsync();
+                }
+                finally
+                {
+                    await transaction.DisposeAsync();
+                }
+            }
+        }
     }
 }

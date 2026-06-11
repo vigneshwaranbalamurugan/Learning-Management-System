@@ -6,31 +6,15 @@ namespace LMSApi.API.Extensions
     {
         public static int GetUserId(this ClaimsPrincipal user)
         {
-            var value = user.FindFirstValue(ClaimTypes.NameIdentifier)
-                        ?? user.FindFirstValue("sub")
-                        ?? user.FindFirstValue("nameid");
+            var userIdClaim = user.FindFirst(ClaimTypes.NameIdentifier) 
+                              ?? user.FindFirst("sub") 
+                              ?? throw new UnauthorizedAccessException("Authenticated user ID was not found.");
 
-            // If the resolved claim is not a valid integer, try to find another standard claim that is
-            if (value == null || !int.TryParse(value, out _))
+            if (!int.TryParse(userIdClaim.Value, out int userId))
             {
-                var numericClaim = user.Claims.FirstOrDefault(c =>
-                    (c.Type == ClaimTypes.NameIdentifier || c.Type == "sub" || c.Type == "nameid" || c.Type == "uid" || c.Type == "userid")
-                    && int.TryParse(c.Value, out _));
-
-                if (numericClaim != null)
-                {
-                    value = numericClaim.Value;
-                }
+                throw new UnauthorizedAccessException("Authenticated user ID is not a valid integer.");
             }
-
-            if (value == null)
-            {
-                throw new UnauthorizedAccessException("User ID claim not found in token.");
-            }
-
-            return int.TryParse(value, out var id)
-                ? id
-                : throw new UnauthorizedAccessException("User ID claim is not a valid integer.");
+            return userId;
         }
 
         public static string GetEmail(this ClaimsPrincipal user)

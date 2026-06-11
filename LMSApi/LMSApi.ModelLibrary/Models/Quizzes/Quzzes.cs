@@ -1,3 +1,5 @@
+using LMSApi.ModelLibrary.Enums;
+
 namespace LMSApi.ModelLibrary.Models
 {
     public class Quzzes
@@ -8,10 +10,10 @@ namespace LMSApi.ModelLibrary.Models
         public string? Description { get; set; }
         public TimeSpan TimeLimit { get; set; }
 
-        public int PassingMarks { get; set; }
+        public int PassingPercentage { get; set; }
         public int MaxAttempts { get; set; }
         public int Order { get; set; }
-        public bool IsPublished { get; set; }
+        public PublishStatus Status { get; set; } = PublishStatus.Draft;
         public int DeadlineInDays { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }

@@ -5,6 +5,11 @@ namespace LMSApi.ModelLibrary.DTOs
 {
     // ─── Requests ────────────────────────────────────────────────────────────
 
+    public class PublishResourceRequest
+    {
+        public bool Publish { get; set; }
+    }
+
     public class CreateResourceRequest
     {
         [Required(ErrorMessage = "Lesson ID is required.")]
@@ -21,6 +26,8 @@ namespace LMSApi.ModelLibrary.DTOs
 
         [MaxLength(1000, ErrorMessage = "Description must not exceed 1000 characters.")]
         public string? Description { get; set; }
+
+        public PublishStatus Status { get; set; }
     }
 
     public class UpdateResourceRequest
@@ -34,6 +41,8 @@ namespace LMSApi.ModelLibrary.DTOs
 
         [MaxLength(1000, ErrorMessage = "Description must not exceed 1000 characters.")]
         public string? Description { get; set; }
+
+        public PublishStatus? Status { get; set; }
     }
 
     // ─── Responses ───────────────────────────────────────────────────────────
@@ -46,6 +55,7 @@ namespace LMSApi.ModelLibrary.DTOs
         public string ResourceTitle { get; set; }
         public string ResourceUrl { get; set; }
         public string? Description { get; set; }
+        public PublishStatus Status { get; set; }
         public DateTime UploadedAt { get; set; }
     }
 }

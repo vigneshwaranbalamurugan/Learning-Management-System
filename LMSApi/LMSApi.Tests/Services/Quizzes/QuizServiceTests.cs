@@ -60,7 +60,7 @@ namespace LMSApi.Tests.Services.Quizzes
             DbContext.CourseCategories.Add(cat);
             await DbContext.SaveChangesAsync();
 
-            var course = new LMSApi.ModelLibrary.Models.Courses { Title = "Course", Description = "Desc", Price = 0m, ThumbnailUrl = "url", IntroVideoUrl = "url", IsPremium = false, IsPublished = false, Requirements = "Reqs", LearningOutcomes = "Outcomes", EstimatedDuration = TimeSpan.Zero, Level = LMSApi.ModelLibrary.Enums.CourseLevel.Beginner, Language = LMSApi.ModelLibrary.Enums.CourseLanguage.English, PublishedAt = DateTime.UtcNow, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow, DefaultAssignmentDeadlineDays = 7, CategoryId = cat.Id, InstructorId = inst.Id, slug = Guid.NewGuid().ToString() };
+            var course = new LMSApi.ModelLibrary.Models.Courses { Title = "Course", Description = "Desc", Price = 0m, ThumbnailUrl = "url", IntroVideoUrl = "url", IsPremium = false, Requirements = "Reqs", LearningOutcomes = "Outcomes", EstimatedDuration = TimeSpan.Zero, Level = LMSApi.ModelLibrary.Enums.CourseLevel.Beginner, Language = LMSApi.ModelLibrary.Enums.CourseLanguage.English, PublishedAt = DateTime.UtcNow, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow, DefaultDeadlineDays = 7, CategoryId = cat.Id, InstructorId = inst.Id, slug = Guid.NewGuid().ToString() };
             DbContext.Courses.Add(course);
             await DbContext.SaveChangesAsync();
 
@@ -84,7 +84,7 @@ namespace LMSApi.Tests.Services.Quizzes
             DbContext.CourseCategories.Add(cat);
             await DbContext.SaveChangesAsync();
 
-            var course = new LMSApi.ModelLibrary.Models.Courses { Title = "Course", Description = "Desc", Price = 0m, ThumbnailUrl = "url", IntroVideoUrl = "url", IsPremium = false, IsPublished = false, Requirements = "Reqs", LearningOutcomes = "Outcomes", EstimatedDuration = TimeSpan.Zero, Level = LMSApi.ModelLibrary.Enums.CourseLevel.Beginner, Language = LMSApi.ModelLibrary.Enums.CourseLanguage.English, PublishedAt = DateTime.UtcNow, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow, DefaultAssignmentDeadlineDays = 7, CategoryId = cat.Id, InstructorId = inst.Id, slug = Guid.NewGuid().ToString() };
+            var course = new LMSApi.ModelLibrary.Models.Courses { Title = "Course", Description = "Desc", Price = 0m, ThumbnailUrl = "url", IntroVideoUrl = "url", IsPremium = false, Requirements = "Reqs", LearningOutcomes = "Outcomes", EstimatedDuration = TimeSpan.Zero, Level = LMSApi.ModelLibrary.Enums.CourseLevel.Beginner, Language = LMSApi.ModelLibrary.Enums.CourseLanguage.English, PublishedAt = DateTime.UtcNow, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow, DefaultDeadlineDays = 7, CategoryId = cat.Id, InstructorId = inst.Id, slug = Guid.NewGuid().ToString() };
             DbContext.Courses.Add(course);
             await DbContext.SaveChangesAsync();
 
@@ -96,7 +96,7 @@ namespace LMSApi.Tests.Services.Quizzes
             DbContext.Users.Add(user);
             await DbContext.SaveChangesAsync();
 
-            var quiz = new Quzzes { Title = "Q1", CourseSectionId = section.Id, IsPublished = true };
+            var quiz = new Quzzes { Title = "Q1", CourseSectionId = section.Id, Status = PublishStatus.Published };
             DbContext.Quizzes.Add(quiz);
             
             var enrollment = new Enrollments { CourseId = course.Id, UserId = user.Id, EnrollmentStatus = EnrollmentStatus.Active, EnrolledAt = DateTime.UtcNow, ProgressPercentage = 0, IsCompleted = false };

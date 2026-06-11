@@ -36,7 +36,20 @@ namespace LMSApi.API.Controllers
         [HttpGet("{id:int}")]
         public async Task<ActionResult<CourseDetailsResponse>> GetById(int id)
         {
-            var result = await _courseService.GetCourseByIdAsync(id);
+            int? userId = null;
+            bool isAdmin = false;
+            if (User.Identity?.IsAuthenticated == true)
+            {
+                try
+                {
+                    userId = User.GetUserId();
+                    isAdmin = User.IsAdmin();
+                }
+                catch (UnauthorizedAccessException)
+                {
+                }
+            }
+            var result = await _courseService.GetCourseByIdAsync(id, userId, isAdmin);
             return Ok(result);
         }
 
@@ -86,7 +99,7 @@ namespace LMSApi.API.Controllers
                 Language          = form.Language,
                 // Hybrid Learning
                 CourseAccessType              = form.CourseAccessType,
-                DefaultAssignmentDeadlineDays = form.DefaultAssignmentDeadlineDays
+                DefaultDeadlineDays = form.DefaultDeadlineDays
             };
             Console.WriteLine($"{form.Thumbnail?.FileName} - {form.IntroVideo?.FileName}");
             await using var thumbnailStream = form.Thumbnail?.OpenReadStream();
@@ -128,7 +141,7 @@ namespace LMSApi.API.Controllers
                 Language          = form.Language,
                 // Hybrid Learning
                 CourseAccessType              = form.CourseAccessType,
-                DefaultAssignmentDeadlineDays = form.DefaultAssignmentDeadlineDays
+                DefaultDeadlineDays = form.DefaultDeadlineDays
             };
 
             await using var thumbnailStream = form.Thumbnail?.OpenReadStream();
@@ -151,23 +164,13 @@ namespace LMSApi.API.Controllers
             return NoContent();
         }
 
-        /// <summary>Publish a course. Instructor (own only) or Admin.</summary>
+        /// <summary>Publish or unpublish a course. Instructor (own only) or Admin.</summary>
         [Authorize(Roles = "Instructor,Admin")]
         [HttpPatch("{id:int}/publish")]
-        public async Task<ActionResult<CourseResponse>> Publish(int id)
+        public async Task<ActionResult<CourseResponse>> Publish(int id, [FromBody] PublishCourseRequest request)
         {
             await EnforceOwnershipAsync(id);
-            var result = await _courseService.PublishCourseAsync(id);
-            return Ok(result);
-        }
-
-        /// <summary>Unpublish a course. Instructor (own only) or Admin.</summary>
-        [Authorize(Roles = "Instructor,Admin")]
-        [HttpPatch("{id:int}/unpublish")]
-        public async Task<ActionResult<CourseResponse>> Unpublish(int id)
-        {
-            await EnforceOwnershipAsync(id);
-            var result = await _courseService.UnpublishCourseAsync(id);
+            var result = await _courseService.PublishCourseAsync(id, request);
             return Ok(result);
         }
 
@@ -181,7 +184,7 @@ namespace LMSApi.API.Controllers
             if (User.IsAdmin()) return;   // Admins can do anything
 
             var callerId = User.GetUserId();
-            var course = await _courseService.GetCourseByIdAsync(courseId);
+            var course = await _courseService.GetCourseByIdAsync(courseId, callerId, User.IsAdmin());
 
             if (course.InstructorId != callerId)
                 throw new UnauthorizedAccessException("You do not have permission to modify this course.");

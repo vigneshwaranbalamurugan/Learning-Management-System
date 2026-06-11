@@ -72,6 +72,8 @@ namespace LMSApi.ModelLibrary.DTOs
         public int? MaxSubmissions { get; set; }
 
         public bool? IsLateSubmissionAllowed { get; set; }
+
+        public PublishStatus? Status { get; set; }
     }
 
     // ─── Assignment Responses ────────────────────────────────────────────────
@@ -96,7 +98,7 @@ namespace LMSApi.ModelLibrary.DTOs
         public int DeadlineInDays { get; set; }
         public int MaxSubmissions { get; set; }
         public bool IsLateSubmissionAllowed { get; set; }
-        public bool IsPublished { get; set; }
+        public PublishStatus Status { get; set; }
         public DateTime CreatedAt { get; set; }
     }
 

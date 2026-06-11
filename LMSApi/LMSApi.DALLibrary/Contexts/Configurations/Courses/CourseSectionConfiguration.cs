@@ -1,3 +1,4 @@
+using LMSApi.ModelLibrary.Enums;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using LMSApi.ModelLibrary.Models;
@@ -19,8 +20,8 @@ namespace LMSApi.DALLibrary.Contexts.Configurations
             builder.Property(s => s.Description)
                 .HasMaxLength(1000);
 
-            builder.Property(s => s.IsPublished)
-                .HasDefaultValue(false);
+            builder.Property(s => s.Status)
+                .HasDefaultValue(PublishStatus.Draft);
 
             builder.Property(s => s.SortOrder)
                 .HasDefaultValue(1);

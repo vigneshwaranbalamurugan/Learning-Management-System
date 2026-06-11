@@ -10,6 +10,7 @@ namespace LMSApi.ModelLibrary.Models
         public string ResourceTitle { get; set; }
         public string ResourceUrl { get; set; }
         public string Description { get; set; }
+        public PublishStatus Status { get; set; } = PublishStatus.Draft;
         public DateTime UploadedAt { get; set; }
 
         // Navigation property

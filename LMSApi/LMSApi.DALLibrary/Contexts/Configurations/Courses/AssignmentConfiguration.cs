@@ -1,4 +1,5 @@
 using LMSApi.ModelLibrary.Models;
+using LMSApi.ModelLibrary.Enums;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -39,8 +40,8 @@ namespace LMSApi.DALLibrary.Contexts.Configurations
             builder.Property(a => a.IsCompulsory)
                 .HasDefaultValue(false);
 
-            builder.Property(a => a.IsPublished)
-                .HasDefaultValue(false);
+            builder.Property(a => a.Status)
+                .HasDefaultValue(PublishStatus.Draft);
 
             builder.Property(a => a.CreatedAt)
                 .HasDefaultValueSql("CURRENT_TIMESTAMP");

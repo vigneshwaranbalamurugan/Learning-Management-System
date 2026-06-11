@@ -117,7 +117,6 @@ namespace LMSApi.Tests.Services.Courses
                 ThumbnailUrl = "url",
                 IntroVideoUrl = "url", 
                 IsPremium = false,
-                IsPublished = false,
                 Requirements = "Reqs",
                 LearningOutcomes = "Outcomes",
                 EstimatedDuration = TimeSpan.Zero,
@@ -126,7 +125,7 @@ namespace LMSApi.Tests.Services.Courses
                 PublishedAt = DateTime.UtcNow,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow,
-                DefaultAssignmentDeadlineDays = 7,
+                DefaultDeadlineDays = 7,
                 CategoryId = cat.Id, 
                 InstructorId = user.Id, 
                 slug = "course-1" 

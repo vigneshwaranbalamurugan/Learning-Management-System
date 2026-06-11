@@ -43,6 +43,7 @@ namespace LMSApi.DALLibrary.Repositories
                 .Include(c => c.Instructor)
                 .Include(c => c.Sections)
                     .ThenInclude(s => s.Lessons)
+                        .ThenInclude(l => l.Resources)
                 .Include(c => c.Sections)
                     .ThenInclude(s => s.Quizzes)
                 .Include(c => c.Sections)

@@ -110,3 +110,12 @@ Next steps:
 17. Discussion Forums
 18. Cetficiates
 19. SignalR for real-time updates
+
+
+Platform Fee types:
+1. Premium Course - Percentage
+2. Premium Certificate(Fixed)
+3. Instructor Subscription - Fixed
+4. Student Subscription - Fixed
+5. Featured Course - Fixed
+6. Batch Enrollment(For both) - Percentage

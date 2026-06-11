@@ -23,7 +23,8 @@ namespace LMSApi.API.Controllers
         [HttpGet("{id:int}/take")]
         public async Task<ActionResult<QuizStudentDetailResponse>> GetQuizForStudent(int id)
         {
-            var result = await _quizService.GetQuizForStudentAsync(id);
+            var userId = User.GetUserId();
+            var result = await _quizService.GetQuizForStudentAsync(id, userId);
             return Ok(result);
         }
 

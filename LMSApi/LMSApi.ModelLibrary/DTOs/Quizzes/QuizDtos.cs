@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using LMSApi.ModelLibrary.Enums;
 
 namespace LMSApi.ModelLibrary.DTOs
 {
@@ -19,8 +20,8 @@ namespace LMSApi.ModelLibrary.DTOs
         [Required(ErrorMessage = "Time Limit is required.")]
         public TimeSpan TimeLimit { get; set; }
 
-        [Range(0, int.MaxValue, ErrorMessage = "Passing marks must be zero or greater.")]
-        public int PassingMarks { get; set; }
+        [Range(0, 100, ErrorMessage = "Passing percentage must be between 0 and 100.")]
+        public int PassingPercentage { get; set; }
 
         [Range(1, int.MaxValue, ErrorMessage = "Max attempts must be at least 1.")]
         public int MaxAttempts { get; set; }
@@ -41,7 +42,8 @@ namespace LMSApi.ModelLibrary.DTOs
         public string? Description { get; set; }
 
         public TimeSpan? TimeLimit { get; set; }
-        public int? PassingMarks { get; set; }
+        [Range(0, 100, ErrorMessage = "Passing percentage must be between 0 and 100.")]
+        public int? PassingPercentage { get; set; }
         public int? MaxAttempts { get; set; }
 
         [Range(0, int.MaxValue)]
@@ -49,6 +51,8 @@ namespace LMSApi.ModelLibrary.DTOs
 
         [Range(0, int.MaxValue, ErrorMessage = "Deadline must be zero or greater.")]
         public int? DeadlineInDays { get; set; }
+
+        public PublishStatus? Status { get; set; }
     }
 
     public class PublishQuizRequest
@@ -67,10 +71,10 @@ namespace LMSApi.ModelLibrary.DTOs
         public string? Description { get; set; }
         public TimeSpan TimeLimit { get; set; }
         public int TotalMarks { get; set; }
-        public int PassingMarks { get; set; }
+        public int PassingPercentage { get; set; }
         public int MaxAttempts { get; set; }
         public int Order { get; set; }
-        public bool IsPublished { get; set; }
+        public PublishStatus Status { get; set; }
         public int DeadlineInDays { get; set; }
         public int QuestionCount { get; set; }
     }
@@ -83,10 +87,10 @@ namespace LMSApi.ModelLibrary.DTOs
         public string? Description { get; set; }
         public TimeSpan TimeLimit { get; set; }
         public int TotalMarks { get; set; }
-        public int PassingMarks { get; set; }
+        public int PassingPercentage { get; set; }
         public int MaxAttempts { get; set; }
         public int Order { get; set; }
-        public bool IsPublished { get; set; }
+        public PublishStatus Status { get; set; }
         public int DeadlineInDays { get; set; }
         public List<QuizQuestionResponse> Questions { get; set; } = [];
     }
@@ -99,7 +103,7 @@ namespace LMSApi.ModelLibrary.DTOs
         public string? Description { get; set; }
         public TimeSpan TimeLimit { get; set; }
         public int TotalMarks { get; set; }
-        public int PassingMarks { get; set; }
+        public int PassingPercentage { get; set; }
         public int MaxAttempts { get; set; }
         public int Order { get; set; }
         public int DeadlineInDays { get; set; }

@@ -1,8 +1,14 @@
+using LMSApi.ModelLibrary.Enums;
 using System.ComponentModel.DataAnnotations;
 
 namespace LMSApi.ModelLibrary.DTOs
 {
     // ─── Requests ────────────────────────────────────────────────────────────
+
+    public class PublishSectionRequest
+    {
+        public bool Publish { get; set; }
+    }
 
     public class CreateSectionRequest
     {
@@ -36,7 +42,7 @@ namespace LMSApi.ModelLibrary.DTOs
         [Range(0, int.MaxValue)]
         public int? SortOrder { get; set; }
 
-        public bool? IsPublished { get; set; }
+        public PublishStatus? Status { get; set; }
     }
 
     public class ReorderSectionsRequest
@@ -61,7 +67,7 @@ namespace LMSApi.ModelLibrary.DTOs
         public string? Description { get; set; }
         public TimeSpan EstimatedDuration { get; set; }
         public int SortOrder { get; set; }
-        public bool IsPublished { get; set; }
+        public PublishStatus Status { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
     }
