@@ -69,6 +69,12 @@ namespace LMSApi.BALLibrary.Services
             // Validate parent course exists
             var course = await _courseRepository.GetByIdAsync(request.CourseId);
 
+            var existingCourseSections = await _sectionRepository.GetSectionsByCourseAsync(course.Id);
+            if (existingCourseSections.Any(s => string.Equals(s.Title.Trim(), request.Title.Trim(), StringComparison.OrdinalIgnoreCase)))
+            {
+                throw new InvalidOperationException("A section with this title already exists in this course.");
+            }
+
             // Auto-assign SortOrder if not provided (default 0)
             if (request.SortOrder == 0)
             {
@@ -98,7 +104,18 @@ namespace LMSApi.BALLibrary.Services
 
             var course = await _courseRepository.GetByIdAsync(section.CourseId);
 
-            if (request.Title != null) section.Title = request.Title;
+            if (request.Title != null)
+            {
+                if (string.IsNullOrWhiteSpace(request.Title))
+                    throw new ArgumentException("Section title cannot be null or empty.", nameof(request.Title));
+
+                var existingSections = await _sectionRepository.GetSectionsByCourseAsync(course.Id);
+                if (existingSections.Any(s => s.Id != id && string.Equals(s.Title.Trim(), request.Title.Trim(), StringComparison.OrdinalIgnoreCase)))
+                {
+                    throw new InvalidOperationException("A section with this title already exists in this course.");
+                }
+                section.Title = request.Title;
+            }
             if (request.Description != null) section.Description = request.Description;
             if (request.EstimatedDuration.HasValue) section.EstimatedDuration = request.EstimatedDuration.Value;
             if (request.SortOrder.HasValue) section.SortOrder = request.SortOrder.Value;

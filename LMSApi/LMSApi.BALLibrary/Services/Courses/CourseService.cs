@@ -5,6 +5,7 @@ using LMSApi.ModelLibrary.DTOs;
 using LMSApi.ModelLibrary.Enums;
 using LMSApi.ModelLibrary.Models;
 using Microsoft.Extensions.Logging;
+using LMSApi.BALLibrary.Utils;
 
 namespace LMSApi.BALLibrary.Services
 {
@@ -17,6 +18,8 @@ namespace LMSApi.BALLibrary.Services
         private readonly IUploadService _uploadService;
         private readonly IMapper _mapper;
         private readonly ILogger<CourseService> _logger;
+        private readonly INotificationService _notificationService;
+        private readonly IWishListRepository _wishListRepository;
 
         public CourseService(
             ICourseRepository courseRepository,
@@ -25,7 +28,9 @@ namespace LMSApi.BALLibrary.Services
             IEnrollmentRepository enrollmentRepository,
             IUploadService uploadService,
             IMapper mapper,
-            ILogger<CourseService> logger)
+            ILogger<CourseService> logger,
+            INotificationService notificationService,
+            IWishListRepository wishListRepository)
         {
             _courseRepository = courseRepository;
             _categoryRepository = categoryRepository;
@@ -34,12 +39,16 @@ namespace LMSApi.BALLibrary.Services
             _uploadService = uploadService;
             _mapper = mapper;
             _logger = logger;
+            _notificationService = notificationService;
+            _wishListRepository = wishListRepository;
         }
 
         public async Task<IEnumerable<CourseResponse>> GetAllCoursesAsync()
         {
             var courses = await _courseRepository.GetPublishedCoursesAsync();
-            return _mapper.Map<IEnumerable<CourseResponse>>(courses);
+            var responses = _mapper.Map<IEnumerable<CourseResponse>>(courses).ToList();
+            await PopulateRatingStatsListAsync(responses);
+            return responses;
         }
 
         public async Task<CourseDetailsResponse> GetCourseByIdAsync(int id, int? currentUserId = null, bool isAdmin = false)
@@ -66,7 +75,18 @@ namespace LMSApi.BALLibrary.Services
                     }).ToList();
             }
 
-            return _mapper.Map<CourseDetailsResponse>(course);
+            var response = _mapper.Map<CourseDetailsResponse>(course);
+
+            var stats = await _courseRepository.GetCourseRatingStatsAsync(id);
+            response.AverageRating = stats.AverageRating;
+            response.TotalReviews = stats.TotalReviews;
+
+            if (currentUserId.HasValue)
+            {
+                response.IsWishlisted = await _wishListRepository.CheckExistsAsync(currentUserId.Value, id);
+            }
+
+            return response;
         }
 
         /// <summary>
@@ -88,6 +108,13 @@ namespace LMSApi.BALLibrary.Services
 
             // Verify category exists
             await _categoryRepository.GetByIdAsync(request.CategoryId);
+
+            // Verify that the instructor doesn't already have a course with the same title
+            var existingCourses = await _courseRepository.GetCoursesByInstructorAsync(instructorId);
+            if (existingCourses.Any(c => string.Equals(c.Title.Trim(), request.Title.Trim(), StringComparison.OrdinalIgnoreCase)))
+            {
+                throw new InvalidOperationException("A course with this title already exists for this instructor.");
+            }
 
             var course = _mapper.Map<Courses>(request);
             course.InstructorId = instructorId;    // always from token, never from client
@@ -133,6 +160,14 @@ namespace LMSApi.BALLibrary.Services
             {
                 if (string.IsNullOrWhiteSpace(request.Title))
                     throw new ArgumentException("Title cannot be empty.", nameof(request.Title));
+
+                // Check for duplicate course title for the same instructor (excluding current course id)
+                var existingCourses = await _courseRepository.GetCoursesByInstructorAsync(course.InstructorId);
+                if (existingCourses.Any(c => c.Id != id && string.Equals(c.Title.Trim(), request.Title.Trim(), StringComparison.OrdinalIgnoreCase)))
+                {
+                    throw new InvalidOperationException("A course with this title already exists for this instructor.");
+                }
+
                 course.Title = request.Title;
                 course.slug = GenerateSlug(request.Title);
             }
@@ -157,7 +192,7 @@ namespace LMSApi.BALLibrary.Services
             if (request.Requirements != null) course.Requirements = request.Requirements;
             if (request.LearningOutcomes != null) course.LearningOutcomes = request.LearningOutcomes;
             if (request.Level.HasValue) course.Level = request.Level.Value;
-            if (request.Language.HasValue) course.Language = request.Language.Value;
+            if (request.LanguageId.HasValue) course.LanguageId = request.LanguageId.Value;
             course.EstimatedDuration=request.EstimatedDuration;
 
             // ─── Hybrid Learning ─────────────────────────────────────────────────
@@ -209,11 +244,57 @@ namespace LMSApi.BALLibrary.Services
                 if (course.Status == CourseStatus.Published)
                     throw new InvalidOperationException($"Course with id '{id}' is already published.");
 
+                if (course.Status == CourseStatus.PendingApproval)
+                    throw new InvalidOperationException($"Course with id '{id}' is already pending approval.");
+
                 // Validation: CohortBased courses must have at least one batch defined before publishing
                 if (course.CourseAccessType == CourseAccessType.CohortBased && !course.Batches.Any())
                     throw new InvalidOperationException(
                         $"CohortBased course '{id}' cannot be published without at least one batch. Create a batch first.");
 
+                course.Status = CourseStatus.PendingApproval;
+
+                await _courseRepository.UpdateAsync(course);
+
+                _logger.LogInformation("Course submitted for approval: Id={Id}", id);
+                return _mapper.Map<CourseResponse>(course);
+            }
+            else
+            {
+                var course = await _courseRepository.GetByIdAsync(id);
+
+                if (course.Status != CourseStatus.Published && course.Status != CourseStatus.PendingApproval)
+                    throw new InvalidOperationException($"Course with id '{id}' is not published or pending approval.");
+
+                course.Status = CourseStatus.Draft;
+                await _courseRepository.UpdateAsync(course);
+
+                _logger.LogInformation("Course unpublished/cancelled: Id={Id}", id);
+                
+                var instructor = await _userRepository.GetByIdAsync(course.InstructorId);
+                var html = EmailTemplate.GetCourseStatusUpdatedTemplate(
+                    instructor.UserProfile?.FirstName ?? instructor.Email,
+                    course.Title, "Unpublished", null);
+                Message msg = new EmailMessage(instructor.Email, $"Your course '{course.Title}' has been unpublished", html) { IsHtml = true };
+                await _notificationService.Send(msg);
+
+                return _mapper.Map<CourseResponse>(course);
+            }
+        }
+
+        public async Task<CourseResponse> ReviewCourseAsync(int id, ReviewCourseRequest request)
+        {
+            if (request == null)
+                throw new ArgumentNullException(nameof(request));
+
+            var course = await _courseRepository.GetCourseWithDetailsAsync(id)
+                ?? throw new KeyNotFoundException($"Course with id '{id}' not found.");
+
+            if (course.Status != CourseStatus.PendingApproval)
+                throw new InvalidOperationException($"Course with id '{id}' is not pending approval.");
+
+            if (string.Equals(request.Action, "Approve", StringComparison.OrdinalIgnoreCase))
+            {
                 course.Status = CourseStatus.Published;
                 course.PublishedAt = DateTime.UtcNow;
 
@@ -237,37 +318,86 @@ namespace LMSApi.BALLibrary.Services
 
                 await _courseRepository.UpdateAsync(course);
 
-                _logger.LogInformation("Course Published: Id={Id}", id);
+                _logger.LogInformation("Course approved and published: Id={Id}", id);
+
+                var instructor = await _userRepository.GetByIdAsync(course.InstructorId);
+                var html = EmailTemplate.GetCourseStatusUpdatedTemplate(
+                    instructor.UserProfile?.FirstName ?? instructor.Email,
+                    course.Title, "Published", null);
+                Message msg = new EmailMessage(instructor.Email, $"Your course '{course.Title}' has been published!", html) { IsHtml = true };
+                await _notificationService.Send(msg);
+
+                return _mapper.Map<CourseResponse>(course);
+            }
+            else if (string.Equals(request.Action, "Reject", StringComparison.OrdinalIgnoreCase))
+            {
+                if (string.IsNullOrWhiteSpace(request.Reason))
+                {
+                    throw new ArgumentException("Rejection reason is required when rejecting a course.");
+                }
+
+                course.Status = CourseStatus.Rejected;
+                await _courseRepository.UpdateAsync(course);
+
+                _logger.LogInformation("Course rejected: Id={Id}, Reason={Reason}", id, request.Reason);
+
+                var instructor = await _userRepository.GetByIdAsync(course.InstructorId);
+                var html = EmailTemplate.GetCourseStatusUpdatedTemplate(
+                    instructor.UserProfile?.FirstName ?? instructor.Email,
+                    course.Title, "Rejected", request.Reason);
+                Message msg = new EmailMessage(instructor.Email, $"Your course '{course.Title}' was not approved", html) { IsHtml = true };
+                await _notificationService.Send(msg);
+
                 return _mapper.Map<CourseResponse>(course);
             }
             else
             {
-                var course = await _courseRepository.GetByIdAsync(id);
-
-                if (course.Status != CourseStatus.Published)
-                    throw new InvalidOperationException($"Course with id '{id}' is not currently published.");
-
-                course.Status = CourseStatus.Draft;
-                await _courseRepository.UpdateAsync(course);
-
-                _logger.LogInformation("Course Unpublished: Id={Id}", id);
-                return _mapper.Map<CourseResponse>(course);
+                throw new ArgumentException($"Invalid action '{request.Action}'. Action must be 'Approve' or 'Reject'.");
             }
         }
+
+        public async Task<IEnumerable<CourseResponse>> GetPendingCoursesAsync()
+        {
+            var courses = await _courseRepository.GetPendingCoursesAsync();
+            var responses = _mapper.Map<IEnumerable<CourseResponse>>(courses).ToList();
+            await PopulateRatingStatsListAsync(responses);
+            return responses;
+        }
+
+
 
         public async Task<IEnumerable<CourseResponse>> GetCoursesByInstructorAsync(int instructorId)
         {
             var courses = await _courseRepository.GetCoursesByInstructorAsync(instructorId);
-            return courses == null ? Enumerable.Empty<CourseResponse>() : _mapper.Map<IEnumerable<CourseResponse>>(courses);
+            var responses = courses == null ? new List<CourseResponse>() : _mapper.Map<IEnumerable<CourseResponse>>(courses).ToList();
+            await PopulateRatingStatsListAsync(responses);
+            return responses;
         }
 
         public async Task<IEnumerable<CourseResponse>> GetCoursesByCategoryAsync(int categoryId)
         {
             var courses = await _courseRepository.GetCoursesByCategoryAsync(categoryId);
-            return courses == null ? Enumerable.Empty<CourseResponse>() : _mapper.Map<IEnumerable<CourseResponse>>(courses);
+            var responses = courses == null ? new List<CourseResponse>() : _mapper.Map<IEnumerable<CourseResponse>>(courses).ToList();
+            await PopulateRatingStatsListAsync(responses);
+            return responses;
         }
 
         // ─── Helpers ──────────────────────────────────────────────────────────
+
+        private async Task PopulateRatingStatsAsync(CourseResponse response)
+        {
+            var stats = await _courseRepository.GetCourseRatingStatsAsync(response.Id);
+            response.AverageRating = stats.AverageRating;
+            response.TotalReviews = stats.TotalReviews;
+        }
+
+        private async Task PopulateRatingStatsListAsync(IEnumerable<CourseResponse> responses)
+        {
+            foreach (var response in responses)
+            {
+                await PopulateRatingStatsAsync(response);
+            }
+        }
 
         private static string GenerateSlug(string title)
         {

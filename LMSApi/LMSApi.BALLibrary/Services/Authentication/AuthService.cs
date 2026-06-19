@@ -5,6 +5,7 @@ using LMSApi.ModelLibrary.DTOs;
 using LMSApi.ModelLibrary.Enums;
 using LMSApi.BALLibrary.Utils;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 
 
 namespace LMSApi.BALLibrary.Services
@@ -15,13 +16,20 @@ namespace LMSApi.BALLibrary.Services
         private readonly INotificationService _notificationService;
         private readonly ITokenService _tokenService;
         private readonly IConfiguration _configuration;
+        private readonly ILogger<AuthService>? _logger;
 
-        public AuthService(IUserRepository userRepository, INotificationService notificationService, ITokenService tokenService, IConfiguration configuration)
+        public AuthService(
+            IUserRepository userRepository, 
+            INotificationService notificationService, 
+            ITokenService tokenService, 
+            IConfiguration configuration,
+            ILogger<AuthService>? logger = null)
         {
             _userRepository = userRepository;
             _notificationService = notificationService;
             _tokenService = tokenService;
             _configuration = configuration;
+            _logger = logger;
         }
 
         public async Task<LoginResponse> AuthenticateAsync(LoginRequest request)
@@ -30,21 +38,38 @@ namespace LMSApi.BALLibrary.Services
             if (string.IsNullOrWhiteSpace(request.Email)) throw new ArgumentException("Email cannot be null or empty.", nameof(request.Email));
             if (string.IsNullOrWhiteSpace(request.Password)) throw new ArgumentException("Password cannot be null or empty.", nameof(request.Password));
 
+            _logger?.LogInformation("Attempting to authenticate user: {Email}", request.Email);
+
             var user = await _userRepository.GetByEmailAsync(request.Email);
-            if (user == null) throw new KeyNotFoundException($"User with email {request.Email} not found");
+            if (user == null)
+            {
+                _logger?.LogWarning("Authentication failed: User {Email} not found.", request.Email);
+                throw new UnauthorizedAccessException($"Invalid credentials");
+            }
 
             if (!PasswordHashing.VerifyPassword(request.Password, user.PasswordHash, user.PasswordSalt))
+            {
+                _logger?.LogWarning("Authentication failed: Incorrect password for user {Email}.", request.Email);
                 throw new UnauthorizedAccessException("Invalid credentials");
+            }
 
-            if (!user.IsEmailVerified) throw new InvalidOperationException("Email not verified");
+            if (!user.IsEmailVerified)
+            {
+                _logger?.LogWarning("Authentication failed: User {Email} has not verified their email.", request.Email);
+                throw new InvalidOperationException("Email not verified");
+            }
 
             if (user.Role == null)
+            {
+                _logger?.LogError("Authentication failed: User role navigation property is null for user {Email}.", request.Email);
                 throw new InvalidOperationException("User role is not configured.");
+            }
 
             user.LastLoginAt = DateTime.UtcNow;
             await _userRepository.UpdateAsync(user);
 
             var (token, expires) = _tokenService.GenerateToken(user.Id, user.Email, user.Role.RoleName);
+            _logger?.LogInformation("User {Email} authenticated successfully. Token expires at: {ExpiresAt}", request.Email, expires);
             return new LoginResponse { Email = request.Email, Token = token, ExpiresAt = expires, Message = "Authenticated" };
         }
 
@@ -54,11 +79,19 @@ namespace LMSApi.BALLibrary.Services
             if (string.IsNullOrWhiteSpace(request.Email)) throw new ArgumentException("Email cannot be null or empty.", nameof(request.Email));
             if (string.IsNullOrWhiteSpace(request.Password)) throw new ArgumentException("Password cannot be null or empty.", nameof(request.Password));
 
+            _logger?.LogInformation("Registering new user with email: {Email}, role: {Role}", request.Email, request.Role);
+
             if(request.Role != RegistrationRole.Learner && request.Role != RegistrationRole.Instructor)
+            {
+                _logger?.LogWarning("Registration failed: Invalid role {Role} requested for email {Email}.", request.Role, request.Email);
                 throw new InvalidOperationException("Invalid registration role.Only Learner and Instructor roles are allowed");
+            }
 
             if (await _userRepository.IsEmailAlreadyRegisteredAsync(request.Email))
+            {
+                _logger?.LogWarning("Registration failed: Email {Email} is already registered.", request.Email);
                 throw new InvalidOperationException($"Email {request.Email} is already registered");
+            }
             var (passwordHash, passwordSalt) = PasswordHashing.HashPassword(request.Password);
             var roleId = request.Role switch
             {
@@ -81,6 +114,7 @@ namespace LMSApi.BALLibrary.Services
             };
 
             await _userRepository.AddAsync(user);
+            _logger?.LogInformation("User entity created for {Email} with ID: {UserId}.", user.Email, user.Id);
 
             var relative = $"/auth/verify?email={Uri.EscapeDataString(request.Email)}&token={user.VerificationToken}";
             var baseUrl = _configuration["App:BaseUrl"] ?? string.Empty;
@@ -90,6 +124,7 @@ namespace LMSApi.BALLibrary.Services
             var html = EmailTemplate.GetVerificationTemplate(request.Email, link);
             Message msg = new EmailMessage(request.Email, "Please verify your email", html) { IsHtml = true };
             await _notificationService.Send(msg);
+            _logger?.LogInformation("Verification email sent to {Email}.", request.Email);
 
             return new RegisterResponse { Email = request.Email, Message = "Registration successful. Verification email sent. Please check your inbox and verify your email." };
         }
@@ -100,12 +135,34 @@ namespace LMSApi.BALLibrary.Services
             if (string.IsNullOrWhiteSpace(request.Email)) throw new ArgumentException("Email cannot be null or empty.", nameof(request.Email));
             if (string.IsNullOrWhiteSpace(request.Token)) throw new ArgumentException("Verification token cannot be null or empty.", nameof(request.Token));
 
+            _logger?.LogInformation("Attempting to verify email for: {Email}", request.Email);
+
             var user = await _userRepository.GetByEmailAsync(request.Email);
-            if (user == null) throw new KeyNotFoundException($"User with email {request.Email} not found");
-            if (user.IsEmailVerified) throw new InvalidOperationException($"Email {request.Email} is already verified");
-            if(user.CurrentTokenType != TokenType.EmailVerification) throw new InvalidOperationException("No email verification in progress");
-            if (user.VerificationToken != request.Token) throw new UnauthorizedAccessException("Invalid verification token");
-            if (user.VerificationTokenExpiry == null || user.VerificationTokenExpiry < DateTime.UtcNow) throw new InvalidOperationException("Verification token expired");
+            if (user == null)
+            {
+                _logger?.LogWarning("Email verification failed: User {Email} not found.", request.Email);
+                throw new UnauthorizedAccessException("Invalid verification token or email");
+            }
+            if (user.IsEmailVerified)
+            {
+                _logger?.LogWarning("Email verification failed: User {Email} is already verified.", request.Email);
+                throw new UnauthorizedAccessException("Invalid verification token or email");
+            }
+            if(user.CurrentTokenType != TokenType.EmailVerification)
+            {
+                _logger?.LogWarning("Email verification failed: Incorrect token type for user {Email}.", request.Email);
+                throw new InvalidOperationException("Invalid verification token or email");
+            }
+            if (user.VerificationToken != request.Token)
+            {
+                _logger?.LogWarning("Email verification failed: Token mismatch for user {Email}.", request.Email);
+                throw new UnauthorizedAccessException("Invalid verification token or email");
+            }
+            if (user.VerificationTokenExpiry == null || user.VerificationTokenExpiry < DateTime.UtcNow)
+            {
+                _logger?.LogWarning("Email verification failed: Verification token expired for user {Email}.", request.Email);
+                throw new InvalidOperationException("Invalid verification token or email");
+            }
 
             user.IsEmailVerified = true;
             user.VerificationToken = null;
@@ -113,6 +170,12 @@ namespace LMSApi.BALLibrary.Services
             user.CurrentTokenType = null;
 
             await _userRepository.UpdateAsync(user);
+            _logger?.LogInformation("Email verified successfully for user: {Email}", request.Email);
+
+            var html = EmailTemplate.GetWelcomeTemplate(user.Email, user.Email, user.Role?.RoleName ?? "Learner");
+            Message msg = new EmailMessage(user.Email, "Welcome to LMS!", html) { IsHtml = true };
+            await _notificationService.Send(msg);
+
             return new VerifyEmailResponse { IsVerified = true, Email = request.Email, Message = "Email verified successfully" };
         }
 
@@ -122,9 +185,9 @@ namespace LMSApi.BALLibrary.Services
             if (string.IsNullOrWhiteSpace(request.Email)) throw new ArgumentException("Email cannot be null or empty.", nameof(request.Email));
 
             var user = await _userRepository.GetByEmailAsync(request.Email);
-            if (user == null) throw new KeyNotFoundException($"User with email {request.Email} not found");
-            if (user.IsEmailVerified) throw new InvalidOperationException($"Email {request.Email} is already verified");
-            if(user.CurrentTokenType != TokenType.EmailVerification) throw new InvalidOperationException("No email verification in progress");
+            if (user == null) throw new UnauthorizedAccessException("Invalid verification token or email");
+            if (user.IsEmailVerified) throw new InvalidOperationException("Invalid verification token or email");
+            if(user.CurrentTokenType != TokenType.EmailVerification) throw new InvalidOperationException("Invalid verification token or email");
 
             user.VerificationToken = Guid.NewGuid().ToString();
             user.VerificationTokenExpiry = DateTime.UtcNow.AddHours(24);
@@ -180,11 +243,11 @@ namespace LMSApi.BALLibrary.Services
             if (string.IsNullOrWhiteSpace(request.NewPassword)) throw new ArgumentException("New Password cannot be null or empty.", nameof(request.NewPassword));
 
             var user = await _userRepository.GetByEmailAsync(request.Email);
-            if (user == null) throw new KeyNotFoundException($"User with email {request.Email} not found");
+            if (user == null) throw new KeyNotFoundException("Invalid password reset token or email");
 
-            if (user.CurrentTokenType != TokenType.PasswordReset) throw new InvalidOperationException("No password reset in progress");
-            if (user.VerificationToken != request.Token) throw new UnauthorizedAccessException("Invalid password reset token");
-            if (user.VerificationTokenExpiry == null || user.VerificationTokenExpiry < DateTime.UtcNow) throw new InvalidOperationException("Password reset token expired");
+            if (user.CurrentTokenType != TokenType.PasswordReset) throw new InvalidOperationException("Invalid password reset token or email");
+            if (user.VerificationToken != request.Token) throw new UnauthorizedAccessException("Invalid password reset token or email");
+            if (user.VerificationTokenExpiry == null || user.VerificationTokenExpiry < DateTime.UtcNow) throw new InvalidOperationException("Invalid password reset token or email");
 
             var (passwordHash, passwordSalt) = PasswordHashing.HashPassword(request.NewPassword);
             user.PasswordHash = passwordHash;

@@ -15,5 +15,9 @@ namespace LMSApi.BALLibrary.Interfaces
 		Task<string> UploadLessonPdfAsync(Stream fileStream, string fileName, string publicId);
 		bool IsAllowedAssignmentAttachment(string fileName, string contentType);
 		Task<string> UploadAssignmentAttachmentAsync(Stream fileStream, string fileName, string publicId);
+
+		bool IsAllowedCertificateTemplateBackground(string fileName, string contentType);
+		Task<string> UploadCertificateTemplateBackgroundAsync(Stream fileStream, string fileName, string publicId);
+		Task<string> UploadCertificatePdfAsync(Stream fileStream, string fileName, string publicId);
 	}
 }

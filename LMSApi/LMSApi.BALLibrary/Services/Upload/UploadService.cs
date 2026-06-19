@@ -2,6 +2,7 @@ using LMSApi.BALLibrary.Interfaces;
 using LMSApi.BALLibrary.Utils;
 using Microsoft.Extensions.Configuration;
 using SixLabors.ImageSharp;
+using Microsoft.Extensions.Logging;
 
 namespace LMSApi.BALLibrary.Services.Upload
 {
@@ -57,10 +58,12 @@ namespace LMSApi.BALLibrary.Services.Upload
 		};
 
 		private readonly IConfiguration _configuration;
+		private readonly ILogger<UploadService>? _logger;
 
-		public UploadService(IConfiguration configuration)
+		public UploadService(IConfiguration configuration, ILogger<UploadService>? logger = null)
 		{
 			_configuration = configuration;
+			_logger = logger;
 		}
 
 				// ─── Profile image ────────────────────────────────────────────────────────
@@ -68,7 +71,7 @@ namespace LMSApi.BALLibrary.Services.Upload
 		{
 			if (string.IsNullOrWhiteSpace(fileName)) return false;
 			var extension = Path.GetExtension(fileName);
-			Console.WriteLine($"Checking profile image: {fileName}, extension: {extension}, content type: {contentType}");
+			_logger?.LogInformation("Checking profile image: {FileName}, extension: {Extension}, content type: {ContentType}", fileName, extension, contentType);
 			return AllowedImageExtensions.Contains(extension)
 			       && (string.IsNullOrWhiteSpace(contentType)
 			           || AllowedImageContentTypes.Contains(contentType)
@@ -81,13 +84,18 @@ namespace LMSApi.BALLibrary.Services.Upload
 			if (string.IsNullOrWhiteSpace(fileName)) throw new ArgumentException("File name cannot be null or empty.", nameof(fileName));
 			if (string.IsNullOrWhiteSpace(publicId)) throw new ArgumentException("Public ID cannot be null or empty.", nameof(publicId));
 
+			_logger?.LogInformation("Uploading profile image for Public ID: {PublicId}, File Name: {FileName}", publicId, fileName);
+
 			var extension = Path.GetExtension(fileName);
 			var contentType = extension.Equals(".png", StringComparison.OrdinalIgnoreCase)
 				? "image/png"
 				: "image/jpeg";
 
 			if (!IsAllowedProfileImage(fileName, contentType))
+			{
+				_logger?.LogWarning("Profile image upload rejected: Disallowed file type or extension for file {FileName}", fileName);
 				throw new InvalidOperationException("Only JPG, JPEG, and PNG profile pictures are allowed.");
+			}
 
 			// Convert the image to WebP format
 			using var image = await SixLabors.ImageSharp.Image.LoadAsync(fileStream);
@@ -97,7 +105,9 @@ namespace LMSApi.BALLibrary.Services.Upload
 
 			var webpFileName = Path.ChangeExtension(fileName, ".webp");
 
-			return await CloudinaryUtils.UploadProfileImageAsync(_configuration, outputStream, webpFileName, publicId);
+			var url = await CloudinaryUtils.UploadProfileImageAsync(_configuration, outputStream, webpFileName, publicId);
+			_logger?.LogInformation("Profile image uploaded successfully to Cloudinary. URL: {Url}", url);
+			return url;
 		}
 
 		// ─── Course thumbnail ─────────────────────────────────────────────────────
@@ -195,6 +205,35 @@ namespace LMSApi.BALLibrary.Services.Upload
 				throw new InvalidOperationException("Invalid file type for assignment attachment.");
 
 			return CloudinaryUtils.UploadAssignmentAttachmentAsync(_configuration, fileStream, fileName, publicId);
+		}
+
+		// ─── Certificates ─────────────────────────────────────────────────────────
+		public bool IsAllowedCertificateTemplateBackground(string fileName, string contentType)
+		{
+			if (string.IsNullOrWhiteSpace(fileName)) return false;
+			var extension = Path.GetExtension(fileName);
+			return AllowedImageExtensions.Contains(extension)
+			       && (string.IsNullOrWhiteSpace(contentType)
+			           || AllowedImageContentTypes.Contains(contentType)
+			           || contentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase));
+		}
+
+		public Task<string> UploadCertificateTemplateBackgroundAsync(Stream fileStream, string fileName, string publicId)
+		{
+			if (fileStream == null) throw new ArgumentNullException(nameof(fileStream));
+			if (string.IsNullOrWhiteSpace(fileName)) throw new ArgumentException("File name cannot be null or empty.", nameof(fileName));
+			if (string.IsNullOrWhiteSpace(publicId)) throw new ArgumentException("Public ID cannot be null or empty.", nameof(publicId));
+
+			if (!IsAllowedCertificateTemplateBackground(fileName, string.Empty))
+				throw new InvalidOperationException("Only JPG, JPEG, and PNG images are allowed as certificate template backgrounds.");
+
+			return CloudinaryUtils.UploadCertificateTemplateBackgroundAsync(_configuration, fileStream, fileName, publicId);
+		}
+
+		public Task<string> UploadCertificatePdfAsync(Stream fileStream, string fileName, string publicId)
+		{
+			// Cloudinary needs to know the type for proper transformation, usually auto works, but for specific folder/naming we use utils
+			return CloudinaryUtils.UploadCertificatePdfAsync(_configuration, fileStream, fileName, publicId);
 		}
 	}
 }

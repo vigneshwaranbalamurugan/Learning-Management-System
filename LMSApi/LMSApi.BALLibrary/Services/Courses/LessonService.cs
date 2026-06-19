@@ -16,6 +16,8 @@ namespace LMSApi.BALLibrary.Services
         private readonly IUploadService _uploadService;
         private readonly IMapper _mapper;
         private readonly ILogger<LessonService> _logger;
+        private readonly IEnrollmentRepository _enrollmentRepository;
+        private readonly INotificationService _notificationService;
 
         public LessonService(
             ILessonRepository lessonRepository,
@@ -23,7 +25,9 @@ namespace LMSApi.BALLibrary.Services
             ICourseRepository courseRepository,
             IUploadService uploadService,
             IMapper mapper,
-            ILogger<LessonService> logger)
+            ILogger<LessonService> logger,
+            IEnrollmentRepository enrollmentRepository,
+            INotificationService notificationService)
         {
             _lessonRepository = lessonRepository;
             _sectionRepository = sectionRepository;
@@ -31,6 +35,8 @@ namespace LMSApi.BALLibrary.Services
             _uploadService = uploadService;
             _mapper = mapper;
             _logger = logger;
+            _enrollmentRepository = enrollmentRepository;
+            _notificationService = notificationService;
         }
 
         public async Task<IEnumerable<LessonResponse>> GetLessonsBySectionAsync(int sectionId, int? currentUserId = null, bool isAdmin = false)
@@ -106,6 +112,16 @@ namespace LMSApi.BALLibrary.Services
 
             var course = await _courseRepository.GetByIdAsync(section.CourseId);
 
+            var courseSections = await _sectionRepository.GetSectionsByCourseAsync(course.Id);
+            foreach (var s in courseSections)
+            {
+                var existingLessonsForSection = await _lessonRepository.GetLessonsBySectionAsync(s.Id);
+                if (existingLessonsForSection.Any(l => string.Equals(l.Title.Trim(), request.Title.Trim(), StringComparison.OrdinalIgnoreCase)))
+                {
+                    throw new InvalidOperationException("A lesson with this title already exists in this course.");
+                }
+            }
+
             // Auto-assign SortOrder if not provided (default 0)
             if (request.SortOrder == 0)
             {
@@ -166,7 +182,22 @@ namespace LMSApi.BALLibrary.Services
             var section = await _sectionRepository.GetByIdAsync(lesson.CourseSectionId);
             var course = await _courseRepository.GetByIdAsync(section.CourseId);
 
-            if (request.Title != null) lesson.Title = request.Title;
+            if (request.Title != null)
+            {
+                if (string.IsNullOrWhiteSpace(request.Title))
+                    throw new ArgumentException("Lesson title cannot be null or empty.", nameof(request.Title));
+
+                var courseSections = await _sectionRepository.GetSectionsByCourseAsync(course.Id);
+                foreach (var s in courseSections)
+                {
+                    var existingLessonsForSection = await _lessonRepository.GetLessonsBySectionAsync(s.Id);
+                    if (existingLessonsForSection.Any(l => l.Id != id && string.Equals(l.Title.Trim(), request.Title.Trim(), StringComparison.OrdinalIgnoreCase)))
+                    {
+                        throw new InvalidOperationException("A lesson with this title already exists in this course.");
+                    }
+                }
+                lesson.Title = request.Title;
+            }
             if (request.Description != null) lesson.Description = request.Description;
             if (request.Content != null) lesson.Content = request.Content;
             if (request.ContentUrl != null) lesson.ContentUrl = request.ContentUrl;
@@ -255,6 +286,38 @@ namespace LMSApi.BALLibrary.Services
             await _lessonRepository.UpdateAsync(lesson);
 
             _logger.LogInformation("Lesson publication status updated: LessonId={LessonId}, Status={Status}", id, lesson.Status);
+
+            if (request.Publish && course.CourseAccessType == CourseAccessType.CohortBased)
+            {
+                var enrollments = await _enrollmentRepository.GetActiveEnrollmentsByCourseAsync(course.Id);
+                var emailsToSend = enrollments.Select(e => new
+                {
+                    Email = e.User.Email,
+                    Name = e.User.UserProfile?.FirstName ?? e.User.Email,
+                    BatchName = e.Batch?.Name ?? ""
+                }).ToList();
+
+                var courseTitle = course.Title;
+                var lessonTitle = lesson.Title;
+
+                _ = Task.Run(async () =>
+                {
+                    foreach (var e in emailsToSend)
+                    {
+                        var html = Utils.EmailTemplate.GetContentPublishedTemplate(
+                            e.Name, courseTitle, "Lesson", lessonTitle, e.BatchName);
+                        Message msg = new EmailMessage(e.Email, $"New lesson available: {lessonTitle}", html) { IsHtml = true };
+                        try
+                        {
+                            await _notificationService.Send(msg);
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogError(ex, "Failed to send lesson published email to {Email}", e.Email);
+                        }
+                    }
+                });
+            }
 
             return _mapper.Map<LessonResponse>(lesson);
         }

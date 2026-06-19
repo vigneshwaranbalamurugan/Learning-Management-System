@@ -15,6 +15,7 @@ namespace LMSApi.ModelLibrary.Models
 
         // Navigation properties
         public Quzzes Quiz { get; set; }
+        
         public Users User { get; set; }
         public ICollection<QuizAnswers> Answers { get; set; } = new List<QuizAnswers>();
     }

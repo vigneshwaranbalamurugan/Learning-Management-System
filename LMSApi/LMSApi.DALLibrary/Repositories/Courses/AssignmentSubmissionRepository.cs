@@ -59,14 +59,14 @@ namespace LMSApi.DALLibrary.Repositories
         public async Task<bool> CalculateAssignmentPassStatusAsync(int submissionId)
         {
             return await _context.Database
-                .SqlQuery<bool>($"SELECT calculate_assignment_pass_status({submissionId})")
+                .SqlQuery<bool>($"SELECT calculate_assignment_pass_status({submissionId}) AS \"Value\"")
                 .FirstOrDefaultAsync();
         }
 
         public async Task<bool> HasStudentPassedMandatoryAssignmentsAsync(int studentId, int sectionId)
         {
             return await _context.Database
-                .SqlQuery<bool>($"SELECT calculate_assignment_completion({studentId}, {sectionId})")
+                .SqlQuery<bool>($"SELECT calculate_assignment_completion({studentId}, {sectionId}) AS \"Value\"")
                 .FirstOrDefaultAsync();
         }
 

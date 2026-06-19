@@ -43,6 +43,17 @@ namespace LMSApi.DALLibrary.Repositories
         }
 
         /// <inheritdoc/>
+        public async Task<IEnumerable<Enrollments>> GetActiveEnrollmentsByCourseAsync(int courseId)
+        {
+            return await _context.Enrollments
+                .Include(e => e.User)
+                    .ThenInclude(u => u.UserProfile)
+                .Include(e => e.Batch)
+                .Where(e => e.CourseId == courseId && e.EnrollmentStatus == LMSApi.ModelLibrary.Enums.EnrollmentStatus.Active)
+                .ToListAsync();
+        }
+
+        /// <inheritdoc/>
         public async Task<bool> HasEnrollmentsByCourseAsync(int courseId)
         {
             return await _context.Enrollments.AnyAsync(e => e.CourseId == courseId);

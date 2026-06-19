@@ -1,7 +1,13 @@
+using System;
+using System.Threading.Tasks;
 using AutoMapper;
 using LMSApi.DALLibrary.Contexts;
 using Microsoft.EntityFrameworkCore;
+using LMSApi.ModelLibrary.Models;
+using LMSApi.ModelLibrary.Enums;
 using NUnit.Framework;
+
+[assembly: NonParallelizable]
 
 namespace LMSApi.Tests
 {
@@ -13,8 +19,10 @@ namespace LMSApi.Tests
         [SetUp]
         public virtual void SetUp()
         {
+            AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
+            var uniqueDbName = $"lmstestdb_{Guid.NewGuid():N}";
             var options = new DbContextOptionsBuilder<LMSDbContext>()
-                .UseNpgsql("Host=localhost;Port=5432;Database=lmstestdb;Username=postgres;Password=978681")
+                .UseNpgsql($"Host=localhost;Port=5432;Database={uniqueDbName};Username=postgres;Password=978681")
                 .Options;
 
             DbContext = new LMSDbContext(options);
@@ -97,6 +105,51 @@ namespace LMSApi.Tests
                     RETURN GREATEST(0, v_max_attempts - v_attempt_count);
                 END;
                 $$ LANGUAGE plpgsql;
+
+                CREATE OR REPLACE FUNCTION get_submission_attempt_count(p_assignment_id INT, p_student_id INT)
+                RETURNS INT AS $$
+                BEGIN
+                    RETURN (
+                        SELECT COUNT(*)
+                        FROM ""AssignmentSubmissions""
+                        WHERE ""AssignmentId"" = p_assignment_id
+                          AND ""StudentId"" = p_student_id
+                    );
+                END;
+                $$ LANGUAGE plpgsql;
+
+                CREATE OR REPLACE FUNCTION calculate_assignment_pass_status(p_submission_id INT)
+                RETURNS BOOLEAN AS $$
+                DECLARE
+                    v_marks_awarded INT;
+                    v_passing_marks INT;
+                BEGIN
+                    SELECT s.""MarksAwarded"", a.""PassingMarks""
+                    INTO v_marks_awarded, v_passing_marks
+                    FROM ""AssignmentSubmissions"" s
+                    INNER JOIN ""Assignments"" a ON a.""Id"" = s.""AssignmentId""
+                    WHERE s.""Id"" = p_submission_id;
+
+                    RETURN COALESCE(v_marks_awarded, 0) >= v_passing_marks;
+                END;
+                $$ LANGUAGE plpgsql;
+
+                CREATE OR REPLACE FUNCTION get_course_rating_stats(p_course_id INTEGER)
+                RETURNS TABLE (
+                    ""AverageRating"" DOUBLE PRECISION,
+                    ""TotalReviews"" INTEGER
+                ) 
+                LANGUAGE plpgsql
+                AS $$
+                BEGIN
+                    RETURN QUERY
+                    SELECT 
+                        COALESCE(AVG(""Rating"")::DOUBLE PRECISION, 0.0::DOUBLE PRECISION) AS ""AverageRating"",
+                        COUNT(*)::INTEGER AS ""TotalReviews""
+                    FROM ""Reviews""
+                    WHERE ""CourseId"" = p_course_id;
+                END;
+                $$;
             ");
 
             // Initialize AutoMapper with the profiles from the BALLibrary assembly
@@ -112,6 +165,36 @@ namespace LMSApi.Tests
         {
             DbContext.Database.EnsureDeleted();
             DbContext.Dispose();
+        }
+
+        protected async Task<(Users instructor, CourseSection section, Courses course)> SetupCourseAndSection(
+            CourseAccessType type = CourseAccessType.SelfPaced,
+            CourseStatus status = CourseStatus.Published)
+        {
+            var inst = new Users { Email = $"{Guid.NewGuid()}@test.com", PasswordHash = "h", PasswordSalt = "s", Role = new UserRoles { RoleName = "Instructor", Description = "Desc" } };
+            var cat = new CourseCategories { Name = "Cat", Description = "Desc" };
+            DbContext.Users.Add(inst);
+            DbContext.CourseCategories.Add(cat);
+            await DbContext.SaveChangesAsync();
+
+            var course = new Courses
+            {
+                Title = "Course", Description = "Desc", Price = 0m, ThumbnailUrl = "url", IntroVideoUrl = "url",
+                IsPremium = false, Requirements = "Reqs", LearningOutcomes = "Outcomes",
+                EstimatedDuration = TimeSpan.Zero, Level = CourseLevel.Beginner, LanguageId = 1,
+                PublishedAt = DateTime.UtcNow, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow,
+                DefaultDeadlineDays = 7, CategoryId = cat.Id, InstructorId = inst.Id,
+                slug = Guid.NewGuid().ToString(),
+                CourseAccessType = type, Status = status
+            };
+            DbContext.Courses.Add(course);
+            await DbContext.SaveChangesAsync();
+
+            var section = new CourseSection { Title = "Sec", Description = "Desc", SectionId = 1, CourseId = course.Id };
+            DbContext.CourseSections.Add(section);
+            await DbContext.SaveChangesAsync();
+
+            return (inst, section, course);
         }
     }
 }

@@ -19,7 +19,8 @@ namespace LMSApi.ModelLibrary.Models
         public string? LearningOutcomes { get; set; }
         public TimeSpan EstimatedDuration { get; set; }
         public CourseLevel Level { get; set; }
-        public CourseLanguage Language { get; set; }
+        public int LanguageId { get; set; }
+        public CourseLanguages Language { get; set; }
         public CourseStatus Status { get; set; }
         public DateTime PublishedAt { get; set; }
         public DateTime CreatedAt { get; set; }

@@ -14,17 +14,23 @@ namespace LMSApi.BALLibrary.Services
         private readonly ICourseRepository _courseRepository;
         private readonly IMapper _mapper;
         private readonly ILogger<BatchService> _logger;
+        private readonly IEnrollmentRepository _enrollmentRepository;
+        private readonly INotificationService _notificationService;
 
         public BatchService(
             ICourseBatchRepository batchRepository,
             ICourseRepository courseRepository,
             IMapper mapper,
-            ILogger<BatchService> logger)
+            ILogger<BatchService> logger,
+            IEnrollmentRepository enrollmentRepository,
+            INotificationService notificationService)
         {
             _batchRepository = batchRepository;
             _courseRepository = courseRepository;
             _mapper = mapper;
             _logger = logger;
+            _enrollmentRepository = enrollmentRepository;
+            _notificationService = notificationService;
         }
 
         /// <inheritdoc/>
@@ -87,6 +93,44 @@ namespace LMSApi.BALLibrary.Services
                 if (request.Status.Value == BatchStatus.Completed && oldStatus != BatchStatus.Completed)
                     _logger.LogInformation("Batch Completed: BatchId={BatchId}, CourseId={CourseId}",
                         batchId, batch.CourseId);
+
+                if (oldStatus != request.Status.Value && 
+                    (request.Status.Value == BatchStatus.Active || request.Status.Value == BatchStatus.Completed))
+                {
+                    // ── Send Batch Status Email ──
+                    var course = await _courseRepository.GetByIdAsync(batch.CourseId);
+                    var enrollments = await _enrollmentRepository.GetActiveEnrollmentsByCourseAsync(batch.CourseId);
+                    // Filter to only learners in this specific batch
+                    var batchLearners = enrollments.Where(e => e.BatchId == batch.Id).ToList();
+                    
+                    var emailsToSend = batchLearners.Select(e => new
+                    {
+                        Email = e.User.Email,
+                        Name = e.User.UserProfile?.FirstName ?? e.User.Email
+                    }).ToList();
+
+                    var courseTitle = course.Title;
+                    var batchName = batch.Name;
+                    var statusStr = request.Status.Value.ToString();
+
+                    _ = Task.Run(async () =>
+                    {
+                        foreach (var e in emailsToSend)
+                        {
+                            var html = Utils.EmailTemplate.GetBatchStatusTemplate(
+                                e.Name, batchName, courseTitle, statusStr);
+                            Message msg = new EmailMessage(e.Email, $"Batch Status Updated: {batchName}", html) { IsHtml = true };
+                            try
+                            {
+                                await _notificationService.Send(msg);
+                            }
+                            catch (Exception ex)
+                            {
+                                _logger.LogError(ex, "Failed to send batch status email to {Email}", e.Email);
+                            }
+                        }
+                    });
+                }
             }
 
             await _batchRepository.UpdateAsync(batch);

@@ -16,6 +16,7 @@ namespace LMSApi.DALLibrary.Repositories
         {
             return await _context.Courses
                 .Include(c => c.Category)
+                .Include(c => c.Language)
                 .Where(c => c.InstructorId == instructorId)
                 .ToListAsync();
         }
@@ -24,6 +25,7 @@ namespace LMSApi.DALLibrary.Repositories
         {
             return await _context.Courses
                 .Include(c => c.Category)
+                .Include(c => c.Language)
                 .Where(c => c.CategoryId == categoryId)
                 .ToListAsync();
         }
@@ -32,7 +34,17 @@ namespace LMSApi.DALLibrary.Repositories
         {
             return await _context.Courses
                 .Include(c => c.Category)
+                .Include(c => c.Language)
                 .Where(c => c.Status == CourseStatus.Published)
+                .ToListAsync();
+        }
+
+        public async Task<IEnumerable<Courses>> GetPendingCoursesAsync()
+        {
+            return await _context.Courses
+                .Include(c => c.Category)
+                .Include(c => c.Language)
+                .Where(c => c.Status == CourseStatus.PendingApproval)
                 .ToListAsync();
         }
 
@@ -40,6 +52,7 @@ namespace LMSApi.DALLibrary.Repositories
         {
             return await _context.Courses
                 .Include(c => c.Category)
+                .Include(c => c.Language)
                 .Include(c => c.Instructor)
                 .Include(c => c.Sections)
                     .ThenInclude(s => s.Lessons)
@@ -52,5 +65,13 @@ namespace LMSApi.DALLibrary.Repositories
                 .FirstOrDefaultAsync(c => c.Id == id);
         }
 
+        public async Task<LMSApi.ModelLibrary.DTOs.CourseRatingStatsDto> GetCourseRatingStatsAsync(int courseId)
+        {
+            var stats = await _context.Database
+                .SqlQueryRaw<LMSApi.ModelLibrary.DTOs.CourseRatingStatsDto>("SELECT * FROM get_course_rating_stats({0})", courseId)
+                .FirstOrDefaultAsync();
+
+            return stats ?? new LMSApi.ModelLibrary.DTOs.CourseRatingStatsDto { AverageRating = 0.0, TotalReviews = 0 };
+        }
     }
 }

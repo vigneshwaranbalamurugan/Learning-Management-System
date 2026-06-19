@@ -3,3 +3,7 @@
 Prompt.yaml
 
 **/appsettings.Development.json
+
+LMSApi.API/Logs/
+
+TestReport/

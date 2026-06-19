@@ -11,35 +11,35 @@ namespace LMSApi.BALLibrary.Services
     public class AssignmentService : IAssignmentService
     {
         private readonly IAssignmentRepository _assignmentRepository;
-        private readonly IAssignmentSubmissionRepository _submissionRepository;
         private readonly ICourseSectionRepository _sectionRepository;
         private readonly IEnrollmentRepository _enrollmentRepository;
         private readonly ICourseRepository _courseRepository;
-        private readonly IStudentProgressService _progressService;
         private readonly IUploadService _uploadService;
         private readonly IMapper _mapper;
         private readonly ILogger<AssignmentService> _logger;
+        private readonly INotificationService _notificationService;
+        private readonly ICourseBatchRepository _batchRepository;
 
         public AssignmentService(
             IAssignmentRepository assignmentRepository,
-            IAssignmentSubmissionRepository submissionRepository,
             ICourseSectionRepository sectionRepository,
             IEnrollmentRepository enrollmentRepository,
             ICourseRepository courseRepository,
-            IStudentProgressService progressService,
             IUploadService uploadService,
             IMapper mapper,
-            ILogger<AssignmentService> logger)
+            ILogger<AssignmentService> logger,
+            INotificationService notificationService,
+            ICourseBatchRepository batchRepository)
         {
             _assignmentRepository = assignmentRepository;
-            _submissionRepository = submissionRepository;
             _sectionRepository = sectionRepository;
             _enrollmentRepository = enrollmentRepository;
             _courseRepository = courseRepository;
-            _progressService = progressService;
             _uploadService = uploadService;
             _mapper = mapper;
             _logger = logger;
+            _notificationService = notificationService;
+            _batchRepository = batchRepository;
         }
 
         // ─── Assignment CRUD ────────────────────────────────────────────────
@@ -92,7 +92,39 @@ namespace LMSApi.BALLibrary.Services
 
             ValidateMarks(request.TotalMarks, request.PassingMarks);
 
+            var section = await _sectionRepository.GetByIdAsync(request.CourseSectionId)
+                ?? throw new KeyNotFoundException($"Section with id '{request.CourseSectionId}' not found.");
+            var course = await _courseRepository.GetByIdAsync(section.CourseId)
+                ?? throw new KeyNotFoundException($"Course with id '{section.CourseId}' not found.");
+
+            if (course.CourseAccessType == CourseAccessType.CohortBased)
+            {
+                if (!request.DeadlineDate.HasValue)
+                {
+                    throw new ArgumentException("DeadlineDate is required for cohort-based courses.", nameof(request.DeadlineDate));
+                }
+
+                var batches = await _batchRepository.GetBatchesByCourseAsync(course.Id);
+                foreach (var batch in batches)
+                {
+                    if (request.DeadlineDate.Value > batch.EndDate)
+                    {
+                        throw new ArgumentException($"DeadlineDate ({request.DeadlineDate.Value:yyyy-MM-dd}) cannot be after the Batch '{batch.Name}' end date ({batch.EndDate:yyyy-MM-dd}).");
+                    }
+                }
+            }
+
             var assignment = _mapper.Map<Assignments>(request);
+
+            if (course.CourseAccessType == CourseAccessType.CohortBased)
+            {
+                assignment.DeadlineInDays = 0;
+                assignment.DeadlineDate = request.DeadlineDate;
+            }
+            else
+            {
+                assignment.DeadlineDate = null;
+            }
 
             if (request.AttachmentType == AssignmentAttachmentType.File && attachmentStream != null && !string.IsNullOrWhiteSpace(attachmentFileName))
             {
@@ -109,8 +141,15 @@ namespace LMSApi.BALLibrary.Services
                 assignment.AttachmentUrl = null;
             }
 
-            var section = await _sectionRepository.GetByIdAsync(request.CourseSectionId);
-            var course = await _courseRepository.GetByIdAsync(section.CourseId);
+            var courseSections = await _sectionRepository.GetSectionsByCourseAsync(course.Id);
+            foreach (var s in courseSections)
+            {
+                var existingAssignments = await _assignmentRepository.GetAssignmentsBySectionAsync(s.Id);
+                if (existingAssignments.Any(a => string.Equals(a.Title.Trim(), request.Title.Trim(), StringComparison.OrdinalIgnoreCase)))
+                {
+                    throw new InvalidOperationException("An assignment with this title already exists in this course.");
+                }
+            }
             if (course.CourseAccessType == CourseAccessType.SelfPaced && course.Status == CourseStatus.Published)
             {
                 assignment.Status = PublishStatus.Published;
@@ -130,7 +169,25 @@ namespace LMSApi.BALLibrary.Services
 
             var assignment = await _assignmentRepository.GetByIdAsync(id);
 
-            if (request.Title != null) assignment.Title = request.Title;
+            var section = await _sectionRepository.GetByIdAsync(assignment.CourseSectionId);
+            var course = await _courseRepository.GetByIdAsync(section.CourseId);
+
+            if (request.Title != null)
+            {
+                if (string.IsNullOrWhiteSpace(request.Title))
+                    throw new ArgumentException("Assignment title cannot be null or empty.", nameof(request.Title));
+
+                var courseSections = await _sectionRepository.GetSectionsByCourseAsync(course.Id);
+                foreach (var s in courseSections)
+                {
+                    var existingAssignments = await _assignmentRepository.GetAssignmentsBySectionAsync(s.Id);
+                    if (existingAssignments.Any(a => a.Id != id && string.Equals(a.Title.Trim(), request.Title.Trim(), StringComparison.OrdinalIgnoreCase)))
+                    {
+                        throw new InvalidOperationException("An assignment with this title already exists in this course.");
+                    }
+                }
+                assignment.Title = request.Title;
+            }
             if (request.Description != null) assignment.Description = request.Description;
             if (request.Instructions != null) assignment.Instructions = request.Instructions;
             if (request.IsCompulsory.HasValue) assignment.IsCompulsory = request.IsCompulsory.Value;
@@ -159,12 +216,39 @@ namespace LMSApi.BALLibrary.Services
                 assignment.AttachmentUrl = request.AttachmentUrl;
             }
 
-            if (request.DeadlineInDays.HasValue) assignment.DeadlineInDays = request.DeadlineInDays.Value;
+            if (course.CourseAccessType == CourseAccessType.CohortBased)
+            {
+                if (request.DeadlineInDays.HasValue && request.DeadlineInDays.Value > 0)
+                {
+                    throw new ArgumentException("Cohort-based assignments must use DeadlineDate instead of DeadlineInDays.");
+                }
+
+                var targetDeadlineDate = request.DeadlineDate ?? assignment.DeadlineDate;
+                if (!targetDeadlineDate.HasValue)
+                {
+                    throw new ArgumentException("DeadlineDate is required for cohort-based courses.");
+                }
+
+                var batches = await _batchRepository.GetBatchesByCourseAsync(course.Id);
+                foreach (var batch in batches)
+                {
+                    if (targetDeadlineDate.Value > batch.EndDate)
+                    {
+                        throw new ArgumentException($"DeadlineDate ({targetDeadlineDate.Value:yyyy-MM-dd}) cannot be after the Batch '{batch.Name}' end date ({batch.EndDate:yyyy-MM-dd}).");
+                    }
+                }
+
+                assignment.DeadlineDate = targetDeadlineDate;
+                assignment.DeadlineInDays = 0;
+            }
+            else
+            {
+                assignment.DeadlineDate = null;
+                if (request.DeadlineInDays.HasValue) assignment.DeadlineInDays = request.DeadlineInDays.Value;
+            }
+
             if (request.MaxSubmissions.HasValue) assignment.MaxSubmissions = request.MaxSubmissions.Value;
             if (request.IsLateSubmissionAllowed.HasValue) assignment.IsLateSubmissionAllowed = request.IsLateSubmissionAllowed.Value;
-
-            var section = await _sectionRepository.GetByIdAsync(assignment.CourseSectionId);
-            var course = await _courseRepository.GetByIdAsync(section.CourseId);
             
             if (request.Status.HasValue)
             {
@@ -214,176 +298,41 @@ namespace LMSApi.BALLibrary.Services
 
             _logger.LogInformation("Assignment Published status updated: Id={Id}, Status={Status}", id, assignment.Status);
 
+            if (publish && course.CourseAccessType == CourseAccessType.CohortBased)
+            {
+                var enrollments = await _enrollmentRepository.GetActiveEnrollmentsByCourseAsync(course.Id);
+                var emailsToSend = enrollments.Select(e => new
+                {
+                    Email = e.User.Email,
+                    Name = e.User.UserProfile?.FirstName ?? e.User.Email,
+                    BatchName = e.Batch?.Name ?? ""
+                }).ToList();
+
+                var courseTitle = course.Title;
+                var assignmentTitle = assignment.Title;
+
+                _ = Task.Run(async () =>
+                {
+                    foreach (var e in emailsToSend)
+                    {
+                        var html = Utils.EmailTemplate.GetContentPublishedTemplate(
+                            e.Name, courseTitle, "Assignment", assignmentTitle, e.BatchName);
+                        Message msg = new EmailMessage(e.Email, $"New assignment available: {assignmentTitle}", html) { IsHtml = true };
+                        try
+                        {
+                            await _notificationService.Send(msg);
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogError(ex, "Failed to send assignment published email to {Email}", e.Email);
+                        }
+                    }
+                });
+            }
+
             return _mapper.Map<AssignmentResponse>(assignment);
         }
-
-        // ─── Submission Workflow ────────────────────────────────────────────
-
-        public async Task<AssignmentSubmissionResponse> SubmitAssignmentAsync(int studentId, AssignmentSubmissionRequest request, Stream? attachmentStream = null, string? attachmentFileName = null)
-        {
-            if (request == null) throw new ArgumentNullException(nameof(request));
-
-            // 1. Verify assignment exists
-            var assignment = await _assignmentRepository.GetByIdAsync(request.AssignmentId);
-
-            // 2. Verify at least one of text or URL or file is provided
-            if (string.IsNullOrWhiteSpace(request.SubmissionText) && string.IsNullOrWhiteSpace(request.SubmittedAssignmentUrl) && attachmentStream == null)
-                throw new ArgumentException("Submission must include either text, a file, or a link URL.");
-
-            // 3. Verify student is enrolled
-            var section = await _sectionRepository.GetByIdAsync(assignment.CourseSectionId);
-            var enrollment = await _enrollmentRepository.GetByUserAndCourseAsync(studentId, section.CourseId);
-            var isEnrolled = enrollment != null &&
-                (enrollment.EnrollmentStatus == EnrollmentStatus.Active ||
-                 enrollment.EnrollmentStatus == EnrollmentStatus.Completed);
-
-            if (!isEnrolled)
-                throw new UnauthorizedAccessException("Student must be enrolled in the course to submit this assignment.");
-
-            // 4. Verify submission deadline
-            if (assignment.DeadlineInDays > 0)
-            {
-                if (enrollment != null)
-                {
-                    // This is basic. More robust logic resides in calculating against batch start date if applicable.
-                    var deadline = enrollment.EnrolledAt.AddDays(assignment.DeadlineInDays);
-                    if (DateTime.UtcNow > deadline && !assignment.IsLateSubmissionAllowed)
-                        throw new InvalidOperationException(
-                            $"The submission deadline was {deadline:yyyy-MM-dd}. Late submissions are not allowed.");
-                }
-            }
-
-            // 5. Verify attempt limit using PG function
-            var attemptCount = await _submissionRepository.GetSubmissionAttemptCountAsync(request.AssignmentId, studentId);
-            if (attemptCount >= assignment.MaxSubmissions)
-                throw new InvalidOperationException(
-                    $"Maximum number of submissions ({assignment.MaxSubmissions}) has been reached for this assignment.");
-
-            if(request.AttachmentType == AssignmentSubmissonAttachmentType.File && attachmentStream == null)
-                throw new ArgumentException("Attachment file must be provided when AttachmentType is File.");
-            if(request.AttachmentType==AssignmentSubmissonAttachmentType.Link && request.SubmittedAssignmentUrl==null)
-                throw new ArgumentNullException("Attachment link must be provided when AttachmentType is Link ");
-            // 6. Create submission
-            var submission = new AssignmentSubmissions
-            {
-                AssignmentId = request.AssignmentId,
-                StudentId = studentId,
-                SubmissionText = request.SubmissionText,
-                AttachmentType = request.AttachmentType,
-                SubmittedAt = DateTime.UtcNow,
-                Status = SubmissionStatus.Submitted,
-                AttemptNumber = attemptCount + 1
-            };
-
-            if (request.AttachmentType == AssignmentSubmissonAttachmentType.File && attachmentStream != null && !string.IsNullOrWhiteSpace(attachmentFileName))
-            {
-                var publicId = $"submission_{Guid.NewGuid()}";
-                submission.SubmittedAssignmentUrl = await _uploadService.UploadAssignmentAttachmentAsync(
-                    attachmentStream, attachmentFileName, publicId);
-            }
-            else if (request.AttachmentType == AssignmentSubmissonAttachmentType.Link)
-            {
-                submission.SubmittedAssignmentUrl = request.SubmittedAssignmentUrl;
-            }
-            else
-            {
-                submission.SubmittedAssignmentUrl = request.SubmittedAssignmentUrl;
-            }
-
-            await _submissionRepository.AddAsync(submission);
-
-            _logger.LogInformation("Assignment Submitted: AssignmentId={AssignmentId}, StudentId={StudentId}, Attempt={AttemptNumber}",
-                request.AssignmentId, studentId, submission.AttemptNumber);
-
-            return _mapper.Map<AssignmentSubmissionResponse>(submission);
-        }
-
-        public async Task<AssignmentSubmissionResponse> GradeAssignmentAsync(int submissionId, GradeSubmissionRequest request)
-        {
-            if (request == null) throw new ArgumentNullException(nameof(request));
-            if (string.IsNullOrWhiteSpace(request.Feedback))
-                throw new ArgumentException("Feedback is required when grading.", nameof(request.Feedback));
-
-            var submission = await _submissionRepository.GetByIdAsync(submissionId);
-            var assignment = await _assignmentRepository.GetByIdAsync(submission.AssignmentId);
-
-            // Validate marks range
-            if (request.MarksAwarded < 0 || request.MarksAwarded > assignment.TotalMarks)
-                throw new ArgumentException(
-                    $"MarksAwarded must be between 0 and {assignment.TotalMarks}.");
-
-            // Apply grade via repository (sets GradedAt, Status = Graded)
-            await _submissionRepository.GradeSubmissionAsync(submissionId, request.MarksAwarded, request.Feedback);
-
-            // Calculate pass/fail via PG function
-            var isPassed = await _submissionRepository.CalculateAssignmentPassStatusAsync(submissionId);
-
-            // Persist IsPassed
-            submission = await _submissionRepository.GetByIdAsync(submissionId);
-            submission.IsPassed = isPassed;
-            await _submissionRepository.UpdateAsync(submission);
-
-            if (isPassed)
-                _logger.LogInformation("Assignment Passed: SubmissionId={SubmissionId}, StudentId={StudentId}",
-                    submissionId, submission.StudentId);
-            else
-                _logger.LogInformation("Assignment Failed: SubmissionId={SubmissionId}, StudentId={StudentId}",
-                    submissionId, submission.StudentId);
-
-            _logger.LogInformation("Assignment Graded: SubmissionId={SubmissionId}, Marks={Marks}, Passed={Passed}",
-                submissionId, request.MarksAwarded, isPassed);
-
-            // Recalculate course progress so mandatory assignment affects completion
-            var section = await _sectionRepository.GetByIdAsync(assignment.CourseSectionId);
-            await _progressService.RecalculateCourseProgressAsync(submission.StudentId, section.CourseId);
-
-            return _mapper.Map<AssignmentSubmissionResponse>(submission);
-        }
-
-        // ─── Queries ────────────────────────────────────────────────────────
-
-        public async Task<AssignmentStatusResponse> GetStudentAssignmentStatusAsync(int assignmentId, int studentId)
-        {
-            var assignment = await _assignmentRepository.GetByIdAsync(assignmentId);
-            var attemptCount = await _submissionRepository.GetSubmissionAttemptCountAsync(assignmentId, studentId);
-            var submissions = (await _submissionRepository.GetStudentSubmissionsAsync(assignmentId, studentId)).ToList();
-
-            var latest = submissions.FirstOrDefault(); // already ordered desc
-            DateTime? deadline = null;
-
-            if (assignment.DeadlineInDays > 0)
-            {
-                var section = await _sectionRepository.GetByIdAsync(assignment.CourseSectionId);
-                var enrollment = await _enrollmentRepository.GetByUserAndCourseAsync(studentId, section.CourseId);
-                if (enrollment != null)
-                    deadline = enrollment.EnrolledAt.AddDays(assignment.DeadlineInDays);
-            }
-
-            return new AssignmentStatusResponse
-            {
-                AssignmentId = assignmentId,
-                StudentId = studentId,
-                AttemptsMade = attemptCount,
-                MaxSubmissions = assignment.MaxSubmissions,
-                RemainingAttempts = Math.Max(0, assignment.MaxSubmissions - attemptCount),
-                IsPassed = latest?.IsPassed,
-                LatestStatus = latest?.Status.ToString(),
-                Deadline = deadline
-            };
-        }
-
-        public async Task<IEnumerable<AssignmentSubmissionResponse>> GetPendingReviewsAsync(int assignmentId)
-        {
-            var submissions = await _submissionRepository.GetPendingSubmissionsAsync(assignmentId);
-            return _mapper.Map<IEnumerable<AssignmentSubmissionResponse>>(submissions);
-        }
-
-        public async Task<IEnumerable<AssignmentSubmissionResponse>> GetStudentSubmissionsAsync(int assignmentId, int studentId)
-        {
-            var submissions = await _submissionRepository.GetStudentSubmissionsAsync(assignmentId, studentId);
-            return _mapper.Map<IEnumerable<AssignmentSubmissionResponse>>(submissions);
-        }
-
+        
         // ─── Private Helpers ────────────────────────────────────────────────
 
         private static void ValidateMarks(int totalMarks, int passingMarks)

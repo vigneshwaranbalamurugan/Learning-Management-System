@@ -5,6 +5,7 @@ namespace LMSApi.ModelLibrary.Enums
         Pending,
         Completed,
         Failed,
-        Refunded
+        Refunded,
+        Transferred   // Payment completed and instructor payout initiated
     }
 }

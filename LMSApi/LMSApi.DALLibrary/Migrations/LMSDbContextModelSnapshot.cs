@@ -22,6 +22,38 @@ namespace LMSApi.DALLibrary.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("LMSApi.ModelLibrary.Models.ActivityLogs", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("ActivityType")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<DateTime>("Timestamp")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp without time zone")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("ActivityLogs");
+                });
+
             modelBuilder.Entity("LMSApi.ModelLibrary.Models.AssignmentSubmissions", b =>
                 {
                     b.Property<int>("Id")
@@ -45,7 +77,7 @@ namespace LMSApi.DALLibrary.Migrations
                         .HasColumnType("text");
 
                     b.Property<DateTime?>("GradedAt")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<bool?>("IsPassed")
                         .HasColumnType("boolean");
@@ -70,7 +102,7 @@ namespace LMSApi.DALLibrary.Migrations
 
                     b.Property<DateTime>("SubmittedAt")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
+                        .HasColumnType("timestamp without time zone")
                         .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
                     b.HasKey("Id");
@@ -101,8 +133,11 @@ namespace LMSApi.DALLibrary.Migrations
 
                     b.Property<DateTime>("CreatedAt")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
+                        .HasColumnType("timestamp without time zone")
                         .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.Property<DateTime?>("DeadlineDate")
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<int>("DeadlineInDays")
                         .ValueGeneratedOnAdd()
@@ -155,6 +190,148 @@ namespace LMSApi.DALLibrary.Migrations
                     b.ToTable("Assignments", (string)null);
                 });
 
+            modelBuilder.Entity("LMSApi.ModelLibrary.Models.AuditLogs", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("NewValues")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("OldValues")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("RecordId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("TableName")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<DateTime>("Timestamp")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp without time zone")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("AuditLogs");
+                });
+
+            modelBuilder.Entity("LMSApi.ModelLibrary.Models.CertificateTemplates", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("AspectRatioHeight")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(9);
+
+                    b.Property<int>("AspectRatioWidth")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(16);
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp without time zone")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true);
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("TemplateBackgroundUrl")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp without time zone")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("CertificateTemplates", (string)null);
+                });
+
+            modelBuilder.Entity("LMSApi.ModelLibrary.Models.Certificates", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<Guid>("CertificateId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasDefaultValueSql("gen_random_uuid()");
+
+                    b.Property<string>("CertificateImageUrl")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<int>("CertificateTemplateId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("CourseId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("IssuedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp without time zone")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CertificateId")
+                        .IsUnique();
+
+                    b.HasIndex("CertificateTemplateId");
+
+                    b.HasIndex("CourseId");
+
+                    b.HasIndex("UserId", "CourseId")
+                        .IsUnique();
+
+                    b.ToTable("Certificates", (string)null);
+                });
+
             modelBuilder.Entity("LMSApi.ModelLibrary.Models.CourseBatch", b =>
                 {
                     b.Property<int>("Id")
@@ -168,17 +345,17 @@ namespace LMSApi.DALLibrary.Migrations
 
                     b.Property<DateTime>("CreatedAt")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+                        .HasColumnType("timestamp without time zone")
+                        .HasDefaultValueSql("timestamp without time zone 'now'");
 
                     b.Property<DateTime>("EndDate")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<DateTime>("EnrollmentEndDate")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<DateTime>("EnrollmentStartDate")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<int>("MaxStudents")
                         .HasColumnType("integer");
@@ -189,7 +366,7 @@ namespace LMSApi.DALLibrary.Migrations
                         .HasColumnType("character varying(200)");
 
                     b.Property<DateTime>("StartDate")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<int>("Status")
                         .ValueGeneratedOnAdd()
@@ -198,8 +375,8 @@ namespace LMSApi.DALLibrary.Migrations
 
                     b.Property<DateTime>("UpdatedAt")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+                        .HasColumnType("timestamp without time zone")
+                        .HasDefaultValueSql("timestamp without time zone 'now'");
 
                     b.HasKey("Id");
 
@@ -218,7 +395,7 @@ namespace LMSApi.DALLibrary.Migrations
 
                     b.Property<DateTime>("CreatedAt")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
+                        .HasColumnType("timestamp without time zone")
                         .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
                     b.Property<string>("Description")
@@ -233,7 +410,7 @@ namespace LMSApi.DALLibrary.Migrations
 
                     b.Property<DateTime>("UpdatedAt")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
+                        .HasColumnType("timestamp without time zone")
                         .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
                     b.HasKey("Id");
@@ -242,6 +419,44 @@ namespace LMSApi.DALLibrary.Migrations
                         .IsUnique();
 
                     b.ToTable("CourseCategories", (string)null);
+                });
+
+            modelBuilder.Entity("LMSApi.ModelLibrary.Models.CourseLanguages", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Name")
+                        .IsUnique();
+
+                    b.ToTable("CourseLanguages", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            Name = "English"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            Name = "Tamil"
+                        },
+                        new
+                        {
+                            Id = 3,
+                            Name = "Hindi"
+                        });
                 });
 
             modelBuilder.Entity("LMSApi.ModelLibrary.Models.CourseSection", b =>
@@ -257,7 +472,7 @@ namespace LMSApi.DALLibrary.Migrations
 
                     b.Property<DateTime>("CreatedAt")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
+                        .HasColumnType("timestamp without time zone")
                         .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
                     b.Property<string>("Description")
@@ -288,7 +503,7 @@ namespace LMSApi.DALLibrary.Migrations
 
                     b.Property<DateTime>("UpdatedAt")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
+                        .HasColumnType("timestamp without time zone")
                         .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
                     b.HasKey("Id");
@@ -316,7 +531,7 @@ namespace LMSApi.DALLibrary.Migrations
 
                     b.Property<DateTime>("CreatedAt")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
+                        .HasColumnType("timestamp without time zone")
                         .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
                     b.Property<int?>("DefaultDeadlineDays")
@@ -342,7 +557,7 @@ namespace LMSApi.DALLibrary.Migrations
                         .HasColumnType("boolean")
                         .HasDefaultValue(false);
 
-                    b.Property<int>("Language")
+                    b.Property<int>("LanguageId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("integer")
                         .HasDefaultValue(1);
@@ -359,7 +574,7 @@ namespace LMSApi.DALLibrary.Migrations
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<DateTime>("PublishedAt")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<string>("Requirements")
                         .HasColumnType("text");
@@ -381,7 +596,7 @@ namespace LMSApi.DALLibrary.Migrations
 
                     b.Property<DateTime>("UpdatedAt")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
+                        .HasColumnType("timestamp without time zone")
                         .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
                     b.Property<string>("slug")
@@ -394,6 +609,8 @@ namespace LMSApi.DALLibrary.Migrations
                     b.HasIndex("CategoryId");
 
                     b.HasIndex("InstructorId");
+
+                    b.HasIndex("LanguageId");
 
                     b.HasIndex("slug")
                         .IsUnique();
@@ -410,20 +627,20 @@ namespace LMSApi.DALLibrary.Migrations
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<DateTime?>("AccessExpiresAt")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<int?>("BatchId")
                         .HasColumnType("integer");
 
                     b.Property<DateTime?>("CompletedAt")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<int>("CourseId")
                         .HasColumnType("integer");
 
                     b.Property<DateTime>("EnrolledAt")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
+                        .HasColumnType("timestamp without time zone")
                         .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
                     b.Property<int>("EnrollmentStatus")
@@ -435,6 +652,9 @@ namespace LMSApi.DALLibrary.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")
                         .HasDefaultValue(false);
+
+                    b.Property<int?>("PaymentId")
+                        .HasColumnType("integer");
 
                     b.Property<decimal>("ProgressPercentage")
                         .ValueGeneratedOnAdd()
@@ -450,10 +670,433 @@ namespace LMSApi.DALLibrary.Migrations
 
                     b.HasIndex("CourseId");
 
+                    b.HasIndex("PaymentId");
+
                     b.HasIndex("UserId", "CourseId")
                         .IsUnique();
 
                     b.ToTable("Enrollments", (string)null);
+                });
+
+            modelBuilder.Entity("LMSApi.ModelLibrary.Models.InstructorLinkedAccount", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("AccountStatus")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasDefaultValue("created");
+
+                    b.Property<string>("BusinessType")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<string>("City")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("ContactName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("Country")
+                        .IsRequired()
+                        .HasMaxLength(2)
+                        .HasColumnType("character varying(2)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp without time zone")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<string>("Gst")
+                        .HasMaxLength(15)
+                        .HasColumnType("character varying(15)");
+
+                    b.Property<int>("InstructorId")
+                        .HasColumnType("integer");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsVerified")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("LegalBusinessName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("Pan")
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)");
+
+                    b.Property<string>("Phone")
+                        .IsRequired()
+                        .HasMaxLength(15)
+                        .HasColumnType("character varying(15)");
+
+                    b.Property<string>("PostalCode")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)");
+
+                    b.Property<string>("ProfileCategory")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("ProfileSubcategory")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("RazorpayAccountId")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("State")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("Street1")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("Street2")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp without time zone")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.Property<DateTime?>("VerifiedAt")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("InstructorId");
+
+                    b.HasIndex("RazorpayAccountId")
+                        .IsUnique();
+
+                    b.ToTable("InstructorLinkedAccounts", (string)null);
+                });
+
+            modelBuilder.Entity("LMSApi.ModelLibrary.Models.InstructorPayout", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal>("Amount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp without time zone")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.Property<string>("FailureReason")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<int>("InstructorId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("InstructorPayoutAccountId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<int>("PaymentId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("RazorpayFundAccountId")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("RazorpayPayoutId")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<int>("Status")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0);
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp without time zone")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("InstructorId");
+
+                    b.HasIndex("InstructorPayoutAccountId");
+
+                    b.HasIndex("PaymentId");
+
+                    b.HasIndex("RazorpayPayoutId");
+
+                    b.ToTable("InstructorPayouts", (string)null);
+                });
+
+            modelBuilder.Entity("LMSApi.ModelLibrary.Models.InstructorPayoutAccount", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("AccountNumber")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<string>("AccountStatus")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("BusinessType")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("City")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("ContactName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("Country")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp without time zone")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)");
+
+                    b.Property<string>("Gst")
+                        .HasColumnType("text");
+
+                    b.Property<string>("IfscCode")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<int>("InstructorId")
+                        .HasColumnType("integer");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true);
+
+                    b.Property<bool>("IsVerified")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("LegalBusinessName")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)");
+
+                    b.Property<string>("Pan")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Phone")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("PostalCode")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("ProfileCategory")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("ProfileSubcategory")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("RazorpayLinkedAccountId")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("RazorpayProductId")
+                        .HasColumnType("text");
+
+                    b.Property<string>("RazorpayStakeholderId")
+                        .HasColumnType("text");
+
+                    b.Property<string>("State")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Street1")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Street2")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp without time zone")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.Property<DateTime?>("VerifiedAt")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("InstructorId", "IsActive");
+
+                    b.ToTable("InstructorPayoutAccounts", (string)null);
+                });
+
+            modelBuilder.Entity("LMSApi.ModelLibrary.Models.InstructorPayoutProduct", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("AccountNumber")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("BeneficiaryName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp without time zone")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.Property<string>("IfscCode")
+                        .IsRequired()
+                        .HasMaxLength(11)
+                        .HasColumnType("character varying(11)");
+
+                    b.Property<int>("InstructorLinkedAccountId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("ProductStatus")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasDefaultValue("requested");
+
+                    b.Property<string>("RazorpayProductId")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<bool>("TncAccepted")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp without time zone")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("InstructorLinkedAccountId")
+                        .IsUnique();
+
+                    b.HasIndex("RazorpayProductId")
+                        .IsUnique();
+
+                    b.ToTable("InstructorPayoutProducts", (string)null);
+                });
+
+            modelBuilder.Entity("LMSApi.ModelLibrary.Models.InstructorStakeholder", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp without time zone")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<int>("InstructorLinkedAccountId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("RazorpayStakeholderId")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp without time zone")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("InstructorLinkedAccountId")
+                        .IsUnique();
+
+                    b.HasIndex("RazorpayStakeholderId")
+                        .IsUnique();
+
+                    b.ToTable("InstructorStakeholders", (string)null);
                 });
 
             modelBuilder.Entity("LMSApi.ModelLibrary.Models.LessonResources", b =>
@@ -492,7 +1135,7 @@ namespace LMSApi.DALLibrary.Migrations
 
                     b.Property<DateTime>("UploadedAt")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
+                        .HasColumnType("timestamp without time zone")
                         .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
                     b.HasKey("Id");
@@ -521,7 +1164,7 @@ namespace LMSApi.DALLibrary.Migrations
                         .HasColumnType("integer");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<string>("Description")
                         .HasMaxLength(1000)
@@ -554,13 +1197,62 @@ namespace LMSApi.DALLibrary.Migrations
                         .HasColumnType("integer");
 
                     b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp without time zone");
 
                     b.HasKey("Id");
 
                     b.HasIndex("CourseSectionId");
 
                     b.ToTable("Lessons", (string)null);
+                });
+
+            modelBuilder.Entity("LMSApi.ModelLibrary.Models.Notifications", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp without time zone")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.Property<bool>("IsRead")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
+                    b.Property<string>("Message")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<DateTime?>("ReadAt")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<string>("RedirectUrl")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("Notifications");
                 });
 
             modelBuilder.Entity("LMSApi.ModelLibrary.Models.Payments", b =>
@@ -572,33 +1264,65 @@ namespace LMSApi.DALLibrary.Migrations
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<decimal>("Amount")
-                        .HasColumnType("numeric");
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int?>("BatchId")
+                        .HasColumnType("integer");
 
                     b.Property<int>("CourseId")
                         .HasColumnType("integer");
 
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp without time zone");
+
                     b.Property<string>("Currency")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)")
+                        .HasDefaultValue("INR");
 
                     b.Property<int?>("EnrollmentId")
                         .HasColumnType("integer");
 
+                    b.Property<int?>("FeeTypeSnapshot")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal?>("FeeValueSnapshot")
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<decimal>("InstructorAmount")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("decimal(18,2)")
+                        .HasDefaultValue(0m);
+
                     b.Property<DateTime?>("PaidAt")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<decimal>("PlatformFeeAmount")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("decimal(18,2)")
+                        .HasDefaultValue(0m);
+
+                    b.Property<int?>("PlatformFeeConfigId")
+                        .HasColumnType("integer");
 
                     b.Property<string>("ProviderOrderId")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
 
                     b.Property<string>("ProviderPaymentId")
-                        .HasColumnType("text");
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
 
                     b.Property<string>("RawResponse")
                         .HasColumnType("text");
 
                     b.Property<int>("Status")
-                        .HasColumnType("integer");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0);
 
                     b.Property<int>("UserId")
                         .HasColumnType("integer");
@@ -607,12 +1331,53 @@ namespace LMSApi.DALLibrary.Migrations
 
                     b.HasIndex("CourseId");
 
-                    b.HasIndex("EnrollmentId")
+                    b.HasIndex("EnrollmentId");
+
+                    b.HasIndex("PlatformFeeConfigId");
+
+                    b.HasIndex("ProviderOrderId")
                         .IsUnique();
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("Payments");
+                    b.ToTable("Payments", (string)null);
+                });
+
+            modelBuilder.Entity("LMSApi.ModelLibrary.Models.PlatformFeeConfig", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp without time zone")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.Property<int>("CreatedByAdminId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("EffectiveFrom")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<int>("FeeCategory")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("FeeType")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal>("Value")
+                        .HasColumnType("decimal(18,4)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedByAdminId");
+
+                    b.HasIndex("FeeCategory", "EffectiveFrom");
+
+                    b.ToTable("PlatformFeeConfigs", (string)null);
                 });
 
             modelBuilder.Entity("LMSApi.ModelLibrary.Models.QuizAnswers", b =>
@@ -657,7 +1422,7 @@ namespace LMSApi.DALLibrary.Migrations
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<DateTime?>("CompletedAt")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<bool>("IsPassed")
                         .ValueGeneratedOnAdd()
@@ -674,7 +1439,7 @@ namespace LMSApi.DALLibrary.Migrations
 
                     b.Property<DateTime>("StartedAt")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
+                        .HasColumnType("timestamp without time zone")
                         .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
                     b.Property<string>("Status")
@@ -774,7 +1539,10 @@ namespace LMSApi.DALLibrary.Migrations
                         .HasColumnType("integer");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<DateTime?>("DeadlineDate")
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<int>("DeadlineInDays")
                         .ValueGeneratedOnAdd()
@@ -812,7 +1580,7 @@ namespace LMSApi.DALLibrary.Migrations
                         .HasColumnType("character varying(300)");
 
                     b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp without time zone");
 
                     b.HasKey("Id");
 
@@ -834,7 +1602,7 @@ namespace LMSApi.DALLibrary.Migrations
 
                     b.Property<DateTime>("CreatedAt")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
+                        .HasColumnType("timestamp without time zone")
                         .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
                     b.Property<int>("Rating")
@@ -846,7 +1614,7 @@ namespace LMSApi.DALLibrary.Migrations
 
                     b.Property<DateTime>("UpdatedAt")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
+                        .HasColumnType("timestamp without time zone")
                         .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
                     b.Property<int>("UserId")
@@ -871,7 +1639,7 @@ namespace LMSApi.DALLibrary.Migrations
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<DateTime?>("CompletedAt")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<int>("CourseId")
                         .HasColumnType("integer");
@@ -882,7 +1650,7 @@ namespace LMSApi.DALLibrary.Migrations
                         .HasDefaultValue(false);
 
                     b.Property<DateTime>("LastAccessed")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<int>("LastWatchedSecond")
                         .HasColumnType("integer");
@@ -896,7 +1664,7 @@ namespace LMSApi.DALLibrary.Migrations
                         .HasDefaultValue(0.0);
 
                     b.Property<DateTime>("StartedAt")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<int>("StudentId")
                         .HasColumnType("integer");
@@ -932,7 +1700,7 @@ namespace LMSApi.DALLibrary.Migrations
 
                     b.Property<DateTime>("CreatedAt")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
+                        .HasColumnType("timestamp without time zone")
                         .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
                     b.Property<DateOnly>("DateOfBirth")
@@ -958,7 +1726,7 @@ namespace LMSApi.DALLibrary.Migrations
 
                     b.Property<DateTime>("UpdatedAt")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
+                        .HasColumnType("timestamp without time zone")
                         .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
                     b.Property<int>("UserId")
@@ -982,7 +1750,7 @@ namespace LMSApi.DALLibrary.Migrations
 
                     b.Property<DateTime>("CreatedAt")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
+                        .HasColumnType("timestamp without time zone")
                         .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
                     b.Property<string>("Description")
@@ -997,7 +1765,7 @@ namespace LMSApi.DALLibrary.Migrations
 
                     b.Property<DateTime>("UpdatedAt")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
+                        .HasColumnType("timestamp without time zone")
                         .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
                     b.HasKey("Id");
@@ -1008,26 +1776,26 @@ namespace LMSApi.DALLibrary.Migrations
                         new
                         {
                             Id = 1,
-                            CreatedAt = new DateTime(2026, 6, 11, 5, 27, 0, 366, DateTimeKind.Utc).AddTicks(5940),
+                            CreatedAt = new DateTime(2026, 6, 19, 7, 29, 7, 2, DateTimeKind.Utc).AddTicks(9930),
                             Description = "Learner account",
                             RoleName = "Learner",
-                            UpdatedAt = new DateTime(2026, 6, 11, 5, 27, 0, 366, DateTimeKind.Utc).AddTicks(5940)
+                            UpdatedAt = new DateTime(2026, 6, 19, 7, 29, 7, 2, DateTimeKind.Utc).AddTicks(9930)
                         },
                         new
                         {
                             Id = 2,
-                            CreatedAt = new DateTime(2026, 6, 11, 5, 27, 0, 366, DateTimeKind.Utc).AddTicks(5940),
+                            CreatedAt = new DateTime(2026, 6, 19, 7, 29, 7, 2, DateTimeKind.Utc).AddTicks(9930),
                             Description = "Instructor account",
                             RoleName = "Instructor",
-                            UpdatedAt = new DateTime(2026, 6, 11, 5, 27, 0, 366, DateTimeKind.Utc).AddTicks(5940)
+                            UpdatedAt = new DateTime(2026, 6, 19, 7, 29, 7, 2, DateTimeKind.Utc).AddTicks(9930)
                         },
                         new
                         {
                             Id = 3,
-                            CreatedAt = new DateTime(2026, 6, 11, 5, 27, 0, 366, DateTimeKind.Utc).AddTicks(5940),
+                            CreatedAt = new DateTime(2026, 6, 19, 7, 29, 7, 2, DateTimeKind.Utc).AddTicks(9940),
                             Description = "Admin account",
                             RoleName = "Admin",
-                            UpdatedAt = new DateTime(2026, 6, 11, 5, 27, 0, 366, DateTimeKind.Utc).AddTicks(5940)
+                            UpdatedAt = new DateTime(2026, 6, 19, 7, 29, 7, 2, DateTimeKind.Utc).AddTicks(9940)
                         });
                 });
 
@@ -1041,7 +1809,7 @@ namespace LMSApi.DALLibrary.Migrations
 
                     b.Property<DateTime>("CreatedAt")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
+                        .HasColumnType("timestamp without time zone")
                         .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
                     b.Property<int?>("CurrentTokenType")
@@ -1063,7 +1831,7 @@ namespace LMSApi.DALLibrary.Migrations
                         .HasDefaultValue(false);
 
                     b.Property<DateTime>("LastLoginAt")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<string>("PasswordHash")
                         .IsRequired()
@@ -1078,14 +1846,14 @@ namespace LMSApi.DALLibrary.Migrations
 
                     b.Property<DateTime>("UpdatedAt")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
+                        .HasColumnType("timestamp without time zone")
                         .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
                     b.Property<string>("VerificationToken")
                         .HasColumnType("text");
 
                     b.Property<DateTime?>("VerificationTokenExpiry")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp without time zone");
 
                     b.HasKey("Id");
 
@@ -1100,14 +1868,15 @@ namespace LMSApi.DALLibrary.Migrations
                         new
                         {
                             Id = 1,
-                            CreatedAt = new DateTime(2026, 6, 11, 5, 27, 0, 366, DateTimeKind.Utc).AddTicks(3340),
+                            CreatedAt = new DateTime(2026, 6, 19, 7, 29, 7, 2, DateTimeKind.Utc).AddTicks(5820),
                             Email = "admin@gmail.com",
                             IsActive = true,
                             IsEmailVerified = true,
                             LastLoginAt = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             PasswordHash = "TPZPlYPS43ldK8EYFX67pHzyMNFmt69wd9N2cUNObYs=",
+                            PasswordSalt = "K5CamRmhDuuJEyr50OpNsA==",
                             RoleId = 3,
-                            UpdatedAt = new DateTime(2026, 6, 11, 5, 27, 0, 366, DateTimeKind.Utc).AddTicks(3340)
+                            UpdatedAt = new DateTime(2026, 6, 19, 7, 29, 7, 2, DateTimeKind.Utc).AddTicks(5820)
                         });
                 });
 
@@ -1121,7 +1890,7 @@ namespace LMSApi.DALLibrary.Migrations
 
                     b.Property<DateTime>("AddedAt")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
+                        .HasColumnType("timestamp without time zone")
                         .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
                     b.Property<int>("CourseId")
@@ -1129,7 +1898,7 @@ namespace LMSApi.DALLibrary.Migrations
 
                     b.Property<DateTime>("UpdatedAt")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
+                        .HasColumnType("timestamp without time zone")
                         .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
                     b.Property<int>("UserId")
@@ -1143,6 +1912,17 @@ namespace LMSApi.DALLibrary.Migrations
                         .IsUnique();
 
                     b.ToTable("WishLists", (string)null);
+                });
+
+            modelBuilder.Entity("LMSApi.ModelLibrary.Models.ActivityLogs", b =>
+                {
+                    b.HasOne("LMSApi.ModelLibrary.Models.Users", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("LMSApi.ModelLibrary.Models.AssignmentSubmissions", b =>
@@ -1173,6 +1953,44 @@ namespace LMSApi.DALLibrary.Migrations
                         .IsRequired();
 
                     b.Navigation("CourseSection");
+                });
+
+            modelBuilder.Entity("LMSApi.ModelLibrary.Models.AuditLogs", b =>
+                {
+                    b.HasOne("LMSApi.ModelLibrary.Models.Users", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("LMSApi.ModelLibrary.Models.Certificates", b =>
+                {
+                    b.HasOne("LMSApi.ModelLibrary.Models.CertificateTemplates", "Template")
+                        .WithMany()
+                        .HasForeignKey("CertificateTemplateId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("LMSApi.ModelLibrary.Models.Courses", "Course")
+                        .WithMany()
+                        .HasForeignKey("CourseId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("LMSApi.ModelLibrary.Models.Users", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Course");
+
+                    b.Navigation("Template");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("LMSApi.ModelLibrary.Models.CourseBatch", b =>
@@ -1211,9 +2029,17 @@ namespace LMSApi.DALLibrary.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("LMSApi.ModelLibrary.Models.CourseLanguages", "Language")
+                        .WithMany()
+                        .HasForeignKey("LanguageId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.Navigation("Category");
 
                     b.Navigation("Instructor");
+
+                    b.Navigation("Language");
                 });
 
             modelBuilder.Entity("LMSApi.ModelLibrary.Models.Enrollments", b =>
@@ -1229,6 +2055,10 @@ namespace LMSApi.DALLibrary.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("LMSApi.ModelLibrary.Models.Payments", "Payment")
+                        .WithMany()
+                        .HasForeignKey("PaymentId");
+
                     b.HasOne("LMSApi.ModelLibrary.Models.Users", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
@@ -1239,7 +2069,80 @@ namespace LMSApi.DALLibrary.Migrations
 
                     b.Navigation("Course");
 
+                    b.Navigation("Payment");
+
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("LMSApi.ModelLibrary.Models.InstructorLinkedAccount", b =>
+                {
+                    b.HasOne("LMSApi.ModelLibrary.Models.Users", "Instructor")
+                        .WithMany()
+                        .HasForeignKey("InstructorId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Instructor");
+                });
+
+            modelBuilder.Entity("LMSApi.ModelLibrary.Models.InstructorPayout", b =>
+                {
+                    b.HasOne("LMSApi.ModelLibrary.Models.Users", "Instructor")
+                        .WithMany()
+                        .HasForeignKey("InstructorId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("LMSApi.ModelLibrary.Models.InstructorPayoutAccount", "PayoutAccount")
+                        .WithMany()
+                        .HasForeignKey("InstructorPayoutAccountId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("LMSApi.ModelLibrary.Models.Payments", "Payment")
+                        .WithMany("InstructorPayouts")
+                        .HasForeignKey("PaymentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Instructor");
+
+                    b.Navigation("Payment");
+
+                    b.Navigation("PayoutAccount");
+                });
+
+            modelBuilder.Entity("LMSApi.ModelLibrary.Models.InstructorPayoutAccount", b =>
+                {
+                    b.HasOne("LMSApi.ModelLibrary.Models.Users", "Instructor")
+                        .WithMany()
+                        .HasForeignKey("InstructorId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Instructor");
+                });
+
+            modelBuilder.Entity("LMSApi.ModelLibrary.Models.InstructorPayoutProduct", b =>
+                {
+                    b.HasOne("LMSApi.ModelLibrary.Models.InstructorLinkedAccount", "LinkedAccount")
+                        .WithOne("PayoutProduct")
+                        .HasForeignKey("LMSApi.ModelLibrary.Models.InstructorPayoutProduct", "InstructorLinkedAccountId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("LinkedAccount");
+                });
+
+            modelBuilder.Entity("LMSApi.ModelLibrary.Models.InstructorStakeholder", b =>
+                {
+                    b.HasOne("LMSApi.ModelLibrary.Models.InstructorLinkedAccount", "LinkedAccount")
+                        .WithOne("Stakeholder")
+                        .HasForeignKey("LMSApi.ModelLibrary.Models.InstructorStakeholder", "InstructorLinkedAccountId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("LinkedAccount");
                 });
 
             modelBuilder.Entity("LMSApi.ModelLibrary.Models.LessonResources", b =>
@@ -1264,29 +2167,59 @@ namespace LMSApi.DALLibrary.Migrations
                     b.Navigation("CourseSection");
                 });
 
-            modelBuilder.Entity("LMSApi.ModelLibrary.Models.Payments", b =>
+            modelBuilder.Entity("LMSApi.ModelLibrary.Models.Notifications", b =>
                 {
-                    b.HasOne("LMSApi.ModelLibrary.Models.Courses", "Course")
-                        .WithMany()
-                        .HasForeignKey("CourseId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("LMSApi.ModelLibrary.Models.Enrollments", "Enrollment")
-                        .WithOne("Payment")
-                        .HasForeignKey("LMSApi.ModelLibrary.Models.Payments", "EnrollmentId");
-
                     b.HasOne("LMSApi.ModelLibrary.Models.Users", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("LMSApi.ModelLibrary.Models.Payments", b =>
+                {
+                    b.HasOne("LMSApi.ModelLibrary.Models.Courses", "Course")
+                        .WithMany()
+                        .HasForeignKey("CourseId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("LMSApi.ModelLibrary.Models.Enrollments", "Enrollment")
+                        .WithMany()
+                        .HasForeignKey("EnrollmentId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("LMSApi.ModelLibrary.Models.PlatformFeeConfig", "PlatformFeeConfig")
+                        .WithMany()
+                        .HasForeignKey("PlatformFeeConfigId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("LMSApi.ModelLibrary.Models.Users", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.Navigation("Course");
 
                     b.Navigation("Enrollment");
 
+                    b.Navigation("PlatformFeeConfig");
+
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("LMSApi.ModelLibrary.Models.PlatformFeeConfig", b =>
+                {
+                    b.HasOne("LMSApi.ModelLibrary.Models.Users", "CreatedByAdmin")
+                        .WithMany()
+                        .HasForeignKey("CreatedByAdminId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("CreatedByAdmin");
                 });
 
             modelBuilder.Entity("LMSApi.ModelLibrary.Models.QuizAnswers", b =>
@@ -1481,14 +2414,21 @@ namespace LMSApi.DALLibrary.Migrations
                     b.Navigation("Sections");
                 });
 
-            modelBuilder.Entity("LMSApi.ModelLibrary.Models.Enrollments", b =>
+            modelBuilder.Entity("LMSApi.ModelLibrary.Models.InstructorLinkedAccount", b =>
                 {
-                    b.Navigation("Payment");
+                    b.Navigation("PayoutProduct");
+
+                    b.Navigation("Stakeholder");
                 });
 
             modelBuilder.Entity("LMSApi.ModelLibrary.Models.Lessons", b =>
                 {
                     b.Navigation("Resources");
+                });
+
+            modelBuilder.Entity("LMSApi.ModelLibrary.Models.Payments", b =>
+                {
+                    b.Navigation("InstructorPayouts");
                 });
 
             modelBuilder.Entity("LMSApi.ModelLibrary.Models.QuizAttempts", b =>

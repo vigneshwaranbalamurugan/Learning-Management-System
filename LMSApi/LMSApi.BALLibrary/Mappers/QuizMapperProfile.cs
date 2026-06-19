@@ -52,12 +52,16 @@ namespace LMSApi.BALLibrary.Mappers
 
             // ─── Attempt ────────────────────────────────────────────────────
             CreateMap<QuizAttempts, QuizAttemptResponse>()
-                .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToString()));
+                .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToString()))
+                .ForMember(dest => dest.ObtainedScore, opt => opt.MapFrom(src => src.Score))
+                .ForMember(dest => dest.TotalScore, opt => opt.MapFrom(src => src.Quiz != null && src.Quiz.Questions != null ? src.Quiz.Questions.Sum(q => q.Mark) : 0.0));
 
             CreateMap<QuizAttempts, QuizAttemptDetailResponse>()
                 .ForMember(dest => dest.Answers,
                     opt => opt.MapFrom(src => src.Answers))
-                .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToString()));
+                .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToString()))
+                .ForMember(dest => dest.ObtainedScore, opt => opt.MapFrom(src => src.Score))
+                .ForMember(dest => dest.TotalScore, opt => opt.MapFrom(src => src.Quiz != null && src.Quiz.Questions != null ? src.Quiz.Questions.Sum(q => q.Mark) : 0.0));
 
             // ─── Answer ─────────────────────────────────────────────────────
             CreateMap<QuizAnswers, QuizAnswerResponse>()

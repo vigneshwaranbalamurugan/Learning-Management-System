@@ -4,6 +4,8 @@ namespace LMSApi.ModelLibrary.Enums
     {
         Draft=1,
         Published=2,
-        Archived=3
+        Archived=3,
+        PendingApproval=4,
+        Rejected=5
     }
 }

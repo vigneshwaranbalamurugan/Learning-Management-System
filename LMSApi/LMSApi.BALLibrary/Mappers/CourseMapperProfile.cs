@@ -17,12 +17,14 @@ namespace LMSApi.BALLibrary.Mappers
             // ─── Course ────────────────────────────────────────────────────
             CreateMap<Courses, CourseResponse>()
                 .ForMember(dest => dest.Slug, opt => opt.MapFrom(src => src.slug))
-                .ForMember(dest => dest.CategoryName, opt => opt.MapFrom(src => src.Category != null ? src.Category.Name : string.Empty));
+                .ForMember(dest => dest.CategoryName, opt => opt.MapFrom(src => src.Category != null ? src.Category.Name : string.Empty))
+                .ForMember(dest => dest.LanguageName, opt => opt.MapFrom(src => src.Language != null ? src.Language.Name : string.Empty));
                 // CourseAccessType maps by convention (same property name)
 
             CreateMap<Courses, CourseDetailsResponse>()
                 .ForMember(dest => dest.Slug, opt => opt.MapFrom(src => src.slug))
                 .ForMember(dest => dest.CategoryName, opt => opt.MapFrom(src => src.Category != null ? src.Category.Name : string.Empty))
+                .ForMember(dest => dest.LanguageName, opt => opt.MapFrom(src => src.Language != null ? src.Language.Name : string.Empty))
                 .ForMember(dest => dest.Sections, opt => opt.MapFrom(src => src.Sections))
                 .ForMember(dest => dest.AvailableBatches, opt => opt.MapFrom(src => src.Batches));
 
@@ -72,6 +74,13 @@ namespace LMSApi.BALLibrary.Mappers
                     opt => opt.MapFrom(src => src.Course != null ? src.Course.Title : string.Empty))
                 .ForMember(dest => dest.BatchName,
                     opt => opt.MapFrom(src => src.Batch != null ? src.Batch.Name : null));
+
+            // ─── Certificates ────────────────────────────────────────────────
+            CreateMap<Certificates, CertificateResponse>()
+                .ForMember(dest => dest.CourseName, opt => opt.MapFrom(src => src.Course != null ? src.Course.Title : string.Empty))
+                .ForMember(dest => dest.LearnerName, opt => opt.MapFrom(src => src.User != null && src.User.UserProfile != null ? $"{src.User.UserProfile.FirstName} {src.User.UserProfile.LastName}".Trim() : string.Empty))
+                .ForMember(dest => dest.InstructorName, opt => opt.MapFrom(src => src.Course != null && src.Course.Instructor != null && src.Course.Instructor.UserProfile != null ? $"{src.Course.Instructor.UserProfile.FirstName} {src.Course.Instructor.UserProfile.LastName}".Trim() : string.Empty));
+            CreateMap<CertificateTemplates,CertificateTemplateResponse>();
         }
     }
 }

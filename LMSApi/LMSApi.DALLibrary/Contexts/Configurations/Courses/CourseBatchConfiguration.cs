@@ -18,16 +18,16 @@ namespace LMSApi.DALLibrary.Contexts.Configurations
                 .HasMaxLength(200);
 
             builder.Property(b => b.StartDate)
-                .IsRequired();
+                .IsRequired().HasColumnType("timestamp without time zone");
 
             builder.Property(b => b.EndDate)
-                .IsRequired();
+                .IsRequired().HasColumnType("timestamp without time zone");
 
             builder.Property(b => b.EnrollmentStartDate)
-                .IsRequired();
+                .IsRequired().HasColumnType("timestamp without time zone");
 
             builder.Property(b => b.EnrollmentEndDate)
-                .IsRequired();
+                .IsRequired().HasColumnType("timestamp without time zone");
 
             builder.Property(b => b.MaxStudents)
                 .IsRequired();
@@ -36,10 +36,10 @@ namespace LMSApi.DALLibrary.Contexts.Configurations
                 .HasDefaultValue(BatchStatus.Upcoming);
 
             builder.Property(b => b.CreatedAt)
-                .HasDefaultValueSql("CURRENT_TIMESTAMP");
+                .HasDefaultValueSql("timestamp without time zone 'now'");
 
             builder.Property(b => b.UpdatedAt)
-                .HasDefaultValueSql("CURRENT_TIMESTAMP");
+                .HasDefaultValueSql("timestamp without time zone 'now'");
 
             // AvailableSeats is [NotMapped] — no configuration needed.
 

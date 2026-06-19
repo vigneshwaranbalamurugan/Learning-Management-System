@@ -20,6 +20,7 @@ namespace LMSApi.ModelLibrary.Models
         /// 0 means no deadline.
         /// </summary>
         public int DeadlineInDays { get; set; }
+        public DateTime? DeadlineDate { get; set; }
 
         /// <summary>Maximum number of submission attempts allowed per student.</summary>
         public int MaxSubmissions { get; set; } = 1;

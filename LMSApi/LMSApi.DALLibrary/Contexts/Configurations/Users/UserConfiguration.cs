@@ -25,6 +25,7 @@ namespace LMSApi.DALLibrary.Contexts.Configurations
                     Id = 1,
                     Email = "admin@gmail.com",
                     PasswordHash = "TPZPlYPS43ldK8EYFX67pHzyMNFmt69wd9N2cUNObYs=",
+                    PasswordSalt="K5CamRmhDuuJEyr50OpNsA==",
                     IsActive = true,
                     IsEmailVerified = true,
                     RoleId = 3,

@@ -7,9 +7,7 @@ namespace LMSApi.ModelLibrary.DTOs
     public class SubmitQuizRequest
     {
         [Required]
-        public int QuizId { get; set; }
-
-        [Required]
+        [MinLength(1, ErrorMessage = "Answers cannot be empty")]
         public List<SubmitAnswerItem> Answers { get; set; } = [];
     }
 
@@ -42,7 +40,8 @@ namespace LMSApi.ModelLibrary.DTOs
         public int Id { get; set; }
         public int QuizId { get; set; }
         public int UserId { get; set; }
-        public double Score { get; set; }
+        public double ObtainedScore { get; set; }
+        public double TotalScore { get; set; }
         public bool IsPassed { get; set; }
         public string Status { get; set; }
         public DateTime StartedAt { get; set; }
@@ -54,11 +53,13 @@ namespace LMSApi.ModelLibrary.DTOs
         public int Id { get; set; }
         public int QuizId { get; set; }
         public int UserId { get; set; }
-        public double Score { get; set; }
+        public double ObtainedScore { get; set; }
+        public double TotalScore { get; set; }
         public bool IsPassed { get; set; }
         public string Status { get; set; }
         public DateTime StartedAt { get; set; }
         public DateTime? CompletedAt { get; set; }
+        public List<QuizQuestionResponse> Questions { get; set; } = [];
         public List<QuizAnswerResponse> Answers { get; set; } = [];
     }
 

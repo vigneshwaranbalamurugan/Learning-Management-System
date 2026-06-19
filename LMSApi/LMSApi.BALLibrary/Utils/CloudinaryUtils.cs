@@ -179,5 +179,55 @@ namespace LMSApi.BALLibrary.Utils
 
 			return result.SecureUrl?.ToString() ?? result.Url?.ToString() ?? throw new InvalidOperationException("Cloudinary upload did not return a usable URL.");
 		}
+		public static async Task<string> UploadCertificateTemplateBackgroundAsync(IConfiguration configuration, Stream fileStream, string fileName, string publicId)
+		{
+			var cloudinary = CreateClient(configuration);
+			var folder = configuration["Cloudinary:CertificateTemplateFolder"] ?? "lms/certificate-templates";
+
+			using var memoryStream = new MemoryStream();
+			await fileStream.CopyToAsync(memoryStream);
+			memoryStream.Position = 0;
+
+			var uploadParams = new ImageUploadParams
+			{
+				File = new FileDescription(fileName, memoryStream),
+				Folder = folder,
+				PublicId = publicId,
+				Overwrite = true,
+				UniqueFilename = false
+			};
+
+			var result = await cloudinary.UploadAsync(uploadParams);
+
+			if (result.Error != null)
+				throw new InvalidOperationException(result.Error.Message);
+
+			return result.SecureUrl?.ToString() ?? result.Url?.ToString() ?? throw new InvalidOperationException("Cloudinary upload did not return a usable URL.");
+		}
+
+		public static async Task<string> UploadCertificatePdfAsync(IConfiguration configuration, Stream fileStream, string fileName, string publicId)
+		{
+			var cloudinary = CreateClient(configuration);
+			var folder = configuration["Cloudinary:CertificateFolder"] ?? "lms/certificates";
+
+			using var memoryStream = new MemoryStream();
+			await fileStream.CopyToAsync(memoryStream);
+			memoryStream.Position = 0;
+
+			var uploadParams = new RawUploadParams
+			{
+				File = new FileDescription(fileName, memoryStream),
+				Folder = folder,
+				PublicId = publicId,
+				Overwrite = true
+			};
+
+			var result = await cloudinary.UploadAsync(uploadParams);
+
+			if (result.Error != null)
+				throw new InvalidOperationException(result.Error.Message);
+
+			return result.SecureUrl?.ToString() ?? result.Url?.ToString() ?? throw new InvalidOperationException("Cloudinary upload did not return a usable URL.");
+		}
 	}
 }

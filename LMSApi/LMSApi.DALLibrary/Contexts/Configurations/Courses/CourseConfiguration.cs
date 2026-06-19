@@ -41,8 +41,8 @@ namespace LMSApi.DALLibrary.Contexts.Configurations
             builder.Property(c=>c.Level)
                 .HasDefaultValue(CourseLevel.Beginner);
 
-            builder.Property(c => c.Language)
-                .HasDefaultValue(CourseLanguage.English);
+            builder.Property(c => c.LanguageId)
+                .HasDefaultValue(1);
 
             builder.Property(c => c.IsPremium)
                 .HasDefaultValue(false);
@@ -64,6 +64,11 @@ namespace LMSApi.DALLibrary.Contexts.Configurations
             builder.HasOne(c => c.Category)
                 .WithMany()
                 .HasForeignKey(c => c.CategoryId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            builder.HasOne(c => c.Language)
+                .WithMany()
+                .HasForeignKey(c => c.LanguageId)
                 .OnDelete(DeleteBehavior.Restrict);
 
             builder.HasOne(c => c.Instructor)

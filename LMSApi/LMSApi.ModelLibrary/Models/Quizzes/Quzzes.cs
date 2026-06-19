@@ -15,6 +15,7 @@ namespace LMSApi.ModelLibrary.Models
         public int Order { get; set; }
         public PublishStatus Status { get; set; } = PublishStatus.Draft;
         public int DeadlineInDays { get; set; }
+        public DateTime? DeadlineDate { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
 

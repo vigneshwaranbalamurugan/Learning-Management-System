@@ -16,6 +16,8 @@ namespace LMSApi.DALLibrary.Repositories
         public async Task<IEnumerable<QuizAttempts>> GetAttemptsByQuizAndUserAsync(int quizId, int userId)
         {
             return await _context.QuizAttempts
+                .Include(a => a.Quiz)
+                    .ThenInclude(q => q.Questions)
                 .Where(a => a.QuizId == quizId && a.UserId == userId)
                 .OrderByDescending(a => a.StartedAt)
                 .ToListAsync();
@@ -24,6 +26,8 @@ namespace LMSApi.DALLibrary.Repositories
         public async Task<QuizAttempts> GetAttemptWithAnswersAsync(int attemptId)
         {
             return await _context.QuizAttempts
+                .Include(a => a.Quiz)
+                    .ThenInclude(q => q.Questions)
                 .Include(a => a.Answers)
                     .ThenInclude(ans => ans.Question)
                 .Include(a => a.Answers)
@@ -75,6 +79,8 @@ namespace LMSApi.DALLibrary.Repositories
             if (quizIds == null || !quizIds.Any()) return new List<QuizAttempts>();
 
             return await _context.QuizAttempts
+                .Include(a => a.Quiz)
+                    .ThenInclude(q => q.Questions)
                 .Where(a => quizIds.Contains(a.QuizId) && a.UserId == userId)
                 .ToListAsync();
         }
@@ -82,6 +88,8 @@ namespace LMSApi.DALLibrary.Repositories
         public async Task<QuizAttempts?> GetInProgressAttemptAsync(int quizId, int userId)
         {
             return await _context.QuizAttempts
+                .Include(a => a.Quiz)
+                    .ThenInclude(q => q.Questions)
                 .Include(a => a.Answers)
                 .FirstOrDefaultAsync(a => a.QuizId == quizId && a.UserId == userId && a.Status == AttemptStatus.InProgress);
         }

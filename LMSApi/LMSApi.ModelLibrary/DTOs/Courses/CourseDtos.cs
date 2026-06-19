@@ -30,7 +30,7 @@ namespace LMSApi.ModelLibrary.DTOs
         public TimeSpan EstimatedDuration { get; set; }
 
         public CourseLevel Level { get; set; } = CourseLevel.Beginner;
-        public CourseLanguage Language { get; set; } = CourseLanguage.English;
+        public int LanguageId { get; set; } = 1;
 
         // ─── Hybrid Learning ─────────────────────────────────────────────────
         public CourseAccessType CourseAccessType { get; set; } = CourseAccessType.SelfPaced;
@@ -60,7 +60,7 @@ namespace LMSApi.ModelLibrary.DTOs
 
         public TimeSpan EstimatedDuration { get; set; }
         public CourseLevel? Level { get; set; }=CourseLevel.Beginner;
-        public CourseLanguage? Language { get; set; }=CourseLanguage.English;
+        public int? LanguageId { get; set; }
 
         // ─── Hybrid Learning ─────────────────────────────────────────────────
         public CourseAccessType? CourseAccessType { get; set; }= Enums.CourseAccessType.SelfPaced;
@@ -72,6 +72,15 @@ namespace LMSApi.ModelLibrary.DTOs
     public class PublishCourseRequest
     {
         public bool Publish { get; set; }
+    }
+
+    public class ReviewCourseRequest
+    {
+        [Required(ErrorMessage = "Action is required (Approve or Reject).")]
+        [RegularExpression("^(Approve|Reject)$", ErrorMessage = "Action must be either 'Approve' or 'Reject'.")]
+        public string Action { get; set; }
+
+        public string? Reason { get; set; }
     }
 
     public class CourseResponse
@@ -87,7 +96,8 @@ namespace LMSApi.ModelLibrary.DTOs
         public bool IsPremium { get; set; }
         public string? ThumbnailUrl { get; set; }
         public CourseLevel Level { get; set; }
-        public CourseLanguage Language { get; set; }
+        public int LanguageId { get; set; }
+        public string LanguageName { get; set; }
         public CourseStatus Status { get; set; }
         public DateTime? PublishedAt { get; set; }
         public DateTime CreatedAt { get; set; }
@@ -95,6 +105,9 @@ namespace LMSApi.ModelLibrary.DTOs
 
         // ─── Hybrid Learning ─────────────────────────────────────────────────
         public CourseAccessType CourseAccessType { get; set; }
+
+        public double AverageRating { get; set; }
+        public int TotalReviews { get; set; }
     }
 
     public class CourseDetailsResponse : CourseResponse
@@ -108,5 +121,7 @@ namespace LMSApi.ModelLibrary.DTOs
         // ─── Hybrid Learning ─────────────────────────────────────────────────
         /// <summary>Populated for CohortBased courses; empty list for SelfPaced.</summary>
         public IEnumerable<BatchSummaryResponse> AvailableBatches { get; set; } = [];
+
+        public bool IsWishlisted { get; set; }
     }
 }

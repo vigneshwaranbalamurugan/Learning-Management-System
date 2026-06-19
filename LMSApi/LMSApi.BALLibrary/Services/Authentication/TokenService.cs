@@ -5,7 +5,7 @@ using LMSApi.BALLibrary.Interfaces;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 
-namespace LMSApi.BALLibrary.Services.Authentication
+namespace LMSApi.BALLibrary.Services
 {
     public class TokenService : ITokenService
     {

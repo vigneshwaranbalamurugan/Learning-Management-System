@@ -6,7 +6,7 @@ using Microsoft.Extensions.Configuration;
 using Moq;
 using NUnit.Framework;
 
-namespace LMSApi.Tests.Services.Upload
+namespace LMSApi.Tests.Services
 {
     [TestFixture]
     public class UploadServiceTests

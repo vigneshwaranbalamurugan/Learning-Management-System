@@ -10,7 +10,7 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using NUnit.Framework;
 
-namespace LMSApi.Tests.Services.Courses
+namespace LMSApi.Tests.Services
 {
     [TestFixture]
     public class CourseCategoryServiceTests : BaseServiceTest
@@ -36,6 +36,8 @@ namespace LMSApi.Tests.Services.Courses
             );
         }
 
+        // ─── GetAllCategoriesAsync ─────────────────────────────────────────────
+
         [Test]
         public async Task GetAllCategoriesAsync_ReturnsAllCategories()
         {
@@ -47,6 +49,36 @@ namespace LMSApi.Tests.Services.Courses
 
             Assert.That(result.Count(), Is.EqualTo(2));
         }
+
+        [Test]
+        public async Task GetAllCategoriesAsync_EmptyDatabase_ReturnsEmptyList()
+        {
+            var result = await _courseCategoryService.GetAllCategoriesAsync();
+            Assert.That(result, Is.Empty);
+        }
+
+        // ─── GetCategoryByIdAsync ──────────────────────────────────────────────
+
+        [Test]
+        public void GetCategoryByIdAsync_NotFound_ThrowsKeyNotFoundException()
+        {
+            Assert.ThrowsAsync<KeyNotFoundException>(() => _courseCategoryService.GetCategoryByIdAsync(99999));
+        }
+
+        [Test]
+        public async Task GetCategoryByIdAsync_ExistingId_ReturnsCategory()
+        {
+            var cat = new CourseCategories { Name = "FindMe", Description = "Desc" };
+            DbContext.CourseCategories.Add(cat);
+            await DbContext.SaveChangesAsync();
+
+            var result = await _courseCategoryService.GetCategoryByIdAsync(cat.Id);
+
+            Assert.That(result, Is.Not.Null);
+            Assert.That(result.Name, Is.EqualTo("FindMe"));
+        }
+
+        // ─── CreateCategoryAsync ───────────────────────────────────────────────
 
         [Test]
         public async Task CreateCategoryAsync_ValidRequest_CreatesAndReturnsCategory()
@@ -71,6 +103,8 @@ namespace LMSApi.Tests.Services.Courses
             Assert.ThrowsAsync<InvalidOperationException>(() => _courseCategoryService.CreateCategoryAsync(request));
         }
 
+        // ─── UpdateCategoryAsync ───────────────────────────────────────────────
+
         [Test]
         public async Task UpdateCategoryAsync_ValidRequest_UpdatesAndReturnsCategory()
         {
@@ -84,6 +118,42 @@ namespace LMSApi.Tests.Services.Courses
 
             Assert.That(result.Name, Is.EqualTo("UpdatedName"));
         }
+
+        [Test]
+        public async Task UpdateCategoryAsync_DuplicateName_ThrowsInvalidOperationException()
+        {
+            var cat1 = new CourseCategories { Name = "ExistingName", Description = "Desc" };
+            var cat2 = new CourseCategories { Name = "OtherName", Description = "Desc" };
+            DbContext.CourseCategories.AddRange(cat1, cat2);
+            await DbContext.SaveChangesAsync();
+
+            // Try to rename cat2 to the name of cat1
+            var request = new UpdateCategoryRequest { Name = "ExistingName" };
+            Assert.ThrowsAsync<InvalidOperationException>(() =>
+                _courseCategoryService.UpdateCategoryAsync(cat2.Id, request));
+        }
+
+        [Test]
+        public void UpdateCategoryAsync_NotFound_ThrowsKeyNotFoundException()
+        {
+            var request = new UpdateCategoryRequest { Name = "Ghost" };
+            Assert.ThrowsAsync<KeyNotFoundException>(() => _courseCategoryService.UpdateCategoryAsync(99999, request));
+        }
+
+        [Test]
+        public async Task UpdateCategoryAsync_SameName_DoesNotThrow()
+        {
+            var cat = new CourseCategories { Name = "SameName", Description = "Desc" };
+            DbContext.CourseCategories.Add(cat);
+            await DbContext.SaveChangesAsync();
+
+            // Updating with same name should not throw (the service excludes self from uniqueness check)
+            var request = new UpdateCategoryRequest { Name = "SameName", Description = "Updated Desc" };
+            var result = await _courseCategoryService.UpdateCategoryAsync(cat.Id, request);
+            Assert.That(result.Description, Is.EqualTo("Updated Desc"));
+        }
+
+        // ─── DeleteCategoryAsync ───────────────────────────────────────────────
 
         [Test]
         public async Task DeleteCategoryAsync_NoLinkedCourses_DeletesCategory()
@@ -109,7 +179,7 @@ namespace LMSApi.Tests.Services.Courses
             DbContext.Users.Add(user);
             await DbContext.SaveChangesAsync();
 
-            DbContext.Courses.Add(new LMSApi.ModelLibrary.Models.Courses 
+            DbContext.Courses.Add(new Courses 
             { 
                 Title = "Course1", 
                 Description = "Desc", 
@@ -121,7 +191,7 @@ namespace LMSApi.Tests.Services.Courses
                 LearningOutcomes = "Outcomes",
                 EstimatedDuration = TimeSpan.Zero,
                 Level = LMSApi.ModelLibrary.Enums.CourseLevel.Beginner,
-                Language = LMSApi.ModelLibrary.Enums.CourseLanguage.English,
+                LanguageId = 1,
                 PublishedAt = DateTime.UtcNow,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow,
@@ -133,6 +203,12 @@ namespace LMSApi.Tests.Services.Courses
             await DbContext.SaveChangesAsync();
 
             Assert.ThrowsAsync<InvalidOperationException>(() => _courseCategoryService.DeleteCategoryAsync(cat.Id));
+        }
+
+        [Test]
+        public void DeleteCategoryAsync_NotFound_ThrowsKeyNotFoundException()
+        {
+            Assert.ThrowsAsync<KeyNotFoundException>(() => _courseCategoryService.DeleteCategoryAsync(99999));
         }
     }
 }

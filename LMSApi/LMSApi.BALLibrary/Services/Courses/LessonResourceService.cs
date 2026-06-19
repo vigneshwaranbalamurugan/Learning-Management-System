@@ -17,6 +17,8 @@ namespace LMSApi.BALLibrary.Services
         private readonly IUploadService _uploadService;
         private readonly IMapper _mapper;
         private readonly ILogger<LessonResourceService> _logger;
+        private readonly IEnrollmentRepository _enrollmentRepository;
+        private readonly INotificationService _notificationService;
 
         public LessonResourceService(
             ILessonResourceRepository resourceRepository,
@@ -25,7 +27,9 @@ namespace LMSApi.BALLibrary.Services
             ICourseRepository courseRepository,
             IUploadService uploadService,
             IMapper mapper,
-            ILogger<LessonResourceService> logger)
+            ILogger<LessonResourceService> logger,
+            IEnrollmentRepository enrollmentRepository,
+            INotificationService notificationService)
         {
             _resourceRepository = resourceRepository;
             _lessonRepository = lessonRepository;
@@ -34,6 +38,8 @@ namespace LMSApi.BALLibrary.Services
             _uploadService = uploadService;
             _mapper = mapper;
             _logger = logger;
+            _enrollmentRepository = enrollmentRepository;
+            _notificationService = notificationService;
         }
 
         public async Task<IEnumerable<ResourceResponse>> GetResourcesByLessonAsync(int lessonId, int? currentUserId = null, bool isAdmin = false)
@@ -91,6 +97,20 @@ namespace LMSApi.BALLibrary.Services
             var lesson = await _lessonRepository.GetByIdAsync(request.LessonId);
             var section = await _sectionRepository.GetByIdAsync(lesson.CourseSectionId);
             var course = await _courseRepository.GetByIdAsync(section.CourseId);
+
+            var courseSections = await _sectionRepository.GetSectionsByCourseAsync(course.Id);
+            foreach (var s in courseSections)
+            {
+                var sectionLessons = await _lessonRepository.GetLessonsBySectionAsync(s.Id);
+                foreach (var l in sectionLessons)
+                {
+                    var existingResources = await _resourceRepository.GetResourcesByLessonAsync(l.Id);
+                    if (existingResources.Any(r => string.Equals(r.ResourceTitle.Trim(), request.ResourceTitle.Trim(), StringComparison.OrdinalIgnoreCase)))
+                    {
+                        throw new InvalidOperationException("A lesson resource with this title already exists in this course.");
+                    }
+                }
+            }
 
             string resourceUrl;
             if (request.ResourceType == ResourceType.ExternalLink)
@@ -188,7 +208,27 @@ namespace LMSApi.BALLibrary.Services
             var course = await _courseRepository.GetByIdAsync(section.CourseId);
 
             if (request.ResourceType.HasValue) resource.ResourceType = request.ResourceType.Value;
-            if (request.ResourceTitle != null) resource.ResourceTitle = request.ResourceTitle;
+            
+            if (request.ResourceTitle != null)
+            {
+                if (string.IsNullOrWhiteSpace(request.ResourceTitle))
+                    throw new ArgumentException("Resource title cannot be null or empty.", nameof(request.ResourceTitle));
+
+                var courseSections = await _sectionRepository.GetSectionsByCourseAsync(course.Id);
+                foreach (var s in courseSections)
+                {
+                    var sectionLessons = await _lessonRepository.GetLessonsBySectionAsync(s.Id);
+                    foreach (var l in sectionLessons)
+                    {
+                        var existingResources = await _resourceRepository.GetResourcesByLessonAsync(l.Id);
+                        if (existingResources.Any(r => r.Id != id && string.Equals(r.ResourceTitle.Trim(), request.ResourceTitle.Trim(), StringComparison.OrdinalIgnoreCase)))
+                        {
+                            throw new InvalidOperationException("A lesson resource with this title already exists in this course.");
+                        }
+                    }
+                }
+                resource.ResourceTitle = request.ResourceTitle;
+            }
             if (request.Description != null) resource.Description = request.Description;
             if (request.Status.HasValue)
             {
@@ -235,6 +275,38 @@ namespace LMSApi.BALLibrary.Services
             await _resourceRepository.UpdateAsync(resource);
 
             _logger.LogInformation("Resource publication status updated: ResourceId={ResourceId}, Status={Status}", id, resource.Status);
+
+            if (request.Publish && course.CourseAccessType == CourseAccessType.CohortBased)
+            {
+                var enrollments = await _enrollmentRepository.GetActiveEnrollmentsByCourseAsync(course.Id);
+                var emailsToSend = enrollments.Select(e => new
+                {
+                    Email = e.User.Email,
+                    Name = e.User.UserProfile?.FirstName ?? e.User.Email,
+                    BatchName = e.Batch?.Name ?? ""
+                }).ToList();
+
+                var courseTitle = course.Title;
+                var resourceTitle = resource.ResourceTitle;
+
+                _ = Task.Run(async () =>
+                {
+                    foreach (var e in emailsToSend)
+                    {
+                        var html = Utils.EmailTemplate.GetContentPublishedTemplate(
+                            e.Name, courseTitle, "Resource", resourceTitle, e.BatchName);
+                        Message msg = new EmailMessage(e.Email, $"New resource available: {resourceTitle}", html) { IsHtml = true };
+                        try
+                        {
+                            await _notificationService.Send(msg);
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogError(ex, "Failed to send resource published email to {Email}", e.Email);
+                        }
+                    }
+                });
+            }
 
             return _mapper.Map<ResourceResponse>(resource);
         }
