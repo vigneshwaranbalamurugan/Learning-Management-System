@@ -8,6 +8,16 @@ namespace LMSApi.BALLibrary.Utils
         private const int SaltSize = 16;
         private const int KeySize = 32;
         private const int Iterations = 100000;
+        private readonly IConfiguration _configuration;
+
+        public PasswordHashing(IConfiguration _configuration)
+        {
+            _configuration = _configuration;
+            SaltSize = _configuration.GetValue<int>("Security:SaltSize");
+            KeySize = _configuration.GetValue<int>("Security:KeySize");
+            Iterations = _configuration.GetValue<int>("Security:Iterations");
+            
+        }
 
         public static (string Hash, string Salt) HashPassword(string password)
         {
