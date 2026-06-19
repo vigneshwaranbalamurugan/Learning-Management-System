@@ -3,6 +3,7 @@ using LMSApi.ModelLibrary.DTOs;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Asp.Versioning;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace LMSApi.API.Controllers
 {
@@ -19,6 +20,7 @@ namespace LMSApi.API.Controllers
 		}
 
 		[HttpPost("register")]
+		[EnableRateLimiting("Register")]
 		public async Task<ActionResult<RegisterResponse>> Register([FromBody] RegisterRequest request)
 		{
 			var result = await _authService.RegisterAsync(request);
@@ -26,6 +28,7 @@ namespace LMSApi.API.Controllers
 		}
 
 		[HttpGet("verify")]
+		[EnableRateLimiting("OtpVerify")]
 		public async Task<IActionResult> VerifyFromQuery([FromQuery] string email, [FromQuery] string token)
 		{
 	
@@ -35,6 +38,7 @@ namespace LMSApi.API.Controllers
 		}
 
 		[HttpPost("resend")]
+		[EnableRateLimiting("OtpSend")]
 		public async Task<ActionResult<ResendVerificationResponse>> Resend([FromBody] ResendVerificationRequest request)
 		{
 			var result = await _authService.ReRequestEmailVerificationAsync(request);
@@ -42,6 +46,7 @@ namespace LMSApi.API.Controllers
 		}
 
 		[HttpPost("login")]
+		[EnableRateLimiting("Login")]
 		public async Task<ActionResult<LoginResponse>> Login([FromBody] LoginRequest request)
 		{
 			var result = await _authService.AuthenticateAsync(request);
@@ -49,6 +54,7 @@ namespace LMSApi.API.Controllers
 		}
 
 		[HttpPost("forgot-password")]
+		[EnableRateLimiting("ForgotPassword")]
 		public async Task<ActionResult<ForgotPasswordResponse>> ForgotPassword([FromBody] ForgotPasswordRequest request)
 		{
 			var result = await _authService.ForgotPasswordAsync(request);
