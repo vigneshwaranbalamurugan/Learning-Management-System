@@ -4,6 +4,9 @@ using LMSApi.BALLibrary.Interfaces;
 using LMSApi.ModelLibrary.DTOs;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
+using LMSApi.API.Handlers;
+using LMSApi.ModelLibrary.Enums;
 
 namespace LMSApi.API.Controllers
 {
@@ -17,19 +20,33 @@ namespace LMSApi.API.Controllers
     [Route("api/v{version:apiVersion}/[controller]")]
     public class AssignmentSubmissionsController : ControllerBase
     {
-        private readonly IAssignmentService _assignmentService;
+        private readonly IAssignmentSubmissionService _assignmentSubmissionService;
+        private readonly AssignmentUploadHandler _assignmentUploadHandler;
 
-        public AssignmentSubmissionsController(IAssignmentService assignmentService)
+        public AssignmentSubmissionsController(
+            IAssignmentSubmissionService assignmentSubmissionService,
+            AssignmentUploadHandler assignmentUploadHandler)
         {
-            _assignmentService = assignmentService;
+            _assignmentSubmissionService = assignmentSubmissionService;
+            _assignmentUploadHandler = assignmentUploadHandler;
         }
 
         /// <summary>Submit an assignment (enrolled students).</summary>
         [Authorize]
         [Consumes("multipart/form-data")]
         [HttpPost]
+        [EnableRateLimiting("AssignmentSubmit")]
         public async Task<ActionResult<AssignmentSubmissionResponse>> Submit([FromForm] AssignmentSubmissionFormRequest form)
         {
+            if (form.AttachmentType == AssignmentSubmissonAttachmentType.File)
+            {
+                if (form.AttachmentFile == null)
+                {
+                    throw new InvalidOperationException("Assignment attachment is required.");
+                }
+                _assignmentUploadHandler.ValidateAssignmentAttachment(form.AttachmentFile);
+            }
+
             var studentId = User.GetUserId();
             
             var request = new AssignmentSubmissionRequest
@@ -42,7 +59,7 @@ namespace LMSApi.API.Controllers
             
             await using var attachmentStream = form.AttachmentFile?.OpenReadStream();
             
-            var result = await _assignmentService.SubmitAssignmentAsync(
+            var result = await _assignmentSubmissionService.SubmitAssignmentAsync(
                 studentId, 
                 request, 
                 attachmentStream, 
@@ -56,7 +73,7 @@ namespace LMSApi.API.Controllers
         [HttpPut("{id:int}/grade")]
         public async Task<ActionResult<AssignmentSubmissionResponse>> Grade(int id, [FromBody] GradeSubmissionRequest request)
         {
-            var result = await _assignmentService.GradeAssignmentAsync(id, request);
+            var result = await _assignmentSubmissionService.GradeAssignmentAsync(id, request);
             return Ok(result);
         }
 
@@ -66,7 +83,7 @@ namespace LMSApi.API.Controllers
         public async Task<ActionResult<IEnumerable<AssignmentSubmissionResponse>>> GetMySubmissions(int assignmentId)
         {
             var studentId = User.GetUserId();
-            var result = await _assignmentService.GetStudentSubmissionsAsync(assignmentId, studentId);
+            var result = await _assignmentSubmissionService.GetStudentSubmissionsAsync(assignmentId, studentId);
             return Ok(result);
         }
 
@@ -75,7 +92,7 @@ namespace LMSApi.API.Controllers
         [HttpGet("assignment/{assignmentId:int}/pending")]
         public async Task<ActionResult<IEnumerable<AssignmentSubmissionResponse>>> GetPendingReviews(int assignmentId)
         {
-            var result = await _assignmentService.GetPendingReviewsAsync(assignmentId);
+            var result = await _assignmentSubmissionService.GetPendingReviewsAsync(assignmentId);
             return Ok(result);
         }
 
@@ -85,7 +102,7 @@ namespace LMSApi.API.Controllers
         public async Task<ActionResult<AssignmentStatusResponse>> GetStatus(int assignmentId)
         {
             var studentId = User.GetUserId();
-            var result = await _assignmentService.GetStudentAssignmentStatusAsync(assignmentId, studentId);
+            var result = await _assignmentSubmissionService.GetStudentAssignmentStatusAsync(assignmentId, studentId);
             return Ok(result);
         }
     }

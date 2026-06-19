@@ -25,20 +25,17 @@ namespace LMSApi.API.Controllers
     public class AssignmentsController : ControllerBase
     {
         private readonly IAssignmentService _assignmentService;
-        private readonly ICourseSectionService _sectionService;
-        private readonly ICourseService _courseService;
         private readonly AssignmentUploadHandler _assignmentUploadHandler;
+        private readonly IOwnershipService _ownershipService;
 
         public AssignmentsController(
             IAssignmentService assignmentService,
-            ICourseSectionService sectionService,
-            ICourseService courseService,
-            AssignmentUploadHandler assignmentUploadHandler)
+            AssignmentUploadHandler assignmentUploadHandler,
+            IOwnershipService ownershipService)
         {
             _assignmentService = assignmentService;
-            _sectionService = sectionService;
-            _courseService = courseService;
             _assignmentUploadHandler = assignmentUploadHandler;
+            _ownershipService = ownershipService;
         }
 
         /// <summary>List all assignments in a section.</summary>
@@ -69,7 +66,7 @@ namespace LMSApi.API.Controllers
         [HttpPost]
         public async Task<ActionResult<AssignmentResponse>> Create([FromForm] CreateAssignmentFormRequest form)
         {
-            await EnforceSectionOwnershipAsync(form.CourseSectionId);
+            await _ownershipService.EnforceSectionOwnershipAsync(form.CourseSectionId, User.GetUserId(), User.IsAdmin(), "You do not have permission to manage assignments in this section.");
             if (form.AttachmentType==AssignmentAttachmentType.File)
                 _assignmentUploadHandler.ValidateAssignmentAttachment(form.AttachmentFile);
 
@@ -88,7 +85,7 @@ namespace LMSApi.API.Controllers
                 MaxSubmissions = form.MaxSubmissions,
                 IsLateSubmissionAllowed = form.IsLateSubmissionAllowed
             };
-            Console.WriteLine("Assignment creation request received: " + form.AttachmentFile.Name);
+            Console.WriteLine("Assignment creation request received: " + form.AttachmentFile?.Name);
             await using var attachmentStream = form.AttachmentFile?.OpenReadStream();
 
             var result = await _assignmentService.CreateAssignmentAsync(
@@ -104,7 +101,7 @@ namespace LMSApi.API.Controllers
         [HttpPut("{id:int}")]
         public async Task<ActionResult<AssignmentResponse>> Update(int id, [FromForm] UpdateAssignmentFormRequest form)
         {
-            await EnforceAssignmentOwnershipAsync(id);
+            await _ownershipService.EnforceAssignmentOwnershipAsync(id, User.GetUserId(), User.IsAdmin());
 
             if (form.AttachmentFile != null)
                 _assignmentUploadHandler.ValidateAssignmentAttachment(form.AttachmentFile);
@@ -140,7 +137,7 @@ namespace LMSApi.API.Controllers
         [HttpDelete("{id:int}")]
         public async Task<IActionResult> Delete(int id)
         {
-            await EnforceAssignmentOwnershipAsync(id);
+            await _ownershipService.EnforceAssignmentOwnershipAsync(id, User.GetUserId(), User.IsAdmin());
             await _assignmentService.DeleteAssignmentAsync(id);
             return NoContent();
         }
@@ -150,36 +147,10 @@ namespace LMSApi.API.Controllers
         [HttpPost("{id:int}/publish")]
         public async Task<ActionResult<AssignmentResponse>> Publish(int id, [FromBody] PublishAssignmentRequest request)
         {
-            await EnforceAssignmentOwnershipAsync(id);
+            await _ownershipService.EnforceAssignmentOwnershipAsync(id, User.GetUserId(), User.IsAdmin());
             var result = await _assignmentService.PublishAssignmentAsync(id, request.Publish);
             return Ok(result);
         }
 
-        // ─── Private Ownership Helpers ───────────────────────────────────────
-
-        private async Task EnforceSectionOwnershipAsync(int sectionId)
-        {
-            if (User.IsAdmin()) return;
-
-            var callerId = User.GetUserId();
-            var section = await _sectionService.GetSectionByIdAsync(sectionId, callerId, User.IsAdmin());
-            var course = await _courseService.GetCourseByIdAsync(section.CourseId, callerId, User.IsAdmin());
-
-            if (course.InstructorId != callerId)
-                throw new UnauthorizedAccessException("You do not have permission to manage assignments in this section.");
-        }
-
-        private async Task EnforceAssignmentOwnershipAsync(int assignmentId)
-        {
-            if (User.IsAdmin()) return;
-
-            var callerId = User.GetUserId();
-            var assignment = await _assignmentService.GetAssignmentByIdAsync(assignmentId, callerId, User.IsAdmin());
-            var section = await _sectionService.GetSectionByIdAsync(assignment.CourseSectionId, callerId, User.IsAdmin());
-            var course = await _courseService.GetCourseByIdAsync(section.CourseId, callerId, User.IsAdmin());
-
-            if (course.InstructorId != callerId)
-                throw new UnauthorizedAccessException("You do not have permission to modify this assignment.");
-        }
     }
 }
