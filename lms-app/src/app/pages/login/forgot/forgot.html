@@ -1,0 +1,38 @@
+<div class="flex flex-col gap-6 w-full animate-[fadeIn_0.3s_ease-out]">
+  <div class="text-center md:text-left">
+    <h1 class="text-2xl sm:text-3xl font-extrabold text-text-primary tracking-tight">
+      Forgot Password?
+    </h1>
+    <p class="text-sm text-text-muted mt-1.5">
+      Enter your email to receive password reset instructions.
+    </p>
+  </div>
+
+  <form (submit)="onSubmit($event)" class="flex flex-col gap-1 w-full">
+    <app-form-input
+      id="forgot-email"
+      label="Email Address"
+      type="email"
+      placeholder="name@example.com"
+      icon="email"
+      [value]="email"
+      [error]="emailError"
+      (valueChange)="onEmailChange($event)"
+    ></app-form-input>
+
+    <div class="mt-4">
+      <app-button type="submit" variant="primary" [loading]="isSubmitting">
+        Send Reset Link
+      </app-button>
+    </div>
+  </form>
+
+  <p class="text-sm text-center md:text-left text-text-muted mt-2">
+    <button type="button" (click)="backToLogin.emit()" class="font-semibold text-secondary hover:text-secondary-hover transition-colors cursor-pointer bg-transparent border-none focus:outline-none flex items-center gap-1 mx-auto md:mx-0">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-4 h-4">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" />
+      </svg>
+      Back to Login
+    </button>
+  </p>
+</div>

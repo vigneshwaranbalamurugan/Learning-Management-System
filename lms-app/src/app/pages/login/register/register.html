@@ -1,0 +1,117 @@
+<div class="flex flex-col gap-6 w-full animate-[fadeIn_0.3s_ease-out]">
+  <div class="text-center md:text-left">
+    <h1 class="text-2xl sm:text-3xl font-extrabold text-text-primary tracking-tight">
+      Create Your Account
+    </h1>
+    <p class="text-sm text-text-muted mt-1.5">
+      Start your learning experience today.
+    </p>
+  </div>
+
+  <form (submit)="onSubmit($event)" class="flex flex-col gap-1 w-full">
+    <app-form-input
+      id="register-email"
+      label="Email Address"
+      type="email"
+      placeholder="name@example.com"
+      icon="email"
+      [value]="email"
+      [error]="emailError"
+      (valueChange)="onEmailChange($event)"
+    ></app-form-input>
+
+    <!-- Password field wrapper with focus tracking -->
+    <div class="relative w-full" (focusin)="isPasswordFocused = true" (focusout)="isPasswordFocused = false">
+      <app-form-input
+        id="register-password"
+        label="Password"
+        type="password"
+        placeholder="••••••••"
+        icon="lock"
+        [value]="password"
+        [error]="passwordError"
+        (valueChange)="onPasswordChange($event)"
+      ></app-form-input>
+
+      <!-- Real-time Popup Password Indicator -->
+      <div
+        *ngIf="isPasswordFocused && !allRequirementsMet"
+        class="absolute left-0 top-[100%] z-30 w-full bg-white border border-border-default rounded-xl shadow-xl p-4 -mt-1 animate-[fadeIn_0.15s_ease-out] flex flex-col gap-2"
+      >
+        <p class="text-text-secondary font-semibold text-xs mb-0.5 select-none">Password requirements:</p>
+        
+        <!-- Min 8 chars -->
+        <div class="flex items-center gap-2 text-xs transition-colors duration-200" [class.text-success]="hasMinLength" [class.text-text-muted]="!hasMinLength">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-3.5 h-3.5 transition-transform" [class.scale-110]="hasMinLength">
+            <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" *ngIf="hasMinLength" />
+            <circle cx="12" cy="12" r="2" fill="currentColor" *ngIf="!hasMinLength" />
+          </svg>
+          <span>At least 8 characters long</span>
+        </div>
+
+        <!-- Uppercase -->
+        <div class="flex items-center gap-2 text-xs transition-colors duration-200" [class.text-success]="hasUppercase" [class.text-text-muted]="!hasUppercase">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-3.5 h-3.5 transition-transform" [class.scale-110]="hasUppercase">
+            <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" *ngIf="hasUppercase" />
+            <circle cx="12" cy="12" r="2" fill="currentColor" *ngIf="!hasUppercase" />
+          </svg>
+          <span>At least one uppercase letter (A-Z)</span>
+        </div>
+
+        <!-- Lowercase -->
+        <div class="flex items-center gap-2 text-xs transition-colors duration-200" [class.text-success]="hasLowercase" [class.text-text-muted]="!hasLowercase">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-3.5 h-3.5 transition-transform" [class.scale-110]="hasLowercase">
+            <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" *ngIf="hasLowercase" />
+            <circle cx="12" cy="12" r="2" fill="currentColor" *ngIf="!hasLowercase" />
+          </svg>
+          <span>At least one lowercase letter (a-z)</span>
+        </div>
+
+        <!-- Number -->
+        <div class="flex items-center gap-2 text-xs transition-colors duration-200" [class.text-success]="hasNumber" [class.text-text-muted]="!hasNumber">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-3.5 h-3.5 transition-transform" [class.scale-110]="hasNumber">
+            <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" *ngIf="hasNumber" />
+            <circle cx="12" cy="12" r="2" fill="currentColor" *ngIf="!hasNumber" />
+          </svg>
+          <span>At least one number (0-9)</span>
+        </div>
+      </div>
+    </div>
+
+
+    <app-form-input
+      id="register-confirm-password"
+      label="Confirm Password"
+      type="password"
+      placeholder="••••••••"
+      icon="lock"
+      [value]="confirmPassword"
+      [error]="confirmPasswordError"
+      (valueChange)="onConfirmPasswordChange($event)"
+    ></app-form-input>
+
+    <app-dropdown
+      id="register-role"
+      label="Select Role"
+      placeholder="Select your role"
+      icon="role"
+      [options]="[{ value: 'learner', label: 'Learner' }, { value: 'instructor', label: 'Instructor' }]"
+      [value]="role"
+      [error]="roleError"
+      (valueChange)="onRoleChange($event)"
+    ></app-dropdown>
+
+    <div class="mt-4">
+      <app-button type="submit" variant="primary" [loading]="isSubmitting">
+        Register
+      </app-button>
+    </div>
+  </form>
+
+  <p class="text-sm text-center md:text-left text-text-muted mt-2">
+    Already have an account? 
+    <button type="button" (click)="backToLogin.emit()" class="font-semibold text-secondary hover:text-secondary-hover transition-colors cursor-pointer bg-transparent border-none focus:outline-none">
+      Sign In
+    </button>
+  </p>
+</div>

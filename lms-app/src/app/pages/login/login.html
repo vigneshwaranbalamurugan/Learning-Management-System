@@ -1,0 +1,194 @@
+<app-navbar></app-navbar>
+
+<div class="min-h-[calc(100vh-72px)] mt-[72px] pb-12 w-full bg-bg-surface flex items-center justify-center p-4 sm:p-6 md:p-8 lg:p-12">
+  <!-- Card Container (16px rounded corners, subtle shadow) -->
+  <div class="w-full max-w-5xl bg-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-border-default overflow-hidden flex flex-col md:flex-row min-h-[620px]">
+    
+    <!-- Left Section: Authentication Forms (50% Width on desktop) -->
+    <div class="w-full md:w-1/2 p-8 sm:p-12 lg:p-16 flex flex-col justify-center gap-6 min-h-[580px]">
+      
+      <!-- LMS Logo and Brand Header (Shared across screens) -->
+      <div class="flex flex-col items-center md:items-start">
+        <div class="flex items-center gap-2 select-none">
+          <img src="/coursehub.webp" alt="CourseHub Logo" class="h-10 w-auto object-contain" />
+          <span class="text-xl font-bold tracking-tight text-primary">CourseHub <span class="text-secondary">LMS</span></span>
+        </div>
+      </div>
+
+      <!-- ================= 1. LOGIN SCREEN ================= -->
+      <div *ngIf="currentScreen() === 'login'" class="flex flex-col gap-6 w-full animate-[fadeIn_0.3s_ease-out]">
+        <div class="text-center md:text-left">
+          <h1 class="text-2xl sm:text-3xl font-extrabold text-text-primary tracking-tight">
+            Sign in to Your Account
+          </h1>
+          <p class="text-sm text-text-muted mt-1.5">
+            Unlock your learning journey.
+          </p>
+        </div>
+
+        <form (submit)="onLoginSubmit($event)" class="flex flex-col gap-1 w-full">
+          <app-form-input
+            id="login-email"
+            label="Email Address"
+            type="email"
+            placeholder="name@example.com"
+            icon="email"
+            [value]="email"
+            [error]="emailError"
+            (valueChange)="onEmailChange($event)"
+          ></app-form-input>
+
+          <app-form-input
+            id="login-password"
+            label="Password"
+            type="password"
+            placeholder="••••••••"
+            icon="lock"
+            [value]="password"
+            [error]="passwordError"
+            (valueChange)="onPasswordChange($event)"
+          ></app-form-input>
+
+          <!-- Keep me signed in & Forgot Password Row -->
+          <div class="flex items-center justify-between mt-1 mb-5 text-sm">
+            <label class="flex items-center gap-2 cursor-pointer select-none text-text-secondary">
+              <input type="checkbox" class="w-4 h-4 rounded border-border-default text-primary focus:ring-primary cursor-pointer" />
+              <span>Remember Me</span>
+            </label>
+            <button type="button" (click)="changeScreen('forgot-password')" class="font-medium text-primary hover:text-primary-hover hover:underline transition-all cursor-pointer focus:outline-none bg-transparent border-none">
+              Forgot Password?
+            </button>
+          </div>
+
+          <app-button type="submit" variant="primary" [loading]="isSubmitting()">
+            Sign In
+          </app-button>
+        </form>
+
+        <div class="flex flex-col gap-2 text-sm text-center md:text-left text-text-muted mt-2">
+          <p>
+            Don't have an account? 
+            <button type="button" (click)="changeScreen('register')" class="font-semibold text-secondary hover:text-secondary-hover transition-colors cursor-pointer bg-transparent border-none focus:outline-none">
+              Register
+            </button>
+          </p>
+          <p>
+            Need verification? 
+            <button type="button" (click)="changeScreen('resend-verification')" class="font-semibold text-primary hover:text-primary-hover transition-colors cursor-pointer bg-transparent border-none focus:outline-none">
+              Resend Verification Email
+            </button>
+          </p>
+        </div>
+      </div>
+
+      <!-- ================= 2. REGISTER SCREEN ================= -->
+      <app-register
+        *ngIf="currentScreen() === 'register'"
+        [isSubmitting]="isSubmitting()"
+        (backToLogin)="changeScreen('login')"
+        (registerSubmit)="handleRegister($event)"
+      ></app-register>
+
+      <!-- ================= 3. FORGOT PASSWORD SCREEN ================= -->
+      <app-forgot
+        *ngIf="currentScreen() === 'forgot-password'"
+        [isSubmitting]="isSubmitting()"
+        (backToLogin)="changeScreen('login')"
+        (forgotSubmit)="handleForgot($event)"
+      ></app-forgot>
+
+      <!-- ================= 4. RESEND VERIFICATION SCREEN ================= -->
+      <app-resend
+        *ngIf="currentScreen() === 'resend-verification'"
+        [isSubmitting]="isSubmitting()"
+        (backToLogin)="changeScreen('login')"
+        (resendSubmit)="handleResend($event)"
+      ></app-resend>
+
+    </div>
+
+    <!-- Right Section: Education-themed vector illustration (50% Width on desktop, hidden on tablet/mobile) -->
+    <div class="hidden md:flex md:w-1/2 bg-bg-surface items-center justify-center p-8 lg:p-12 border-l border-border-default select-none">
+      <div class="w-full max-w-sm flex flex-col items-center gap-8">
+        
+        <!-- Premium Vector SVG Illustration -->
+        <svg class="w-full h-auto max-h-[320px]" viewBox="0 0 500 400" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <!-- Background shapes -->
+          <circle cx="250" cy="200" r="150" fill="#1C1C7B" fill-opacity="0.03" />
+          <circle cx="380" cy="120" r="50" fill="#FF8C00" fill-opacity="0.04" />
+          <rect x="80" y="250" width="80" height="80" rx="16" transform="rotate(-15 80 250)" fill="#1C1C7B" fill-opacity="0.02" />
+
+          <!-- Main Desktop Display Frame -->
+          <rect x="110" y="80" width="280" height="190" rx="12" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="6" />
+          <rect x="110" y="80" width="280" height="32" rx="0" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="2" />
+          <circle cx="130" cy="96" r="4" fill="#EF4444" />
+          <circle cx="142" cy="96" r="4" fill="#F59E0B" />
+          <circle cx="154" cy="96" r="4" fill="#10B981" />
+          
+          <!-- Desktop Base -->
+          <path d="M210 270L230 310H270L290 270" stroke="#E2E8F0" stroke-width="6" stroke-linejoin="round" />
+          <rect x="190" y="310" width="120" height="8" rx="4" fill="#E2E8F0" />
+
+          <!-- LMS Mockup Graphics -->
+          <rect x="116" y="116" width="50" height="148" fill="#1C1C7B" rx="4" fill-opacity="0.9" />
+          <rect x="122" y="126" width="38" height="6" rx="3" fill="#FFFFFF" opacity="0.5" />
+          <rect x="122" y="140" width="38" height="6" rx="3" fill="#FFFFFF" opacity="0.3" />
+          <rect x="122" y="154" width="38" height="6" rx="3" fill="#FFFFFF" opacity="0.3" />
+          <rect x="122" y="168" width="38" height="6" rx="3" fill="#FFFFFF" opacity="0.3" />
+          
+          <rect x="178" y="126" width="94" height="60" rx="6" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1" />
+          <rect x="186" y="136" width="60" height="6" rx="3" fill="#1C1C7B" opacity="0.7" />
+          <rect x="186" y="148" width="40" height="4" rx="2" fill="#64748B" />
+          <circle cx="248" cy="156" r="14" fill="#FF8C00" fill-opacity="0.1" />
+          <path d="M242 156C242 152 248 150 248 156C248 162 254 160 254 156" stroke="#FF8C00" stroke-width="2" stroke-linecap="round" />
+
+          <rect x="282" y="126" width="98" height="60" rx="6" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1" />
+          <rect x="290" y="136" width="50" height="6" rx="3" fill="#1C1C7B" opacity="0.7" />
+          <rect x="290" y="148" width="65" height="4" rx="2" fill="#64748B" />
+          <rect x="290" y="164" width="80" height="8" rx="4" fill="#E2E8F0" />
+          <rect x="290" y="164" width="55" height="8" rx="4" fill="#16A34A" />
+
+          <rect x="178" y="196" width="202" height="68" rx="6" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1" />
+          <rect x="186" y="208" width="80" height="6" rx="3" fill="#1C1C7B" opacity="0.4" />
+          <rect x="186" y="222" width="186" height="1" rx="0.5" fill="#E2E8F0" />
+          <rect x="186" y="232" width="186" height="1" rx="0.5" fill="#E2E8F0" />
+          <circle cx="192" cy="211" r="2" fill="#1C1C7B" />
+          
+          <!-- Floating Icons -->
+          <g transform="translate(60, 90)">
+            <circle cx="20" cy="20" r="24" fill="#FF8C00" fill-opacity="0.1" />
+            <path d="M20 12L31 17L20 22L9 17L20 12Z" stroke="#FF8C00" stroke-width="2" stroke-linejoin="round" />
+            <path d="M13 20V23.5C13 25 20 26 20 23.5V20" stroke="#FF8C00" stroke-width="2" stroke-linecap="round" />
+            <path d="M27.5 18.5V23.5" stroke="#FF8C00" stroke-width="1.5" />
+            <circle cx="27.5" cy="24" r="1" fill="#FF8C00" />
+          </g>
+
+          <g transform="translate(380, 240)">
+            <circle cx="20" cy="20" r="24" fill="#1C1C7B" fill-opacity="0.08" />
+            <path d="M12 28V12" stroke="#1C1C7B" stroke-width="2" stroke-linecap="round" />
+            <path d="M12 28H28" stroke="#1C1C7B" stroke-width="2" stroke-linecap="round" />
+            <path d="M16 24L20 18L24 21L28 15" stroke="#1C1C7B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+          </g>
+
+          <g transform="translate(360, 40)">
+            <circle cx="20" cy="20" r="20" fill="#16A34A" fill-opacity="0.08" />
+            <path d="M14 16H20C22 16 26 18 26 20V24C26 22 22 20 20 20H14V16Z" stroke="#16A34A" stroke-width="1.5" stroke-linejoin="round" />
+            <path d="M14 13H20C22 13 26 15 26 17V21C26 19 22 17 20 17H14V13Z" fill="#16A34A" fill-opacity="0.1" stroke="#16A34A" stroke-width="1.5" stroke-linejoin="round" />
+            <path d="M14 13V20" stroke="#16A34A" stroke-width="1.5" />
+          </g>
+        </svg>
+
+        <!-- Slogan -->
+        <div class="text-center">
+          <h3 class="text-lg font-bold text-text-primary">All-in-One Learning Portal</h3>
+          <p class="text-xs text-text-muted mt-1 max-w-[280px]">
+            Access coursework, track progress, and access course materials globally.
+          </p>
+        </div>
+      </div>
+    </div>
+    
+  </div>
+</div>
+
+<app-footer></app-footer>

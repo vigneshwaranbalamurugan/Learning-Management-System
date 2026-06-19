@@ -1,0 +1,87 @@
+.loader {
+position: absolute;
+top: calc(50% - 1.875em);
+left: calc(50% - 1.875em);
+width: 3.75em;
+height: 3.75em;
+transform: rotate(165deg);
+}
+
+.loader:before,
+.loader:after {
+content: "";
+position: absolute;
+top: 50%;
+left: 50%;
+display: block;
+width: 0.75em;
+height: 0.75em;
+border-radius: 0.375em;
+transform: translate(-50%, -50%);
+}
+
+.loader:before {
+animation: before8 2s infinite;
+}
+
+.loader:after {
+animation: after6 2s infinite;
+}
+
+@keyframes before8 {
+0% {
+width: 0.75em;
+box-shadow:
+1.5em -0.75em rgba(28, 28, 123, 0.8),
+-1.5em 0.75em rgba(255, 140, 0, 0.8);
+}
+
+35% {
+width: 3.75em;
+box-shadow:
+0 -0.75em rgba(28, 28, 123, 0.8),
+0 0.75em rgba(255, 140, 0, 0.8);
+}
+
+70% {
+width: 0.75em;
+box-shadow:
+-1.5em -0.75em rgba(28, 28, 123, 0.8),
+1.5em 0.75em rgba(255, 140, 0, 0.8);
+}
+
+100% {
+box-shadow:
+1.5em -0.75em rgba(28, 28, 123, 0.8),
+-1.5em 0.75em rgba(255, 140, 0, 0.8);
+}
+}
+
+@keyframes after6 {
+0% {
+height: 0.75em;
+box-shadow:
+0.75em 1.5em rgba(28, 28, 123, 0.45),
+-0.75em -1.5em rgba(255, 140, 0, 0.45);
+}
+
+35% {
+height: 3.75em;
+box-shadow:
+0.75em 0 rgba(28, 28, 123, 0.45),
+-0.75em 0 rgba(255, 140, 0, 0.45);
+}
+
+70% {
+height: 0.75em;
+box-shadow:
+0.75em -1.5em rgba(28, 28, 123, 0.45),
+-0.75em 1.5em rgba(255, 140, 0, 0.45);
+}
+
+100% {
+box-shadow:
+0.75em 1.5em rgba(28, 28, 123, 0.45),
+-0.75em -1.5em rgba(255, 140, 0, 0.45);
+}
+}

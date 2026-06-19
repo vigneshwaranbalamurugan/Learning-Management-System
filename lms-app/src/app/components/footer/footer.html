@@ -1,0 +1,72 @@
+<footer class="bg-white border-t border-border-default select-none py-12 md:py-16">
+  <div class="max-w-[1400px] w-full mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center md:items-start justify-around gap-10">
+    
+    <!-- Left Column: Branding -->
+    <div class="flex flex-col items-center md:items-start gap-4">
+      <div class="flex items-center gap-3">
+        <div class="flex items-center justify-center bg-gray-50 p-1.5 rounded-xl border border-gray-100">
+          <img
+            src="/coursehub.webp"
+            alt="CourseHub Logo"
+            class="h-8 w-auto object-contain"
+          />
+        </div>
+        <span class="text-xl font-bold tracking-tight text-primary">CourseHub <span class="text-secondary">LMS</span></span>
+      </div>
+      <p class="text-xs text-text-secondary text-center md:text-left max-w-xs leading-relaxed">
+        <strong>Learn Without Limits. Achieve Without Boundaries.</strong>
+        <span class="block mt-1 text-gray-500 font-normal">Discover expert-led courses, earn certificates, and build the skills you need to achieve your goals.</span>
+      </p>
+    </div>
+
+    <!-- Center Column: Quick links -->
+    <div class="flex flex-col items-center md:items-start gap-3">
+      <span class="text-sm font-bold text-text-primary tracking-wide">Quick Links</span>
+      <div class="flex flex-col items-center md:items-start gap-2 text-sm">
+        <a href="#home" (click)="scrollToSection('home', $event)" class="text-text-secondary hover:text-primary transition-colors cursor-pointer">
+          Home
+        </a>
+        <a href="#about" (click)="scrollToSection('about', $event)" class="text-text-secondary hover:text-primary transition-colors cursor-pointer">
+          About Us
+        </a>
+        <a href="#feedback" (click)="scrollToSection('feedback', $event)" class="text-text-secondary hover:text-primary transition-colors cursor-pointer">
+          Feedback
+        </a>
+      </div>
+    </div>
+
+    <!-- Right Column: Contact -->
+    <div class="flex flex-col items-center md:items-start gap-3">
+      <span class="text-sm font-bold text-text-primary tracking-wide">Contact Us</span>
+      <div class="flex flex-col items-center md:items-start gap-2 text-sm">
+        <span class="text-text-secondary">Email: <a href="mailto:support@coursehublms.com" class="text-primary font-semibold hover:underline">support@coursehublms.com</a></span>
+        <span class="text-text-secondary">Phone: +91 1234567890</span>
+      </div>
+    </div>
+
+    <!-- 4th Column: Social Links -->
+    <div class="flex flex-col items-center md:items-start gap-3">
+      <span class="text-sm font-bold text-text-primary tracking-wide">Follow Us</span>
+      <div class="flex flex-col items-center md:items-start gap-2 text-sm">
+        <a href="#" class="flex items-center gap-2 text-text-secondary hover:text-primary transition-colors cursor-pointer" aria-label="LinkedIn">
+          <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 24 24"><path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.32 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.79M6.88 8.56a1.68 1.68 0 0 0 1.68-1.68c0-.93-.75-1.69-1.68-1.69a1.69 1.69 0 0 0-1.69 1.69c0 .93.76 1.68 1.69 1.68m1.39 9.94v-8.37H5.5v8.37h2.77z"/></svg>
+          LinkedIn
+        </a>
+        <a href="#" class="flex items-center gap-2 text-text-secondary hover:text-primary transition-colors cursor-pointer" aria-label="Twitter">
+          <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+          Twitter
+        </a>
+        <a href="#" class="flex items-center gap-2 text-text-secondary hover:text-primary transition-colors cursor-pointer" aria-label="GitHub">
+          <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 24 24"><path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482C19.138 20.197 22 16.44 22 12.017 22 6.484 17.522 2 12 2z"/></svg>
+          GitHub
+        </a>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Bottom Section -->
+  <div class="max-w-[1400px] w-full mx-auto px-4 sm:px-6 lg:px-8 mt-12 pt-6 border-t border-border-light text-center text-xs text-text-muted select-none">
+    &copy; 2026 CourseHub LMS Platform. All Rights Reserved.
+  </div>
+</footer>

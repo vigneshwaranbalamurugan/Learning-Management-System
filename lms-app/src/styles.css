@@ -1,0 +1,55 @@
+@import 'tailwindcss';
+
+@theme {
+  /* Brand Colors */
+  --color-primary: #1C1C7B;
+  --color-primary-hover: #15155E;
+  --color-primary-light: #E8E8FF;
+
+  --color-secondary: #FF8C00;
+  --color-secondary-hover: #E67E00;
+  --color-secondary-light: #FFF4E6;
+
+  /* Background Colors */
+  --color-bg-main: #FFFFFF;
+  --color-bg-navbar: #FFFFFF;
+  --color-bg-card: #FFFFFF;
+  --color-bg-surface: #F8FAFC;
+  --color-bg-surface-hover: #F1F5F9;
+
+  /* Text Colors */
+  --color-text-primary: #000000;
+  --color-text-secondary: #475569;
+  --color-text-muted: #64748B;
+  --color-text-white: #FFFFFF;
+
+  /* Border Colors */
+  --color-border-default: #E2E8F0;
+  --color-border-light: #F1F5F9;
+
+  /* Status Colors */
+  --color-success: #16A34A;
+  --color-success-light: #DCFCE7;
+
+  --color-warning: #F59E0B;
+  --color-warning-light: #FEF3C7;
+
+  --color-danger: #DC2626;
+  --color-danger-light: #FEE2E2;
+
+  --color-info: #0284C7;
+  --color-info-light: #E0F2FE;
+
+  /* Sidebar */
+  --color-sidebar-bg: #1C1C7B;
+  --color-sidebar-text: #FFFFFF;
+  --color-sidebar-hover: #2B2B99;
+  --color-sidebar-active: #FF8C00;
+
+  /* Navbar */
+  --color-navbar-bg: #FFFFFF;
+  --color-navbar-text: #000000;
+  --color-navbar-hover: #1C1C7B;
+  --color-navbar-active: #FF8C00;
+}
+
