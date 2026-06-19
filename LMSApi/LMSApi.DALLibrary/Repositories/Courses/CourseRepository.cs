@@ -68,7 +68,9 @@ namespace LMSApi.DALLibrary.Repositories
         public async Task<LMSApi.ModelLibrary.DTOs.CourseRatingStatsDto> GetCourseRatingStatsAsync(int courseId)
         {
             var stats = await _context.Database
-                .SqlQueryRaw<LMSApi.ModelLibrary.DTOs.CourseRatingStatsDto>("SELECT * FROM get_course_rating_stats({0})", courseId)
+                .SqlQueryRaw<LMSApi.ModelLibrary.DTOs.CourseRatingStatsDto>(
+                    "SELECT averagerating AS \"AverageRating\", totalreviews AS \"TotalReviews\" FROM get_course_rating_stats({0})", 
+                    courseId)
                 .FirstOrDefaultAsync();
 
             return stats ?? new LMSApi.ModelLibrary.DTOs.CourseRatingStatsDto { AverageRating = 0.0, TotalReviews = 0 };

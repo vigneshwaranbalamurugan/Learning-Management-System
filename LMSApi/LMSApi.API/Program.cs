@@ -237,6 +237,7 @@ app.UseRateLimiter();
 app.UseHangfireDashboard("/hangfire");
 
 app.MapHub<NotificationHub>("/hubs/notification").RequireRateLimiting("SignalRHubConnect");
+app.MapHub<VideoProgressHub>("/hubs/video-progress").RequireRateLimiting("SignalRHubConnect");
 app.MapControllers();
 
 var recurringJobManager = app.Services.GetRequiredService<IRecurringJobManager>();

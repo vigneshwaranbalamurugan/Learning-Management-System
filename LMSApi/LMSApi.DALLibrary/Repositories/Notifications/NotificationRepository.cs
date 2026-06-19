@@ -21,7 +21,17 @@ namespace LMSApi.DALLibrary.Repositories
         public async Task<List<UpcomingDeadlineDto>> GetUpcomingDeadlinesAsync(DateTime targetDate)
         {
             return await _context.Database
-                .SqlQueryRaw<UpcomingDeadlineDto>("SELECT * FROM get_upcoming_deadlines(CAST({0} AS date))", targetDate)
+                .SqlQueryRaw<UpcomingDeadlineDto>(
+                    @"SELECT 
+                        userid AS ""UserId"", 
+                        useremail AS ""UserEmail"", 
+                        username AS ""UserName"", 
+                        coursename AS ""CourseName"", 
+                        itemtype AS ""ItemType"", 
+                        itemtitle AS ""ItemTitle"", 
+                        deadlinedate AS ""DeadlineDate"" 
+                      FROM get_upcoming_deadlines(CAST({0} AS date))", 
+                    targetDate)
                 .ToListAsync();
         }
     }

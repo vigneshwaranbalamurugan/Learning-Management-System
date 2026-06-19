@@ -51,7 +51,8 @@ namespace LMSApi.BALLibrary.Mappers
             CreateMap<StudentProgress, LessonProgressResponse>()
                 .ForMember(dest => dest.UserId, opt => opt.MapFrom(src => src.StudentId))
                 .ForMember(dest => dest.LastViewedAt, opt => opt.MapFrom(src => src.LastAccessed))
-                .ForMember(dest => dest.WatchPercentage, opt => opt.MapFrom(src => src.VideoWatchedPercentage));
+                .ForMember(dest => dest.WatchPercentage, opt => opt.MapFrom(src => src.VideoWatchedPercentage))
+                .ForMember(dest => dest.LastWatchedSecond, opt => opt.MapFrom(src => src.LastWatchedSecond));
 
             // ─── Resource ────────────────────────────────────────────────────
             CreateMap<LessonResources, ResourceResponse>();

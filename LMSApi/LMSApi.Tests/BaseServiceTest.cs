@@ -136,16 +136,16 @@ namespace LMSApi.Tests
 
                 CREATE OR REPLACE FUNCTION get_course_rating_stats(p_course_id INTEGER)
                 RETURNS TABLE (
-                    ""AverageRating"" DOUBLE PRECISION,
-                    ""TotalReviews"" INTEGER
+                    averagerating DOUBLE PRECISION,
+                    totalreviews INTEGER
                 ) 
                 LANGUAGE plpgsql
                 AS $$
                 BEGIN
                     RETURN QUERY
                     SELECT 
-                        COALESCE(AVG(""Rating"")::DOUBLE PRECISION, 0.0::DOUBLE PRECISION) AS ""AverageRating"",
-                        COUNT(*)::INTEGER AS ""TotalReviews""
+                        COALESCE(AVG(""Rating"")::DOUBLE PRECISION, 0.0::DOUBLE PRECISION) AS averagerating,
+                        COUNT(*)::INTEGER AS totalreviews
                     FROM ""Reviews""
                     WHERE ""CourseId"" = p_course_id;
                 END;

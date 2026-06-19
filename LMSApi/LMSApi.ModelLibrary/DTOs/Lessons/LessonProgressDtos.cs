@@ -7,6 +7,19 @@ namespace LMSApi.ModelLibrary.DTOs
         public decimal? WatchPercentage { get; set; }
     }
 
+    /// <summary>
+    /// Sent by the video player (via SignalR) to report the current playback position.
+    /// The backend calculates VideoWatchedPercentage using the lesson's DurationInMinutes.
+    /// </summary>
+    public class UpdateVideoProgressRequest
+    {
+        /// <summary>ID of the video lesson being watched.</summary>
+        public int LessonId { get; set; }
+
+        /// <summary>Current playback position in seconds.</summary>
+        public int LastWatchedSecond { get; set; }
+    }
+
     public class LessonProgressResponse
     {
         public int Id { get; set; }
@@ -16,6 +29,8 @@ namespace LMSApi.ModelLibrary.DTOs
         public DateTime? CompletedAt { get; set; }
         public DateTime LastViewedAt { get; set; }
         public decimal WatchPercentage { get; set; }
+        /// <summary>Last watched position in seconds — used by the frontend to resume playback.</summary>
+        public int LastWatchedSecond { get; set; }
     }
 
     public class CourseProgressResponse

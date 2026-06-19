@@ -28,5 +28,20 @@ namespace LMSApi.API.Controllers
             var result = await _progressService.GetCourseProgressAsync(userId, courseId);
             return Ok(result);
         }
+
+        /// <summary>
+        /// Returns the progress record for a single lesson including the last watched second.
+        /// Use this before starting video playback to get the resume position.
+        /// Returns 204 No Content when the student has never started this lesson.
+        /// </summary>
+        [Authorize]
+        [HttpGet("lessons/{lessonId:int}")]
+        public async Task<ActionResult<LessonProgressResponse>> GetLessonProgress(int lessonId)
+        {
+            var userId = User.GetUserId();
+            var result = await _progressService.GetLessonProgressAsync(userId, lessonId);
+            if (result == null) return NoContent();
+            return Ok(result);
+        }
     }
 }

@@ -85,8 +85,8 @@ namespace LMSApi.BALLibrary.Services
                 {
                     progress.VideoWatchedPercentage = watchPercentage.Value;
                 }
-                // If watch percentage >= 90%, mark completed automatically
-                if (progress.VideoWatchedPercentage >= 90m)
+                // If watch percentage >= 98%, mark completed automatically
+                if (progress.VideoWatchedPercentage >= 98m)
                 {
                     if (!progress.IsCompleted)
                     {
@@ -253,6 +253,81 @@ namespace LMSApi.BALLibrary.Services
             {
                 await UpdateCourseEnrollmentProgressAsync(userId, courseId, enrollment);
             }
+        }
+
+        /// <inheritdoc />
+        public async Task<LessonProgressResponse> UpdateVideoProgressAsync(int userId, int lessonId, int lastWatchedSecond)
+        {
+            var lesson = await _lessonRepository.GetByIdAsync(lessonId);
+            if (lesson == null)
+                throw new KeyNotFoundException($"Lesson with id '{lessonId}' not found.");
+
+            if (lesson.Type != LessonType.Video)
+                throw new InvalidOperationException($"Lesson '{lessonId}' is not a video lesson.");
+
+            var section = await _sectionRepository.GetByIdAsync(lesson.CourseSectionId);
+            var courseId = section.CourseId;
+
+            // Verify enrollment
+            var enrollment = await _enrollmentRepository.GetByUserAndCourseAsync(userId, courseId);
+            if (enrollment == null)
+                throw new InvalidOperationException($"Student is not enrolled in course '{courseId}'.");
+
+            // Upsert progress record
+            var progress = await _progressRepository.GetProgressByUserAndLessonAsync(userId, lessonId);
+            var isNew = progress == null;
+            if (isNew)
+            {
+                progress = new StudentProgress
+                {
+                    StudentId = userId,
+                    CourseId = courseId,
+                    LessonId = lessonId,
+                    StartedAt = DateTime.UtcNow,
+                    LastAccessed = DateTime.UtcNow
+                };
+            }
+
+            progress!.LastWatchedSecond = lastWatchedSecond;
+            progress.LastAccessed = DateTime.UtcNow;
+
+            // Calculate watch percentage from duration stored on lesson
+            if (lesson.DurationInMinutes.HasValue && lesson.DurationInMinutes.Value.TotalSeconds > 0)
+            {
+                var totalSeconds = (decimal)lesson.DurationInMinutes.Value.TotalSeconds;
+                var rawPercentage = lastWatchedSecond / totalSeconds * 100m;
+                progress.VideoWatchedPercentage = Math.Min(Math.Round(rawPercentage, 2), 100m);
+            }
+            // If duration is not set we cannot calculate — keep existing percentage
+
+            // Auto-complete at 98%
+            if (progress.VideoWatchedPercentage >= 98m && !progress.IsCompleted)
+            {
+                progress.IsCompleted = true;
+                progress.CompletedAt = DateTime.UtcNow;
+                _logger.LogInformation(
+                    "Lesson Completed (video): LessonId={LessonId}, StudentId={StudentId}, WatchedPercentage={Percentage}%",
+                    lessonId, userId, progress.VideoWatchedPercentage);
+            }
+
+            if (isNew)
+                await _progressRepository.AddAsync(progress);
+            else
+                await _progressRepository.UpdateAsync(progress);
+
+            // Recalculate overall course progress in the background (only when completion state changed)
+            if (progress.IsCompleted)
+                await UpdateCourseEnrollmentProgressAsync(userId, courseId, enrollment);
+
+            return _mapper.Map<LessonProgressResponse>(progress);
+        }
+
+        /// <inheritdoc />
+        public async Task<LessonProgressResponse?> GetLessonProgressAsync(int userId, int lessonId)
+        {
+            var progress = await _progressRepository.GetProgressByUserAndLessonAsync(userId, lessonId);
+            if (progress == null) return null;
+            return _mapper.Map<LessonProgressResponse>(progress);
         }
 
         private async Task UpdateCourseEnrollmentProgressAsync(int userId, int courseId, Enrollments enrollment)
