@@ -13,28 +13,25 @@ namespace LMSApi.API.Controllers
     [Route("api/v{version:apiVersion}/[controller]")]
     public class QuizQuestionsController : ControllerBase
     {
-        private readonly IQuizService _quizService;
-        private readonly ICourseSectionService _sectionService;
-        private readonly ICourseService _courseService;
+        private readonly IQuizQuestionService _quizQuestionService;
+        private readonly IOwnershipService _ownershipService;
 
         public QuizQuestionsController(
-            IQuizService quizService,
-            ICourseSectionService sectionService,
-            ICourseService courseService)
+            IQuizQuestionService quizQuestionService,
+            IOwnershipService ownershipService)
         {
-            _quizService = quizService;
-            _sectionService = sectionService;
-            _courseService = courseService;
+            _quizQuestionService = quizQuestionService;
+            _ownershipService = ownershipService;
         }
 
         [Authorize(Roles = "Instructor,Admin")]
         [HttpPost("quiz/{quizId:int}")]
         public async Task<ActionResult<QuizQuestionResponse>> AddQuestion(int quizId, [FromBody] CreateQuizQuestionRequest request)
         {
-            await EnforceQuizOwnershipAsync(quizId);
+            await _ownershipService.EnforceQuizOwnershipAsync(quizId, User.GetUserId(), User.IsAdmin(), "You do not have permission to modify questions in this quiz.");
             request.QuizId = quizId;
 
-            var result = await _quizService.AddQuestionAsync(request);
+            var result = await _quizQuestionService.AddQuestionAsync(request);
             return Created($"api/v1/quizquestions/{result.Id}", result);
         }
 
@@ -49,10 +46,10 @@ namespace LMSApi.API.Controllers
             if (extension != ".xlsx")
                 return BadRequest("Invalid file format. Please upload an .xlsx file.");
 
-            await EnforceQuizOwnershipAsync(quizId);
+            await _ownershipService.EnforceQuizOwnershipAsync(quizId, User.GetUserId(), User.IsAdmin(), "You do not have permission to modify questions in this quiz.");
 
             using var stream = file.OpenReadStream();
-            var result = await _quizService.BulkUploadQuestionsAsync(quizId, stream);
+            var result = await _quizQuestionService.BulkUploadQuestionsAsync(quizId, stream);
 
             if (result.TotalImported == 0 && result.Errors.Any())
             {
@@ -66,7 +63,7 @@ namespace LMSApi.API.Controllers
         [HttpPut("{questionId:int}")]
         public async Task<ActionResult<QuizQuestionResponse>> UpdateQuestion(int questionId, [FromBody] UpdateQuizQuestionRequest request)
         {
-            var result = await _quizService.UpdateQuestionAsync(questionId, request);
+            var result = await _quizQuestionService.UpdateQuestionAsync(questionId, request);
             return Ok(result);
         }
 
@@ -74,21 +71,9 @@ namespace LMSApi.API.Controllers
         [HttpDelete("{questionId:int}")]
         public async Task<IActionResult> DeleteQuestion(int questionId)
         {
-            await _quizService.DeleteQuestionAsync(questionId);
+            await _quizQuestionService.DeleteQuestionAsync(questionId);
             return NoContent();
         }
 
-        private async Task EnforceQuizOwnershipAsync(int quizId)
-        {
-            if (User.IsAdmin()) return;
-
-            var callerId = User.GetUserId();
-            var quiz = await _quizService.GetQuizByIdAsync(quizId);
-            var section = await _sectionService.GetSectionByIdAsync(quiz.CourseSectionId);
-            var course = await _courseService.GetCourseByIdAsync(section.CourseId);
-
-            if (course.InstructorId != callerId)
-                throw new UnauthorizedAccessException("You do not have permission to modify questions in this quiz.");
-        }
     }
 }

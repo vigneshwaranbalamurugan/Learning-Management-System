@@ -13,17 +13,14 @@ namespace LMSApi.API.Controllers
     public class QuizzesController : ControllerBase
     {
         private readonly IQuizService _quizService;
-        private readonly ICourseSectionService _sectionService;
-        private readonly ICourseService _courseService;
+        private readonly IOwnershipService _ownershipService;
 
         public QuizzesController(
             IQuizService quizService,
-            ICourseSectionService sectionService,
-            ICourseService courseService)
+            IOwnershipService ownershipService)
         {
             _quizService = quizService;
-            _sectionService = sectionService;
-            _courseService = courseService;
+            _ownershipService = ownershipService;
         }
 
         [Authorize]
@@ -50,7 +47,7 @@ namespace LMSApi.API.Controllers
         [HttpPost]
         public async Task<ActionResult<QuizResponse>> Create([FromBody] CreateQuizRequest request)
         {
-            await EnforceSectionOwnershipAsync(request.CourseSectionId);
+            await _ownershipService.EnforceSectionOwnershipAsync(request.CourseSectionId, User.GetUserId(), User.IsAdmin(), "You do not have permission to manage quizzes in this section.");
 
             var result = await _quizService.CreateQuizAsync(request);
             return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
@@ -60,7 +57,7 @@ namespace LMSApi.API.Controllers
         [HttpPut("{id:int}")]
         public async Task<ActionResult<QuizResponse>> Update(int id, [FromBody] UpdateQuizRequest request)
         {
-            await EnforceQuizOwnershipAsync(id);
+            await _ownershipService.EnforceQuizOwnershipAsync(id, User.GetUserId(), User.IsAdmin());
 
             var result = await _quizService.UpdateQuizAsync(id, request);
             return Ok(result);
@@ -70,7 +67,7 @@ namespace LMSApi.API.Controllers
         [HttpDelete("{id:int}")]
         public async Task<IActionResult> Delete(int id)
         {
-            await EnforceQuizOwnershipAsync(id);
+            await _ownershipService.EnforceQuizOwnershipAsync(id, User.GetUserId(), User.IsAdmin());
             await _quizService.DeleteQuizAsync(id);
             return NoContent();
         }
@@ -79,34 +76,10 @@ namespace LMSApi.API.Controllers
         [HttpPut("{id:int}/publish")]
         public async Task<ActionResult<QuizResponse>> Publish(int id, [FromBody] PublishQuizRequest request)
         {
-            await EnforceQuizOwnershipAsync(id);
+            await _ownershipService.EnforceQuizOwnershipAsync(id, User.GetUserId(), User.IsAdmin());
             var result = await _quizService.PublishQuizAsync(id, request);
             return Ok(result);
         }
 
-        private async Task EnforceSectionOwnershipAsync(int sectionId)
-        {
-            if (User.IsAdmin()) return;
-
-            var callerId = User.GetUserId();
-            var section = await _sectionService.GetSectionByIdAsync(sectionId, callerId, User.IsAdmin());
-            var course = await _courseService.GetCourseByIdAsync(section.CourseId, callerId, User.IsAdmin());
-
-            if (course.InstructorId != callerId)
-                throw new UnauthorizedAccessException("You do not have permission to manage quizzes in this section.");
-        }
-
-        private async Task EnforceQuizOwnershipAsync(int quizId)
-        {
-            if (User.IsAdmin()) return;
-
-            var callerId = User.GetUserId();
-            var quiz = await _quizService.GetQuizByIdAsync(quizId, callerId, User.IsAdmin());
-            var section = await _sectionService.GetSectionByIdAsync(quiz.CourseSectionId, callerId, User.IsAdmin());
-            var course = await _courseService.GetCourseByIdAsync(section.CourseId, callerId, User.IsAdmin());
-
-            if (course.InstructorId != callerId)
-                throw new UnauthorizedAccessException("You do not have permission to modify this quiz.");
-        }
     }
 }

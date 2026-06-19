@@ -8,6 +8,7 @@ using LMSApi.API.Handlers;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace LMSApi.API.Controllers
 {
@@ -17,23 +18,20 @@ namespace LMSApi.API.Controllers
     public class LessonsController : ControllerBase
     {
         private readonly ILessonService _lessonService;
-        private readonly ICourseSectionRepository _sectionRepository;
-        private readonly ICourseService _courseService;
         private readonly LessonUploadHandler _lessonUploadHandler;
         private readonly IStudentProgressService _progressService;
+        private readonly IOwnershipService _ownershipService;
 
         public LessonsController(
             ILessonService lessonService,
-            ICourseSectionRepository sectionRepository,
-            ICourseService courseService,
             LessonUploadHandler lessonUploadHandler,
-            IStudentProgressService progressService)
+            IStudentProgressService progressService,
+            IOwnershipService ownershipService)
         {
             _lessonService = lessonService;
-            _sectionRepository = sectionRepository;
-            _courseService = courseService;
             _lessonUploadHandler = lessonUploadHandler;
             _progressService = progressService;
+            _ownershipService = ownershipService;
         }
 
         [Authorize]
@@ -69,10 +67,11 @@ namespace LMSApi.API.Controllers
         [Authorize(Roles = "Instructor,Admin")]
         [HttpPost]
         [Consumes("multipart/form-data")]
+        [EnableRateLimiting("FileUpload")]
         public async Task<ActionResult<LessonResponse>> Create([FromForm] CreateLessonFormRequest form)
         {
             // 1. Enforce section ownership
-            await EnforceSectionOwnershipAsync(form.CourseSectionId);
+            await _ownershipService.EnforceSectionOwnershipAsync(form.CourseSectionId, User.GetUserId(), User.IsAdmin(), "You do not have permission to modify lessons in this section.");
 
             // 2. Validate required fields per lesson type
             switch (form.Type)
@@ -123,13 +122,14 @@ namespace LMSApi.API.Controllers
         [Authorize(Roles = "Instructor,Admin")]
         [HttpPut("{id:int}")]
         [Consumes("multipart/form-data")]
+        [EnableRateLimiting("FileUpload")]
         public async Task<ActionResult<LessonResponse>> Update(int id, [FromForm] UpdateLessonFormRequest form)
         {
             // 1. Enforce lesson ownership
-            await EnforceLessonOwnershipAsync(id);
+            await _ownershipService.EnforceLessonOwnershipAsync(id, User.GetUserId(), User.IsAdmin());
 
             // Fetch the current lesson to check its type if not changed by form
-            var existingLesson = await _lessonService.GetLessonByIdAsync(id);
+            var existingLesson = await _lessonService.GetLessonByIdAsync(id, User.GetUserId(), User.IsAdmin());
             var finalType = form.Type ?? existingLesson.Type;
 
             // 2. Validate file upload based on resolved type
@@ -190,7 +190,7 @@ namespace LMSApi.API.Controllers
         [HttpDelete("{id:int}")]
         public async Task<IActionResult> Delete(int id)
         {
-            await EnforceLessonOwnershipAsync(id);
+            await _ownershipService.EnforceLessonOwnershipAsync(id, User.GetUserId(), User.IsAdmin());
             await _lessonService.DeleteLessonAsync(id);
             return NoContent();
         }
@@ -199,7 +199,7 @@ namespace LMSApi.API.Controllers
         [HttpPatch("{id:int}/publish")]
         public async Task<ActionResult<LessonResponse>> Publish(int id, [FromBody] PublishLessonRequest request)
         {
-            await EnforceLessonOwnershipAsync(id);
+            await _ownershipService.EnforceLessonOwnershipAsync(id, User.GetUserId(), User.IsAdmin());
             var result = await _lessonService.PublishLessonAsync(id, request);
             return Ok(result);
         }
@@ -211,7 +211,7 @@ namespace LMSApi.API.Controllers
             // Ownership check: the instructor must own all lessons being reordered
             foreach (var item in request.LessonOrders)
             {
-                await EnforceLessonOwnershipAsync(item.LessonId);
+                await _ownershipService.EnforceLessonOwnershipAsync(item.LessonId, User.GetUserId(), User.IsAdmin());
             }
 
             await _lessonService.ReorderLessonsAsync(request);
@@ -223,34 +223,11 @@ namespace LMSApi.API.Controllers
         public async Task<ActionResult<LessonProgressResponse>> Complete(int lessonId, [FromBody] CompleteLessonRequest? request)
         {
             var userId = User.GetUserId();
+            Console.WriteLine($"User {userId} is marking lesson {lessonId} as complete with watch percentage {request?.WatchPercentage}");
             var result = await _progressService.MarkLessonCompleteAsync(userId, lessonId, request?.WatchPercentage);
             return Ok(result);
         }
 
 
-        private async Task EnforceSectionOwnershipAsync(int sectionId)
-        {
-            if (User.IsAdmin()) return;
-
-            var callerId = User.GetUserId();
-            var section = await _sectionRepository.GetByIdAsync(sectionId);
-            var course = await _courseService.GetCourseByIdAsync(section.CourseId, callerId, User.IsAdmin());
-
-            if (course.InstructorId != callerId)
-                throw new UnauthorizedAccessException("You do not have permission to modify lessons in this section.");
-        }
-
-        private async Task EnforceLessonOwnershipAsync(int lessonId)
-        {
-            if (User.IsAdmin()) return;
-
-            var callerId = User.GetUserId();
-            var lesson = await _lessonService.GetLessonByIdAsync(lessonId, callerId, User.IsAdmin());
-            var section = await _sectionRepository.GetByIdAsync(lesson.CourseSectionId);
-            var course = await _courseService.GetCourseByIdAsync(section.CourseId, callerId, User.IsAdmin());
-
-            if (course.InstructorId != callerId)
-                throw new UnauthorizedAccessException("You do not have permission to modify this lesson.");
-        }
     }
 }

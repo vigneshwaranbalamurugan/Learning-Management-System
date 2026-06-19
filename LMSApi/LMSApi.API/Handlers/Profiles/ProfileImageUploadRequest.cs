@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace LMSApi.API.Controllers
+namespace LMSApi.API.Handlers
 {
     public class ProfileImageUploadRequest
     {

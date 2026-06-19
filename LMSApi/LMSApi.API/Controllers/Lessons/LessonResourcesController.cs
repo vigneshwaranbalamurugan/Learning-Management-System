@@ -18,22 +18,19 @@ namespace LMSApi.API.Controllers
     {
         private readonly ILessonResourceService _resourceService;
         private readonly ILessonService _lessonService;
-        private readonly ICourseSectionRepository _sectionRepository;
-        private readonly ICourseService _courseService;
         private readonly LessonUploadHandler _lessonUploadHandler;
+        private readonly IOwnershipService _ownershipService;
 
         public LessonResourcesController(
             ILessonResourceService resourceService,
             ILessonService lessonService,
-            ICourseSectionRepository sectionRepository,
-            ICourseService courseService,
-            LessonUploadHandler lessonUploadHandler)
+            LessonUploadHandler lessonUploadHandler,
+            IOwnershipService ownershipService)
         {
             _resourceService = resourceService;
             _lessonService = lessonService;
-            _sectionRepository = sectionRepository;
-            _courseService = courseService;
             _lessonUploadHandler = lessonUploadHandler;
+            _ownershipService = ownershipService;
         }
 
         [Authorize]
@@ -61,7 +58,7 @@ namespace LMSApi.API.Controllers
         [Consumes("multipart/form-data")]
         public async Task<ActionResult<ResourceResponse>> Add([FromForm] CreateResourceFormRequest form)
         {
-            await EnforceLessonOwnershipAsync(form.LessonId);
+            await _ownershipService.EnforceLessonOwnershipAsync(form.LessonId, User.GetUserId(), User.IsAdmin(), "You do not have permission to add resources to this lesson.");
 
             if (form.ResourceType == ResourceType.Pdf)
             {
@@ -96,7 +93,7 @@ namespace LMSApi.API.Controllers
         [Consumes("multipart/form-data")]
         public async Task<ActionResult<ResourceResponse>> Update(int id, [FromForm] UpdateResourceFormRequest form)
         {
-            await EnforceResourceOwnershipAsync(id);
+            await _ownershipService.EnforceResourceOwnershipAsync(id, User.GetUserId(), User.IsAdmin());
 
             var existingResource = await _resourceService.GetResourceByIdAsync(id);
             var finalType = form.ResourceType ?? existingResource.ResourceType;
@@ -142,7 +139,7 @@ namespace LMSApi.API.Controllers
         [HttpDelete("{id:int}")]
         public async Task<IActionResult> Delete(int id)
         {
-            await EnforceResourceOwnershipAsync(id);
+            await _ownershipService.EnforceResourceOwnershipAsync(id, User.GetUserId(), User.IsAdmin());
 
             await _resourceService.DeleteResourceAsync(id);
             return NoContent();
@@ -152,36 +149,10 @@ namespace LMSApi.API.Controllers
         [HttpPatch("{id:int}/publish")]
         public async Task<ActionResult<ResourceResponse>> Publish(int id, [FromBody] PublishResourceRequest request)
         {
-            await EnforceResourceOwnershipAsync(id);
+            await _ownershipService.EnforceResourceOwnershipAsync(id, User.GetUserId(), User.IsAdmin());
             var result = await _resourceService.PublishResourceAsync(id, request);
             return Ok(result);
         }
 
-        private async Task EnforceLessonOwnershipAsync(int lessonId)
-        {
-            if (User.IsAdmin()) return;
-
-            var callerId = User.GetUserId();
-            var lesson = await _lessonService.GetLessonByIdAsync(lessonId, callerId, User.IsAdmin());
-            var section = await _sectionRepository.GetByIdAsync(lesson.CourseSectionId);
-            var course = await _courseService.GetCourseByIdAsync(section.CourseId, callerId, User.IsAdmin());
-
-            if (course.InstructorId != callerId)
-                throw new UnauthorizedAccessException("You do not have permission to add resources to this lesson.");
-        }
-
-        private async Task EnforceResourceOwnershipAsync(int resourceId)
-        {
-            if (User.IsAdmin()) return;
-
-            var callerId = User.GetUserId();
-            var resource = await _resourceService.GetResourceByIdAsync(resourceId, callerId, User.IsAdmin());
-            var lesson = await _lessonService.GetLessonByIdAsync(resource.LessonId, callerId, User.IsAdmin());
-            var section = await _sectionRepository.GetByIdAsync(lesson.CourseSectionId);
-            var course = await _courseService.GetCourseByIdAsync(section.CourseId, callerId, User.IsAdmin());
-
-            if (course.InstructorId != callerId)
-                throw new UnauthorizedAccessException("You do not have permission to modify this resource.");
-        }
     }
 }

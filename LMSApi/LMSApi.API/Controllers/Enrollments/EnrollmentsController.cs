@@ -4,6 +4,8 @@ using LMSApi.BALLibrary.Interfaces;
 using LMSApi.ModelLibrary.DTOs;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using LMSApi.API.Filters;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace LMSApi.API.Controllers
 {
@@ -21,6 +23,8 @@ namespace LMSApi.API.Controllers
         }
         
         [HttpPost("courses/{courseId:int}/enroll/free")]
+        [Idempotency]
+        [EnableRateLimiting("EnrollCourse")]
         public async Task<ActionResult<EnrollmentResponse>> EnrollFree(
             int courseId,
             [FromBody] EnrollRequest request)
@@ -31,6 +35,8 @@ namespace LMSApi.API.Controllers
         }
 
         [HttpPost("courses/{courseId:int}/enroll/premium")]
+        [Idempotency]
+        [EnableRateLimiting("PaymentInitialization")]
         public async Task<ActionResult<object>> EnrollPremium(
             int courseId,
             [FromBody] EnrollRequest request)
@@ -42,6 +48,8 @@ namespace LMSApi.API.Controllers
         }
 
         [HttpPost("courses/{courseId:int}/enroll/verify")]
+        [Idempotency]
+        [EnableRateLimiting("EnrollCourse")]
         public async Task<ActionResult<EnrollmentResponse>> VerifyPayment(
             int courseId,
             [FromBody] VerifyPaymentRequest request)
@@ -50,11 +58,7 @@ namespace LMSApi.API.Controllers
             var result = await _enrollmentService.VerifyPaymentAndEnrollAsync(
                 userId, 
                 courseId, 
-                request.BatchId, 
-                request.ProviderName, 
-                request.ProviderOrderId, 
-                request.ProviderPaymentId, 
-                request.ProviderSignature);
+                request);
             return CreatedAtAction(nameof(GetMyEnrollments), null, result);
         }
 

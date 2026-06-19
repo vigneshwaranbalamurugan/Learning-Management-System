@@ -4,6 +4,7 @@ using LMSApi.BALLibrary.Interfaces;
 using LMSApi.ModelLibrary.DTOs;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace LMSApi.API.Controllers
 {
@@ -12,11 +13,11 @@ namespace LMSApi.API.Controllers
     [Route("api/v{version:apiVersion}/[controller]")]
     public class QuizAttemptsController : ControllerBase
     {
-        private readonly IQuizService _quizService;
+        private readonly IQuizAttemptService _quizAttemptService;
 
-        public QuizAttemptsController(IQuizService quizService)
+        public QuizAttemptsController(IQuizAttemptService quizAttemptService)
         {
-            _quizService = quizService;
+            _quizAttemptService = quizAttemptService;
         }
 
         [Authorize]
@@ -24,7 +25,7 @@ namespace LMSApi.API.Controllers
         public async Task<ActionResult<QuizStudentDetailResponse>> GetQuizForStudent(int id)
         {
             var userId = User.GetUserId();
-            var result = await _quizService.GetQuizForStudentAsync(id, userId);
+            var result = await _quizAttemptService.GetQuizForStudentAsync(id, userId);
             return Ok(result);
         }
 
@@ -33,18 +34,18 @@ namespace LMSApi.API.Controllers
         public async Task<ActionResult<StartAttemptResponse>> StartAttempt(int id)
         {
             var userId = User.GetUserId();
-            var result = await _quizService.StartAttemptAsync(id, userId);
+            var result = await _quizAttemptService.StartAttemptAsync(id, userId);
             return Ok(result);
         }
 
         [Authorize]
         [HttpPost("{id:int}/submit")]
+        [EnableRateLimiting("QuizSubmit")]
         public async Task<ActionResult<QuizAttemptResponse>> SubmitQuiz(int id, [FromBody] SubmitQuizRequest request)
         {
             var userId = User.GetUserId();
-            request.QuizId = id;
 
-            var result = await _quizService.SubmitQuizAsync(userId, request);
+            var result = await _quizAttemptService.SubmitQuizAsync(id, userId, request);
             return Ok(result);
         }
 
@@ -53,7 +54,7 @@ namespace LMSApi.API.Controllers
         public async Task<ActionResult<GetRemainingAttemptsResponse>> GetRemainingAttempts(int id)
         {
             var userId = User.GetUserId();
-            var result = await _quizService.GetRemainingAttemptsAsync(id, userId);
+            var result = await _quizAttemptService.GetRemainingAttemptsAsync(id, userId);
             return Ok(result);
         }
 
@@ -62,7 +63,7 @@ namespace LMSApi.API.Controllers
         public async Task<ActionResult<IEnumerable<QuizAttemptResponse>>> GetUserAttempts(int quizId)
         {
             var userId = User.GetUserId();
-            var result = await _quizService.GetUserAttemptsAsync(quizId, userId);
+            var result = await _quizAttemptService.GetUserAttemptsAsync(quizId, userId);
             return Ok(result);
         }
 
@@ -70,7 +71,7 @@ namespace LMSApi.API.Controllers
         [HttpGet("{attemptId:int}")]
         public async Task<ActionResult<QuizAttemptDetailResponse>> GetAttemptDetail(int attemptId)
         {
-            var result = await _quizService.GetAttemptDetailAsync(attemptId);
+            var result = await _quizAttemptService.GetAttemptDetailAsync(attemptId);
             return Ok(result);
         }
     }

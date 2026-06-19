@@ -3,6 +3,7 @@ using LMSApi.BALLibrary.Interfaces;
 using LMSApi.ModelLibrary.DTOs;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace LMSApi.API.Controllers
 {
@@ -36,6 +37,7 @@ namespace LMSApi.API.Controllers
 
         [Authorize(Roles = "Admin")]
         [HttpPost]
+        [EnableRateLimiting("AdminApis")]
         public async Task<ActionResult<CategoryResponse>> Create([FromBody] CreateCategoryRequest request)
         {
             var result = await _categoryService.CreateCategoryAsync(request);
@@ -44,6 +46,7 @@ namespace LMSApi.API.Controllers
 
         [Authorize(Roles = "Admin")]
         [HttpPut("{id:int}")]
+        [EnableRateLimiting("AdminApis")]
         public async Task<ActionResult<CategoryResponse>> Update(int id, [FromBody] UpdateCategoryRequest request)
         {
             var result = await _categoryService.UpdateCategoryAsync(id, request);
@@ -52,6 +55,7 @@ namespace LMSApi.API.Controllers
 
         [Authorize(Roles = "Admin")]
         [HttpDelete("{id:int}")]
+        [EnableRateLimiting("AdminApis")]
         public async Task<IActionResult> Delete(int id)
         {
             await _categoryService.DeleteCategoryAsync(id);

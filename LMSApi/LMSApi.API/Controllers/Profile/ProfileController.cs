@@ -5,6 +5,7 @@ using LMSApi.ModelLibrary.DTOs;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Asp.Versioning;
+using Microsoft.AspNetCore.RateLimiting;
 using System.Security.Claims;
 
 namespace LMSApi.API.Controllers
@@ -42,6 +43,7 @@ namespace LMSApi.API.Controllers
 
         [HttpPost("update-profile-image")]
         [Consumes("multipart/form-data")]
+        [EnableRateLimiting("FileUpload")]
         public async Task<ActionResult<ProfileResponse>> UpdateProfileImage([FromForm] ProfileImageUploadRequest request)
         {
             Console.WriteLine($"Received file: {request.File?.FileName}, size: {request.File?.Length} bytes, content type: {request.File?.ContentType}");

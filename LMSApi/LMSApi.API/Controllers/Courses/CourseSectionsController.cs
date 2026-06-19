@@ -15,14 +15,14 @@ namespace LMSApi.API.Controllers
     public class CourseSectionsController : ControllerBase
     {
         private readonly ICourseSectionService _sectionService;
-        private readonly ICourseService _courseService;
+        private readonly IOwnershipService _ownershipService;
 
         public CourseSectionsController(
             ICourseSectionService sectionService,
-            ICourseService courseService)
+            IOwnershipService ownershipService)
         {
             _sectionService = sectionService;
-            _courseService = courseService;
+            _ownershipService = ownershipService;
         }
 
         // ─── Queries (all authenticated users) ──────────────────────────────
@@ -53,7 +53,7 @@ namespace LMSApi.API.Controllers
         [HttpPost]
         public async Task<ActionResult<SectionResponse>> Create([FromBody] CreateSectionRequest request)
         {
-            await EnforceCourseOwnershipAsync(request.CourseId);
+            await _ownershipService.EnforceCourseOwnershipAsync(request.CourseId, User.GetUserId(), User.IsAdmin(), "You do not have permission to modify sections in this course.");
 
             var result = await _sectionService.CreateSectionAsync(request);
             return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
@@ -63,7 +63,7 @@ namespace LMSApi.API.Controllers
         [HttpPut("{id:int}")]
         public async Task<ActionResult<SectionResponse>> Update(int id, [FromBody] UpdateSectionRequest request)
         {
-            await EnforceSectionOwnershipAsync(id);
+            await _ownershipService.EnforceSectionOwnershipAsync(id, User.GetUserId(), User.IsAdmin());
 
             var result = await _sectionService.UpdateSectionAsync(id, request);
             return Ok(result);
@@ -73,7 +73,7 @@ namespace LMSApi.API.Controllers
         [HttpDelete("{id:int}")]
         public async Task<IActionResult> Delete(int id)
         {
-            await EnforceSectionOwnershipAsync(id);
+            await _ownershipService.EnforceSectionOwnershipAsync(id, User.GetUserId(), User.IsAdmin());
 
             await _sectionService.DeleteSectionAsync(id);
             return NoContent();
@@ -83,7 +83,7 @@ namespace LMSApi.API.Controllers
         [HttpPatch("{id:int}/publish")]
         public async Task<ActionResult<SectionResponse>> Publish(int id, [FromBody] PublishSectionRequest request)
         {
-            await EnforceSectionOwnershipAsync(id);
+            await _ownershipService.EnforceSectionOwnershipAsync(id, User.GetUserId(), User.IsAdmin());
             var result = await _sectionService.PublishSectionAsync(id, request);
             return Ok(result);
         }
@@ -96,7 +96,7 @@ namespace LMSApi.API.Controllers
 
             foreach (var item in request.SectionOrders)
             {
-                await EnforceSectionOwnershipAsync(item.SectionId);
+                await _ownershipService.EnforceSectionOwnershipAsync(item.SectionId, User.GetUserId(), User.IsAdmin());
             }
 
             await _sectionService.ReorderSectionsAsync(request);
@@ -104,35 +104,5 @@ namespace LMSApi.API.Controllers
         }
 
 
-        /// <summary>
-        /// Ensures the calling Instructor owns the course.
-        /// Admins bypass this check.
-        /// </summary>
-        private async Task EnforceCourseOwnershipAsync(int courseId)
-        {
-            if (User.IsAdmin()) return;
-
-            var callerId = User.GetUserId();
-            var course = await _courseService.GetCourseByIdAsync(courseId, callerId, User.IsAdmin());
-
-            if (course.InstructorId != callerId)
-                throw new UnauthorizedAccessException("You do not have permission to modify sections in this course.");
-        }
-
-        /// <summary>
-        /// Resolves a section's parent course and verifies the calling Instructor is the creator.
-        /// Admins bypass this check.
-        /// </summary>
-        private async Task EnforceSectionOwnershipAsync(int sectionId)
-        {
-            if (User.IsAdmin()) return;
-
-            var callerId = User.GetUserId();
-            var section = await _sectionService.GetSectionByIdAsync(sectionId, callerId, User.IsAdmin());
-            var course = await _courseService.GetCourseByIdAsync(section.CourseId, callerId, User.IsAdmin());
-
-            if (course.InstructorId != callerId)
-                throw new UnauthorizedAccessException("You do not have permission to modify this section.");
-        }
     }
 }

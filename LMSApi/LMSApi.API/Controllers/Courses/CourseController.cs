@@ -6,6 +6,7 @@ using LMSApi.ModelLibrary.DTOs;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace LMSApi.API.Controllers
 {
@@ -16,16 +17,22 @@ namespace LMSApi.API.Controllers
     {
         private readonly ICourseService _courseService;
         private readonly CourseUploadHandler _courseUploadHandler;
+        private readonly IOwnershipService _ownershipService;
 
-        public CoursesController(ICourseService courseService, CourseUploadHandler courseUploadHandler)
+        public CoursesController(
+            ICourseService courseService,
+            CourseUploadHandler courseUploadHandler,
+            IOwnershipService ownershipService)
         {
             _courseService = courseService;
             _courseUploadHandler = courseUploadHandler;
+            _ownershipService = ownershipService;
         }
 
 
         /// <summary>Get all published courses.</summary>
         [HttpGet]
+        [EnableRateLimiting("PublicCourseListing")]
         public async Task<ActionResult<IEnumerable<CourseResponse>>> GetAll()
         {
             var result = await _courseService.GetAllCoursesAsync();
@@ -34,6 +41,7 @@ namespace LMSApi.API.Controllers
 
         /// <summary>Get a course with full details (sections + lessons).</summary>
         [HttpGet("{id:int}")]
+        [EnableRateLimiting("PublicCourseListing")]
         public async Task<ActionResult<CourseDetailsResponse>> GetById(int id)
         {
             int? userId = null;
@@ -55,6 +63,7 @@ namespace LMSApi.API.Controllers
 
         /// <summary>Get all courses in a specific category.</summary>
         [HttpGet("category/{categoryId:int}")]
+        [EnableRateLimiting("PublicCourseListing")]
         public async Task<ActionResult<IEnumerable<CourseResponse>>> GetByCategory(int categoryId)
         {
             var result = await _courseService.GetCoursesByCategoryAsync(categoryId);
@@ -75,6 +84,7 @@ namespace LMSApi.API.Controllers
         [Authorize(Roles = "Instructor,Admin")]
         [HttpPost]
         [Consumes("multipart/form-data")]
+        [EnableRateLimiting("FileUpload")]
         public async Task<ActionResult<CourseResponse>> Create([FromForm] CreateCourseFormRequest form)
         {
             if (form.Thumbnail != null)
@@ -96,7 +106,7 @@ namespace LMSApi.API.Controllers
                 LearningOutcomes  = form.LearningOutcomes,
                 EstimatedDuration = form.EstimatedDuration,
                 Level             = form.Level,
-                Language          = form.Language,
+                LanguageId        = form.LanguageId,
                 // Hybrid Learning
                 CourseAccessType              = form.CourseAccessType,
                 DefaultDeadlineDays = form.DefaultDeadlineDays
@@ -116,10 +126,11 @@ namespace LMSApi.API.Controllers
         [Authorize(Roles = "Instructor,Admin")]
         [HttpPut("{id:int}")]
         [Consumes("multipart/form-data")]
+        [EnableRateLimiting("FileUpload")]
         public async Task<ActionResult<CourseResponse>> Update(int id, [FromForm] UpdateCourseFormRequest form)
         {
             // Ownership check: Instructors may only edit their own courses
-            await EnforceOwnershipAsync(id);
+            await _ownershipService.EnforceCourseOwnershipAsync(id, User.GetUserId(), User.IsAdmin());
 
             if (form.Thumbnail != null)
                 _courseUploadHandler.ValidateThumbnail(form.Thumbnail);
@@ -138,7 +149,7 @@ namespace LMSApi.API.Controllers
                 LearningOutcomes  = form.LearningOutcomes,
                 EstimatedDuration = form.EstimatedDuration,
                 Level             = form.Level,
-                Language          = form.Language,
+                LanguageId        = form.LanguageId,
                 // Hybrid Learning
                 CourseAccessType              = form.CourseAccessType,
                 DefaultDeadlineDays = form.DefaultDeadlineDays
@@ -155,11 +166,12 @@ namespace LMSApi.API.Controllers
             return Ok(result);
         }
 
-        /// <summary>Delete a course. Admin only.</summary>
-        [Authorize(Roles = "Admin")]
+        /// <summary>Delete a course. Instructor (own only) or Admin.</summary>
+        [Authorize(Roles = "Instructor,Admin")]
         [HttpDelete("{id:int}")]
         public async Task<IActionResult> Delete(int id)
         {
+            await _ownershipService.EnforceCourseOwnershipAsync(id, User.GetUserId(), User.IsAdmin());
             await _courseService.DeleteCourseAsync(id);
             return NoContent();
         }
@@ -169,25 +181,31 @@ namespace LMSApi.API.Controllers
         [HttpPatch("{id:int}/publish")]
         public async Task<ActionResult<CourseResponse>> Publish(int id, [FromBody] PublishCourseRequest request)
         {
-            await EnforceOwnershipAsync(id);
+            await _ownershipService.EnforceCourseOwnershipAsync(id, User.GetUserId(), User.IsAdmin());
             var result = await _courseService.PublishCourseAsync(id, request);
             return Ok(result);
         }
 
-
-        /// <summary>
-        /// Ensures the calling Instructor owns the course.
-        /// Admins bypass this check entirely.
-        /// </summary>
-        private async Task EnforceOwnershipAsync(int courseId)
+        /// <summary>Get all courses pending approval. Admin only.</summary>
+        [Authorize(Roles = "Admin")]
+        [HttpGet("pending")]
+        [EnableRateLimiting("AdminApis")]
+        public async Task<ActionResult<IEnumerable<CourseResponse>>> GetPending()
         {
-            if (User.IsAdmin()) return;   // Admins can do anything
-
-            var callerId = User.GetUserId();
-            var course = await _courseService.GetCourseByIdAsync(courseId, callerId, User.IsAdmin());
-
-            if (course.InstructorId != callerId)
-                throw new UnauthorizedAccessException("You do not have permission to modify this course.");
+            var result = await _courseService.GetPendingCoursesAsync();
+            return Ok(result);
         }
+
+        /// <summary>Review (Approve or Reject) a course. Admin only.</summary>
+        [Authorize(Roles = "Admin")]
+        [HttpPatch("{id:int}/review")]
+        [EnableRateLimiting("AdminApis")]
+        public async Task<ActionResult<CourseResponse>> Review(int id, [FromBody] ReviewCourseRequest request)
+        {
+            var result = await _courseService.ReviewCourseAsync(id, request);
+            return Ok(result);
+        }
+
+
     }
 }
