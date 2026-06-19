@@ -119,3 +119,7 @@ Platform Fee types:
 4. Student Subscription - Fixed
 5. Featured Course - Fixed
 6. Batch Enrollment(For both) - Percentage
+
+
+Logs
+InstructorPayoutupdate
