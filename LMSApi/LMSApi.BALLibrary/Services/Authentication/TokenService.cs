@@ -84,5 +84,48 @@ namespace LMSApi.BALLibrary.Services
                 return false;
             }
         }
+
+        public string GenerateRefreshToken()
+        {
+            var randomNumber = new byte[64];
+            using var rng = System.Security.Cryptography.RandomNumberGenerator.Create();
+            rng.GetBytes(randomNumber);
+            return Convert.ToBase64String(randomNumber);
+        }
+
+        public ClaimsPrincipal? GetPrincipalFromExpiredToken(string token)
+        {
+            try
+            {
+                var key = _configuration["Jwt:Key"] ?? throw new InvalidOperationException("JWT key not configured");
+                var issuer = _configuration["Jwt:Issuer"] ?? "LMSApi";
+                var audience = _configuration["Jwt:Audience"] ?? "LMSApiUsers";
+
+                var tokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidateAudience = true,
+                    ValidateIssuer = true,
+                    ValidateIssuerSigningKey = true,
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key)),
+                    ValidateLifetime = false, // We want to read claims from expired tokens
+                    ValidIssuer = issuer,
+                    ValidAudience = audience
+                };
+
+                var tokenHandler = new JwtSecurityTokenHandler();
+                var principal = tokenHandler.ValidateToken(token, tokenValidationParameters, out SecurityToken securityToken);
+                if (securityToken is not JwtSecurityToken jwtSecurityToken || 
+                    !jwtSecurityToken.Header.Alg.Equals(SecurityAlgorithms.HmacSha256, StringComparison.InvariantCultureIgnoreCase))
+                {
+                    return null;
+                }
+
+                return principal;
+            }
+            catch
+            {
+                return null;
+            }
+        }
     }
 }

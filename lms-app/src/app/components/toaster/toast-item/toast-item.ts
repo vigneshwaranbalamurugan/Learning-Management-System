@@ -1,7 +1,7 @@
 import { Component, Input, OnInit, OnDestroy, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Toast } from '../../../models/toast';
-import { ToastService } from '../../../services/toast.service';
+import { Toast } from '@models/toast';
+import { ToastService } from '@services/toast.service';
 
 @Component({
   selector: 'app-toast-item',

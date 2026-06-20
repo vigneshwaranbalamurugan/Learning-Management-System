@@ -1,8 +1,8 @@
 import { Component, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Button } from '../button/button';
-import { FormInput } from '../form-input/form-input';
-import { ToastService } from '../../services/toast.service';
+import { Button } from '@components/button/button';
+import { FormInput } from '@components/form-input/form-input';
+import { ToastService } from '@services/toast.service';
 
 @Component({
   selector: 'app-feedback-section',

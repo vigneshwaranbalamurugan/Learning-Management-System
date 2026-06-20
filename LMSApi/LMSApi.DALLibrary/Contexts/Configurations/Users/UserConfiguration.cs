@@ -16,6 +16,8 @@ namespace LMSApi.DALLibrary.Contexts.Configurations
             builder.Property(u => u.IsEmailVerified).HasDefaultValue(false);
             builder.Property(u => u.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
             builder.Property(u => u.UpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+            builder.Property(u => u.RefreshToken).HasMaxLength(500).IsRequired(false);
+            builder.Property(u => u.RefreshTokenExpiryTime).IsRequired(false);
             builder.HasOne(u => u.Role)
                 .WithMany(ur => ur.Users)
                 .HasForeignKey(u => u.RoleId)

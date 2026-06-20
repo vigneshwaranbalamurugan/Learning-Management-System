@@ -203,9 +203,22 @@ builder.Services.AddApiVersioning(options =>
 });
 
 // Rate Limiting Configuration
-builder.Services.AddCustomRateLimiting();
+builder.Services.AddCustomRateLimiting(builder.Configuration);
 
 builder.Services.AddRoleAuthorization();
+
+// CORS configuration
+var frontendUrl = builder.Configuration["ApplicationUrls:Frontend"] ?? "http://localhost:4200";
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowFrontend", policy =>
+    {
+        policy.WithOrigins(frontendUrl)
+              .AllowAnyMethod()
+              .AllowAnyHeader()
+              .AllowCredentials();
+    });
+});
 
 var app = builder.Build();
 
@@ -224,6 +237,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+app.UseCors("AllowFrontend");
 
 app.UseAuthentication();
 app.UseAuthorization();

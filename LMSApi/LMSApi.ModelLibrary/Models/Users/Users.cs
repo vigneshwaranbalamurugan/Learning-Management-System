@@ -17,6 +17,8 @@ namespace LMSApi.ModelLibrary.Models
         public DateTime LastLoginAt { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
+        public string? RefreshToken { get; set; }
+        public DateTime? RefreshTokenExpiryTime { get; set; }
 
         // Navigation property
         public UserRoles Role { get; set; }

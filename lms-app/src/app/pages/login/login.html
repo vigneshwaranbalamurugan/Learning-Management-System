@@ -52,7 +52,7 @@
           <!-- Keep me signed in & Forgot Password Row -->
           <div class="flex items-center justify-between mt-1 mb-5 text-sm">
             <label class="flex items-center gap-2 cursor-pointer select-none text-text-secondary">
-              <input type="checkbox" class="w-4 h-4 rounded border-border-default text-primary focus:ring-primary cursor-pointer" />
+              <input type="checkbox" (change)="onRememberMeChange($event)" [checked]="rememberMe" class="w-4 h-4 rounded border-border-default text-primary focus:ring-primary cursor-pointer" />
               <span>Remember Me</span>
             </label>
             <button type="button" (click)="changeScreen('forgot-password')" class="font-medium text-primary hover:text-primary-hover hover:underline transition-all cursor-pointer focus:outline-none bg-transparent border-none">

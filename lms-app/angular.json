@@ -23,7 +23,8 @@
               {
                 "glob": "**/*",
                 "input": "public"
-              }
+              },
+              "src/assets"
             ],
             "styles": [
               "src/styles.css"
@@ -55,9 +56,6 @@
         },
         "serve": {
           "builder": "@angular/build:dev-server",
-          "options": {
-            "allowedHosts": ["reconvene-impart-city.ngrok-free.dev"]
-          },
           "configurations": {
             "production": {
               "buildTarget": "lms-app:build:production"

@@ -40,13 +40,20 @@ namespace LMSApi.API.Extensions
 					{
 						OnMessageReceived = context =>
 						{
-							var accessToken = context.Request.Query["access_token"];
-
-							var path = context.HttpContext.Request.Path;
-							if (!string.IsNullOrEmpty(accessToken) &&
-								path.StartsWithSegments("/hubs/notification"))
+							var cookieToken = context.Request.Cookies["access_token"];
+							if (!string.IsNullOrEmpty(cookieToken))
 							{
-								context.Token = accessToken;
+								context.Token = cookieToken;
+							}
+							else
+							{
+								var accessToken = context.Request.Query["access_token"];
+								var path = context.HttpContext.Request.Path;
+								if (!string.IsNullOrEmpty(accessToken) &&
+									path.StartsWithSegments("/hubs/notification"))
+								{
+									context.Token = accessToken;
+								}
 							}
 							return Task.CompletedTask;
 						},

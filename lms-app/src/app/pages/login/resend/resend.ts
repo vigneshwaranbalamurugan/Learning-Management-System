@@ -1,8 +1,8 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Button } from '../../../components/button/button';
-import { FormInput } from '../../../components/form-input/form-input';
-import { ResendVerificationModel } from '../../../models/auth';
+import { Button } from '@components/button/button';
+import { FormInput } from '@components/form-input/form-input';
+import { ResendVerificationModel } from '@models/auth';
 
 @Component({
   selector: 'app-resend',

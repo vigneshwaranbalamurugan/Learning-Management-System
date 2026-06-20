@@ -1,0 +1,39 @@
+<svg viewBox="0 0 500 400" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Light background shapes -->
+  <rect x="50" y="50" width="400" height="300" rx="20" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="2" />
+  <circle cx="120" cy="120" r="60" fill="#FF8C00" fill-opacity="0.05" />
+  <circle cx="360" cy="280" r="80" fill="#1C1C7B" fill-opacity="0.03" />
+
+  <!-- Laptop Mockup -->
+  <rect x="140" y="160" width="220" height="130" rx="8" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="4" />
+  <rect x="140" y="160" width="220" height="20" fill="#F1F5F9" />
+  <circle cx="150" cy="170" r="3" fill="#EF4444" />
+  <circle cx="158" cy="170" r="3" fill="#F59E0B" />
+  <circle cx="166" cy="170" r="3" fill="#10B981" />
+  <rect x="110" y="290" width="280" height="10" rx="5" fill="#E2E8F0" />
+  
+  <!-- Student character reading book vector graphics -->
+  <g transform="translate(190, 80)">
+    <circle cx="60" cy="30" r="18" fill="#1C1C7B" fill-opacity="0.1" />
+    <path d="M42 30C42 22 48 18 60 18C72 18 78 22 78 30" stroke="#1C1C7B" stroke-width="2" />
+    <!-- Book held -->
+    <path d="M40 45H80V65H40V45Z" fill="#FF8C00" rx="3" />
+    <path d="M60 45V65" stroke="#FFFFFF" stroke-width="1.5" />
+  </g>
+
+  <!-- Analytics line floating -->
+  <g transform="translate(250, 190)">
+    <rect width="130" height="70" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1.5" />
+    <path d="M15 50L45 35L75 45L115 15" stroke="#FF8C00" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+    <circle cx="115" cy="15" r="4" fill="#FF8C00" />
+    <!-- Metrics label -->
+    <rect x="15" y="10" width="45" height="6" rx="3" fill="#1C1C7B" />
+    <rect x="15" y="20" width="30" height="4" rx="2" fill="#64748B" />
+  </g>
+
+  <!-- Verified Medals -->
+  <g transform="translate(60, 220)">
+    <circle cx="30" cy="30" r="30" fill="#E8E8FF" />
+    <path d="M20 30L27 37L40 22" stroke="#1C1C7B" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+  </g>
+</svg>

@@ -30,6 +30,7 @@ namespace LMSApi.BALLibrary.Services
             _tokenService = tokenService;
             _configuration = configuration;
             _logger = logger;
+            PasswordHashing.Initialize(configuration);
         }
 
         public async Task<LoginResponse> AuthenticateAsync(LoginRequest request)
@@ -65,12 +66,19 @@ namespace LMSApi.BALLibrary.Services
                 throw new InvalidOperationException("User role is not configured.");
             }
 
+            var (token, expires) = _tokenService.GenerateToken(user.Id, user.Email, user.Role.RoleName);
+            
+            var refreshToken = _tokenService.GenerateRefreshToken();
+            var refreshTokenDaysStr = _configuration["Jwt:RefreshTokenExpiresDays"] ?? "7";
+            if (!int.TryParse(refreshTokenDaysStr, out var refreshDays)) refreshDays = 7;
+
             user.LastLoginAt = DateTime.UtcNow;
+            user.RefreshToken = refreshToken;
+            user.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(refreshDays);
             await _userRepository.UpdateAsync(user);
 
-            var (token, expires) = _tokenService.GenerateToken(user.Id, user.Email, user.Role.RoleName);
             _logger?.LogInformation("User {Email} authenticated successfully. Token expires at: {ExpiresAt}", request.Email, expires);
-            return new LoginResponse { Email = request.Email, Token = token, ExpiresAt = expires, Message = "Authenticated" };
+            return new LoginResponse { Email = request.Email, Token = token, ExpiresAt = expires, RefreshToken = refreshToken, Message = "Authenticated" };
         }
 
         public async Task<RegisterResponse> RegisterAsync(RegisterRequest request)
@@ -260,6 +268,61 @@ namespace LMSApi.BALLibrary.Services
             await _userRepository.UpdateAsync(user);
 
             return new ResetPasswordResponse { Email = request.Email, Message = "Password has been successfully reset." };
+        }
+
+        public async Task<RefreshTokenResponse> RefreshTokenAsync(RefreshTokenRequest request)
+        {
+            if (request == null) throw new ArgumentNullException(nameof(request));
+            if (string.IsNullOrWhiteSpace(request.AccessToken)) throw new ArgumentException("Access token is required", nameof(request.AccessToken));
+            if (string.IsNullOrWhiteSpace(request.RefreshToken)) throw new ArgumentException("Refresh token is required", nameof(request.RefreshToken));
+
+            var principal = _tokenService.GetPrincipalFromExpiredToken(request.AccessToken);
+            if (principal == null)
+            {
+                throw new UnauthorizedAccessException("Invalid access token or refresh token");
+            }
+
+            var email = principal.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value;
+            if (string.IsNullOrEmpty(email))
+            {
+                throw new UnauthorizedAccessException("Invalid access token or refresh token");
+            }
+
+            var user = await _userRepository.GetByEmailAsync(email);
+            if (user == null || user.RefreshToken != request.RefreshToken || user.RefreshTokenExpiryTime <= DateTime.UtcNow)
+            {
+                throw new UnauthorizedAccessException("Invalid access token or refresh token");
+            }
+
+            var (newAccessToken, expiresAt) = _tokenService.GenerateToken(user.Id, user.Email, user.Role.RoleName);
+            var newRefreshToken = _tokenService.GenerateRefreshToken();
+
+            var refreshTokenDaysStr = _configuration["Jwt:RefreshTokenExpiresDays"] ?? "7";
+            if (!int.TryParse(refreshTokenDaysStr, out var refreshDays)) refreshDays = 7;
+
+            user.RefreshToken = newRefreshToken;
+            user.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(refreshDays);
+            await _userRepository.UpdateAsync(user);
+
+            return new RefreshTokenResponse
+            {
+                AccessToken = newAccessToken,
+                RefreshToken = newRefreshToken,
+                ExpiresAt = expiresAt
+            };
+        }
+
+        public async Task RevokeTokenAsync(string email)
+        {
+            if (string.IsNullOrWhiteSpace(email)) throw new ArgumentException("Email is required", nameof(email));
+
+            var user = await _userRepository.GetByEmailAsync(email);
+            if (user != null)
+            {
+                user.RefreshToken = null;
+                user.RefreshTokenExpiryTime = null;
+                await _userRepository.UpdateAsync(user);
+            }
         }
     }
 }

@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Configuration;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -5,18 +6,22 @@ namespace LMSApi.BALLibrary.Utils
 {
     public static class PasswordHashing
     {
-        private const int SaltSize = 16;
-        private const int KeySize = 32;
-        private const int Iterations = 100000;
-        private readonly IConfiguration _configuration;
+        private static int SaltSize = 16;
+        private static int KeySize = 32;
+        private static int Iterations = 100000;
 
-        public PasswordHashing(IConfiguration _configuration)
+        public static void Initialize(IConfiguration configuration)
         {
-            _configuration = _configuration;
-            SaltSize = _configuration.GetValue<int>("Security:SaltSize");
-            KeySize = _configuration.GetValue<int>("Security:KeySize");
-            Iterations = _configuration.GetValue<int>("Security:Iterations");
-            
+            if (configuration == null) return;
+
+            var saltSizeStr = configuration["Security:SaltSize"];
+            if (int.TryParse(saltSizeStr, out var saltSize) && saltSize > 0) SaltSize = saltSize;
+
+            var keySizeStr = configuration["Security:KeySize"];
+            if (int.TryParse(keySizeStr, out var keySize) && keySize > 0) KeySize = keySize;
+
+            var iterationsStr = configuration["Security:Iterations"];
+            if (int.TryParse(iterationsStr, out var iterations) && iterations > 0) Iterations = iterations;
         }
 
         public static (string Hash, string Salt) HashPassword(string password)

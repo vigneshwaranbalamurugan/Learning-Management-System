@@ -1,15 +1,16 @@
 import { Component, signal, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
-import { Button } from '../../components/button/button';
-import { FormInput } from '../../components/form-input/form-input';
+import { Button } from '@components/button/button';
+import { FormInput } from '@components/form-input/form-input';
 import { Register } from './register/register';
 import { Forgot } from './forgot/forgot';
 import { Resend } from './resend/resend';
-import { RegisterModel, ForgotPasswordModel, ResendVerificationModel, LoginModel } from '../../models/auth';
-import { Navbar } from '../../components/navbar/navbar';
-import { Footer } from '../../components/footer/footer';
-import { ToastService } from '../../services/toast.service';
+import { RegisterModel, ForgotPasswordModel, ResendVerificationModel, LoginModel } from '@models/auth';
+import { Navbar } from '@components/navbar/navbar';
+import { Footer } from '@components/footer/footer';
+import { ToastService } from '@services/toast.service';
+import { AuthService } from '@services/auth.service';
 
 type AuthScreen = 'login' | 'register' | 'forgot-password' | 'resend-verification';
 
@@ -22,6 +23,7 @@ type AuthScreen = 'login' | 'register' | 'forgot-password' | 'resend-verificatio
 })
 export class Login implements OnInit {
   private toastService = inject(ToastService);
+  private authService = inject(AuthService);
 
   // Current screen state signal
   protected currentScreen = signal<AuthScreen>('login');
@@ -30,6 +32,7 @@ export class Login implements OnInit {
   // Form Fields
   protected email = '';
   protected password = '';
+  protected rememberMe = false;
 
   // Validation Errors
   protected emailError = '';
@@ -50,6 +53,12 @@ export class Login implements OnInit {
         this.currentScreen.set('login');
       }
     });
+
+    const savedEmail = localStorage.getItem('rememberedEmail');
+    if (savedEmail) {
+      this.email = savedEmail;
+      this.rememberMe = true;
+    }
   }
 
   protected changeScreen(screen: AuthScreen): void {
@@ -72,6 +81,10 @@ export class Login implements OnInit {
   protected onPasswordChange(val: string): void {
     this.password = val;
     this.passwordError = '';
+  }
+
+  protected onRememberMeChange(event: Event): void {
+    this.rememberMe = (event.target as HTMLInputElement).checked;
   }
 
   private validateEmail(email: string): boolean {
@@ -101,6 +114,13 @@ export class Login implements OnInit {
     return true;
   }
 
+  protected loginModel(): LoginModel {
+    return {
+      email: this.email,
+      password: this.password
+    };
+  }
+
   protected onLoginSubmit(event: Event): void {
     event.preventDefault();
     this.emailError = '';
@@ -116,10 +136,30 @@ export class Login implements OnInit {
 
     if (isEmailValid && isPasswordValid) {
       this.isSubmitting.set(true);
-      setTimeout(() => {
-        this.isSubmitting.set(false);
-        this.toastService.showSuccess('Login successful');
-      }, 1500);
+      this.authService.loginApiCall(this.loginModel()).subscribe({
+        next: (response: any) => {
+          this.isSubmitting.set(false);
+          this.toastService.showSuccess('Login successful');
+
+          const token = response.token || response.accessToken;
+          if (token) {
+            const role = this.authService.getRoleFromToken(token);
+            console.log('Role claims extracted:', role);
+          } else if (response.role) {
+            console.log('Role claims extracted:', response.role);
+          }
+
+          if (this.rememberMe) {
+            localStorage.setItem('rememberedEmail', this.email);
+          } else {
+            localStorage.removeItem('rememberedEmail');
+          }
+        },
+        error: (err: any) => {
+          this.isSubmitting.set(false);
+          this.toastService.showError(err.error?.message || 'Login failed. Invalid email or password.');
+        }
+      });
     }
   }
 
@@ -150,4 +190,3 @@ export class Login implements OnInit {
     }, 1500);
   }
 }
-

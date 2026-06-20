@@ -1,9 +1,9 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Button } from '../../../components/button/button';
-import { FormInput } from '../../../components/form-input/form-input';
-import { Dropdown } from '../../../components/dropdown/dropdown';
-import { RegisterModel } from '../../../models/auth';
+import { Button } from '@components/button/button';
+import { FormInput } from '@components/form-input/form-input';
+import { Dropdown } from '@components/dropdown/dropdown';
+import { RegisterModel } from '@models/auth';
 
 @Component({
   selector: 'app-register',

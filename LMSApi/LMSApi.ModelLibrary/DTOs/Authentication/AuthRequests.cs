@@ -21,7 +21,24 @@ namespace LMSApi.ModelLibrary.DTOs
         public string Email { get; set; }
         public string Token { get; set; }
         public DateTime ExpiresAt { get; set; }
+        public string RefreshToken { get; set; }
         public string Message { get; set; }
+    }
+
+    public class RefreshTokenRequest
+    {
+        [Required(ErrorMessage = "AccessToken is required")]
+        public string AccessToken { get; set; }
+
+        [Required(ErrorMessage = "RefreshToken is required")]
+        public string RefreshToken { get; set; }
+    }
+
+    public class RefreshTokenResponse
+    {
+        public string AccessToken { get; set; }
+        public string RefreshToken { get; set; }
+        public DateTime ExpiresAt { get; set; }
     }
 
     public class ForgotPasswordRequest

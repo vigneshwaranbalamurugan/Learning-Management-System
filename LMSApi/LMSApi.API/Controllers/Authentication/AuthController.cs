@@ -50,6 +50,25 @@ namespace LMSApi.API.Controllers
 		public async Task<ActionResult<LoginResponse>> Login([FromBody] LoginRequest request)
 		{
 			var result = await _authService.AuthenticateAsync(request);
+
+			var cookieOptions = new Microsoft.AspNetCore.Http.CookieOptions
+			{
+				HttpOnly = true,
+				Secure = true,
+				SameSite = Microsoft.AspNetCore.Http.SameSiteMode.None,
+				Expires = result.ExpiresAt
+			};
+			Response.Cookies.Append("access_token", result.Token, cookieOptions);
+
+			var refreshCookieOptions = new Microsoft.AspNetCore.Http.CookieOptions
+			{
+				HttpOnly = true,
+				Secure = true,
+				SameSite = Microsoft.AspNetCore.Http.SameSiteMode.None,
+				Expires = DateTime.UtcNow.AddDays(7)
+			};
+			Response.Cookies.Append("refresh_token", result.RefreshToken, refreshCookieOptions);
+
 			return Ok(result);
 		}
 
@@ -73,6 +92,55 @@ namespace LMSApi.API.Controllers
 		public async Task<ActionResult> Protected()
 		{
 			return Ok("This is a protected endpoint.");
+		}
+
+		[HttpPost("refresh-token")]
+		public async Task<ActionResult<RefreshTokenResponse>> Refresh([FromBody] RefreshTokenRequest? request)
+		{
+			var accessToken = request?.AccessToken ?? Request.Cookies["access_token"];
+			var refreshToken = request?.RefreshToken ?? Request.Cookies["refresh_token"];
+
+			if (string.IsNullOrEmpty(accessToken) || string.IsNullOrEmpty(refreshToken))
+			{
+				return Unauthorized("Access token or refresh token is missing.");
+			}
+
+			var req = new RefreshTokenRequest { AccessToken = accessToken, RefreshToken = refreshToken };
+			var result = await _authService.RefreshTokenAsync(req);
+
+			var cookieOptions = new Microsoft.AspNetCore.Http.CookieOptions
+			{
+				HttpOnly = true,
+				Secure = true,
+				SameSite = Microsoft.AspNetCore.Http.SameSiteMode.None,
+				Expires = result.ExpiresAt
+			};
+			Response.Cookies.Append("access_token", result.AccessToken, cookieOptions);
+
+			var refreshCookieOptions = new Microsoft.AspNetCore.Http.CookieOptions
+			{
+				HttpOnly = true,
+				Secure = true,
+				SameSite = Microsoft.AspNetCore.Http.SameSiteMode.None,
+				Expires = DateTime.UtcNow.AddDays(7)
+			};
+			Response.Cookies.Append("refresh_token", result.RefreshToken, refreshCookieOptions);
+
+			return Ok(result);
+		}
+
+		[Authorize]
+		[HttpPost("revoke")]
+		public async Task<IActionResult> Revoke()
+		{
+			var email = User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value;
+			if (string.IsNullOrEmpty(email)) return BadRequest("Invalid user claims");
+			await _authService.RevokeTokenAsync(email);
+
+			Response.Cookies.Delete("access_token");
+			Response.Cookies.Delete("refresh_token");
+
+			return Ok(new { Message = "Token revoked successfully" });
 		}
 	}
 }

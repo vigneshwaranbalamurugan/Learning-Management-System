@@ -5,19 +5,13 @@ using Microsoft.Extensions.DependencyInjection;
 using System.Threading.RateLimiting;
 using System.Security.Claims;
 
+using Microsoft.Extensions.Configuration;
+
 namespace LMSApi.API.Extensions
 {
     public static class RateLimiterExtensions
     {
-
-        private readonly IConfiguration _configuration;
-
-        public RateLimiterExtensions(IConfiguration configuration)
-        {
-            _configuration = configuration;
-        }
-
-        public static IServiceCollection AddCustomRateLimiting(this IServiceCollection services)
+        public static IServiceCollection AddCustomRateLimiting(this IServiceCollection services, IConfiguration configuration)
         {
             services.AddRateLimiter(options =>
             {
@@ -56,7 +50,7 @@ namespace LMSApi.API.Extensions
                         factory: _ => new FixedWindowRateLimiterOptions
                         {
                             AutoReplenishment = true,
-                            PermitLimit = _configuration.GetValue<int>("RateLimiting:LoginPermitLimit", 5),
+                            PermitLimit = configuration.GetValue<int>("RateLimiting:LoginPermitLimit", 5),
                             Window = TimeSpan.FromMinutes(1)
                         }));
 
@@ -71,7 +65,7 @@ namespace LMSApi.API.Extensions
                         factory: _ => new FixedWindowRateLimiterOptions
                         {
                             AutoReplenishment = true,
-                            PermitLimit = _configuration.GetValue<int>("RateLimiting:ForgotPasswordPermitLimit", 3),
+                            PermitLimit = configuration.GetValue<int>("RateLimiting:ForgotPasswordPermitLimit", 3),
                             Window = TimeSpan.FromMinutes(15)
                         });
                 });
@@ -83,7 +77,7 @@ namespace LMSApi.API.Extensions
                         factory: _ => new FixedWindowRateLimiterOptions
                         {
                             AutoReplenishment = true,
-                            PermitLimit = _configuration.GetValue<int>("RateLimiting:OtpSendPermitLimit", 3),
+                            PermitLimit = configuration.GetValue<int>("RateLimiting:OtpSendPermitLimit", 3),
                             Window = TimeSpan.FromMinutes(5)
                         }));
 
@@ -94,7 +88,7 @@ namespace LMSApi.API.Extensions
                         factory: _ => new FixedWindowRateLimiterOptions
                         {
                             AutoReplenishment = true,
-                            PermitLimit = _configuration.GetValue<int>("RateLimiting:OtpVerifyPermitLimit", 10),
+                            PermitLimit = configuration.GetValue<int>("RateLimiting:OtpVerifyPermitLimit", 10),
                             Window = TimeSpan.FromMinutes(5)
                         }));
 
@@ -105,7 +99,7 @@ namespace LMSApi.API.Extensions
                         factory: _ => new FixedWindowRateLimiterOptions
                         {
                             AutoReplenishment = true,
-                            PermitLimit = _configuration.GetValue<int>("RateLimiting:RegisterPermitLimit", 5),
+                            PermitLimit = configuration.GetValue<int>("RateLimiting:RegisterPermitLimit", 5),
                             Window = TimeSpan.FromHours(1)
                         }));
 
@@ -116,7 +110,7 @@ namespace LMSApi.API.Extensions
                         factory: _ => new FixedWindowRateLimiterOptions
                         {
                             AutoReplenishment = true,
-                            PermitLimit = _configuration.GetValue<int>("RateLimiting:PublicCourseListingPermitLimit", 100),
+                            PermitLimit = configuration.GetValue<int>("RateLimiting:PublicCourseListingPermitLimit", 100),
                             Window = TimeSpan.FromMinutes(1)
                         }));
 
@@ -127,7 +121,7 @@ namespace LMSApi.API.Extensions
                         factory: _ => new FixedWindowRateLimiterOptions
                         {
                             AutoReplenishment = true,
-                            PermitLimit = _configuration.GetValue<int>("RateLimiting:SearchCoursesPermitLimit", 60),
+                            PermitLimit = configuration.GetValue<int>("RateLimiting:SearchCoursesPermitLimit", 60),
                             Window = TimeSpan.FromMinutes(1)
                         }));
 
@@ -141,7 +135,7 @@ namespace LMSApi.API.Extensions
                         factory: _ => new FixedWindowRateLimiterOptions
                         {
                             AutoReplenishment = true,
-                            PermitLimit = _configuration.GetValue<int>("RateLimiting:EnrollCoursePermitLimit", 10),
+                            PermitLimit = configuration.GetValue<int>("RateLimiting:EnrollCoursePermitLimit", 10),
                             Window = TimeSpan.FromMinutes(1)
                         });
                 });
@@ -156,7 +150,7 @@ namespace LMSApi.API.Extensions
                         factory: _ => new FixedWindowRateLimiterOptions
                         {
                             AutoReplenishment = true,
-                            PermitLimit = _configuration.GetValue<int>("RateLimiting:PaymentInitializationPermitLimit", 3),
+                            PermitLimit = configuration.GetValue<int>("RateLimiting:PaymentInitializationPermitLimit", 3),
                             Window = TimeSpan.FromMinutes(1)
                         });
                 });
@@ -171,7 +165,7 @@ namespace LMSApi.API.Extensions
                         factory: _ => new FixedWindowRateLimiterOptions
                         {
                             AutoReplenishment = true,
-                            PermitLimit = _configuration.GetValue<int>("RateLimiting:QuizSubmitPermitLimit", 20),
+                            PermitLimit = configuration.GetValue<int>("RateLimiting:QuizSubmitPermitLimit", 20),
                             Window = TimeSpan.FromMinutes(1)
                         });
                 });
@@ -186,7 +180,7 @@ namespace LMSApi.API.Extensions
                         factory: _ => new FixedWindowRateLimiterOptions
                         {
                             AutoReplenishment = true,
-                            PermitLimit = _configuration.GetValue<int>("RateLimiting:AssignmentSubmitPermitLimit", 10),
+                            PermitLimit = configuration.GetValue<int>("RateLimiting:AssignmentSubmitPermitLimit", 10),
                             Window = TimeSpan.FromMinutes(1)
                         });
                 });
@@ -201,7 +195,7 @@ namespace LMSApi.API.Extensions
                         factory: _ => new FixedWindowRateLimiterOptions
                         {
                             AutoReplenishment = true,
-                            PermitLimit = _configuration.GetValue<int>("RateLimiting:FileUploadPermitLimit", 20),
+                            PermitLimit = configuration.GetValue<int>("RateLimiting:FileUploadPermitLimit", 20),
                             Window = TimeSpan.FromHours(1)
                         });
                 });
@@ -216,7 +210,7 @@ namespace LMSApi.API.Extensions
                         factory: _ => new FixedWindowRateLimiterOptions
                         {
                             AutoReplenishment = true,
-                            PermitLimit = _configuration.GetValue<int>("RateLimiting:CertificateDownloadPermitLimit", 30),
+                            PermitLimit = configuration.GetValue<int>("RateLimiting:CertificateDownloadPermitLimit", 30),
                             Window = TimeSpan.FromMinutes(1)
                         });
                 });
@@ -231,7 +225,7 @@ namespace LMSApi.API.Extensions
                         factory: _ => new FixedWindowRateLimiterOptions
                         {
                             AutoReplenishment = true,
-                            PermitLimit = _configuration.GetValue<int>("RateLimiting:NotificationApisPermitLimit", 60),
+                            PermitLimit = configuration.GetValue<int>("RateLimiting:NotificationApisPermitLimit", 60),
                             Window = TimeSpan.FromMinutes(1)
                         });
                 });
@@ -246,7 +240,7 @@ namespace LMSApi.API.Extensions
                         factory: _ => new FixedWindowRateLimiterOptions
                         {
                             AutoReplenishment = true,
-                            PermitLimit = _configuration.GetValue<int>("RateLimiting:AdminApisPermitLimit", 200),
+                            PermitLimit = configuration.GetValue<int>("RateLimiting:AdminApisPermitLimit", 200),
                             Window = TimeSpan.FromMinutes(1)
                         });
                 });
@@ -261,7 +255,7 @@ namespace LMSApi.API.Extensions
                         factory: _ => new FixedWindowRateLimiterOptions
                         {
                             AutoReplenishment = true,
-                            PermitLimit = _configuration.GetValue<int>("RateLimiting:SignalRHubConnectNotificationPermitLimit", 20),
+                            PermitLimit = configuration.GetValue<int>("RateLimiting:SignalRHubConnectNotificationPermitLimit", 20),
                             Window = TimeSpan.FromMinutes(1)
                         });
                 });
@@ -276,7 +270,7 @@ namespace LMSApi.API.Extensions
                         factory: _ => new FixedWindowRateLimiterOptions
                         {
                             AutoReplenishment = true,
-                            PermitLimit = _configuration.GetValue<int>("RateLimiting:SignalRHubConnectVideoProgressPermitLimit", 20),
+                            PermitLimit = configuration.GetValue<int>("RateLimiting:SignalRHubConnectVideoProgressPermitLimit", 20),
                             Window = TimeSpan.FromMinutes(1)
                         });
                 });

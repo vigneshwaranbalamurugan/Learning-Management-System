@@ -700,5 +700,165 @@ namespace LMSApi.Tests.Services
             Assert.That(updated.VerificationToken, Is.Null);
             Assert.That(updated.CurrentTokenType, Is.Null);
         }
+
+        // ─── RefreshTokenAsync & RevokeTokenAsync ──────────────────────────────
+
+        [Test]
+        public async Task RefreshTokenAsync_ValidRequest_ReturnsNewTokens()
+        {
+            // Arrange
+            var user = new Users
+            {
+                Email = "refresh_test@example.com",
+                PasswordHash = "hash",
+                PasswordSalt = "salt",
+                IsEmailVerified = true,
+                Role = new UserRoles { RoleName = "Learner", Description = "Desc" },
+                RefreshToken = "valid_refresh_token",
+                RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(1)
+            };
+            DbContext.Users.Add(user);
+            await DbContext.SaveChangesAsync();
+
+            var principal = new System.Security.Claims.ClaimsPrincipal(new System.Security.Claims.ClaimsIdentity(new[]
+            {
+                new System.Security.Claims.Claim(System.Security.Claims.ClaimTypes.Email, "refresh_test@example.com")
+            }));
+
+            _mockTokenService.Setup(x => x.GetPrincipalFromExpiredToken(It.IsAny<string>())).Returns(principal);
+            _mockTokenService.Setup(x => x.GenerateToken(It.IsAny<int>(), It.IsAny<string>(), It.IsAny<string>()))
+                .Returns(("new_access_token", DateTime.UtcNow.AddHours(1)));
+            _mockTokenService.Setup(x => x.GenerateRefreshToken()).Returns("new_refresh_token");
+
+            var request = new RefreshTokenRequest
+            {
+                AccessToken = "expired_access_token",
+                RefreshToken = "valid_refresh_token"
+            };
+
+            // Act
+            var response = await _authService.RefreshTokenAsync(request);
+
+            // Assert
+            Assert.That(response, Is.Not.Null);
+            Assert.That(response.AccessToken, Is.EqualTo("new_access_token"));
+            Assert.That(response.RefreshToken, Is.EqualTo("new_refresh_token"));
+
+            // Verify DB update
+            DbContext.ChangeTracker.Clear();
+            var updatedUser = DbContext.Users.Find(user.Id)!;
+            Assert.That(updatedUser.RefreshToken, Is.EqualTo("new_refresh_token"));
+        }
+
+        [Test]
+        public void RefreshTokenAsync_InvalidAccessToken_ThrowsUnauthorizedAccessException()
+        {
+            // Arrange
+            _mockTokenService.Setup(x => x.GetPrincipalFromExpiredToken(It.IsAny<string>())).Returns((System.Security.Claims.ClaimsPrincipal?)null);
+
+            var request = new RefreshTokenRequest
+            {
+                AccessToken = "invalid_access_token",
+                RefreshToken = "some_refresh_token"
+            };
+
+            // Act & Assert
+            Assert.ThrowsAsync<UnauthorizedAccessException>(() => _authService.RefreshTokenAsync(request));
+        }
+
+        [Test]
+        public async Task RefreshTokenAsync_InvalidRefreshToken_ThrowsUnauthorizedAccessException()
+        {
+            // Arrange
+            var user = new Users
+            {
+                Email = "refresh_test2@example.com",
+                PasswordHash = "hash",
+                PasswordSalt = "salt",
+                IsEmailVerified = true,
+                Role = new UserRoles { RoleName = "Learner", Description = "Desc" },
+                RefreshToken = "correct_refresh_token",
+                RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(1)
+            };
+            DbContext.Users.Add(user);
+            await DbContext.SaveChangesAsync();
+
+            var principal = new System.Security.Claims.ClaimsPrincipal(new System.Security.Claims.ClaimsIdentity(new[]
+            {
+                new System.Security.Claims.Claim(System.Security.Claims.ClaimTypes.Email, "refresh_test2@example.com")
+            }));
+
+            _mockTokenService.Setup(x => x.GetPrincipalFromExpiredToken(It.IsAny<string>())).Returns(principal);
+
+            var request = new RefreshTokenRequest
+            {
+                AccessToken = "expired_access_token",
+                RefreshToken = "incorrect_refresh_token"
+            };
+
+            // Act & Assert
+            Assert.ThrowsAsync<UnauthorizedAccessException>(() => _authService.RefreshTokenAsync(request));
+        }
+
+        [Test]
+        public async Task RefreshTokenAsync_ExpiredRefreshToken_ThrowsUnauthorizedAccessException()
+        {
+            // Arrange
+            var user = new Users
+            {
+                Email = "refresh_test3@example.com",
+                PasswordHash = "hash",
+                PasswordSalt = "salt",
+                IsEmailVerified = true,
+                Role = new UserRoles { RoleName = "Learner", Description = "Desc" },
+                RefreshToken = "expired_refresh_token",
+                RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(-1)
+            };
+            DbContext.Users.Add(user);
+            await DbContext.SaveChangesAsync();
+
+            var principal = new System.Security.Claims.ClaimsPrincipal(new System.Security.Claims.ClaimsIdentity(new[]
+            {
+                new System.Security.Claims.Claim(System.Security.Claims.ClaimTypes.Email, "refresh_test3@example.com")
+            }));
+
+            _mockTokenService.Setup(x => x.GetPrincipalFromExpiredToken(It.IsAny<string>())).Returns(principal);
+
+            var request = new RefreshTokenRequest
+            {
+                AccessToken = "expired_access_token",
+                RefreshToken = "expired_refresh_token"
+            };
+
+            // Act & Assert
+            Assert.ThrowsAsync<UnauthorizedAccessException>(() => _authService.RefreshTokenAsync(request));
+        }
+
+        [Test]
+        public async Task RevokeTokenAsync_ValidEmail_RevokesToken()
+        {
+            // Arrange
+            var user = new Users
+            {
+                Email = "revoke_test@example.com",
+                PasswordHash = "hash",
+                PasswordSalt = "salt",
+                IsEmailVerified = true,
+                Role = new UserRoles { RoleName = "Learner", Description = "Desc" },
+                RefreshToken = "some_refresh_token",
+                RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(1)
+            };
+            DbContext.Users.Add(user);
+            await DbContext.SaveChangesAsync();
+
+            // Act
+            await _authService.RevokeTokenAsync("revoke_test@example.com");
+
+            // Assert
+            DbContext.ChangeTracker.Clear();
+            var updatedUser = DbContext.Users.Find(user.Id)!;
+            Assert.That(updatedUser.RefreshToken, Is.Null);
+            Assert.That(updatedUser.RefreshTokenExpiryTime, Is.Null);
+        }
     }
 }
