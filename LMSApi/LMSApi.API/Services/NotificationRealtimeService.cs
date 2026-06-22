@@ -18,5 +18,10 @@ namespace LMSApi.API.Services
         {
             await _hubContext.Clients.User(userId.ToString()).SendAsync("ReceiveNotification", notification);
         }
+
+        public async Task SendUnreadCountAsync(int userId, int unreadCount)
+        {
+            await _hubContext.Clients.User(userId.ToString()).SendAsync("UpdateUnreadCount", unreadCount);
+        }
     }
 }

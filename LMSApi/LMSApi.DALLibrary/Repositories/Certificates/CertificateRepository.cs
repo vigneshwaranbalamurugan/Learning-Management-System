@@ -19,6 +19,9 @@ namespace LMSApi.DALLibrary.Repositories
             return await _context.Certificates
                 .Include(c => c.Course)
                     .ThenInclude(course => course.Instructor)
+                        .ThenInclude(i => i.UserProfile)
+                .Include(c => c.Course)
+                    .ThenInclude(course => course.Category)
                 .Include(c => c.User)
                     .ThenInclude(u => u.UserProfile)
                 .Include(c => c.Template)
@@ -29,6 +32,21 @@ namespace LMSApi.DALLibrary.Repositories
         {
             return await _context.Certificates
                 .FirstOrDefaultAsync(c => c.UserId == userId && c.CourseId == courseId);
+        }
+
+        public async Task<IEnumerable<Certificates>> GetCertificatesByUserAsync(int userId)
+        {
+            return await _context.Certificates
+                .Include(c => c.Course)
+                    .ThenInclude(course => course.Instructor)
+                        .ThenInclude(i => i.UserProfile)
+                .Include(c => c.Course)
+                    .ThenInclude(course => course.Category)
+                .Include(c => c.User)
+                    .ThenInclude(u => u.UserProfile)
+                .Where(c => c.UserId == userId)
+                .OrderByDescending(c => c.IssuedAt)
+                .ToListAsync();
         }
 
         public async Task<CertificateTemplates?> GetActiveTemplateAsync()

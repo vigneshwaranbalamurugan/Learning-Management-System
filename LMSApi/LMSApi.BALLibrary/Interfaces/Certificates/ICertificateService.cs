@@ -13,6 +13,9 @@ namespace LMSApi.BALLibrary.Interfaces
         /// <summary>Public certificate lookup by the unique Guid.</summary>
         Task<CertificateVerificationResponse> VerifyCertificateAsync(Guid certificateId);
 
+        /// <summary>Get all certificates issued to the student.</summary>
+        Task<IEnumerable<CertificateResponse>> GetMyCertificatesAsync(int userId);
+
         /// <summary>Admin: create a new certificate template with a background image.</summary>
         Task<CertificateTemplateResponse> CreateTemplateAsync(
             CreateCertificateTemplateRequest request,

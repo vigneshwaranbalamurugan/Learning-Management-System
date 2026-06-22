@@ -21,6 +21,7 @@ namespace LMSApi.BALLibrary.Services
         private readonly IMapper _mapper;
         private readonly ILogger<AssignmentSubmissionService> _logger;
         private readonly INotificationService _notificationService;
+        private readonly IUserNotificationsService _userNotificationsService;
         private readonly IUserRepository _userRepository;
 
         public AssignmentSubmissionService(
@@ -34,6 +35,7 @@ namespace LMSApi.BALLibrary.Services
             IMapper mapper,
             ILogger<AssignmentSubmissionService> logger,
             INotificationService notificationService,
+            IUserNotificationsService userNotificationsService,
             IUserRepository userRepository)        {
             _assignmentRepository = assignmentRepository;
             _submissionRepository = submissionRepository;
@@ -45,6 +47,7 @@ namespace LMSApi.BALLibrary.Services
             _mapper = mapper;
             _logger = logger;
             _notificationService = notificationService;
+            _userNotificationsService = userNotificationsService;
             _userRepository = userRepository;
         }
 
@@ -202,7 +205,7 @@ namespace LMSApi.BALLibrary.Services
             var section = await _sectionRepository.GetByIdAsync(assignment.CourseSectionId);
             await _progressService.RecalculateCourseProgressAsync(submission.StudentId, section.CourseId);
 
-            // ── Send Assignment Graded Email ──
+            // ── Send Assignment Graded Email (fire-and-forget) ──
             var student = await _userRepository.GetByIdAsync(submission.StudentId);
             var studentName = student.UserProfile?.FirstName ?? student.Email;
             var course = await _courseRepository.GetByIdAsync(section.CourseId);
@@ -222,6 +225,22 @@ namespace LMSApi.BALLibrary.Services
                     _logger.LogError(ex, "Failed to send assignment graded email to {Email}", student.Email);
                 }
             });
+
+            // ── Send real-time SignalR notification to the student ──
+            var resultText = isPassed ? "Passed ✅" : "Failed ❌";
+            var marks = $"{request.MarksAwarded}/{assignment.TotalMarks}";
+            try
+            {
+                await _userNotificationsService.CreateAndSendNotificationAsync(
+                    userId: submission.StudentId,
+                    title: $"Assignment Graded: {assignment.Title}",
+                    message: $"You scored {marks} — {resultText}. Feedback: {request.Feedback}",
+                    type: NotificationType.AssignmentGraded);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to send real-time grading notification to Student {StudentId}", submission.StudentId);
+            }
 
             return _mapper.Map<AssignmentSubmissionResponse>(submission);
         }
@@ -266,7 +285,37 @@ namespace LMSApi.BALLibrary.Services
         public async Task<IEnumerable<AssignmentSubmissionResponse>> GetPendingReviewsAsync(int assignmentId)
         {
             var submissions = await _submissionRepository.GetPendingSubmissionsAsync(assignmentId);
-            return _mapper.Map<IEnumerable<AssignmentSubmissionResponse>>(submissions);
+            var assignment = await _assignmentRepository.GetByIdAsync(assignmentId);
+            var section = await _sectionRepository.GetByIdAsync(assignment.CourseSectionId);
+            var course = await _courseRepository.GetByIdAsync(section.CourseId);
+
+            var responseList = new List<AssignmentSubmissionResponse>();
+
+            foreach (var sub in submissions)
+            {
+                var res = _mapper.Map<AssignmentSubmissionResponse>(sub);
+
+                DateTime? studentDeadline = null;
+                if (course.CourseAccessType == CourseAccessType.CohortBased)
+                {
+                    studentDeadline = assignment.DeadlineDate;
+                }
+                else if (assignment.DeadlineInDays > 0)
+                {
+                    var enrollment = await _enrollmentRepository.GetByUserAndCourseAsync(sub.StudentId, section.CourseId);
+                    if (enrollment != null)
+                    {
+                        studentDeadline = enrollment.EnrolledAt.AddDays(assignment.DeadlineInDays);
+                    }
+                }
+
+                res.StudentDeadline = studentDeadline;
+                res.IsLate = studentDeadline.HasValue && sub.SubmittedAt > studentDeadline.Value;
+
+                responseList.Add(res);
+            }
+
+            return responseList;
         }
 
         public async Task<IEnumerable<AssignmentSubmissionResponse>> GetStudentSubmissionsAsync(int assignmentId, int studentId)

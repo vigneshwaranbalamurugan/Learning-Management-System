@@ -80,13 +80,26 @@ namespace LMSApi.DALLibrary.Repositories
                 avgAssignmentScore = (decimal?)assignmentSubmissions.Average(sub => sub.MarksAwarded);
             }
 
+            var recentEnrollments = await _context.Enrollments
+                .Where(e => courseIds.Contains(e.CourseId) && (e.EnrollmentStatus == EnrollmentStatus.Active || e.EnrollmentStatus == EnrollmentStatus.Completed))
+                .OrderByDescending(e => e.EnrolledAt)
+                .Take(5)
+                .Select(e => new RecentEnrollmentDto
+                {
+                    StudentName = e.User.UserProfile != null ? (e.User.UserProfile.FirstName + " " + e.User.UserProfile.LastName) : e.User.Email,
+                    CourseTitle = e.Course.Title,
+                    EnrolledAt = e.EnrolledAt
+                })
+                .ToListAsync();
+
             return new InstructorAnalyticsResponse
             {
                 TotalCoursesCreated = totalCoursesCreated,
                 TotalStudentsEnrolled = totalStudentsEnrolled,
                 TotalRevenueGenerated = totalRevenueGenerated,
                 AverageQuizScore = avgQuizScore,
-                AverageAssignmentScore = avgAssignmentScore
+                AverageAssignmentScore = avgAssignmentScore,
+                RecentEnrollments = recentEnrollments
             };
         }
 

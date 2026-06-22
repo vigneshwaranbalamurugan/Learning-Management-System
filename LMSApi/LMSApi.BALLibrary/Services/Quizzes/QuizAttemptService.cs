@@ -275,6 +275,12 @@ namespace LMSApi.BALLibrary.Services
                 MaxAttempts = quiz.MaxAttempts
             };
         }
+
+        public async Task<IEnumerable<QuizAttemptResponse>> GetMyAttemptsAsync(int userId)
+        {
+            var attempts = await _attemptRepository.GetAttemptsByUserAsync(userId);
+            return _mapper.Map<IEnumerable<QuizAttemptResponse>>(attempts);
+        }
    
     }
 }

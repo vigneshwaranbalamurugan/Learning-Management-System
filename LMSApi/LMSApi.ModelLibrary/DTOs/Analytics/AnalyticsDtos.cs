@@ -11,6 +11,13 @@ namespace LMSApi.ModelLibrary.DTOs
         public decimal TotalRevenue { get; set; }
     }
 
+    public class RecentEnrollmentDto
+    {
+        public string StudentName { get; set; } = string.Empty;
+        public string CourseTitle { get; set; } = string.Empty;
+        public DateTime EnrolledAt { get; set; }
+    }
+
     public class InstructorAnalyticsResponse
     {
         public int TotalCoursesCreated { get; set; }
@@ -18,6 +25,7 @@ namespace LMSApi.ModelLibrary.DTOs
         public decimal TotalRevenueGenerated { get; set; }
         public decimal? AverageQuizScore { get; set; }
         public decimal? AverageAssignmentScore { get; set; }
+        public System.Collections.Generic.List<RecentEnrollmentDto> RecentEnrollments { get; set; } = new();
     }
 
     public class LearnerAnalyticsResponse

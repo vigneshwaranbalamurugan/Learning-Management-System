@@ -3,6 +3,7 @@ using LMSApi.ModelLibrary.DTOs;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
+using LMSApi.API.Extensions;
 
 namespace LMSApi.API.Controllers
 {
@@ -15,6 +16,16 @@ namespace LMSApi.API.Controllers
         public CertificateController(ICertificateService certificateService)
         {
             _certificateService = certificateService;
+        }
+
+        [HttpGet("my")]
+        [Authorize]
+        [EnableRateLimiting("CertificateDownload")]
+        public async Task<ActionResult<IEnumerable<CertificateResponse>>> GetMyCertificates()
+        {
+            var userId = User.GetUserId();
+            var result = await _certificateService.GetMyCertificatesAsync(userId);
+            return Ok(result);
         }
 
         [HttpGet("verify/{certificateId:guid}")]

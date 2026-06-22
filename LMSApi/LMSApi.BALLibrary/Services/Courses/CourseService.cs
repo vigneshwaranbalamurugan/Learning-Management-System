@@ -51,6 +51,52 @@ namespace LMSApi.BALLibrary.Services
             return responses;
         }
 
+        public async Task<PagedCourseResponse> GetPublishedCoursesPagedAsync(
+            CourseSearchQuery query, int? currentUserId = null)
+        {
+            if (currentUserId.HasValue)
+            {
+                var enrollments = await _enrollmentRepository.GetEnrollmentsByUserAsync(currentUserId.Value);
+                if (enrollments.Any())
+                {
+                    var enrolledCourseIds = enrollments.Select(e => e.CourseId).ToList();
+                    var existingExcludes = string.IsNullOrWhiteSpace(query.ExcludeCourseIds)
+                        ? new List<int>()
+                        : query.ExcludeCourseIds.Split(',').Select(int.Parse).ToList();
+
+                    var combinedExcludes = existingExcludes.Union(enrolledCourseIds).Distinct().ToList();
+                    query.ExcludeCourseIds = string.Join(",", combinedExcludes);
+                }
+            }
+
+            var (courses, totalCount) = await _courseRepository.GetPublishedCoursesPagedAsync(query);
+
+            var courseList = _mapper.Map<IEnumerable<CourseResponse>>(courses).ToList();
+            
+            // Map EnrolledCount and populate rating statistics
+            foreach (var response in courseList)
+            {
+                var original = courses.FirstOrDefault(c => c.Id == response.Id);
+                if (original != null)
+                {
+                    response.EnrolledCount = original.Enrollments?.Count ?? 0;
+                }
+            }
+            
+            await PopulateRatingStatsListAsync(courseList);
+
+            var totalPages = (int)System.Math.Ceiling((double)totalCount / query.PageSize);
+
+            return new PagedCourseResponse
+            {
+                Courses = courseList,
+                TotalCount = totalCount,
+                PageNumber = query.PageNumber,
+                PageSize = query.PageSize,
+                TotalPages = totalPages
+            };
+        }
+
         public async Task<CourseDetailsResponse> GetCourseByIdAsync(int id, int? currentUserId = null, bool isAdmin = false)
         {
             var course = await _courseRepository.GetCourseWithDetailsAsync(id)
@@ -370,6 +416,19 @@ namespace LMSApi.BALLibrary.Services
         {
             var courses = await _courseRepository.GetCoursesByInstructorAsync(instructorId);
             var responses = courses == null ? new List<CourseResponse>() : _mapper.Map<IEnumerable<CourseResponse>>(courses).ToList();
+            
+            if (courses != null)
+            {
+                foreach (var response in responses)
+                {
+                    var original = courses.FirstOrDefault(c => c.Id == response.Id);
+                    if (original != null)
+                    {
+                        response.EnrolledCount = original.Enrollments?.Count ?? 0;
+                    }
+                }
+            }
+
             await PopulateRatingStatsListAsync(responses);
             return responses;
         }
@@ -380,6 +439,26 @@ namespace LMSApi.BALLibrary.Services
             var responses = courses == null ? new List<CourseResponse>() : _mapper.Map<IEnumerable<CourseResponse>>(courses).ToList();
             await PopulateRatingStatsListAsync(responses);
             return responses;
+        }
+
+        public async Task<IEnumerable<CategoryResponse>> GetAllCategoriesAsync()
+        {
+            var categories = await _categoryRepository.GetAllAsync();
+            return _mapper.Map<IEnumerable<CategoryResponse>>(categories);
+        }
+
+        public async Task<FiltersMetadataResponse> GetFiltersMetadataAsync()
+        {
+            var categories = await GetAllCategoriesAsync();
+            var languages = await _courseRepository.GetActiveLanguagesAsync();
+            var instructors = await _courseRepository.GetActiveInstructorsAsync();
+
+            return new FiltersMetadataResponse
+            {
+                Categories = categories,
+                Languages = languages,
+                Instructors = instructors
+            };
         }
 
         // ─── Helpers ──────────────────────────────────────────────────────────

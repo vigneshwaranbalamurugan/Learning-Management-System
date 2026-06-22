@@ -74,5 +74,14 @@ namespace LMSApi.API.Controllers
             var result = await _quizAttemptService.GetAttemptDetailAsync(attemptId);
             return Ok(result);
         }
+
+        [Authorize]
+        [HttpGet("my")]
+        public async Task<ActionResult<IEnumerable<QuizAttemptResponse>>> GetMyAttempts()
+        {
+            var userId = User.GetUserId();
+            var result = await _quizAttemptService.GetMyAttemptsAsync(userId);
+            return Ok(result);
+        }
     }
 }

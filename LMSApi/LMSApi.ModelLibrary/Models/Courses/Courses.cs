@@ -33,5 +33,7 @@ namespace LMSApi.ModelLibrary.Models
         public Users Instructor { get; set; }
         public ICollection<CourseSection> Sections { get; set; } = new List<CourseSection>();
         public ICollection<CourseBatch> Batches { get; set; } = new List<CourseBatch>();
+        public ICollection<Reviews> Reviews { get; set; } = new List<Reviews>();
+        public ICollection<Enrollments> Enrollments { get; set; } = new List<Enrollments>();
     }
 }

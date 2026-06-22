@@ -49,6 +49,16 @@ namespace LMSApi.API.Controllers
             return Ok(result);
         }
 
+        /// <summary>Get all assignments created by the authenticated instructor.</summary>
+        [Authorize(Roles = "Instructor,Admin")]
+        [HttpGet("my-created")]
+        public async Task<ActionResult<IEnumerable<InstructorAssignmentSummaryDto>>> GetInstructorAssignments()
+        {
+            var userId = User.GetUserId();
+            var result = await _assignmentService.GetInstructorAssignmentsAsync(userId);
+            return Ok(result);
+        }
+
         /// <summary>Get a single assignment by Id.</summary>
         [Authorize]
         [HttpGet("{id:int}")]
@@ -82,6 +92,7 @@ namespace LMSApi.API.Controllers
                 AttachmentType = form.AttachmentType,
                 AttachmentUrl = form.AttachmentUrl,
                 DeadlineInDays = form.DeadlineInDays,
+                DeadlineDate = form.DeadlineDate,
                 MaxSubmissions = form.MaxSubmissions,
                 IsLateSubmissionAllowed = form.IsLateSubmissionAllowed
             };
@@ -117,6 +128,7 @@ namespace LMSApi.API.Controllers
                 AttachmentType = form.AttachmentType,
                 AttachmentUrl = form.AttachmentUrl,
                 DeadlineInDays = form.DeadlineInDays,
+                DeadlineDate = form.DeadlineDate,
                 MaxSubmissions = form.MaxSubmissions,
                 IsLateSubmissionAllowed = form.IsLateSubmissionAllowed
             };

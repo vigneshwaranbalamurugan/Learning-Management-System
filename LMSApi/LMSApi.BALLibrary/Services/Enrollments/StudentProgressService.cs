@@ -3,6 +3,7 @@ using LMSApi.BALLibrary.Interfaces;
 using LMSApi.DALLibrary.Interfaces;
 using LMSApi.ModelLibrary.DTOs;
 using LMSApi.ModelLibrary.Models;
+using LMSApi.BALLibrary.Utils;
 using LMSApi.ModelLibrary.Enums;
 using Microsoft.Extensions.Logging;
 using Hangfire;
@@ -171,6 +172,7 @@ namespace LMSApi.BALLibrary.Services
                         Id = prog?.Id ?? 0,
                         UserId = userId,
                         LessonId = lesson.Id,
+                        LessonTitle = lesson.Title,
                         IsCompleted = isCompleted,
                         CompletedAt = prog?.CompletedAt,
                         LastViewedAt = prog?.LastAccessed ?? DateTime.MinValue,
@@ -193,6 +195,7 @@ namespace LMSApi.BALLibrary.Services
                     quizProgresses.Add(new QuizProgressResponse
                     {
                         QuizId = quiz.Id,
+                        QuizTitle = quiz.Title,
                         IsPassed = isPassed,
                         AttemptsMade = attempts.Count
                     });
@@ -214,6 +217,7 @@ namespace LMSApi.BALLibrary.Services
                     assignmentProgresses.Add(new AssignmentProgressResponse
                     {
                         AssignmentId = assignment.Id,
+                        AssignmentTitle = assignment.Title,
                         IsPassed = isPassed,
                         Status = latestSub?.Status.ToString() ?? "NotSubmitted"
                     });
@@ -376,6 +380,51 @@ namespace LMSApi.BALLibrary.Services
                     _logger.LogError(ex, "Failed to issue certificate for User {UserId} in Course {CourseId}", userId, courseId);
                 }
             }
+        }
+
+        public async Task<IEnumerable<StudentProgressSummaryDto>> GetStudentsProgressForCourseAsync(int instructorId, int courseId)
+        {
+            var course = await _courseRepository.GetByIdAsync(courseId)
+                ?? throw new KeyNotFoundException($"Course with id '{courseId}' not found.");
+
+            if (course.InstructorId != instructorId)
+            {
+                throw new UnauthorizedAccessException("You do not have permission to view progress details for this course.");
+            }
+
+            var enrollments = await _enrollmentRepository.GetEnrollmentsByCourseAsync(courseId);
+
+            return enrollments.Select(e => new StudentProgressSummaryDto
+            {
+                EnrollmentId = e.Id,
+                StudentId = e.UserId,
+                StudentName = e.User.UserProfile != null && (!string.IsNullOrEmpty(e.User.UserProfile.FirstName) || !string.IsNullOrEmpty(e.User.UserProfile.LastName))
+                    ? (e.User.UserProfile.FirstName + " " + e.User.UserProfile.LastName).Trim()
+                    : MaskingUtils.MaskEmail(e.User.Email),
+                StudentEmail = MaskingUtils.MaskEmail(e.User.Email),
+                EnrolledAt = e.EnrolledAt,
+                EnrollmentStatus = e.EnrollmentStatus,
+                ProgressPercentage = e.ProgressPercentage,
+                IsCompleted = e.IsCompleted,
+                CompletedAt = e.CompletedAt,
+                BatchName = e.Batch?.Name
+            });
+        }
+
+        public async Task<CourseProgressResponse> GetStudentDetailedProgressForInstructorAsync(int instructorId, int studentId, int courseId)
+        {
+            var course = await _courseRepository.GetByIdAsync(courseId)
+                ?? throw new KeyNotFoundException($"Course with id '{courseId}' not found.");
+
+            if (course.InstructorId != instructorId)
+            {
+                throw new UnauthorizedAccessException("You do not have permission to view progress details for this course.");
+            }
+
+            var enrollment = await _enrollmentRepository.GetByUserAndCourseAsync(studentId, courseId)
+                ?? throw new KeyNotFoundException("Student enrollment not found in this course.");
+
+            return await GetCourseProgressAsync(studentId, courseId);
         }
     }
 }

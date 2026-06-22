@@ -54,14 +54,25 @@ namespace LMSApi.BALLibrary.Mappers
             CreateMap<QuizAttempts, QuizAttemptResponse>()
                 .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToString()))
                 .ForMember(dest => dest.ObtainedScore, opt => opt.MapFrom(src => src.Score))
-                .ForMember(dest => dest.TotalScore, opt => opt.MapFrom(src => src.Quiz != null && src.Quiz.Questions != null ? src.Quiz.Questions.Sum(q => q.Mark) : 0.0));
+                .ForMember(dest => dest.QuizTitle, opt => opt.MapFrom(src => src.Quiz != null ? src.Quiz.Title : string.Empty))
+                .ForMember(dest => dest.CourseTitle, opt => opt.MapFrom(src => src.Quiz != null && src.Quiz.CourseSection != null && src.Quiz.CourseSection.Course != null ? src.Quiz.CourseSection.Course.Title : string.Empty))
+                .ForMember(dest => dest.SectionTitle, opt => opt.MapFrom(src => src.Quiz != null && src.Quiz.CourseSection != null ? src.Quiz.CourseSection.Title : string.Empty))
+                .ForMember(dest => dest.TotalScore, opt => opt.MapFrom(src => src.Quiz != null && src.Quiz.Questions != null ? src.Quiz.Questions.Sum(q => q.Mark) : 0.0))
+                .ForMember(dest => dest.QuestionsCount, opt => opt.MapFrom(src => src.Quiz != null && src.Quiz.Questions != null ? src.Quiz.Questions.Count : 0))
+                .ForMember(dest => dest.PassingPercentage, opt => opt.MapFrom(src => src.Quiz != null ? src.Quiz.PassingPercentage : 0));
 
             CreateMap<QuizAttempts, QuizAttemptDetailResponse>()
                 .ForMember(dest => dest.Answers,
                     opt => opt.MapFrom(src => src.Answers))
                 .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToString()))
                 .ForMember(dest => dest.ObtainedScore, opt => opt.MapFrom(src => src.Score))
-                .ForMember(dest => dest.TotalScore, opt => opt.MapFrom(src => src.Quiz != null && src.Quiz.Questions != null ? src.Quiz.Questions.Sum(q => q.Mark) : 0.0));
+                .ForMember(dest => dest.QuizTitle, opt => opt.MapFrom(src => src.Quiz != null ? src.Quiz.Title : string.Empty))
+                .ForMember(dest => dest.CourseTitle, opt => opt.MapFrom(src => src.Quiz != null && src.Quiz.CourseSection != null && src.Quiz.CourseSection.Course != null ? src.Quiz.CourseSection.Course.Title : string.Empty))
+                .ForMember(dest => dest.SectionTitle, opt => opt.MapFrom(src => src.Quiz != null && src.Quiz.CourseSection != null ? src.Quiz.CourseSection.Title : string.Empty))
+                .ForMember(dest => dest.Questions, opt => opt.MapFrom(src => src.Quiz != null ? src.Quiz.Questions : null))
+                .ForMember(dest => dest.TotalScore, opt => opt.MapFrom(src => src.Quiz != null && src.Quiz.Questions != null ? src.Quiz.Questions.Sum(q => q.Mark) : 0.0))
+                .ForMember(dest => dest.QuestionsCount, opt => opt.MapFrom(src => src.Quiz != null && src.Quiz.Questions != null ? src.Quiz.Questions.Count : 0))
+                .ForMember(dest => dest.PassingPercentage, opt => opt.MapFrom(src => src.Quiz != null ? src.Quiz.PassingPercentage : 0));
 
             // ─── Answer ─────────────────────────────────────────────────────
             CreateMap<QuizAnswers, QuizAnswerResponse>()

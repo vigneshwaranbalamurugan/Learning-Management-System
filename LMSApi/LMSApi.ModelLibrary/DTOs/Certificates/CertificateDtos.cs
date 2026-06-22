@@ -55,6 +55,11 @@ namespace LMSApi.ModelLibrary.DTOs
         public string InstructorName { get; set; } = string.Empty;
         public string CertificateImageUrl { get; set; } = string.Empty;
         public DateTime IssuedAt { get; set; }
+        public string CourseDescription { get; set; } = string.Empty;
+        public string CourseThumbnailUrl { get; set; } = string.Empty;
+        public string CourseLevel { get; set; } = string.Empty;
+        public double CourseDurationHours { get; set; }
+        public string CategoryName { get; set; } = string.Empty;
     }
 
     public class CertificateVerificationResponse

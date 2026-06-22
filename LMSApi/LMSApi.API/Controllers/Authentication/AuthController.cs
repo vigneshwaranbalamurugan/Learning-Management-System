@@ -51,11 +51,13 @@ namespace LMSApi.API.Controllers
 		{
 			var result = await _authService.AuthenticateAsync(request);
 
+			// SameSite=Lax + Secure=false works over HTTP (LAN/dev).
+			// Change to SameSite=None + Secure=true when deploying over HTTPS.
 			var cookieOptions = new Microsoft.AspNetCore.Http.CookieOptions
 			{
 				HttpOnly = true,
-				Secure = true,
-				SameSite = Microsoft.AspNetCore.Http.SameSiteMode.None,
+				Secure = false,
+				SameSite = Microsoft.AspNetCore.Http.SameSiteMode.Lax,
 				Expires = result.ExpiresAt
 			};
 			Response.Cookies.Append("access_token", result.Token, cookieOptions);
@@ -63,8 +65,8 @@ namespace LMSApi.API.Controllers
 			var refreshCookieOptions = new Microsoft.AspNetCore.Http.CookieOptions
 			{
 				HttpOnly = true,
-				Secure = true,
-				SameSite = Microsoft.AspNetCore.Http.SameSiteMode.None,
+				Secure = false,
+				SameSite = Microsoft.AspNetCore.Http.SameSiteMode.Lax,
 				Expires = DateTime.UtcNow.AddDays(7)
 			};
 			Response.Cookies.Append("refresh_token", result.RefreshToken, refreshCookieOptions);
@@ -111,8 +113,12 @@ namespace LMSApi.API.Controllers
 			var cookieOptions = new Microsoft.AspNetCore.Http.CookieOptions
 			{
 				HttpOnly = true,
-				Secure = true,
-				SameSite = Microsoft.AspNetCore.Http.SameSiteMode.None,
+				//For Network
+				// Secure = false,
+				// SameSite = Microsoft.AspNetCore.Http.SameSiteMode.Lax,
+				//For Localhost
+				Secure=true,
+				SameSite=Microsoft.AspNetCore.Http.SameSiteMode.None,
 				Expires = result.ExpiresAt
 			};
 			Response.Cookies.Append("access_token", result.AccessToken, cookieOptions);
@@ -120,8 +126,12 @@ namespace LMSApi.API.Controllers
 			var refreshCookieOptions = new Microsoft.AspNetCore.Http.CookieOptions
 			{
 				HttpOnly = true,
-				Secure = true,
-				SameSite = Microsoft.AspNetCore.Http.SameSiteMode.None,
+				// For Network
+				// Secure = false,
+				// SameSite = Microsoft.AspNetCore.Http.SameSiteMode.Lax,
+				//For Localhost
+				Secure=true,
+				SameSite=Microsoft.AspNetCore.Http.SameSiteMode.None,
 				Expires = DateTime.UtcNow.AddDays(7)
 			};
 			Response.Cookies.Append("refresh_token", result.RefreshToken, refreshCookieOptions);
@@ -137,8 +147,19 @@ namespace LMSApi.API.Controllers
 			if (string.IsNullOrEmpty(email)) return BadRequest("Invalid user claims");
 			await _authService.RevokeTokenAsync(email);
 
-			Response.Cookies.Delete("access_token");
-			Response.Cookies.Delete("refresh_token");
+			var deleteCookieOptions = new Microsoft.AspNetCore.Http.CookieOptions
+			{
+				HttpOnly = true,
+				//For Network
+				// Secure = false,
+				// SameSite = Microsoft.AspNetCore.Http.SameSiteMode.Lax
+
+				//For Localhost
+				Secure=true,
+				SameSite=Microsoft.AspNetCore.Http.SameSiteMode.None,
+			};
+			Response.Cookies.Delete("access_token", deleteCookieOptions);
+			Response.Cookies.Delete("refresh_token", deleteCookieOptions);
 
 			return Ok(new { Message = "Token revoked successfully" });
 		}

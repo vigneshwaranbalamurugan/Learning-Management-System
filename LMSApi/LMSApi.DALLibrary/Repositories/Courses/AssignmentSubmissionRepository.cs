@@ -43,6 +43,8 @@ namespace LMSApi.DALLibrary.Repositories
         public async Task<IEnumerable<AssignmentSubmissions>> GetPendingSubmissionsAsync(int assignmentId)
         {
             return await _context.AssignmentSubmissions
+                .Include(s => s.Student)
+                    .ThenInclude(u => u.UserProfile)
                 .Where(s => s.AssignmentId == assignmentId &&
                             (s.Status == SubmissionStatus.Submitted || s.Status == SubmissionStatus.UnderReview))
                 .OrderBy(s => s.SubmittedAt)

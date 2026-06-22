@@ -56,5 +56,14 @@ namespace LMSApi.API.Controllers
             return Ok(result);
         }
 
+        [AllowAnonymous]
+        [HttpGet("file-limits")]
+        public ActionResult GetFileLimits([FromServices] IConfiguration configuration)
+        {
+            var profileImageLimit = configuration["FileSizeLimits:ProfileImageinMB"] != null 
+                ? int.Parse(configuration["FileSizeLimits:ProfileImageinMB"]) 
+                : 5;
+            return Ok(new { ProfileImageInMB = profileImageLimit });
+        }
     }
 }

@@ -43,5 +43,25 @@ namespace LMSApi.API.Controllers
             if (result == null) return NoContent();
             return Ok(result);
         }
+
+        /// <summary>Returns the overall course completion progress of all students enrolled in a course (Instructor/Admin only).</summary>
+        [Authorize(Roles = "Instructor,Admin")]
+        [HttpGet("course/{courseId:int}/students")]
+        public async Task<ActionResult<IEnumerable<StudentProgressSummaryDto>>> GetStudentsProgress(int courseId)
+        {
+            var instructorId = User.GetUserId();
+            var result = await _progressService.GetStudentsProgressForCourseAsync(instructorId, courseId);
+            return Ok(result);
+        }
+
+        /// <summary>Returns a student's detailed course completion progress (Instructor/Admin only).</summary>
+        [Authorize(Roles = "Instructor,Admin")]
+        [HttpGet("course/{courseId:int}/students/{studentId:int}/detail")]
+        public async Task<ActionResult<CourseProgressResponse>> GetStudentDetailedProgress(int courseId, int studentId)
+        {
+            var instructorId = User.GetUserId();
+            var result = await _progressService.GetStudentDetailedProgressForInstructorAsync(instructorId, studentId, courseId);
+            return Ok(result);
+        }
     }
 }

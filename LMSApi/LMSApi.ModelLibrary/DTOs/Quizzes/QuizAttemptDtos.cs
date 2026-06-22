@@ -39,6 +39,9 @@ namespace LMSApi.ModelLibrary.DTOs
     {
         public int Id { get; set; }
         public int QuizId { get; set; }
+        public string QuizTitle { get; set; } = string.Empty;
+        public string CourseTitle { get; set; } = string.Empty;
+        public string SectionTitle { get; set; } = string.Empty;
         public int UserId { get; set; }
         public double ObtainedScore { get; set; }
         public double TotalScore { get; set; }
@@ -46,12 +49,17 @@ namespace LMSApi.ModelLibrary.DTOs
         public string Status { get; set; }
         public DateTime StartedAt { get; set; }
         public DateTime? CompletedAt { get; set; }
+        public int QuestionsCount { get; set; }
+        public int PassingPercentage { get; set; }
     }
 
     public class QuizAttemptDetailResponse
     {
         public int Id { get; set; }
         public int QuizId { get; set; }
+        public string QuizTitle { get; set; } = string.Empty;
+        public string CourseTitle { get; set; } = string.Empty;
+        public string SectionTitle { get; set; } = string.Empty;
         public int UserId { get; set; }
         public double ObtainedScore { get; set; }
         public double TotalScore { get; set; }
@@ -59,6 +67,8 @@ namespace LMSApi.ModelLibrary.DTOs
         public string Status { get; set; }
         public DateTime StartedAt { get; set; }
         public DateTime? CompletedAt { get; set; }
+        public int QuestionsCount { get; set; }
+        public int PassingPercentage { get; set; }
         public List<QuizQuestionResponse> Questions { get; set; } = [];
         public List<QuizAnswerResponse> Answers { get; set; } = [];
     }

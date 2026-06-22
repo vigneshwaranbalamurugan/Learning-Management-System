@@ -56,5 +56,30 @@ namespace LMSApi.ModelLibrary.DTOs
         public decimal ProgressPercentage { get; set; }
         public bool IsCompleted { get; set; }
         public DateTime? CompletedAt { get; set; }
+
+        // Enriched course metadata
+        public string? ThumbnailUrl { get; set; }
+        public string InstructorName { get; set; } = string.Empty;
+        public string CategoryName { get; set; } = string.Empty;
+        public string LanguageName { get; set; } = string.Empty;
+        public CourseLevel Level { get; set; }
+        public int LessonsCount { get; set; }
+        public TimeSpan EstimatedDuration { get; set; }
+        public bool HasCertificate { get; set; } = true;
+        public CourseAccessType CourseAccessType { get; set; }
+    }
+
+    public class StudentProgressSummaryDto
+    {
+        public int EnrollmentId { get; set; }
+        public int StudentId { get; set; }
+        public string StudentName { get; set; } = string.Empty;
+        public string StudentEmail { get; set; } = string.Empty;
+        public DateTime EnrolledAt { get; set; }
+        public EnrollmentStatus EnrollmentStatus { get; set; }
+        public decimal ProgressPercentage { get; set; }
+        public bool IsCompleted { get; set; }
+        public DateTime? CompletedAt { get; set; }
+        public string? BatchName { get; set; }
     }
 }

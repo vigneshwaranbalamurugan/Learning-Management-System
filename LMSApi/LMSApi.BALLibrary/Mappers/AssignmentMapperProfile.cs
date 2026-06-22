@@ -18,9 +18,15 @@ namespace LMSApi.BALLibrary.Mappers
             CreateMap<UpdateAssignmentRequest, Assignments>()
                 .ForAllMembers(opts => opts.Condition((src, dest, srcMember) => srcMember != null));
 
-            // ─── Submission ───────────────────────────────────────────────
             CreateMap<AssignmentSubmissions, AssignmentSubmissionResponse>()
-                .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToString()));
+                .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToString()))
+                .ForMember(dest => dest.StudentName, opt => opt.MapFrom(src => 
+                    src.Student != null 
+                        ? (src.Student.UserProfile != null && (!string.IsNullOrEmpty(src.Student.UserProfile.FirstName) || !string.IsNullOrEmpty(src.Student.UserProfile.LastName))
+                            ? (src.Student.UserProfile.FirstName + " " + src.Student.UserProfile.LastName).Trim() 
+                            : LMSApi.BALLibrary.Utils.MaskingUtils.MaskEmail(src.Student.Email)) 
+                        : null))
+                .ForMember(dest => dest.StudentEmail, opt => opt.MapFrom(src => src.Student != null ? LMSApi.BALLibrary.Utils.MaskingUtils.MaskEmail(src.Student.Email) : null));
 
             CreateMap<AssignmentSubmissionRequest, AssignmentSubmissions>()
                 .ForMember(dest => dest.SubmittedAt, opt => opt.Ignore())  // set in service

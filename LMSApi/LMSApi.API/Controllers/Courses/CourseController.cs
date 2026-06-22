@@ -30,12 +30,33 @@ namespace LMSApi.API.Controllers
         }
 
 
-        /// <summary>Get all published courses.</summary>
+        /// <summary>Get all published courses with pagination and filters.</summary>
         [HttpGet]
         [EnableRateLimiting("PublicCourseListing")]
-        public async Task<ActionResult<IEnumerable<CourseResponse>>> GetAll()
+        public async Task<ActionResult<PagedCourseResponse>> GetAll([FromQuery] CourseSearchQuery query)
         {
-            var result = await _courseService.GetAllCoursesAsync();
+            int? userId = null;
+            if (User.Identity?.IsAuthenticated == true)
+            {
+                try
+                {
+                    userId = User.GetUserId();
+                }
+                catch (UnauthorizedAccessException)
+                {
+                }
+            }
+
+            var result = await _courseService.GetPublishedCoursesPagedAsync(query, userId);
+            return Ok(result);
+        }
+
+        /// <summary>Get categories, languages, and active instructors metadata for catalog filtering.</summary>
+        [HttpGet("filters-metadata")]
+        [EnableRateLimiting("PublicCourseListing")]
+        public async Task<ActionResult<FiltersMetadataResponse>> GetFiltersMetadata()
+        {
+            var result = await _courseService.GetFiltersMetadataAsync();
             return Ok(result);
         }
 

@@ -12,6 +12,7 @@ namespace LMSApi.BALLibrary.Interfaces
         Task<IEnumerable<QuizAttemptResponse>> GetUserAttemptsAsync(int quizId, int userId);
         Task<QuizAttemptDetailResponse> GetAttemptDetailAsync(int attemptId);
         Task<GetRemainingAttemptsResponse> GetRemainingAttemptsAsync(int quizId, int userId);
+        Task<IEnumerable<QuizAttemptResponse>> GetMyAttemptsAsync(int userId);
 
     }
 }

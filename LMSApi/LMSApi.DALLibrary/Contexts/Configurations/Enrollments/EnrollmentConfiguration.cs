@@ -42,7 +42,7 @@ namespace LMSApi.DALLibrary.Contexts.Configurations
                 .OnDelete(DeleteBehavior.Restrict);
 
             builder.HasOne(e => e.Course)
-                .WithMany()
+                .WithMany(c => c.Enrollments)
                 .HasForeignKey(e => e.CourseId)
                 .OnDelete(DeleteBehavior.Restrict);
 

@@ -32,7 +32,7 @@ namespace LMSApi.DALLibrary.Contexts.Configurations
                 .OnDelete(DeleteBehavior.Cascade);
 
             builder.HasOne(r => r.Course)
-                .WithMany()
+                .WithMany(c => c.Reviews)
                 .HasForeignKey(r => r.CourseId)
                 .OnDelete(DeleteBehavior.Cascade);
 

@@ -25,5 +25,6 @@ namespace LMSApi.DALLibrary.Interfaces
         Task<Enrollments> CreateEnrollmentAsync(Enrollments enrollment);
         Task<bool> ValidateBatchEnrollmentAsync(int batchId);
         Task<DateTime?> GetCourseAccessAsync(int enrollmentId);
+        Task<IEnumerable<Enrollments>> GetEnrollmentsByCourseAsync(int courseId);
     }
 }

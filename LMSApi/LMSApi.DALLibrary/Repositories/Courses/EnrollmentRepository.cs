@@ -15,8 +15,17 @@ namespace LMSApi.DALLibrary.Repositories
         public async Task<Enrollments?> GetByUserAndCourseAsync(int userId, int courseId)
         {
             return await _context.Enrollments
-                .Include(e => e.Batch)
                 .Include(e => e.Course)
+                    .ThenInclude(c => c.Category)
+                .Include(e => e.Course)
+                    .ThenInclude(c => c.Language)
+                .Include(e => e.Course)
+                    .ThenInclude(c => c.Instructor)
+                        .ThenInclude(i => i.UserProfile)
+                .Include(e => e.Course)
+                    .ThenInclude(c => c.Sections)
+                        .ThenInclude(s => s.Lessons)
+                .Include(e => e.Batch)
                 .FirstOrDefaultAsync(e => e.UserId == userId && e.CourseId == courseId);
         }
 
@@ -36,6 +45,14 @@ namespace LMSApi.DALLibrary.Repositories
             return await _context.Enrollments
                 .Include(e => e.Course)
                     .ThenInclude(c => c.Category)
+                .Include(e => e.Course)
+                    .ThenInclude(c => c.Language)
+                .Include(e => e.Course)
+                    .ThenInclude(c => c.Instructor)
+                        .ThenInclude(i => i.UserProfile)
+                .Include(e => e.Course)
+                    .ThenInclude(c => c.Sections)
+                        .ThenInclude(s => s.Lessons)
                 .Include(e => e.Batch)
                 .Where(e => e.UserId == userId)
                 .OrderByDescending(e => e.EnrolledAt)
@@ -68,6 +85,17 @@ namespace LMSApi.DALLibrary.Repositories
         public async Task<Enrollments?> GetActiveEnrollmentAsync(int userId, int courseId)
         {
             return await _context.Enrollments
+                .Include(e => e.Course)
+                    .ThenInclude(c => c.Category)
+                .Include(e => e.Course)
+                    .ThenInclude(c => c.Language)
+                .Include(e => e.Course)
+                    .ThenInclude(c => c.Instructor)
+                        .ThenInclude(i => i.UserProfile)
+                .Include(e => e.Course)
+                    .ThenInclude(c => c.Sections)
+                        .ThenInclude(s => s.Lessons)
+                .Include(e => e.Batch)
                 .FirstOrDefaultAsync(e => e.UserId == userId && e.CourseId == courseId && e.EnrollmentStatus == LMSApi.ModelLibrary.Enums.EnrollmentStatus.Active);
         }
 
@@ -112,6 +140,17 @@ namespace LMSApi.DALLibrary.Repositories
         {
             var enrollment = await _context.Enrollments.FindAsync(enrollmentId);
             return enrollment?.AccessExpiresAt;
+        }
+
+        public async Task<IEnumerable<Enrollments>> GetEnrollmentsByCourseAsync(int courseId)
+        {
+            return await _context.Enrollments
+                .Include(e => e.User)
+                    .ThenInclude(u => u.UserProfile)
+                .Include(e => e.Batch)
+                .Where(e => e.CourseId == courseId)
+                .OrderBy(e => e.EnrolledAt)
+                .ToListAsync();
         }
     }
 }

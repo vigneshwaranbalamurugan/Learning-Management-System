@@ -108,6 +108,12 @@ namespace LMSApi.ModelLibrary.DTOs
 
         public double AverageRating { get; set; }
         public int TotalReviews { get; set; }
+
+        public string InstructorName { get; set; } = string.Empty;
+        public int LessonsCount { get; set; }
+        public int EnrolledCount { get; set; }
+        public TimeSpan EstimatedDuration { get; set; }
+        public bool HasCertificate { get; set; } = true;
     }
 
     public class CourseDetailsResponse : CourseResponse
@@ -123,5 +129,33 @@ namespace LMSApi.ModelLibrary.DTOs
         public IEnumerable<BatchSummaryResponse> AvailableBatches { get; set; } = [];
 
         public bool IsWishlisted { get; set; }
+    }
+
+    public class PagedCourseResponse
+    {
+        public IEnumerable<CourseResponse> Courses { get; set; } = new List<CourseResponse>();
+        public int TotalCount { get; set; }
+        public int PageNumber { get; set; }
+        public int PageSize { get; set; }
+        public int TotalPages { get; set; }
+    }
+
+    public class InstructorMetadataDto
+    {
+        public int Id { get; set; }
+        public string FullName { get; set; } = string.Empty;
+    }
+
+    public class LanguageMetadataDto
+    {
+        public int Id { get; set; }
+        public string Name { get; set; } = string.Empty;
+    }
+
+    public class FiltersMetadataResponse
+    {
+        public IEnumerable<CategoryResponse> Categories { get; set; } = [];
+        public IEnumerable<LanguageMetadataDto> Languages { get; set; } = [];
+        public IEnumerable<InstructorMetadataDto> Instructors { get; set; } = [];
     }
 }

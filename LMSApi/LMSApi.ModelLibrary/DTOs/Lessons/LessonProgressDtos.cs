@@ -25,6 +25,7 @@ namespace LMSApi.ModelLibrary.DTOs
         public int Id { get; set; }
         public int UserId { get; set; }
         public int LessonId { get; set; }
+        public string LessonTitle { get; set; } = string.Empty;
         public bool IsCompleted { get; set; }
         public DateTime? CompletedAt { get; set; }
         public DateTime LastViewedAt { get; set; }
@@ -56,6 +57,7 @@ namespace LMSApi.ModelLibrary.DTOs
     public class QuizProgressResponse
     {
         public int QuizId { get; set; }
+        public string QuizTitle { get; set; } = string.Empty;
         public bool IsPassed { get; set; }
         public int AttemptsMade { get; set; }
     }
@@ -63,6 +65,7 @@ namespace LMSApi.ModelLibrary.DTOs
     public class AssignmentProgressResponse
     {
         public int AssignmentId { get; set; }
+        public string AssignmentTitle { get; set; } = string.Empty;
         public bool IsPassed { get; set; }
         public string Status { get; set; }
     }

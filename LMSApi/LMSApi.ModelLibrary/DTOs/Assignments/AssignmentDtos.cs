@@ -107,6 +107,21 @@ namespace LMSApi.ModelLibrary.DTOs
         public DateTime CreatedAt { get; set; }
     }
 
+    public class InstructorAssignmentSummaryDto
+    {
+        public int Id { get; set; }
+        public int CourseSectionId { get; set; }
+        public string Title { get; set; }
+        public string CourseTitle { get; set; }
+        public string SectionTitle { get; set; }
+        public int TotalMarks { get; set; }
+        public int DeadlineInDays { get; set; }
+        public DateTime? DeadlineDate { get; set; }
+        public int PendingSubmissionsCount { get; set; }
+        public PublishStatus Status { get; set; }
+        public DateTime CreatedAt { get; set; }
+    }
+
     // ─── Submission Requests ─────────────────────────────────────────────────
 
     public class AssignmentSubmissionRequest
@@ -149,6 +164,10 @@ namespace LMSApi.ModelLibrary.DTOs
         public string Status { get; set; }
         public bool? IsPassed { get; set; }
         public int AttemptNumber { get; set; }
+        public string? StudentName { get; set; }
+        public string? StudentEmail { get; set; }
+        public bool IsLate { get; set; }
+        public DateTime? StudentDeadline { get; set; }
     }
 
     public class AssignmentStatusResponse

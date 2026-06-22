@@ -62,6 +62,11 @@ namespace LMSApi.BALLibrary.Services
             return _mapper.Map<IEnumerable<AssignmentResponse>>(assignments);
         }
 
+        public async Task<IEnumerable<InstructorAssignmentSummaryDto>> GetInstructorAssignmentsAsync(int instructorId)
+        {
+            return await _assignmentRepository.GetInstructorAssignmentsAsync(instructorId);
+        }
+
         public async Task<AssignmentResponse> GetAssignmentByIdAsync(int id, int? currentUserId = null, bool isAdmin = false)
         {
             var assignment = await _assignmentRepository.GetByIdAsync(id)

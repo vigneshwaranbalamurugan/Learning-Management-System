@@ -16,6 +16,8 @@ using Hangfire.PostgreSql;
 using LMSApi.API.Filters;
 using LMSApi.API.Hubs;
 using LMSApi.API.Services;
+using LMSApi.API.Handlers;
+using Microsoft.AspNetCore.SignalR;
 using Serilog;
 using Microsoft.AspNetCore.RateLimiting;
 using System.Threading.RateLimiting;
@@ -41,6 +43,7 @@ AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
 builder.Services.AddControllers();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddSignalR();
+builder.Services.AddSingleton<IUserIdProvider, NotificationUserIdProvider>();
 builder.Services.AddCustomValidation();
 builder.Services.AddOpenApi();
 builder.Services.AddEndpointsApiExplorer();
@@ -126,6 +129,7 @@ builder.Services.AddScoped<INotificationHandler, SmsNotificationHandler>();
 builder.Services.AddScoped<IEmailJob, EmailJob>();
 builder.Services.AddScoped<ICertificateEmailJob, CertificateEmailJob>();
 builder.Services.AddSingleton<ITokenService, TokenService>();
+builder.Services.AddScoped<IAssignmentService, AssignmentService>();
 
 // Course module services
 builder.Services.AddScoped<ICourseCategoryService, CourseCategoryService>();
@@ -207,13 +211,16 @@ builder.Services.AddCustomRateLimiting(builder.Configuration);
 
 builder.Services.AddRoleAuthorization();
 
-// CORS configuration
+// CORS configuration — supports multiple comma-separated origins from config
 var frontendUrl = builder.Configuration["ApplicationUrls:Frontend"] ?? "http://localhost:4200";
+var allowedOrigins = frontendUrl
+    .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
     {
-        policy.WithOrigins(frontendUrl)
+        policy.WithOrigins(allowedOrigins)
               .AllowAnyMethod()
               .AllowAnyHeader()
               .AllowCredentials();
@@ -221,6 +228,13 @@ builder.Services.AddCors(options =>
 });
 
 var app = builder.Build();
+
+app.Use(async (context, next) =>
+{
+    await Task.Delay(3000);
+
+    await next();
+});
 
 // ── Exception handling must be FIRST so it wraps every middleware below ──
 app.UseMiddleware<ExceptionHandlingMiddleware>();
@@ -236,7 +250,9 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
+// Note: HTTPS redirection is disabled for HTTP LAN dev access.
+// Re-enable when deploying with TLS/HTTPS.
+// app.UseHttpsRedirection();
 
 app.UseCors("AllowFrontend");
 

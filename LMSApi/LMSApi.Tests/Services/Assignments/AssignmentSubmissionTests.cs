@@ -38,6 +38,7 @@ namespace LMSApi.Tests.Services
             var courseRepo = new CourseRepository(DbContext);
             var progressService = new Mock<IStudentProgressService>();
             var userRepo = new UserRepository(DbContext);
+            var userNotificationsService = new Mock<IUserNotificationsService>();
 
             _submissionService = new AssignmentSubmissionService(
                 assignmentRepo,
@@ -50,6 +51,7 @@ namespace LMSApi.Tests.Services
                 Mapper,
                 _mockLogger.Object,
                 _mockNotificationService.Object,
+                userNotificationsService.Object,
                 userRepo
             );
         }

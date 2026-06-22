@@ -119,6 +119,12 @@ namespace LMSApi.BALLibrary.Services
             };
         }
 
+        public async Task<IEnumerable<CertificateResponse>> GetMyCertificatesAsync(int userId)
+        {
+            var certs = await _certificateRepository.GetCertificatesByUserAsync(userId);
+            return _mapper.Map<IEnumerable<CertificateResponse>>(certs);
+        }
+
         public async Task<CertificateVerificationResponse> VerifyCertificateAsync(Guid certificateId)
         {
             var cert = await _certificateRepository.GetByGuidAsync(certificateId);
