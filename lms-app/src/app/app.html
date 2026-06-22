@@ -1,2 +1,11 @@
 <router-outlet></router-outlet>
 <app-toaster></app-toaster>
+
+@if (isAuthenticating()) {
+  <div class="fixed inset-0 z-[10000] bg-slate-950/40 backdrop-blur-xs flex flex-col items-center justify-center gap-3 select-none pointer-events-none">
+    <div class="bg-white p-6 rounded-2xl shadow-xl flex flex-col items-center gap-4 border border-gray-150">
+      <app-loader></app-loader>
+      <span class="text-xs font-bold text-gray-700">Authenticating securely...</span>
+    </div>
+  </div>
+}

@@ -1,0 +1,212 @@
+<div class="flex flex-col gap-6 animate-[fadeInContent_400ms_ease]">
+
+  <!-- ═══════════ HEADER BANNER ═══════════ -->
+  <div class="relative overflow-hidden bg-slate-950 text-white rounded-2xl p-7 flex items-center justify-between shadow-xs">
+    <img src="/explore-banner.png" alt="Assignments Banner" class="absolute inset-0 w-full h-full object-cover opacity-30 select-none pointer-events-none" />
+    <div class="absolute inset-0 bg-gradient-to-r from-primary/90 via-slate-950/80 to-transparent"></div>
+    <div class="flex flex-col relative z-10">
+      <div class="bg-white/15 border border-white/20 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider self-start mb-3">
+        Workspace
+      </div>
+      <h2 class="text-2xl sm:text-3xl font-extrabold mb-2 tracking-tight">My Assignments ✍️</h2>
+      <p class="text-white/85 text-xs sm:text-sm max-w-[500px] leading-relaxed">
+        Submit your project files or links, track review progress, and read detailed feedback from instructors.
+      </p>
+    </div>
+    <div class="hidden lg:flex flex-col items-end gap-2 relative z-10 text-right">
+      <div class="text-4xl font-black text-white/15 select-none">{{ totalCount() }}</div>
+      <span class="text-xs text-white/60 font-semibold uppercase tracking-widest">Total Assignments</span>
+    </div>
+  </div>
+
+  <!-- ═══════════ STATS OVERVIEW ═══════════ -->
+  @if (!isLoading() && totalCount() > 0) {
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div class="bg-white border border-gray-200 rounded-xl p-4 flex flex-col justify-between shadow-xs">
+        <span class="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Assigned</span>
+        <span class="text-2xl font-extrabold text-slate-800 mt-1">{{ totalCount() }}</span>
+      </div>
+      <div class="bg-amber-50 border border-amber-100 rounded-xl p-4 flex flex-col justify-between shadow-xs">
+        <span class="text-[10px] text-amber-700 font-bold uppercase tracking-wider">In Progress / Pending</span>
+        <span class="text-2xl font-extrabold text-amber-700 mt-1">{{ pendingCount() }}</span>
+      </div>
+      <div class="bg-emerald-50 border border-emerald-100 rounded-xl p-4 flex flex-col justify-between shadow-xs">
+        <span class="text-[10px] text-emerald-700 font-bold uppercase tracking-wider">Passed</span>
+        <span class="text-2xl font-extrabold text-emerald-700 mt-1">{{ passedCount() }}</span>
+      </div>
+      <div class="bg-red-50 border border-red-100 rounded-xl p-4 flex flex-col justify-between shadow-xs">
+        <span class="text-[10px] text-red-700 font-bold uppercase tracking-wider">Failed</span>
+        <span class="text-2xl font-extrabold text-red-700 mt-1">{{ failedCount() }}</span>
+      </div>
+    </div>
+  }
+
+  <!-- ═══════════ SEARCH & CONTROLS ═══════════ -->
+  @if (!isLoading() && totalCount() > 0) {
+    <div class="flex flex-col sm:flex-row gap-4 items-center justify-between bg-white border border-gray-200 rounded-xl p-3 shadow-xs">
+      <div class="relative w-full sm:max-w-xs">
+        <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+          <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+        </span>
+        <input type="text"
+          id="assignment-search"
+          placeholder="Search by assignment, section or course..."
+          [ngModel]="searchQuery()"
+          (ngModelChange)="searchQuery.set($event)"
+          class="w-full pl-9 pr-9 py-2 border border-gray-200 rounded-lg text-xs bg-white text-gray-800 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition" />
+        @if (searchQuery()) {
+          <button (click)="searchQuery.set('')"
+            class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 cursor-pointer transition">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+          </button>
+        }
+      </div>
+      <span class="text-xs text-gray-400 font-semibold">Showing {{ filteredAssignments().length }} assignments</span>
+    </div>
+  }
+
+  <!-- ═══════════ LOADING STATE ═══════════ -->
+  @if (isLoading()) {
+    <div class="flex items-center justify-center min-h-[60vh]">
+      <app-loader></app-loader>
+    </div>
+  }
+
+  <!-- ═══════════ ASSIGNMENTS LIST ═══════════ -->
+  @if (!isLoading()) {
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      @for (assignment of filteredAssignments(); track assignment.id) {
+        <div class="bg-white border border-gray-250 rounded-2xl p-5 flex flex-col min-h-[260px] shadow-xs relative overflow-hidden
+                    hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 group">
+          
+          <!-- Decorative Status Line at the top -->
+          <div class="absolute top-0 left-0 right-0 h-1.5"
+               [class.bg-emerald-500]="assignment.isPassed === true"
+               [class.bg-red-500]="assignment.isPassed === false"
+               [class.bg-amber-500]="assignment.status === 'Submitted' || assignment.status === 'UnderReview'"
+               [class.bg-gray-300]="assignment.status === 'Pending'"></div>
+
+          <!-- Course & Section Header -->
+          <div class="flex flex-col gap-0.5 mb-1 shrink-0">
+            <span class="text-[9px] text-gray-400 font-bold uppercase tracking-wider truncate">
+              {{ assignment.courseTitle }}
+            </span>
+            <span class="text-[9px] text-indigo-600 font-extrabold uppercase tracking-wider truncate">
+              📂 {{ assignment.sectionTitle }}
+            </span>
+          </div>
+
+          <h3 class="text-sm font-bold text-gray-900 leading-snug line-clamp-2 m-0 mb-3 h-10 pr-2">
+            {{ assignment.title }}
+            @if (assignment.isCompulsory) {
+              <span class="inline-block align-middle ml-1 px-1.5 py-0.5 text-[8px] bg-red-100 text-red-700 font-extrabold rounded-md uppercase">Required</span>
+            }
+          </h3>
+
+          <!-- Details Grid -->
+          <div class="grid grid-cols-2 gap-3 bg-gray-50 border border-gray-150 rounded-xl p-3 mb-3 text-[11px] select-none">
+            <div class="flex flex-col gap-0.5">
+              <span class="text-gray-400 font-bold uppercase text-[8px] tracking-wider">Passing Marks</span>
+              <div class="flex items-baseline gap-1">
+                <span class="text-xs font-black text-slate-800">{{ assignment.passingMarks }}/{{ assignment.totalMarks }}</span>
+              </div>
+            </div>
+            
+            <div class="flex flex-col gap-0.5">
+              <span class="text-gray-400 font-bold uppercase text-[8px] tracking-wider">Attempts</span>
+              <span class="text-xs font-black text-slate-700">{{ assignment.attemptsMade }}/{{ assignment.maxSubmissions }}</span>
+            </div>
+
+            <div class="flex flex-col gap-0.5 col-span-2">
+              <span class="text-gray-400 font-bold uppercase text-[8px] tracking-wider">Deadline</span>
+              <span class="text-xs font-black text-slate-700">
+                @if (assignment.deadline) {
+                  {{ assignment.deadline | date:'MMM dd, yyyy - hh:mm a' }}
+                } @else if (assignment.deadlineInDays > 0) {
+                  Within {{ assignment.deadlineInDays }} days of enrolling
+                } @else {
+                  No deadline
+                }
+              </span>
+            </div>
+          </div>
+
+          <!-- Status Indicator -->
+          <div class="flex items-center justify-between text-[9px] text-gray-400 font-bold uppercase tracking-wider mt-auto pt-2">
+            <span>Status</span>
+            <span class="px-2 py-0.5 rounded-full font-extrabold"
+                  [class.bg-emerald-50]="assignment.isPassed === true"
+                  [class.text-emerald-700]="assignment.isPassed === true"
+                  [class.bg-red-50]="assignment.isPassed === false"
+                  [class.text-red-700]="assignment.isPassed === false"
+                  [class.bg-amber-50]="assignment.status === 'Submitted' || assignment.status === 'UnderReview'"
+                  [class.text-amber-700]="assignment.status === 'Submitted' || assignment.status === 'UnderReview'"
+                  [class.bg-gray-100]="assignment.status === 'Pending'"
+                  [class.text-gray-600]="assignment.status === 'Pending'">
+              @if (assignment.isPassed === true) {
+                Passed
+              } @else if (assignment.isPassed === false) {
+                Failed
+              } @else if (assignment.status === 'UnderReview') {
+                Under Review
+              } @else if (assignment.status === 'Submitted') {
+                Submitted
+              } @else {
+                Not Submitted
+              }
+            </span>
+          </div>
+
+          <!-- Footer Actions -->
+          <div class="flex items-center gap-2 pt-3 border-t border-gray-100 mt-4">
+            <button (click)="viewAssignmentDetail(assignment.id)"
+              class="w-full px-3 py-2.5 rounded-lg text-xs font-bold bg-[#1C1C7B] text-white hover:bg-[#14145a] cursor-pointer transition shadow-sm flex items-center justify-center gap-2">
+              <span>{{ assignment.status === 'Pending' ? '📝 Submit Assignment' : '👁 View Details & Status' }}</span>
+            </button>
+          </div>
+        </div>
+      }
+    </div>
+
+    <!-- Empty State -->
+    @if (filteredAssignments().length === 0) {
+      <div class="flex flex-col items-center justify-center py-16 px-6 text-center bg-white border border-dashed border-gray-200 rounded-2xl animate-[fadeInContent_300ms_ease]">
+        <!-- SVG Empty State Illustration -->
+        <svg class="w-52 h-52 mb-4" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="100" cy="100" r="85" fill="#f8fafc" />
+          <circle cx="100" cy="100" r="75" stroke="#e2e8f0" stroke-width="1.5" stroke-dasharray="4 4" />
+          <path d="M70 70h60v60H70z" fill="#cbd5e1" opacity="0.3" />
+          <path d="M85 85h30v5H85zM85 95h30v5H85z" fill="#cbd5e1" opacity="0.5" />
+        </svg>
+
+        <div class="text-center max-w-sm">
+          <h4 class="text-sm font-bold text-gray-800 m-0 mb-1">No Assignments Found</h4>
+          <p class="text-xs text-gray-400 mx-auto leading-relaxed">
+            @if (assignments().length === 0) {
+              Enroll in courses with assignments and they will appear here.
+            } @else {
+              No assignments match your search query. Try clearing the search.
+            }
+          </p>
+        </div>
+
+        @if (assignments().length === 0) {
+          <button (click)="navigateToExplore()"
+            class="mt-4 px-5 py-2.5 rounded-lg bg-primary text-white text-xs font-bold hover:bg-[#14145a] cursor-pointer transition shadow-sm hover:shadow-md">
+            🚀 Explore Courses
+          </button>
+        } @else {
+          <button (click)="searchQuery.set('')"
+            class="mt-4 px-5 py-2.5 rounded-lg bg-primary text-white text-xs font-bold hover:bg-[#14145a] cursor-pointer transition shadow-sm hover:shadow-md">
+            Clear Search
+          </button>
+        }
+      </div>
+    }
+  }
+
+</div>

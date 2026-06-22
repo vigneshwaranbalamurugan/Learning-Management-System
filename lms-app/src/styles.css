@@ -50,6 +50,64 @@
   --color-navbar-bg: #FFFFFF;
   --color-navbar-text: #000000;
   --color-navbar-hover: #1C1C7B;
-  --color-navbar-active: #FF8C00;
+  /* Brand Color Shadows */
+  --shadow-primary-glow: 0 10px 25px -5px rgba(28, 28, 123, 0.15), 0 8px 10px -6px rgba(28, 28, 123, 0.15);
+  --shadow-secondary-glow: 0 10px 25px -5px rgba(255, 140, 0, 0.15), 0 8px 10px -6px rgba(255, 140, 0, 0.15);
+  --shadow-success-glow: 0 10px 25px -5px rgba(22, 163, 74, 0.15), 0 8px 10px -6px rgba(22, 163, 74, 0.15);
 }
 
+/* ══════════════════════════════════════════
+   Global Keyframes
+═══════════════════════════════════════════ */
+
+@keyframes fadeInContent {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+/* ══════════════════════════════════════════
+   Utility: line-clamp (fallback for older builds)
+═══════════════════════════════════════════ */
+.line-clamp-1 {
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* ══════════════════════════════════════════
+   Utility: min pipe helper via CSS var
+═══════════════════════════════════════════ */

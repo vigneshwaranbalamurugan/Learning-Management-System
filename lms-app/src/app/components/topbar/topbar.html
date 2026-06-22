@@ -1,0 +1,77 @@
+<header class="fixed top-0 right-0 h-[72px] bg-white border-b border-gray-100 flex items-center justify-between px-8 z-40 transition-all duration-300 ease-in-out"
+        [style.left]="isMobile() ? '0px' : (isCollapsed() ? '80px' : '280px')">
+  <!-- Left Side: Toggle & Title -->
+  <div class="flex items-center gap-4">
+    <button (click)="toggleSidebar.emit()" class="p-2 text-gray-500 hover:bg-gray-50 hover:text-primary rounded-lg flex items-center justify-center cursor-pointer transition md:hidden" aria-label="Toggle Sidebar">
+      <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+      </svg>
+    </button>
+    <h1 class="text-xl font-bold text-gray-900 m-0 tracking-tight">{{ pageTitle() }}</h1>
+  </div>
+
+  <!-- Center Search Bar (SaaS Premium Visual Element) -->
+  <div class="hidden md:flex items-center gap-2.5 bg-slate-100 hover:bg-slate-200/60 transition px-3.5 py-2 rounded-lg w-72 text-slate-400 cursor-pointer text-xs font-medium border border-transparent hover:border-slate-300/40">
+    <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+    </svg>
+    <span>Search courses, assignments...</span>
+    <span class="ml-auto bg-white border border-slate-200 text-[10px] px-1.5 py-0.5 rounded-sm font-semibold shadow-xs">⌘K</span>
+  </div>
+
+  <!-- Right Side: Notifications & Profile -->
+  <div class="flex items-center gap-5">
+    <!-- Notification Bell -->
+    <div class="relative">
+      <button
+        id="notification-bell-btn"
+        (click)="togglePanel($event)"
+        class="relative p-2 text-gray-500 hover:bg-gray-50 hover:text-primary rounded-lg flex items-center justify-center cursor-pointer transition"
+        [class.text-primary]="isPanelOpen()"
+        [class.bg-gray-50]="isPanelOpen()"
+        aria-label="View Notifications"
+        [attr.aria-expanded]="isPanelOpen()"
+      >
+        <!-- Bell icon -->
+        <svg class="w-[22px] h-[22px]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+        </svg>
+
+        <!-- Unread badge — hidden when 0 -->
+        @if (unreadCount() > 0) {
+          <span
+            class="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 bg-gradient-to-br from-indigo-500 to-violet-600 text-white text-[10px] font-bold rounded-full flex items-center justify-center border-2 border-white leading-none"
+            aria-label="{{ unreadCount() }} unread notifications"
+          >
+            {{ badgeLabel }}
+          </span>
+        }
+      </button>
+
+      <!-- Notification Panel (dropdown) -->
+      @if (isPanelOpen()) {
+        <app-notification-panel (close)="isPanelOpen.set(false)" />
+      }
+    </div>
+
+    <!-- Profile Trigger -->
+    <div class="relative">
+      <button (click)="toggleDropdown($event)" class="p-0 cursor-pointer flex items-center justify-center rounded-full overflow-hidden transition hover:scale-105">
+        <img *ngIf="user().profilePictureUrl; else initialAvatar" [src]="user().profilePictureUrl" alt="User Avatar" class="w-10 h-10 rounded-full object-cover border-2 border-slate-100" />
+        <ng-template #initialAvatar>
+          <div class="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center font-semibold text-base border-2 border-primary">
+            {{ avatarInitial }}
+          </div>
+        </ng-template>
+      </button>
+
+      <!-- Dropdown -->
+      <app-user-dropdown
+        *ngIf="isDropdownOpen()"
+        [user]="user()"
+        (close)="isDropdownOpen.set(false)"
+        (logout)="logout.emit()">
+      </app-user-dropdown>
+    </div>
+  </div>
+</header>

@@ -1,0 +1,138 @@
+<div class="min-h-screen bg-slate-50 py-12 px-4 sm:px-6 lg:px-8 flex flex-col items-center justify-center animate-[fadeInContent_400ms_ease]">
+  
+  <!-- ═══════════ BRANDING HEADER ═══════════ -->
+  <div class="flex items-center gap-3 mb-8 cursor-pointer" [routerLink]="['/']">
+    <div class="flex items-center justify-center bg-white p-2 rounded-xl border border-gray-250 shadow-xs">
+      <img src="/coursehub.webp" alt="CourseHub Logo" class="h-8 w-auto object-contain" />
+    </div>
+    <span class="text-xl font-bold tracking-tight text-primary">CourseHub <span class="text-secondary">LMS</span></span>
+  </div>
+
+  <!-- ═══════════ MAIN WRAPPER CARD ═══════════ -->
+  <div class="bg-white w-full max-w-2xl rounded-2xl shadow-xl border border-gray-250 overflow-hidden flex flex-col">
+    
+    <!-- Header -->
+    <div class="bg-[#1C1C7B] text-white p-6 relative overflow-hidden">
+      <div class="absolute right-0 top-0 w-32 h-32 bg-white/10 rounded-full blur-2xl pointer-events-none"></div>
+      <h2 class="text-xl sm:text-2xl font-black mb-1.5 tracking-tight">Verify Certificate Credentials</h2>
+      <p class="text-white/80 text-xs sm:text-sm">
+        Confirm the validity of certificates issued by CourseHub LMS.
+      </p>
+    </div>
+
+    <!-- Card Body -->
+    <div class="p-6 sm:p-8 flex flex-col gap-6">
+
+      <!-- Verification Input Bar -->
+      <div class="flex flex-col gap-2">
+        <label for="cert-id" class="text-[10px] text-gray-400 font-bold uppercase tracking-wider">
+          Enter Certificate Verification ID (GUID)
+        </label>
+        <div class="flex flex-col sm:flex-row gap-3">
+          <input type="text"
+            id="cert-id"
+            placeholder="e.g. 123e4567-e89b-12d3-a456-426614174000"
+            [(ngModel)]="inputId"
+            [disabled]="isVerifying()"
+            class="flex-1 px-4 py-3 border border-gray-250 rounded-xl text-xs bg-white text-gray-800 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition font-mono" />
+          <div class="flex items-center gap-2">
+            <button (click)="onVerify()"
+              [disabled]="isVerifying() || !inputId().trim()"
+              class="w-full sm:w-auto px-6 py-3 rounded-xl text-xs font-bold bg-[#1C1C7B] text-white hover:bg-[#14145a] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition shadow-sm">
+              {{ isVerifying() ? 'Verifying...' : 'Verify Now' }}
+            </button>
+            @if (hasAttempted()) {
+              <button (click)="clearResult()"
+                class="px-4 py-3 rounded-xl text-xs font-bold border border-gray-250 text-gray-600 hover:bg-gray-50 cursor-pointer transition">
+                Clear
+              </button>
+            }
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══════════ LOADING STATE ═══════════ -->
+      @if (isVerifying()) {
+        <div class="flex flex-col items-center justify-center py-12 gap-4">
+          <div class="w-10 h-10 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
+          <span class="text-xs text-gray-400 font-semibold animate-pulse">Verifying credentials with secure registry...</span>
+        </div>
+      }
+
+      <!-- ═══════════ VERIFIED STATE ═══════════ -->
+      @if (!isVerifying() && certificate()) {
+        <div class="flex flex-col gap-6 animate-[fadeInContent_300ms_ease]">
+          
+          <!-- Banner -->
+          <div class="border border-emerald-100 bg-emerald-50/40 p-5 rounded-2xl flex flex-col gap-4 text-center items-center">
+            <div class="w-14 h-14 bg-emerald-100 text-emerald-700 rounded-full flex items-center justify-center shadow-xs">
+              <svg class="w-7 h-7" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138z" />
+              </svg>
+            </div>
+            <div>
+              <h4 class="text-base font-extrabold text-emerald-950 m-0 mb-1">Official Credentials Verified</h4>
+              <p class="text-xs text-emerald-700/80 m-0 leading-relaxed max-w-sm">
+                This certificate is verified as authentic and was successfully issued to the candidate below.
+              </p>
+            </div>
+          </div>
+
+          <!-- Info Details -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 border-t border-gray-150 pt-5">
+            <div class="flex flex-col gap-1">
+              <span class="text-[9px] text-gray-400 font-bold uppercase tracking-wider">Candidate</span>
+              <span class="text-xs font-bold text-gray-800">{{ certificate()?.learnerName || 'Learner' }}</span>
+            </div>
+            <div class="flex flex-col gap-1">
+              <span class="text-[9px] text-gray-400 font-bold uppercase tracking-wider">Course Name</span>
+              <span class="text-xs font-bold text-gray-800">{{ certificate()?.courseName }}</span>
+            </div>
+            <div class="flex flex-col gap-1">
+              <span class="text-[9px] text-gray-400 font-bold uppercase tracking-wider">Instructor</span>
+              <span class="text-xs font-bold text-gray-800">{{ certificate()?.instructorName || 'Instructor' }}</span>
+            </div>
+            <div class="flex flex-col gap-1">
+              <span class="text-[9px] text-gray-400 font-bold uppercase tracking-wider">Issued Date</span>
+              <span class="text-xs font-bold text-gray-800">{{ certificate()?.issuedAt | date:'MMMM dd, yyyy' }}</span>
+            </div>
+            <div class="col-span-full flex flex-col gap-1 border-t border-gray-100 pt-3 mt-1">
+              <span class="text-[9px] text-gray-400 font-bold uppercase tracking-wider">Verification ID</span>
+              <span class="text-xs font-mono font-bold text-slate-500 break-all select-all">{{ certificate()?.certificateId }}</span>
+            </div>
+          </div>
+
+
+        </div>
+      }
+
+      <!-- ═══════════ ERROR STATE ═══════════ -->
+      @if (!isVerifying() && errorMsg()) {
+        <div class="border border-red-150 bg-red-50/50 p-5 rounded-2xl flex flex-col gap-3 text-center items-center animate-[fadeInContent_300ms_ease]">
+          <div class="w-12 h-12 bg-red-100 text-red-600 rounded-full flex items-center justify-center shadow-xs">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+          </div>
+          <div>
+            <h4 class="text-sm font-bold text-red-950 m-0 mb-1">Verification Failed</h4>
+            <p class="text-xs text-red-700/80 m-0 leading-relaxed max-w-sm">
+              {{ errorMsg() }}
+            </p>
+          </div>
+        </div>
+      }
+
+    </div>
+
+    <!-- Card Footer -->
+    <div class="bg-gray-50 border-t border-gray-150 p-4 flex items-center justify-between text-xs text-gray-500">
+      <a [routerLink]="['/']" class="font-bold text-primary hover:underline cursor-pointer flex items-center gap-1">
+        <span>←</span> Back to Home
+      </a>
+      <span>Secure Verification Hub</span>
+    </div>
+
+  </div>
+
+</div>

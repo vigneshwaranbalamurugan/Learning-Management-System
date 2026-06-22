@@ -1,0 +1,196 @@
+<div class="flex flex-col gap-6 animate-[fadeInContent_400ms_ease] max-w-5xl mx-auto py-4">
+
+  <!-- ═══════════ HEADER & BACK NAVIGATION ═══════════ -->
+  <div class="flex items-center justify-between border-b border-gray-200 pb-4">
+    <button (click)="goBack()"
+      class="flex items-center gap-2 text-xs font-bold text-gray-500 hover:text-primary cursor-pointer transition">
+      <span>←</span> Back to My Quizzes
+    </button>
+    <span class="text-xs text-gray-400 font-semibold">Attempt Details</span>
+  </div>
+
+  <!-- ═══════════ LOADING SHIMMER ═══════════ -->
+  @if (isLoading()) {
+    <div class="flex flex-col gap-6 animate-pulse select-none pointer-events-none">
+      <!-- Summary Banner Skeleton -->
+      <div class="bg-gray-100 border border-gray-200 rounded-2xl p-6 sm:p-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
+        <div class="flex flex-col gap-2.5 w-full max-w-xl">
+          <div class="h-3 bg-gray-200 rounded w-1/4"></div>
+          <div class="h-6 bg-gray-200 rounded w-2/3"></div>
+          <div class="flex flex-wrap gap-2 mt-2">
+            <div class="h-4 bg-gray-200 rounded-md w-28"></div>
+            <div class="h-4 bg-gray-200 rounded-md w-24"></div>
+            <div class="h-4 bg-gray-200 rounded-md w-20"></div>
+          </div>
+        </div>
+        <div class="flex items-center gap-4 shrink-0 w-full sm:w-auto">
+          <div class="flex flex-col items-end gap-1.5">
+            <div class="h-3 bg-gray-200 rounded w-10"></div>
+            <div class="h-5 bg-gray-200 rounded w-20"></div>
+          </div>
+          <div class="h-10 w-[1px] bg-gray-250 hidden sm:block"></div>
+          <div class="h-8 bg-gray-200 rounded-xl w-20"></div>
+        </div>
+      </div>
+
+      <!-- Question Cards Skeletons -->
+      <div class="flex flex-col gap-6">
+        @for (i of [1, 2]; track i) {
+          <div class="bg-white border border-gray-200 rounded-2xl p-6 flex flex-col gap-4">
+            <!-- Question Title Shimmer -->
+            <div class="flex justify-between items-center gap-4">
+              <div class="h-4 bg-gray-200 rounded w-3/4"></div>
+              <div class="h-4 bg-gray-200 rounded w-12"></div>
+            </div>
+            <!-- Options Shimmer -->
+            <div class="flex flex-col gap-2.5 pl-4">
+              <div class="h-11 bg-gray-50 rounded-xl border border-gray-200 w-full"></div>
+              <div class="h-11 bg-gray-50 rounded-xl border border-gray-200 w-full"></div>
+              <div class="h-11 bg-gray-50 rounded-xl border border-gray-200 w-full"></div>
+              <div class="h-11 bg-gray-50 rounded-xl border border-gray-200 w-full"></div>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+  }
+
+  <!-- ═══════════ MAIN DETAILS VIEW ═══════════ -->
+  @if (!isLoading() && attempt()) {
+    <div class="flex flex-col gap-6">
+
+      <!-- Summary Banner Dashboard -->
+      <div class="relative overflow-hidden bg-slate-950 text-white rounded-2xl p-6 sm:p-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 shadow-sm">
+        <img src="/explore-banner.png" alt="Quiz Banner" class="absolute inset-0 w-full h-full object-cover opacity-20 select-none pointer-events-none" />
+        <div class="absolute inset-0 bg-gradient-to-r from-primary/95 via-slate-950/80 to-transparent"></div>
+        
+        <div class="flex flex-col relative z-10 gap-1.5 max-w-2xl">
+          <div class="flex flex-wrap items-center gap-1.5">
+            <span class="text-[9px] text-white/60 font-bold uppercase tracking-wider">
+              {{ attempt()?.courseTitle }}
+            </span>
+            @if (attempt()?.sectionTitle) {
+              <span class="text-white/40 text-[9px]">•</span>
+              <span class="text-[9px] text-amber-400 font-extrabold uppercase tracking-wider">
+                📂 {{ attempt()?.sectionTitle }}
+              </span>
+            }
+          </div>
+          <h2 class="text-xl sm:text-2xl font-extrabold m-0 tracking-tight leading-snug">
+            {{ attempt()?.quizTitle }}
+          </h2>
+          <div class="flex flex-wrap items-center gap-x-3 gap-y-1.5 mt-3 text-[9px] text-white/75 font-bold uppercase tracking-wider select-none">
+            <span class="flex items-center gap-1 bg-white/10 px-2 py-0.5 rounded">
+              📅 Submitted {{ attempt()?.completedAt | date:'MMM dd, yyyy - hh:mm a' }}
+            </span>
+            <span class="flex items-center gap-1 bg-white/10 px-2 py-0.5 rounded">
+              📋 {{ attempt()?.questionsCount }} Questions
+            </span>
+            <span class="flex items-center gap-1 bg-white/10 px-2 py-0.5 rounded">
+              ⏱️ Took {{ getDuration(attempt()?.startedAt, attempt()?.completedAt) }}
+            </span>
+            <span class="flex items-center gap-1 bg-white/10 px-2 py-0.5 rounded">
+              🎯 Target: {{ attempt()?.passingPercentage }}%
+            </span>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-4 relative z-10 shrink-0">
+          <div class="flex flex-col items-end">
+            <span class="text-xs text-white/50 font-bold uppercase tracking-wider">Score</span>
+            <div class="text-2xl sm:text-3xl font-black text-white leading-none mt-1 flex items-baseline gap-1">
+              <span>{{ attempt()?.obtainedScore }}<span class="text-base text-white/50 font-medium">/{{ attempt()?.totalScore }}</span></span>
+              <span class="text-xs text-white/65 font-bold">({{ getPercentage(attempt()?.obtainedScore, attempt()?.totalScore) }}%)</span>
+            </div>
+          </div>
+          <div class="h-10 w-[1px] bg-white/20"></div>
+          <span class="px-4 py-2 rounded-xl text-xs font-black tracking-wider"
+                [class.bg-emerald-500]="attempt()?.isPassed"
+                [class.text-white]="attempt()?.isPassed"
+                [class.bg-red-500]="!attempt()?.isPassed">
+            {{ attempt()?.isPassed ? 'PASSED' : 'FAILED' }}
+          </span>
+        </div>
+      </div>
+
+      <!-- Questions List -->
+      <div class="flex flex-col gap-6">
+        @for (question of attempt()?.questions; track question.id) {
+          <div class="bg-white border border-gray-250 rounded-2xl p-6 flex flex-col gap-4 shadow-xs">
+            
+            <!-- Question Title -->
+            <div class="flex items-start justify-between gap-4">
+              <div class="flex gap-2">
+                <span class="font-extrabold text-[#1C1C7B] text-xs shrink-0">Question {{ $index + 1 }}.</span>
+                <span class="text-xs font-bold text-gray-800 leading-relaxed">{{ question.questionText }}</span>
+              </div>
+              <span class="px-2 py-0.5 rounded bg-gray-100 text-gray-500 text-[9px] font-bold tracking-wide shrink-0">
+                {{ question.mark }} {{ question.mark === 1 ? 'Mark' : 'Marks' }}
+              </span>
+            </div>
+
+            <!-- Answer options -->
+            <div class="flex flex-col gap-2 pl-4">
+              @for (option of question.options; track option.id) {
+                <div class="flex items-center justify-between p-3 rounded-xl border text-xs transition duration-150"
+                     [class.bg-emerald-50]="option.isCorrect"
+                     [class.border-emerald-500]="option.isCorrect && isSelectedOption(question.id, option.id)"
+                     [class.border-emerald-300]="option.isCorrect && !isSelectedOption(question.id, option.id)"
+                     [class.text-emerald-850]="option.isCorrect"
+                     [class.bg-red-50]="isSelectedOption(question.id, option.id) && !option.isCorrect"
+                     [class.border-red-500]="isSelectedOption(question.id, option.id) && !option.isCorrect"
+                     [class.text-red-850]="isSelectedOption(question.id, option.id) && !option.isCorrect"
+                     [class.border-gray-200]="!option.isCorrect && !isSelectedOption(question.id, option.id)"
+                     [class.text-gray-700]="!option.isCorrect && !isSelectedOption(question.id, option.id)">
+                  
+                  <div class="flex items-center gap-2">
+                    <!-- Option Letter -->
+                    <span class="font-black text-xs"
+                          [class.text-emerald-700]="option.isCorrect"
+                          [class.text-red-700]="isSelectedOption(question.id, option.id) && !option.isCorrect"
+                          [class.text-gray-400]="!option.isCorrect && !isSelectedOption(question.id, option.id)">
+                      {{ ['A','B','C','D','E'][$index] }}.
+                    </span>
+                    <span class="font-medium text-gray-700">{{ option.optionText }}</span>
+                  </div>
+
+                  <!-- Badges -->
+                  <div class="flex items-center gap-1.5">
+                    @if (isSelectedOption(question.id, option.id)) {
+                      <span class="px-1.5 py-0.5 rounded text-[8px] font-bold uppercase tracking-wider bg-slate-900 text-white">Your Answer</span>
+                    }
+                    @if (option.isCorrect) {
+                      <span class="px-1.5 py-0.5 rounded text-[8px] font-bold uppercase tracking-wider bg-emerald-600 text-white">Correct</span>
+                    } @else if (isSelectedOption(question.id, option.id)) {
+                      <span class="px-1.5 py-0.5 rounded text-[8px] font-bold uppercase tracking-wider bg-red-600 text-white">Incorrect</span>
+                    }
+                  </div>
+
+                </div>
+              }
+            </div>
+
+            <!-- Explanation Box -->
+            @if (question.explanation) {
+              <div class="mt-2 p-3 bg-blue-50/50 border border-blue-100 rounded-lg text-[11px] text-slate-700 leading-relaxed flex gap-2">
+                <span class="font-bold text-blue-600 shrink-0">💡 Explanation:</span>
+                <span>{{ question.explanation }}</span>
+              </div>
+            }
+
+          </div>
+        }
+      </div>
+
+      <!-- Action Row -->
+      <div class="flex items-center justify-between border-t border-gray-200 pt-5 mt-2">
+        <button (click)="goBack()"
+          class="px-5 py-2.5 border border-gray-250 text-gray-700 hover:bg-gray-100 rounded-lg text-xs font-bold cursor-pointer transition">
+          Back to List
+        </button>
+      </div>
+
+    </div>
+  }
+
+</div>

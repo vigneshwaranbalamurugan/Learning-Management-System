@@ -16,7 +16,7 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
     catchError((error: HttpErrorResponse) => {
       if (error.status === 401) {
         // Show toaster notification
-        toastService.showError(error.error?.message || 'Unauthorized. Please login again.');
+        toastService.showApiError(error, 'Unauthorized. Please login again.');
         
         // Redirect to login page
         router.navigate(['/login']);

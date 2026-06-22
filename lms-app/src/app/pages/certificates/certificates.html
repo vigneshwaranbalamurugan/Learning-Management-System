@@ -1,0 +1,183 @@
+<div class="flex flex-col gap-6 animate-[fadeInContent_400ms_ease]">
+
+  <!-- ═══════════ HEADER BANNER ═══════════ -->
+  <div class="relative overflow-hidden bg-slate-950 text-white rounded-2xl p-7 flex items-center justify-between shadow-xs">
+    <img src="/explore-banner.png" alt="Certificates Banner" class="absolute inset-0 w-full h-full object-cover opacity-30 select-none pointer-events-none" />
+    <div class="absolute inset-0 bg-gradient-to-r from-primary/90 via-slate-950/80 to-transparent"></div>
+    <div class="flex flex-col relative z-10">
+      <div class="bg-white/15 border border-white/20 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider self-start mb-3">
+        Credentials Hub
+      </div>
+      <h2 class="text-2xl sm:text-3xl font-extrabold mb-2 tracking-tight">My Certifications 🏆</h2>
+      <p class="text-white/85 text-xs sm:text-sm max-w-[500px] leading-relaxed">
+        Access, verify, and share your earned course certificates. Keep building skills and growing your collection!
+      </p>
+    </div>
+    <div class="hidden lg:flex flex-col items-end gap-2 relative z-10 text-right">
+      <div class="text-4xl font-black text-white/15 select-none">{{ certificates().length }}</div>
+      <span class="text-xs text-white/60 font-semibold uppercase tracking-widest">Certificates Earned</span>
+    </div>
+  </div>
+
+  <!-- ═══════════ SEARCH & CONTROLS ═══════════ -->
+  @if (!isLoading() && certificates().length > 0) {
+    <div class="flex flex-col sm:flex-row gap-4 items-center justify-between bg-white border border-gray-200 rounded-xl p-3 shadow-xs">
+      <div class="relative w-full sm:max-w-xs">
+        <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+          <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+        </span>
+        <input type="text"
+          id="cert-search"
+          placeholder="Search by course title..."
+          [ngModel]="searchQuery()"
+          (ngModelChange)="searchQuery.set($event)"
+          class="w-full pl-9 pr-9 py-2 border border-gray-200 rounded-lg text-xs bg-white text-gray-800 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition" />
+        @if (searchQuery()) {
+          <button (click)="searchQuery.set('')"
+            class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 cursor-pointer transition">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+          </button>
+        }
+      </div>
+      <span class="text-xs text-gray-400 font-semibold">Showing {{ filteredCertificates().length }} certificates</span>
+    </div>
+  }
+
+  <!-- ═══════════ LOADING STATE ═══════════ -->
+  @if (isLoading()) {
+    <div class="flex items-center justify-center min-h-[60vh]">
+      <app-loader></app-loader>
+    </div>
+  }
+
+  <!-- ═══════════ CERTIFICATES GRID ═══════════ -->
+  @if (!isLoading()) {
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      @for (cert of filteredCertificates(); track cert.id) {
+        <div class="bg-white border border-gray-250 rounded-2xl flex flex-col min-h-[420px] shadow-xs relative overflow-hidden
+                    hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 group">
+          
+          <!-- Course Thumbnail Header Image -->
+          <div class="relative h-44 w-full bg-slate-100 overflow-hidden shrink-0">
+            @if (cert.courseThumbnailUrl) {
+              <img [src]="cert.courseThumbnailUrl" alt="Course Thumbnail" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+            } @else {
+              <div class="w-full h-full bg-[#1C1C7B]/10 flex items-center justify-center">
+                <span class="text-3xl">🎓</span>
+              </div>
+            }
+            <div class="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-transparent to-transparent"></div>
+            <!-- Category Badge overlay -->
+            @if (cert.categoryName) {
+              <span class="absolute top-2.5 left-2.5 bg-white/95 text-slate-800 text-[8px] font-extrabold uppercase px-1.5 py-0.5 rounded tracking-wider shadow-xs">
+                {{ cert.categoryName }}
+              </span>
+            }
+            <!-- Ribbon/Verify Badge overlay -->
+            <span class="absolute bottom-2.5 left-2.5 bg-emerald-500 text-white text-[8px] font-extrabold uppercase px-1.5 py-0.5 rounded tracking-wider flex items-center gap-1 shadow-xs select-none">
+              🛡️ VERIFIED
+            </span>
+          </div>
+
+          <!-- Card Content Body -->
+          <div class="p-4 flex flex-col flex-1 gap-2">
+            <!-- Course Name -->
+            <h3 class="text-[13px] font-bold text-gray-900 leading-snug line-clamp-2 m-0 h-9 pr-2">
+              {{ cert.courseName }}
+            </h3>
+
+            <!-- Details List / Grid -->
+            <div class="grid grid-cols-2 gap-2 bg-gray-50 border border-gray-150 rounded-xl p-2.5 text-[10px] select-none my-1">
+              <div class="flex flex-col gap-0.5">
+                <span class="text-gray-400 font-bold uppercase text-[7px] tracking-wider">Level</span>
+                <span class="font-extrabold text-slate-700 truncate">{{ cert.courseLevel || 'All Levels' }}</span>
+              </div>
+              <div class="flex flex-col gap-0.5">
+                <span class="text-gray-400 font-bold uppercase text-[7px] tracking-wider">Duration</span>
+                <span class="font-extrabold text-slate-700 truncate">{{ cert.courseDurationHours ? cert.courseDurationHours + ' hrs' : 'N/A' }}</span>
+              </div>
+              <div class="flex flex-col gap-0.5">
+                <span class="text-gray-400 font-bold uppercase text-[7px] tracking-wider">Instructor</span>
+                <span class="font-extrabold text-slate-700 truncate">{{ cert.instructorName || 'Instructor' }}</span>
+              </div>
+              <div class="flex flex-col gap-0.5">
+                <span class="text-gray-400 font-bold uppercase text-[7px] tracking-wider">Issued On</span>
+                <span class="font-extrabold text-slate-700 truncate">{{ cert.issuedAt | date:'MMM dd, yyyy' }}</span>
+              </div>
+            </div>
+
+            <div class="text-[9px] text-gray-400 font-mono flex items-center gap-1 mt-1 truncate">
+              <span class="font-bold text-slate-500">ID:</span>
+              <span class="truncate">{{ cert.certificateId }}</span>
+            </div>
+          </div>
+
+          <!-- Footer Actions -->
+          <div class="flex items-center gap-2 p-4 pt-3 border-t border-gray-100 bg-gray-50/20 shrink-0">
+            <a [routerLink]="['/learner/certificates', cert.certificateId]"
+              class="flex-1 px-3 py-2.5 rounded-lg text-xs font-bold bg-[#1C1C7B] text-white hover:bg-[#14145a] cursor-pointer transition shadow-sm text-center">
+              👁 View Details
+            </a>
+            <button (click)="viewCertificatePdf(cert)"
+              class="px-3 py-2.5 rounded-lg text-xs font-bold border border-gray-200 text-gray-700 hover:bg-gray-50 cursor-pointer transition flex items-center justify-center"
+              title="Download PDF">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      }
+    </div>
+
+    <!-- Empty State -->
+    @if (filteredCertificates().length === 0) {
+      <div class="flex flex-col items-center justify-center py-16 px-6 text-center bg-white border border-dashed border-gray-200 rounded-2xl animate-[fadeInContent_300ms_ease]">
+        <!-- SVG Empty State Illustration -->
+        <svg class="w-52 h-52 mb-4" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="100" cy="100" r="85" fill="#f8fafc" />
+          <circle cx="100" cy="100" r="75" stroke="#e2e8f0" stroke-width="1.5" stroke-dasharray="4 4" />
+          
+          <g transform="translate(60, 50)">
+            <!-- Stack of empty books/folders -->
+            <path d="M10 50h60v12H10z" fill="#cbd5e1" opacity="0.4" />
+            <path d="M15 42h50v8H15z" fill="#cbd5e1" opacity="0.3" />
+            <!-- Locked ribbon -->
+            <path d="M35 15h10v20H35z" fill="#f87171" opacity="0.2" />
+            <circle cx="40" cy="20" r="10" fill="#f87171" opacity="0.2" />
+          </g>
+        </svg>
+
+        <div class="text-center max-w-sm">
+          <h4 class="text-sm font-bold text-gray-800 m-0 mb-1">No Certificates Earned Yet</h4>
+          <p class="text-xs text-gray-400 mx-auto leading-relaxed">
+            @if (certificates().length === 0) {
+              Certificates are automatically issued once you complete 100% of a course's lessons. Complete lessons to earn yours!
+            } @else {
+              No certificates match your search query. Try clearing the search.
+            }
+          </p>
+        </div>
+
+        @if (certificates().length === 0) {
+          <button (click)="navigateToExplore()"
+            class="mt-4 px-5 py-2.5 rounded-lg bg-primary text-white text-xs font-bold hover:bg-[#14145a] cursor-pointer transition shadow-sm hover:shadow-md">
+            🚀 Continue Learning
+          </button>
+        } @else {
+          <button (click)="searchQuery.set('')"
+            class="mt-4 px-5 py-2.5 rounded-lg bg-primary text-white text-xs font-bold hover:bg-[#14145a] cursor-pointer transition shadow-sm hover:shadow-md">
+            Clear Search
+          </button>
+        }
+      </div>
+    }
+  }
+
+
+
+</div>

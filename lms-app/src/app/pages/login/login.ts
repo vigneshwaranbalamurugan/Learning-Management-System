@@ -138,26 +138,36 @@ export class Login implements OnInit {
       this.isSubmitting.set(true);
       this.authService.loginApiCall(this.loginModel()).subscribe({
         next: (response: any) => {
-          this.isSubmitting.set(false);
           this.toastService.showSuccess('Login successful');
 
           const token = response.token || response.accessToken;
+          let role = 'Learner';
           if (token) {
-            const role = this.authService.getRoleFromToken(token);
-            console.log('Role claims extracted:', role);
+            role = this.authService.getRoleFromToken(token) || 'Learner';
           } else if (response.role) {
-            console.log('Role claims extracted:', response.role);
+            role = response.role;
           }
+
+          localStorage.setItem('user_role', role);
+          localStorage.setItem('user_email', this.email);
+          this.authService.userRole.set(role);
 
           if (this.rememberMe) {
             localStorage.setItem('rememberedEmail', this.email);
           } else {
             localStorage.removeItem('rememberedEmail');
           }
+
+          // Redirect to appropriate dashboard immediately
+          this.authService.redirectToDashboard(role);
+          this.isSubmitting.set(false);
+
+          // Initialize auth session state & fetch profile details in background
+          this.authService.initializeAuth().subscribe();
         },
         error: (err: any) => {
           this.isSubmitting.set(false);
-          this.toastService.showError(err.error?.message || 'Login failed. Invalid email or password.');
+          this.toastService.showApiError(err, 'Login failed. Invalid email or password.');
         }
       });
     }

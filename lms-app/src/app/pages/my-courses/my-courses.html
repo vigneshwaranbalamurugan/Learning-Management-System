@@ -1,0 +1,336 @@
+<div class="flex flex-col gap-6 animate-[fadeInContent_400ms_ease]">
+
+  <!-- ═══════════ HEADER BANNER ═══════════ -->
+  <div class="relative overflow-hidden bg-slate-950 text-white rounded-2xl p-7 flex items-center justify-between shadow-xs">
+    <img src="/profile-banner.png" alt="My Courses Banner" class="absolute inset-0 w-full h-full object-cover opacity-35 select-none pointer-events-none" />
+    <div class="absolute inset-0 bg-gradient-to-r from-primary/90 via-slate-950/80 to-transparent"></div>
+    <div class="flex flex-col relative z-10">
+      <div class="bg-white/15 border border-white/20 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider self-start mb-3">
+        Student Portal
+      </div>
+      <h2 class="text-2xl sm:text-3xl font-extrabold mb-2 tracking-tight">My Courses 🎓</h2>
+      <p class="text-white/85 text-xs sm:text-sm max-w-[500px] leading-relaxed">
+        Track your progress, resume your lessons, and manage your learning milestones all in one place.
+      </p>
+    </div>
+    <div class="hidden lg:flex flex-col items-end gap-2 relative z-10 text-right">
+      <div class="text-4xl font-black text-white/10 select-none">{{ totalCount() }}</div>
+      <span class="text-xs text-white/60 font-semibold uppercase tracking-widest">Enrolled Courses</span>
+    </div>
+  </div>
+
+  <!-- ═══════════ STATISTICS OVERVIEW ═══════════ -->
+  @if (!isLoading() && enrollments().length > 0) {
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-5">
+      <!-- Total enrolled -->
+      <div class="bg-white border border-gray-200 rounded-xl p-4 flex items-center gap-4 shadow-xs">
+        <div class="w-10 h-10 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+          </svg>
+        </div>
+        <div class="flex flex-col">
+          <span class="text-lg font-black text-gray-900 leading-tight">{{ totalCount() }}</span>
+          <span class="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Total Enrolled</span>
+        </div>
+      </div>
+      <!-- In progress -->
+      <div class="bg-white border border-gray-200 rounded-xl p-4 flex items-center gap-4 shadow-xs">
+        <div class="w-10 h-10 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </div>
+        <div class="flex flex-col">
+          <span class="text-lg font-black text-gray-900 leading-tight">{{ inProgressCount() }}</span>
+          <span class="text-[10px] text-gray-400 font-bold uppercase tracking-wider">In Progress</span>
+        </div>
+      </div>
+      <!-- Completed -->
+      <div class="bg-white border border-gray-200 rounded-xl p-4 flex items-center gap-4 shadow-xs">
+        <div class="w-10 h-10 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138z" />
+          </svg>
+        </div>
+        <div class="flex flex-col">
+          <span class="text-lg font-black text-gray-900 leading-tight">{{ completedCount() }}</span>
+          <span class="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Completed</span>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- ═══════════ CONTROLS & FILTER BAR ═══════════ -->
+  @if (!isLoading() && enrollments().length > 0) {
+    <div class="flex flex-col md:flex-row gap-4 items-center justify-between bg-white border border-gray-200 rounded-xl p-3 shadow-xs">
+      <!-- Search Input -->
+      <div class="relative w-full md:max-w-xs">
+        <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+          <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+        </span>
+        <input type="text"
+          id="course-search"
+          placeholder="Search by title, instructor..."
+          [ngModel]="searchQuery()"
+          (ngModelChange)="searchQuery.set($event)"
+          class="w-full pl-9 pr-9 py-2 border border-gray-200 rounded-lg text-xs bg-white text-gray-800 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition" />
+        @if (searchQuery()) {
+          <button (click)="searchQuery.set('')"
+            class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 cursor-pointer transition">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+          </button>
+        }
+      </div>
+
+      <!-- Filters segment tabs -->
+      <div class="flex flex-wrap gap-3 items-center w-full md:w-auto justify-end">
+        <!-- Status Filters -->
+        <div class="flex bg-gray-100 rounded-lg p-0.5 border border-gray-200">
+          <button (click)="statusFilter.set('all')"
+            class="px-3 py-1.5 rounded-md text-[10px] font-extrabold uppercase tracking-wider transition cursor-pointer"
+            [class.bg-white]="statusFilter() === 'all'"
+            [class.text-gray-800]="statusFilter() === 'all'"
+            [class.shadow-xs]="statusFilter() === 'all'"
+            [class.text-gray-500]="statusFilter() !== 'all'">
+            All
+          </button>
+          <button (click)="statusFilter.set('in-progress')"
+            class="px-3 py-1.5 rounded-md text-[10px] font-extrabold uppercase tracking-wider transition cursor-pointer"
+            [class.bg-white]="statusFilter() === 'in-progress'"
+            [class.text-gray-800]="statusFilter() === 'in-progress'"
+            [class.shadow-xs]="statusFilter() === 'in-progress'"
+            [class.text-gray-500]="statusFilter() !== 'in-progress'">
+            In Progress
+          </button>
+          <button (click)="statusFilter.set('completed')"
+            class="px-3 py-1.5 rounded-md text-[10px] font-extrabold uppercase tracking-wider transition cursor-pointer"
+            [class.bg-white]="statusFilter() === 'completed'"
+            [class.text-gray-800]="statusFilter() === 'completed'"
+            [class.shadow-xs]="statusFilter() === 'completed'"
+            [class.text-gray-500]="statusFilter() !== 'completed'">
+            Completed
+          </button>
+        </div>
+
+        <!-- Format Filters -->
+        <div class="flex bg-gray-100 rounded-lg p-0.5 border border-gray-200">
+          <button (click)="typeFilter.set('all')"
+            class="px-3 py-1.5 rounded-md text-[10px] font-extrabold uppercase tracking-wider transition cursor-pointer"
+            [class.bg-white]="typeFilter() === 'all'"
+            [class.text-gray-800]="typeFilter() === 'all'"
+            [class.shadow-xs]="typeFilter() === 'all'"
+            [class.text-gray-500]="typeFilter() !== 'all'">
+            All Types
+          </button>
+          <button (click)="typeFilter.set('self-paced')"
+            class="px-3 py-1.5 rounded-md text-[10px] font-extrabold uppercase tracking-wider transition cursor-pointer"
+            [class.bg-white]="typeFilter() === 'self-paced'"
+            [class.text-gray-800]="typeFilter() === 'self-paced'"
+            [class.shadow-xs]="typeFilter() === 'self-paced'"
+            [class.text-gray-500]="typeFilter() !== 'self-paced'">
+            Self Paced
+          </button>
+          <button (click)="typeFilter.set('batch')"
+            class="px-3 py-1.5 rounded-md text-[10px] font-extrabold uppercase tracking-wider transition cursor-pointer"
+            [class.bg-white]="typeFilter() === 'batch'"
+            [class.text-gray-800]="typeFilter() === 'batch'"
+            [class.shadow-xs]="typeFilter() === 'batch'"
+            [class.text-gray-500]="typeFilter() !== 'batch'">
+            Batch
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- ═══════════ LOADING STATE ═══════════ -->
+  @if (isLoading()) {
+    <div class="flex items-center justify-center min-h-[60vh]">
+      <app-loader></app-loader>
+    </div>
+  }
+
+  <!-- ═══════════ ENROLLED COURSES GRID ═══════════ -->
+  @if (!isLoading()) {
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      @for (enrollment of filteredEnrollments(); track enrollment.id) {
+        <div class="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-xs flex flex-col min-h-[440px]
+                    hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 group">
+          
+          <!-- Thumbnail Image -->
+          <div class="h-48 w-full relative overflow-hidden bg-gradient-to-br from-indigo-900 via-[#1C1C7B] to-slate-900 flex items-center justify-center shrink-0">
+            @if (enrollment.thumbnailUrl) {
+              <img [src]="enrollment.thumbnailUrl" [alt]="enrollment.courseTitle"
+                class="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+              <div class="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent"></div>
+            } @else {
+              <div class="text-white/10 text-6xl font-black select-none">LMS</div>
+            }
+
+            <!-- Category badge -->
+            @if (enrollment.categoryName) {
+              <span class="absolute top-3 left-3 bg-slate-900/90 backdrop-blur-xs text-white text-[9px] font-bold px-2.5 py-1 rounded-full border border-white/10 uppercase tracking-wider truncate max-w-[120px] inline-block shadow-sm">
+                {{ enrollment.categoryName }}
+              </span>
+            }
+
+            <!-- Completion / Progress overlay badge -->
+            @if (enrollment.isCompleted) {
+              <span class="absolute top-3 right-3 bg-emerald-500 text-white text-[9px] font-extrabold px-2.5 py-1 rounded-full uppercase tracking-wider shadow-sm flex items-center gap-1">
+                ✓ Completed
+              </span>
+            } @else {
+              <span class="absolute top-3 right-3 bg-[#1C1C7B] text-white text-[9px] font-extrabold px-2.5 py-1 rounded-full uppercase tracking-wider shadow-sm">
+                {{ enrollment.progressPercentage | number:'1.0-0' }}% Done
+              </span>
+            }
+          </div>
+
+          <!-- Card Body -->
+          <div class="p-4 flex-grow flex flex-col gap-2.5">
+            <!-- Level -->
+            <div class="flex items-center">
+              <span class="text-[10px] font-bold px-2 py-0.5 rounded-full {{ getLevelColor(enrollment.level) }}">
+                {{ getLevelName(enrollment.level) }}
+              </span>
+            </div>
+
+            <!-- Title -->
+            <h3 class="text-sm font-bold text-gray-900 leading-snug line-clamp-2 m-0 h-10">{{ enrollment.courseTitle }}</h3>
+
+            <!-- Instructor -->
+            <p class="text-[11px] text-gray-500 m-0 flex items-center gap-1">
+              <svg class="w-3 h-3 text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+              </svg>
+              <span class="truncate">{{ enrollment.instructorName || 'Unknown Instructor' }}</span>
+            </p>
+
+            <!-- Metadata badges -->
+            <div class="flex items-center gap-1.5 flex-wrap">
+              <span class="inline-flex items-center text-[9px] text-gray-500 bg-gray-100 rounded-full px-2 py-0.5 font-semibold">
+                🌐 {{ enrollment.languageName || 'English' }}
+              </span>
+              <span class="inline-flex items-center text-[9px] text-indigo-600 bg-indigo-50 border border-indigo-100 rounded-full px-2 py-0.5 font-semibold">
+                {{ isSelfPaced(enrollment.courseAccessType) ? '⏰ Self Paced' : '👥 Batch Course' }}
+              </span>
+              @if (enrollment.batchName) {
+                <span class="inline-flex items-center text-[9px] text-amber-600 bg-amber-50 border border-amber-100 rounded-full px-2 py-0.5 font-semibold max-w-[120px] truncate" [title]="enrollment.batchName">
+                  👥 {{ enrollment.batchName }}
+                </span>
+              }
+            </div>
+
+            <!-- Lessons / Duration counters -->
+            <div class="flex items-center gap-3 text-[10px] text-gray-400 font-semibold mt-1">
+              @if (enrollment.lessonsCount > 0) {
+                <span class="flex items-center gap-1">
+                  <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.069A1 1 0 0121 8.87v6.26a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+                  </svg>
+                  {{ enrollment.lessonsCount }} lessons
+                </span>
+              }
+              @if (enrollment.estimatedDuration) {
+                <span class="flex items-center gap-1">
+                  <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                  </svg>
+                  {{ formatDuration(enrollment.estimatedDuration) }}
+                </span>
+              }
+            </div>
+
+            <!-- Progress Bar section -->
+            <div class="flex flex-col gap-1.5 mt-auto pt-2">
+              <div class="flex items-center justify-between text-[10px]">
+                <span class="text-gray-400 font-bold uppercase tracking-wider">Progress</span>
+                <span class="text-gray-700 font-bold">{{ enrollment.progressPercentage | number:'1.0-0' }}%</span>
+              </div>
+              <div class="w-full h-2 bg-gray-100 rounded-full overflow-hidden border border-gray-100">
+                <div class="h-full bg-emerald-500 rounded-full transition-all duration-500"
+                  [style.width.%]="enrollment.progressPercentage"></div>
+              </div>
+            </div>
+
+            <!-- CTA Action Row -->
+            <div class="pt-3 border-t border-gray-100 flex items-center justify-end">
+              @if (enrollment.isCompleted) {
+                <button [routerLink]="['/learner/certificates']" [queryParams]="{ courseId: enrollment.courseId }"
+                  class="flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-bold cursor-pointer transition shadow-sm hover:shadow-md
+                         bg-emerald-600 text-white hover:bg-emerald-700">
+                  <span>🏆 View Certificate</span>
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/>
+                  </svg>
+                </button>
+              } @else {
+                <button [routerLink]="['/learner/course', enrollment.courseId]"
+                  class="flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-bold cursor-pointer transition shadow-sm hover:shadow-md
+                         bg-[#1C1C7B] text-white hover:bg-[#14145a]">
+                  <span>⚡ Resume Learning</span>
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/>
+                  </svg>
+                </button>
+              }
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+
+    <!-- Empty State -->
+    @if (filteredEnrollments().length === 0) {
+      <div class="flex flex-col items-center justify-center py-16 px-6 text-center bg-white border border-dashed border-gray-200 rounded-2xl animate-[fadeInContent_300ms_ease]">
+        
+        <!-- SVG Empty State Illustration -->
+        <svg class="w-52 h-52 mb-4" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="100" cy="100" r="85" fill="#f8fafc" />
+          <circle cx="100" cy="100" r="75" stroke="#e2e8f0" stroke-width="1.5" stroke-dasharray="4 4" />
+          
+          <!-- Graduation hat sketch representing learning -->
+          <g transform="translate(45, 45)">
+            <ellipse cx="55" cy="65" rx="40" ry="12" fill="rgba(28, 28, 123, 0.05)" />
+            <path d="M55 20L95 32L55 44L15 32L55 20Z" fill="#1c1c7b" opacity="0.1" stroke="#1c1c7b" stroke-width="2" />
+            <path d="M30 40v12c0 8 10 12 25 12s25-4 25-12V40" fill="none" stroke="#1c1c7b" stroke-width="2" opacity="0.15" />
+            <path d="M55 28L80 35.5v12.5" fill="none" stroke="#fbbf24" stroke-width="2.5" stroke-linecap="round" />
+            <circle cx="80" cy="49" r="3" fill="#fbbf24" />
+          </g>
+          
+          <rect x="70" y="115" width="60" height="8" rx="4" fill="#cbd5e1" opacity="0.6" />
+          <rect x="80" y="129" width="40" height="6" rx="3" fill="#e2e8f0" opacity="0.8" />
+        </svg>
+
+        <div class="text-center max-w-sm">
+          <h4 class="text-sm font-bold text-gray-800 m-0 mb-1">No Courses Enrolled or Matching</h4>
+          <p class="text-xs text-gray-400 mx-auto leading-relaxed">
+            @if (enrollments().length === 0) {
+              You haven't enrolled in any courses yet. Get started by exploring our courses catalog!
+            } @else {
+              No enrolled courses match your search or filter options. Try adjusting the filter categories.
+            }
+          </p>
+        </div>
+        
+        @if (enrollments().length === 0) {
+          <button (click)="navigateToExplore()"
+            class="mt-4 px-5 py-2.5 rounded-lg bg-primary text-white text-xs font-bold hover:bg-[#14145a] cursor-pointer transition shadow-sm hover:shadow-md">
+            🔍 Browse Courses Catalog
+          </button>
+        } @else {
+          <button (click)="resetFilters()"
+            class="mt-4 px-5 py-2.5 rounded-lg bg-primary text-white text-xs font-bold hover:bg-[#14145a] cursor-pointer transition shadow-sm hover:shadow-md">
+            Reset Filters
+          </button>
+        }
+      </div>
+    }
+  }
+
+</div>

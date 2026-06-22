@@ -21,7 +21,8 @@
       "@models/*": ["src/app/models/*"],
       "@environments/*": ["src/environments/*"],
       "@interceptors/*": ["src/app/interceptors/*"],
-      "@guards/*": ["src/app/guards/*"]
+      "@guards/*": ["src/app/guards/*"],
+      "@pages/*":["src/app/pages/*"]
     }
   },
   "angularCompilerOptions": {

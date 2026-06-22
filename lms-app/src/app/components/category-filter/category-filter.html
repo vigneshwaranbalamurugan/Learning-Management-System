@@ -1,0 +1,30 @@
+<div class="relative w-full sm:w-auto">
+  <!-- Mobile Toggle Button (Visible only on mobile) -->
+  <button 
+    (click)="toggleCollapse()"
+    class="w-full sm:hidden flex items-center justify-between px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-semibold text-gray-700 shadow-xs cursor-pointer transition hover:bg-gray-50">
+    <span>{{ selectedId() ? 'Category Selected' : 'Filter Categories' }}</span>
+    <svg class="w-4 h-4 transition-transform duration-200" [class.rotate-180]="isOpen()" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+    </svg>
+  </button>
+
+  <!-- Categories Container -->
+  <div 
+    [class.hidden]="!isOpen()"
+    class="sm:flex flex-col sm:flex-row flex-wrap gap-2 w-full sm:w-auto justify-start sm:justify-end mt-2 sm:mt-0 absolute sm:relative bg-white sm:bg-transparent border sm:border-none border-gray-200 rounded-lg p-2 sm:p-0 shadow-lg sm:shadow-none z-50">
+    <button 
+      (click)="onSelect(null)" 
+      [class]="selectedId() === null ? 'bg-primary text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'"
+      class="w-full sm:w-auto text-left sm:text-center px-3.5 py-2 sm:py-1.5 rounded-lg text-xs font-semibold cursor-pointer transition border-none">
+      All
+    </button>
+    <button 
+      *ngFor="let cat of categories()" 
+      (click)="onSelect(cat.id)" 
+      [class]="selectedId() === cat.id ? 'bg-primary text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'"
+      class="w-full sm:w-auto text-left sm:text-center px-3.5 py-2 sm:py-1.5 rounded-lg text-xs font-semibold cursor-pointer transition border-none">
+      {{ cat.name }}
+    </button>
+  </div>
+</div>

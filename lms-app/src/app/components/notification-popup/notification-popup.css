@@ -1,0 +1,39 @@
+/* Popup entrance — slides in from the right */
+@keyframes popup-in {
+  from { opacity: 0; transform: translateX(110%) scale(0.96); }
+  to   { opacity: 1; transform: translateX(0) scale(1); }
+}
+
+/* Popup exit — shrinks upward and fades out */
+@keyframes popup-out {
+  from {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+    max-height: 120px;
+    margin-top: 0;
+  }
+  to {
+    opacity: 0;
+    transform: translateX(60px) scale(0.94);
+    max-height: 0;
+    margin-top: -12px;
+    padding: 0;
+  }
+}
+
+/* Auto-dismiss progress bar */
+@keyframes progress-shrink {
+  from { transform: scaleX(1); }
+  to   { transform: scaleX(0); }
+}
+
+.popup-entering {
+  animation: popup-in 0.32s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+.popup-leaving {
+  animation: popup-out 0.32s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+.popup-progress-bar {
+  transform-origin: left;
+  animation: progress-shrink 5s linear forwards;
+}

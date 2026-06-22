@@ -30,6 +30,26 @@ export class ToastService {
     this.show(message, 'info', duration);
   }
 
+  showApiError(err: any, fallbackMessage: string) {
+    let message = fallbackMessage;
+    if (err) {
+      if (typeof err === 'string') {
+        message = err;
+      } else if (err.error) {
+        if (typeof err.error === 'string') {
+          message = err.error;
+        } else if (err.error.message) {
+          message = err.error.message;
+        } else if (err.error.title) {
+          message = err.error.title;
+        }
+      } else if (err.message) {
+        message = err.message;
+      }
+    }
+    this.showError(message);
+  }
+
   dismiss(id: string) {
     this.toastsSignal.update((current) => current.filter((t) => t.id !== id));
   }

@@ -1,10 +1,8 @@
 .loader {
-position: absolute;
-top: calc(50% - 1.875em);
-left: calc(50% - 1.875em);
-width: 3.75em;
-height: 3.75em;
-transform: rotate(165deg);
+  position: relative;
+  width: 3.75em;
+  height: 3.75em;
+  transform: rotate(165deg);
 }
 
 .loader:before,

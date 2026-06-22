@@ -1,0 +1,338 @@
+<div class="flex flex-col gap-6 animate-[fadeInContent_400ms_ease]">
+
+  <!-- ═══════════ HEADER BANNER ═══════════ -->
+  <div class="relative overflow-hidden bg-slate-950 text-white rounded-2xl p-7 flex items-center justify-between shadow-xs">
+    <div class="absolute inset-0 bg-gradient-to-r from-emerald-800/90 via-slate-950/80 to-transparent"></div>
+    <div class="flex flex-col relative z-10">
+      <button (click)="goBack()" class="flex items-center gap-1.5 text-xs text-emerald-400 font-semibold mb-3 hover:text-emerald-300 transition cursor-pointer self-start">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+        </svg>
+        Back to Courses
+      </button>
+      <h2 class="text-2xl sm:text-3xl font-extrabold mb-2 tracking-tight">Course Enrollee Progress 📈</h2>
+      <p class="text-white/85 text-xs sm:text-sm max-w-[500px] leading-relaxed">
+        Monitor progress stats, search specific students, and review completed curriculum for: <strong class="text-emerald-300">{{ courseTitle() }}</strong>
+      </p>
+    </div>
+  </div>
+
+  @if (isLoading()) {
+    <div class="flex items-center justify-center min-h-[50vh]">
+      <app-loader></app-loader>
+    </div>
+  }
+
+  @if (!isLoading()) {
+    <!-- ═══════════ STATS DASHBOARD ═══════════ -->
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div class="bg-white border border-gray-200 rounded-xl p-4 flex items-center justify-between shadow-xs">
+        <div>
+          <span class="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Total Students Enrolled</span>
+          <h3 class="text-2xl font-black text-slate-800 mt-1 mb-0">{{ totalStudents() }}</h3>
+        </div>
+        <div class="p-3 bg-blue-50 text-blue-600 rounded-xl">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+          </svg>
+        </div>
+      </div>
+
+      <div class="bg-white border border-gray-200 rounded-xl p-4 flex items-center justify-between shadow-xs">
+        <div>
+          <span class="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Completed (100%)</span>
+          <h3 class="text-2xl font-black text-slate-800 mt-1 mb-0">{{ completedCount() }}</h3>
+        </div>
+        <div class="p-3 bg-emerald-50 text-emerald-600 rounded-xl">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </div>
+      </div>
+
+      <div class="bg-white border border-gray-200 rounded-xl p-4 flex items-center justify-between shadow-xs">
+        <div>
+          <span class="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Average Progress</span>
+          <h3 class="text-2xl font-black text-slate-800 mt-1 mb-0">{{ averageProgress() }}%</h3>
+        </div>
+        <div class="p-3 bg-purple-50 text-purple-600 rounded-xl">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z" />
+          </svg>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════ SEARCH & CONTROLS ═══════════ -->
+    <div class="flex flex-col sm:flex-row gap-4 items-center justify-between bg-white border border-gray-200 rounded-xl p-3 shadow-xs">
+      <div class="relative w-full sm:max-w-xs">
+        <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+          <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+        </span>
+        <input type="text"
+          id="student-progress-search"
+          placeholder="Search by student name or email..."
+          [ngModel]="searchQuery()"
+          (ngModelChange)="searchQuery.set($event)"
+          class="w-full pl-9 pr-9 py-2 border border-gray-200 rounded-lg text-xs bg-white text-gray-800 focus:outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-600/10 transition" />
+        @if (searchQuery()) {
+          <button (click)="searchQuery.set('')"
+            class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 cursor-pointer transition">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+          </button>
+        }
+      </div>
+      <span class="text-xs text-gray-400 font-semibold">Showing {{ filteredStudents().length }} students</span>
+    </div>
+
+    <!-- ═══════════ STUDENT PROGRESS TABLE ═══════════ -->
+    <div class="bg-white border border-gray-200 rounded-2xl shadow-xs overflow-hidden">
+      @if (filteredStudents().length > 0) {
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse text-xs">
+            <thead>
+              <tr class="bg-gray-150/50 text-gray-500 font-bold uppercase border-b border-gray-150 select-none">
+                <th class="px-6 py-3.5">Student</th>
+                <th class="px-6 py-3.5">Batch / Cohort</th>
+                <th class="px-6 py-3.5">Joined Date</th>
+                <th class="px-6 py-3.5">Overall Progress</th>
+                <th class="px-6 py-3.5">Status</th>
+                <th class="px-6 py-3.5 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100 text-slate-700">
+              @for (student of filteredStudents(); track student.enrollmentId) {
+                <tr class="hover:bg-gray-50/70 transition-colors">
+                  <!-- Student Card -->
+                  <td class="px-6 py-4">
+                    <div class="flex items-center gap-3">
+                      <div class="w-9 h-9 rounded-full bg-emerald-50 text-emerald-800 font-extrabold flex items-center justify-center text-xs select-none">
+                        {{ getInitials(student.studentName) }}
+                      </div>
+                      <div class="flex flex-col gap-0.5">
+                        <span class="font-bold text-slate-900 text-sm">{{ student.studentName }}</span>
+                        <span class="text-gray-400 text-[10px] font-medium">{{ student.studentEmail }}</span>
+                      </div>
+                    </div>
+                  </td>
+
+                  <!-- Batch -->
+                  <td class="px-6 py-4 text-slate-600 font-medium">
+                    {{ student.batchName || 'Self-Paced Enrollment' }}
+                  </td>
+
+                  <!-- Enrolled date -->
+                  <td class="px-6 py-4 text-gray-500 font-medium">
+                    {{ student.enrolledAt | date:'MMM dd, yyyy' }}
+                  </td>
+
+                  <!-- Progress Bar -->
+                  <td class="px-6 py-4">
+                    <div class="flex flex-col gap-1.5 max-w-[150px]">
+                      <div class="flex justify-between items-center text-[10px] font-bold text-slate-700">
+                        <span>{{ student.progressPercentage }}%</span>
+                      </div>
+                      <div class="w-full bg-gray-100 rounded-full h-1.5 overflow-hidden">
+                        <div class="h-full rounded-full transition-all duration-300"
+                             [style.width.%]="student.progressPercentage"
+                             [class.bg-amber-500]="student.progressPercentage < 50"
+                             [class.bg-blue-500]="student.progressPercentage >= 50 && student.progressPercentage < 100"
+                             [class.bg-emerald-600]="student.progressPercentage === 100"></div>
+                      </div>
+                    </div>
+                  </td>
+
+                  <!-- Status -->
+                  <td class="px-6 py-4">
+                    <span class="px-2.5 py-1 rounded-full font-extrabold text-[9px] uppercase tracking-wider block w-max"
+                          [class.bg-emerald-50]="student.isCompleted"
+                          [class.text-emerald-700]="student.isCompleted"
+                          [class.bg-amber-50]="!student.isCompleted"
+                          [class.text-amber-700]="!student.isCompleted">
+                      {{ student.isCompleted ? 'Completed' : 'In Progress' }}
+                    </span>
+                  </td>
+
+                  <!-- Actions -->
+                  <td class="px-6 py-4 text-right">
+                    <button (click)="viewStudentDetails(student)"
+                      class="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold transition cursor-pointer shadow-xs">
+                      View Details
+                    </button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      } @else {
+        <div class="flex flex-col items-center justify-center py-16 px-6 text-center">
+          <svg class="w-20 h-20 text-gray-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+          </svg>
+          <h4 class="text-sm font-bold text-slate-800 m-0 mb-1">No Enrolled Students</h4>
+          <p class="text-xs text-gray-400 max-w-xs leading-relaxed">
+            @if (students().length === 0) {
+              There are currently no students enrolled in this course.
+            } @else {
+              No students match your search criteria. Try modifying your query.
+            }
+          </p>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- ═══════════ DETAILED PROGRESS SLIDE-OVER PANEL ═══════════ -->
+  @if (selectedStudent()) {
+    <div class="fixed inset-0 z-50 flex justify-end bg-black/45 backdrop-blur-xs animate-[fadeIn_200ms_ease]" (click)="closeDrawer()">
+      <div class="w-full max-w-lg bg-white h-full flex flex-col shadow-2xl p-6 relative overflow-y-auto animate-[slideInRight_250ms_ease-out]" (click)="$event.stopPropagation()">
+        
+        <!-- Drawer Header -->
+        <div class="flex items-center justify-between border-b border-gray-150 pb-4 mb-5">
+          <div class="flex flex-col gap-0.5">
+            <h3 class="text-base font-extrabold text-slate-900 m-0">Detailed Curriculum Progress</h3>
+            <span class="text-xs text-gray-400 font-semibold">{{ selectedStudent()?.studentName }}</span>
+          </div>
+          <button (click)="closeDrawer()" class="text-gray-400 hover:text-gray-600 transition cursor-pointer">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        @if (isDetailLoading()) {
+          <div class="flex flex-col items-center justify-center flex-1 py-20">
+            <app-loader></app-loader>
+            <span class="text-xs text-gray-450 mt-4 font-medium">Fetching detailed logs...</span>
+          </div>
+        }
+
+        @if (!isDetailLoading() && detailedProgress()) {
+          <div class="flex flex-col gap-6">
+            <!-- Summary Stats -->
+            <div class="bg-gray-50 border border-gray-150 rounded-xl p-4 flex justify-between items-center text-xs select-none">
+              <div class="flex flex-col">
+                <span class="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Overall Progress</span>
+                <span class="text-lg font-black text-slate-800 mt-1">{{ detailedProgress()?.progressPercentage }}%</span>
+              </div>
+              <div class="flex flex-col text-right">
+                <span class="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Completed Items</span>
+                <span class="text-lg font-black text-slate-800 mt-1">
+                  {{ detailedProgress()?.completedLessonsCount }} / {{ detailedProgress()?.totalLessonsCount }}
+                </span>
+              </div>
+            </div>
+
+            <!-- Sections breakdown list -->
+            <div class="flex flex-col gap-5">
+              @for (sec of detailedProgress()?.sections; track sec.sectionId) {
+                <div class="border border-gray-200 rounded-xl overflow-hidden shadow-xs bg-white">
+                  <!-- Section Title header -->
+                  <div class="px-4 py-3 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
+                    <h4 class="text-xs font-black text-slate-800 uppercase tracking-wide truncate max-w-[280px] m-0">
+                      📂 {{ sec.title }}
+                    </h4>
+                    <span class="px-2 py-0.5 bg-emerald-50 text-emerald-700 text-[10px] font-extrabold rounded-md uppercase">
+                      {{ sec.progressPercentage }}%
+                    </span>
+                  </div>
+
+                  <!-- Section Items list -->
+                  <div class="p-3 flex flex-col gap-2.5 text-[11px] text-slate-700">
+                    
+                    <!-- Lessons -->
+                    @if (sec.lessons.length > 0) {
+                      <div class="flex flex-col gap-1.5">
+                        <span class="text-[9px] text-gray-400 font-extrabold uppercase tracking-wider block">Lessons</span>
+                        @for (lesson of sec.lessons; track lesson.lessonId) {
+                          <div class="flex items-center justify-between p-2 rounded-lg bg-gray-50/50 border border-gray-150">
+                            <span class="font-medium text-slate-700 truncate max-w-[260px] flex items-center gap-1.5">
+                              {{ lesson.isCompleted ? '✅' : '⚪' }}
+                              {{ lesson.lessonTitle }}
+                            </span>
+                            @if (lesson.isCompleted) {
+                              <span class="text-gray-400 text-[9px] font-semibold">
+                                Completed {{ lesson.completedAt | date:'MM/dd/yy' }}
+                              </span>
+                            } @else if (lesson.watchPercentage > 0) {
+                              <span class="text-blue-600 text-[9px] font-extrabold">
+                                {{ lesson.watchPercentage }}% Watched
+                              </span>
+                            }
+                          </div>
+                        }
+                      </div>
+                    }
+
+                    <!-- Quizzes -->
+                    @if (sec.quizzes.length > 0) {
+                      <div class="flex flex-col gap-1.5 mt-1 border-t border-gray-100 pt-2">
+                        <span class="text-[9px] text-gray-400 font-extrabold uppercase tracking-wider block">Quizzes</span>
+                        @for (quiz of sec.quizzes; track quiz.quizId) {
+                          <div class="flex items-center justify-between p-2 rounded-lg bg-gray-50/50 border border-gray-150">
+                            <span class="font-medium text-slate-700 truncate max-w-[260px] flex items-center gap-1.5">
+                              {{ quiz.isPassed ? '🏆' : '⚪' }}
+                              {{ quiz.quizTitle }}
+                            </span>
+                            <span class="px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase"
+                                  [class.bg-emerald-100]="quiz.isPassed"
+                                  [class.text-emerald-700]="quiz.isPassed"
+                                  [class.bg-gray-100]="!quiz.isPassed"
+                                  [class.text-gray-600]="!quiz.isPassed">
+                              {{ quiz.isPassed ? 'Passed' : 'Not Passed' }} ({{ quiz.attemptsMade }} attempts)
+                            </span>
+                          </div>
+                        }
+                      </div>
+                    }
+
+                    <!-- Assignments -->
+                    @if (sec.assignments.length > 0) {
+                      <div class="flex flex-col gap-1.5 mt-1 border-t border-gray-100 pt-2">
+                        <span class="text-[9px] text-gray-400 font-extrabold uppercase tracking-wider block">Assignments</span>
+                        @for (assignment of sec.assignments; track assignment.assignmentId) {
+                          <div class="flex items-center justify-between p-2 rounded-lg bg-gray-50/50 border border-gray-150">
+                            <span class="font-medium text-slate-700 truncate max-w-[260px] flex items-center gap-1.5">
+                              {{ assignment.isPassed ? '✍️' : '⚪' }}
+                              {{ assignment.assignmentTitle }}
+                            </span>
+                            <span class="px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase"
+                                  [class.bg-emerald-100]="assignment.isPassed"
+                                  [class.text-emerald-700]="assignment.isPassed"
+                                  [class.bg-amber-100]="assignment.status === 'Submitted' || assignment.status === 'UnderReview'"
+                                  [class.text-amber-700]="assignment.status === 'Submitted' || assignment.status === 'UnderReview'"
+                                  [class.bg-gray-100]="assignment.status === 'NotSubmitted'"
+                                  [class.text-gray-600]="assignment.status === 'NotSubmitted'">
+                              @if (assignment.isPassed) {
+                                Passed
+                              } @else if (assignment.status === 'UnderReview') {
+                                Under Review
+                              } @else if (assignment.status === 'Submitted') {
+                                Submitted
+                              } @else {
+                                Not Submitted
+                              }
+                            </span>
+                          </div>
+                        }
+                      </div>
+                    }
+
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
+        }
+
+      </div>
+    </div>
+  }
+
+</div>

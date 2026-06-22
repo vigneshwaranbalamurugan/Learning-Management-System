@@ -1,0 +1,173 @@
+<div class="p-6">
+  <!-- Back Button -->
+  <button (click)="goBack()" class="mb-4 text-gray-500 hover:text-gray-800 transition flex items-center gap-2 text-sm font-semibold cursor-pointer">
+    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+    </svg>
+    Back to Certificates
+  </button>
+
+  @if (isLoading()) {
+    <div class="bg-white w-full rounded-2xl shadow-sm border border-gray-150 relative overflow-hidden flex flex-col max-w-6xl mx-auto animate-pulse select-none pointer-events-none">
+      <!-- Header Skeleton -->
+      <div class="flex items-center justify-between p-5 border-b border-gray-100 bg-gray-50">
+        <div class="flex items-center gap-2">
+          <div class="w-4 h-4 bg-gray-200 rounded-full"></div>
+          <div class="h-4 bg-gray-200 rounded w-28"></div>
+        </div>
+      </div>
+
+      <!-- Body Skeleton -->
+      <div class="p-6 grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+        
+        <!-- Left Side: Certificate Preview & Ribbon -->
+        <div class="flex flex-col gap-6 w-full">
+          <!-- Ribbon Shimmer -->
+          <div class="border border-emerald-100 bg-emerald-50/10 p-5 rounded-xl flex flex-col gap-4 text-center items-center">
+            <div class="w-14 h-14 bg-gray-250 rounded-full flex items-center justify-center"></div>
+            <div class="flex flex-col gap-1.5 items-center w-full">
+              <div class="h-4 bg-gray-200 rounded w-1/3"></div>
+              <div class="h-3 bg-gray-200 rounded w-2/3"></div>
+            </div>
+          </div>
+
+          <!-- Document Preview Box Shimmer -->
+          <div class="border border-gray-200 rounded-xl bg-gray-50 w-full aspect-[16/9] lg:min-h-[15em] flex items-center justify-center">
+            <div class="w-12 h-12 bg-gray-200 rounded-full"></div>
+          </div>
+        </div>
+
+        <!-- Right Side: Certificate Metadata -->
+        <div class="flex flex-col gap-6">
+          <!-- Metadata List Shimmer -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-5 bg-gray-50/50 p-8 rounded-xl border border-gray-100">
+            @for (item of [1, 2, 3, 4, 5, 6]; track item) {
+              <div class="flex flex-col gap-1.5">
+                <div class="h-2.5 bg-gray-200 rounded w-1/3"></div>
+                <div class="h-3.5 bg-gray-200 rounded w-1/2"></div>
+              </div>
+            }
+            
+            <div class="col-span-full flex flex-col gap-1.5 border-t border-gray-100 pt-4">
+              <div class="h-2.5 bg-gray-200 rounded w-1/4"></div>
+              <div class="h-3.5 bg-gray-200 rounded w-3/4"></div>
+            </div>
+            
+            <div class="col-span-full flex flex-col gap-1.5 border-t border-gray-100 pt-4">
+              <div class="h-2.5 bg-gray-200 rounded w-1/4"></div>
+              <div class="h-3.5 bg-gray-200 rounded w-5/6"></div>
+            </div>
+
+            <!-- Footer Actions Shimmer -->
+            <div class="col-span-full p-6 border-t border-gray-100 flex items-center justify-end bg-gray-100/30 -mx-5 mt-2 rounded-b-xl">
+              <div class="h-9 bg-gray-200 rounded-lg w-52"></div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  } @else if (certificate()) {
+    <div class="bg-white w-full rounded-2xl shadow-sm border border-gray-100 relative overflow-hidden flex flex-col max-w-6xl mx-auto">
+      
+      <!-- Header -->
+      <div class="flex items-center justify-between p-5 border-b border-gray-100 bg-gray-50">
+        <div class="flex items-center gap-2">
+          <span class="text-emerald-600">✓</span>
+          <span class="font-extrabold text-sm text-gray-800">Certificate Details</span>
+        </div>
+      </div>
+
+      <!-- Body -->
+      <div class="p-6 grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+        
+        <!-- Left Side: Certificate Preview & Ribbon -->
+        <div class="flex flex-col gap-6 w-full h-full">
+          <!-- Main Preview Ribbon -->
+          <div class="border border-emerald-100 bg-emerald-50/30 p-5 rounded-xl flex flex-col gap-4 text-center items-center">
+            <div class="w-14 h-14 bg-emerald-100 text-emerald-700 rounded-full flex items-center justify-center shadow-sm">
+              <span class="text-2xl font-bold">🏆</span>
+            </div>
+            <div>
+              <h4 class="text-base font-extrabold text-gray-900 m-0 mb-1">Verified Completion</h4>
+              <p class="text-xs text-gray-500 m-0 leading-relaxed">
+                This certificate proves completion of CourseHub requirements for the course.
+              </p>
+            </div>
+          </div>
+
+          @if (certificate()?.certificateImageUrl) {
+            <div class="border border-gray-250 rounded-xl overflow-auto shadow-xs bg-gray-50 w-full aspect-[16/9] lg:min-h-[15em]">
+              <iframe [src]="safePdfUrl()" class="w-full h-full border-none lg:min-h-[15em]" style="overflow: auto;"></iframe>
+            </div>
+          }
+        </div>
+
+        <!-- Right Side: Certificate Metadata -->
+        <div class="flex flex-col gap-6">
+          
+          <!-- Metadata List -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4 bg-gray-50/50 p-8 rounded-xl border border-gray-100">
+            <div class="flex flex-col gap-1">
+              <span class="text-[9px] text-gray-400 font-bold uppercase tracking-wider">Course Name</span>
+              <span class="text-xs font-bold text-gray-800">{{ certificate()?.courseName }}</span>
+            </div>
+            <div class="flex flex-col gap-1">
+              <span class="text-[9px] text-gray-400 font-bold uppercase tracking-wider">Learner Name</span>
+              <span class="text-xs font-bold text-gray-800">{{ certificate()?.learnerName || 'Learner' }}</span>
+            </div>
+            <div class="flex flex-col gap-1">
+              <span class="text-[9px] text-gray-400 font-bold uppercase tracking-wider">Instructor</span>
+              <span class="text-xs font-bold text-gray-800">{{ certificate()?.instructorName || 'Instructor' }}</span>
+            </div>
+            <div class="flex flex-col gap-1">
+              <span class="text-[9px] text-gray-400 font-bold uppercase tracking-wider">Issued Date</span>
+              <span class="text-xs font-bold text-gray-800">{{ certificate()?.issuedAt | date:'MMMM dd, yyyy - hh:mm a' }}</span>
+            </div>
+            
+            <div class="flex flex-col gap-1 border-t border-gray-100 pt-3 mt-1">
+              <span class="text-[9px] text-gray-400 font-bold uppercase tracking-wider">Category</span>
+              <span class="text-xs font-bold text-gray-800">{{ certificate()?.categoryName || 'N/A' }}</span>
+            </div>
+            <div class="flex flex-col gap-1 border-t border-gray-100 pt-3 mt-1">
+              <span class="text-[9px] text-gray-400 font-bold uppercase tracking-wider">Course Level</span>
+              <span class="text-xs font-bold text-gray-800">{{ certificate()?.courseLevel || 'All Levels' }}</span>
+            </div>
+            <div class="flex flex-col gap-1">
+              <span class="text-[9px] text-gray-400 font-bold uppercase tracking-wider">Total Duration</span>
+              <span class="text-xs font-bold text-gray-800">{{ certificate()?.courseDurationHours ? certificate()?.courseDurationHours + ' Hours' : 'N/A' }}</span>
+            </div>
+            <div class="flex flex-col gap-1">
+              <!-- placeholder space for alignment -->
+            </div>
+
+            @if (certificate()?.courseDescription) {
+              <div class="col-span-full flex flex-col gap-1 border-t border-gray-100 pt-3 mt-1">
+                <span class="text-[9px] text-gray-400 font-bold uppercase tracking-wider">Course Description</span>
+                <p class="text-xs text-gray-600 leading-relaxed m-0">{{ certificate()?.courseDescription }}</p>
+              </div>
+            }
+
+            <div class="col-span-full flex flex-col gap-1 border-t border-gray-100 pt-3 mt-1">
+              <span class="text-[9px] text-gray-400 font-bold uppercase tracking-wider">Verification ID</span>
+              <span class="text-xs font-mono font-bold text-slate-500 break-all select-all">{{ certificate()?.certificateId }}</span>
+            </div>
+
+             <!-- Footer Actions -->
+            <div class="col-span-full p-6 border-t border-gray-200 flex items-center justify-end gap-3 bg-gray-100/50 -mx-5 mt-2 rounded-b-xl">
+              <button (click)="viewCertificatePdf(certificate()!)"
+                class="px-5 py-2 rounded-lg text-xs font-bold bg-[#1C1C7B] text-white hover:bg-[#14145a] cursor-pointer transition flex items-center gap-1.5 shadow-sm hover:shadow-md">
+                <span>📥 View / Download Official PDF</span>
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+          </div>
+        </div>
+      </div>
+
+
+  }
+</div>

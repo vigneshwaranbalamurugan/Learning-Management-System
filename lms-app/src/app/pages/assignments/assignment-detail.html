@@ -1,0 +1,232 @@
+<div class="flex flex-col gap-6 animate-[fadeInContent_400ms_ease]">
+
+  <!-- Header Banner -->
+  <div class="bg-white border border-gray-250 rounded-2xl p-6 shadow-xs flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+    <div class="flex flex-col">
+      <button (click)="goBack()" class="flex items-center gap-1.5 text-xs text-gray-500 hover:text-slate-800 transition cursor-pointer mb-3">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+        </svg>
+        Back to Assignments
+      </button>
+      <h2 class="text-xl font-extrabold text-gray-900 m-0 tracking-tight">{{ assignment()?.title }}</h2>
+    </div>
+
+    @if (statusInfo()?.isPassed) {
+      <span class="px-3.5 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-200">
+        Passed 🎉
+      </span>
+    } @else if (statusInfo()?.attemptsMade === assignment()?.maxSubmissions) {
+      <span class="px-3.5 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider bg-red-50 text-red-700 border border-red-200">
+        No Attempts Remaining 🔒
+      </span>
+    }
+  </div>
+
+  <!-- Loading State -->
+  @if (isLoading()) {
+    <div class="flex items-center justify-center min-h-[50vh]">
+      <app-loader></app-loader>
+    </div>
+  }
+
+  @if (!isLoading() && assignment()) {
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+      <!-- LEFT COLUMN: Instructions and Rubrics -->
+      <div class="lg:col-span-2 flex flex-col gap-6">
+        
+        <!-- Description & Instructions -->
+        <div class="bg-white border border-gray-250 rounded-2xl p-6 shadow-xs">
+          <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Assignment Overview</h3>
+          
+          <div class="prose prose-sm text-gray-600 max-w-none">
+            <h4 class="text-xs font-bold text-gray-800 mt-0 mb-1.5">Description</h4>
+            <p class="text-xs leading-relaxed mb-6 whitespace-pre-line">{{ assignment()?.description || 'No description provided.' }}</p>
+
+            <h4 class="text-xs font-bold text-gray-800 mt-0 mb-1.5">Instructions & Requirements</h4>
+            <p class="text-xs leading-relaxed mb-6 whitespace-pre-line">{{ assignment()?.instructions || 'No special instructions provided.' }}</p>
+          </div>
+
+          <!-- Attachment URL if any -->
+          @if (assignment()?.attachmentUrl) {
+            <div class="border-t border-gray-100 pt-4 mt-6">
+              <h4 class="text-xs font-bold text-gray-800 mb-2">Reference Attachment</h4>
+              <a [href]="assignment()?.attachmentUrl" target="_blank"
+                class="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-200 text-xs font-bold text-indigo-600 bg-indigo-50/30 hover:bg-indigo-50 transition cursor-pointer">
+                <span>📎 Download Attachment / Open URL</span>
+              </a>
+            </div>
+          }
+        </div>
+
+        <!-- Submission History / Attempts -->
+        <div class="bg-white border border-gray-250 rounded-2xl p-6 shadow-xs">
+          <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Your Submissions ({{ submissions().length }})</h3>
+
+          @if (submissions().length === 0) {
+            <div class="flex flex-col items-center justify-center py-10 text-center border border-dashed border-gray-200 rounded-xl">
+              <span class="text-3xl">📤</span>
+              <p class="text-xs text-gray-400 font-semibold mt-2 mb-0">No submissions uploaded yet.</p>
+            </div>
+          } @else {
+            <div class="flex flex-col gap-4">
+              @for (sub of submissions(); track sub.id) {
+                <div class="border border-gray-200 rounded-xl p-4 flex flex-col gap-3 relative overflow-hidden bg-gray-50/50">
+                  <div class="flex items-center justify-between">
+                    <span class="text-xs font-extrabold text-slate-800">Attempt #{{ sub.attemptNumber }}</span>
+                    <span class="px-2.5 py-0.5 rounded-full text-[9px] font-extrabold uppercase border" [ngClass]="getStatusColor(sub.status)">
+                      {{ sub.status }}
+                    </span>
+                  </div>
+
+                  <div class="text-xs text-gray-600">
+                    <div class="flex flex-col gap-1 mb-2">
+                      <span class="text-[9px] text-gray-400 font-bold uppercase">Submission Notes</span>
+                      <p class="m-0 whitespace-pre-line leading-relaxed">{{ sub.submissionText || 'No text/notes provided.' }}</p>
+                    </div>
+
+                    @if (sub.submittedAssignmentUrl) {
+                      <div class="flex flex-col gap-1 mt-2">
+                        <span class="text-[9px] text-gray-400 font-bold uppercase">Attachment</span>
+                        <a [href]="sub.submittedAssignmentUrl" target="_blank" class="text-indigo-600 font-bold hover:underline select-none">
+                          🔗 View Submitted Link / File
+                        </a>
+                      </div>
+                    }
+                  </div>
+
+                  @if (sub.gradedAt) {
+                    <div class="border-t border-gray-150 pt-3 mt-1 flex flex-col gap-2">
+                      <div class="flex items-center justify-between text-xs">
+                        <span class="text-[10px] text-gray-500 font-extrabold uppercase">Grade Received</span>
+                        <span class="font-extrabold text-slate-800">{{ sub.marksAwarded }}/{{ assignment()?.totalMarks }} Marks</span>
+                      </div>
+                      @if (sub.feedback) {
+                        <div class="bg-indigo-50/40 border border-indigo-50 rounded-lg p-3 text-[11px] text-indigo-950">
+                          <span class="font-bold text-[9px] uppercase tracking-wider block mb-1 text-indigo-700">Instructor Feedback</span>
+                          {{ sub.feedback }}
+                        </div>
+                      }
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+          }
+        </div>
+
+      </div>
+
+      <!-- RIGHT COLUMN: Metadata & Workspace Form -->
+      <div class="flex flex-col gap-6">
+        
+        <!-- Details Card -->
+        <div class="bg-white border border-gray-250 rounded-2xl p-5 shadow-xs flex flex-col gap-4 text-xs select-none">
+          <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Details</h3>
+
+          <div class="flex justify-between items-center py-2 border-b border-gray-100">
+            <span class="text-gray-400 font-semibold">Total Marks</span>
+            <span class="font-bold text-slate-800">{{ assignment()?.totalMarks }}</span>
+          </div>
+          <div class="flex justify-between items-center py-2 border-b border-gray-100">
+            <span class="text-gray-400 font-semibold">Passing Marks</span>
+            <span class="font-bold text-slate-800">{{ assignment()?.passingMarks }}</span>
+          </div>
+          <div class="flex justify-between items-center py-2 border-b border-gray-100">
+            <span class="text-gray-400 font-semibold">Attempts Limit</span>
+            <span class="font-bold text-slate-800">{{ statusInfo()?.attemptsMade || 0 }} / {{ assignment()?.maxSubmissions }}</span>
+          </div>
+          <div class="flex justify-between items-center py-2 border-b border-gray-100">
+            <span class="text-gray-400 font-semibold">Deadline</span>
+            <span class="font-bold text-slate-800 text-right">
+              @if (statusInfo()?.deadline) {
+                {{ statusInfo()?.deadline | date:'MMM dd, yyyy - hh:mm a' }}
+              } @else {
+                No deadline
+              }
+            </span>
+          </div>
+        </div>
+
+        <!-- Submission Workspace -->
+        @if (!statusInfo()?.isPassed && (statusInfo()?.remainingAttempts || 1) > 0) {
+          <div class="bg-white border border-gray-250 rounded-2xl p-5 shadow-xs flex flex-col gap-4">
+            <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Submission Workspace</h3>
+
+            <form (submit)="onSubmit()" class="flex flex-col gap-4">
+              <!-- Submission Type selection -->
+              <div class="flex flex-col gap-1.5">
+                <label class="text-[10px] text-gray-400 font-bold uppercase">Submission Format</label>
+                <div class="grid grid-cols-2 gap-2 bg-gray-50 border border-gray-150 rounded-lg p-1.5">
+                  <button type="button" (click)="submissionType = 'file'"
+                    class="py-1.5 px-3 rounded-md text-xs font-bold transition cursor-pointer text-center"
+                    [class.bg-[#1C1C7B]]="submissionType === 'file'"
+                    [class.text-white]="submissionType === 'file'"
+                    [class.text-gray-500]="submissionType !== 'file'">
+                    Upload File
+                  </button>
+                  <button type="button" (click)="submissionType = 'link'"
+                    class="py-1.5 px-3 rounded-md text-xs font-bold transition cursor-pointer text-center"
+                    [class.bg-[#1C1C7B]]="submissionType === 'link'"
+                    [class.text-white]="submissionType === 'link'"
+                    [class.text-gray-500]="submissionType !== 'link'">
+                    Provide URL Link
+                  </button>
+                </div>
+              </div>
+
+              <!-- File selector or Link Input -->
+              @if (submissionType === 'file') {
+                <div class="flex flex-col gap-1.5">
+                  <label class="text-[10px] text-gray-400 font-bold uppercase">Attachment File</label>
+                  <div class="border border-dashed border-gray-250 rounded-xl p-4 flex flex-col items-center justify-center text-center cursor-pointer bg-slate-50 hover:bg-slate-100 transition relative">
+                    <input type="file" (change)="onFileSelected($event)" class="absolute inset-0 opacity-0 cursor-pointer w-full h-full" />
+                    <span class="text-2xl mb-1">📁</span>
+                    <span class="text-[11px] text-slate-700 font-bold">
+                      {{ selectedFile ? selectedFile.name : 'Choose file or drag here' }}
+                    </span>
+                    <span class="text-[9px] text-gray-400 mt-0.5">PDF, DOC, ZIP files accepted</span>
+                  </div>
+                </div>
+              } @else {
+                <div class="flex flex-col gap-1.5">
+                  <label class="text-[10px] text-gray-400 font-bold uppercase">Submission Link URL</label>
+                  <input type="url" [(ngModel)]="submittedUrl" name="submittedUrl" required placeholder="https://github.com/... or shared link"
+                    class="w-full border border-gray-200 rounded-lg p-2 text-xs focus:outline-none focus:border-primary transition" />
+                </div>
+              }
+
+              <!-- Submission Description Text -->
+              <div class="flex flex-col gap-1.5">
+                <label class="text-[10px] text-gray-400 font-bold uppercase">Submission Notes / Description</label>
+                <textarea [(ngModel)]="submissionText" name="submissionText" rows="4" placeholder="Describe your submission or write answers here..."
+                  class="w-full border border-gray-200 rounded-lg p-2.5 text-xs focus:outline-none focus:border-primary transition resize-none"></textarea>
+              </div>
+
+              <button type="submit" [disabled]="isSubmitting()"
+                class="w-full mt-2 px-4 py-2.5 rounded-lg text-xs font-bold bg-[#1C1C7B] text-white hover:bg-[#14145a] cursor-pointer transition disabled:opacity-50 flex items-center justify-center gap-2">
+                @if (isSubmitting()) {
+                  <span>Submitting...</span>
+                } @else {
+                  <span>🚀 Upload & Submit</span>
+                }
+              </button>
+            </form>
+          </div>
+        } @else {
+          <div class="bg-gray-50 border border-gray-200 rounded-2xl p-5 shadow-xs text-center flex flex-col gap-2">
+            <span class="text-2xl">🔒</span>
+            <p class="text-xs font-bold text-gray-700 m-0">Submission Closed</p>
+            <p class="text-[11px] text-gray-400 m-0 leading-relaxed">
+              {{ statusInfo()?.isPassed ? 'You have successfully passed this assignment!' : 'You have reached the maximum number of submissions for this assignment.' }}
+            </p>
+          </div>
+        }
+
+      </div>
+
+    </div>
+  }
+
+</div>

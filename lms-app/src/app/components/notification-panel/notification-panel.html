@@ -1,0 +1,152 @@
+<div class="notif-panel-anim fixed top-[72px] right-4 w-[400px] max-w-[calc(100vw-32px)] max-h-[calc(100vh-90px)] flex flex-col bg-white border border-slate-200 rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.12),0_4px_16px_rgba(0,0,0,0.06)] z-[9999] overflow-hidden"
+     role="dialog" aria-label="Notifications" aria-modal="true">
+
+  <!-- ── Header ─────────────────────────────────────────────────── -->
+  <div class="flex items-center justify-between px-5 pt-[18px] pb-[14px] border-b border-slate-100 bg-white flex-shrink-0">
+    <div class="flex items-center gap-2.5">
+      <span class="text-base font-bold text-slate-900 tracking-tight">Notifications</span>
+      @if (unreadCount > 0) {
+        <span class="inline-flex items-center justify-center min-w-[22px] h-[22px] px-1.5 bg-gradient-to-br from-indigo-500 to-violet-600 text-white rounded-full text-[11px] font-bold">
+          {{ unreadCount }}
+        </span>
+      }
+    </div>
+    <div class="flex items-center gap-2">
+      @if (unreadCount > 0) {
+        <button
+          class="text-xs font-semibold text-indigo-500 bg-transparent border-none cursor-pointer px-2 py-1 rounded-md hover:bg-indigo-50 transition-colors"
+          (click)="onMarkAllAsRead()">
+          Mark all as read
+        </button>
+      }
+      <button
+        class="flex items-center justify-center w-8 h-8 bg-transparent border-none rounded-lg cursor-pointer text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors"
+        (click)="close.emit()" aria-label="Close">
+        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- ── Body / Scroll ───────────────────────────────────────────── -->
+  <div class="notif-scroll overflow-y-auto flex-1 py-2">
+
+    <!-- Loading skeleton -->
+    @if (isLoading()) {
+      <div>
+        @for (i of [1,2,3,4]; track i) {
+          <div class="flex items-center gap-3 px-5 py-3.5">
+            <div class="sk-shimmer w-[42px] h-[42px] rounded-xl flex-shrink-0"></div>
+            <div class="flex-1 flex flex-col gap-2">
+              <div class="sk-shimmer h-3 rounded-md w-4/5"></div>
+              <div class="sk-shimmer h-3 rounded-md w-1/2"></div>
+            </div>
+          </div>
+        }
+      </div>
+    }
+
+    <!-- Empty state -->
+    @if (!isLoading() && allNotifications().length === 0) {
+      <div class="flex flex-col items-center justify-center py-14 px-5 text-center">
+        <div class="text-5xl mb-4 opacity-40">🔔</div>
+        <p class="text-[15px] font-bold text-slate-700 mb-1.5 m-0">All caught up!</p>
+        <p class="text-[13px] text-slate-400 m-0">No notifications yet.</p>
+      </div>
+    }
+
+    <!-- Unread section -->
+    @if (!isLoading() && unreadNotifications().length > 0) {
+      <div class="px-5 pt-2 pb-1 text-[11px] font-bold uppercase tracking-widest text-slate-400">New</div>
+      @for (n of unreadNotifications(); track n.id) {
+        <div class="group flex items-start gap-3 px-5 py-3 cursor-pointer bg-slate-50/60 hover:bg-indigo-50/40 transition-colors"
+             (click)="onNotificationClick(n)" [attr.aria-label]="n.title">
+
+          <!-- Type icon -->
+          <div class="relative flex-shrink-0 w-[42px] h-[42px] rounded-xl flex items-center justify-center"
+               [style.background]="getTypeColor(n.type) + '1a'">
+            <span class="text-xl leading-none">{{ getTypeIcon(n.type) }}</span>
+            <span class="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-indigo-500 border-2 border-white rounded-full"></span>
+          </div>
+
+          <!-- Content -->
+          <div class="flex-1 min-w-0">
+            <p class="text-[13.5px] font-semibold text-slate-900 m-0 mb-[3px] truncate">{{ n.title }}</p>
+            <p class="text-[12.5px] text-slate-500 m-0 mb-1 leading-snug line-clamp-2">{{ n.message }}</p>
+            <span class="text-[11px] text-slate-400 font-medium">{{ relativeTime(n.createdAt) }}</span>
+          </div>
+
+          <!-- Hover actions -->
+          <div class="hidden group-hover:flex flex-col gap-1 flex-shrink-0">
+            <button class="flex items-center justify-center w-7 h-7 border-none rounded-lg bg-slate-100 cursor-pointer text-slate-500 hover:bg-indigo-100 hover:text-indigo-500 transition-colors"
+                    title="Mark as read" (click)="onMarkAsRead(n, $event)" aria-label="Mark as read">
+              <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+              </svg>
+            </button>
+            <button class="flex items-center justify-center w-7 h-7 border-none rounded-lg bg-slate-100 cursor-pointer text-slate-500 hover:bg-red-100 hover:text-red-500 transition-colors"
+                    title="Delete" (click)="onDelete(n.id, $event)" aria-label="Delete notification">
+              <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+      }
+    }
+
+    <!-- Read / Earlier section -->
+    @if (!isLoading() && readNotifications().length > 0) {
+      <div class="px-5 pt-2 pb-1 text-[11px] font-bold uppercase tracking-widest text-slate-400">Earlier</div>
+      @for (n of readNotifications(); track n.id) {
+        <div class="group flex items-start gap-3 px-5 py-3 cursor-pointer hover:bg-slate-50 transition-colors"
+             (click)="onNotificationClick(n)" [attr.aria-label]="n.title">
+
+          <!-- Type icon (dimmed for read) -->
+          <div class="relative flex-shrink-0 w-[42px] h-[42px] rounded-xl flex items-center justify-center"
+               [style.background]="getTypeColor(n.type) + '0d'">
+            <span class="text-xl leading-none">{{ getTypeIcon(n.type) }}</span>
+          </div>
+
+          <!-- Content -->
+          <div class="flex-1 min-w-0">
+            <p class="text-[13.5px] font-medium text-slate-500 m-0 mb-[3px] truncate">{{ n.title }}</p>
+            <p class="text-[12.5px] text-slate-400 m-0 mb-1 leading-snug line-clamp-2">{{ n.message }}</p>
+            <span class="text-[11px] text-slate-400 font-medium">{{ relativeTime(n.createdAt) }}</span>
+          </div>
+
+          <!-- Hover actions (delete only for read) -->
+          <div class="hidden group-hover:flex flex-col gap-1 flex-shrink-0">
+            <button class="flex items-center justify-center w-7 h-7 border-none rounded-lg bg-slate-100 cursor-pointer text-slate-500 hover:bg-red-100 hover:text-red-500 transition-colors"
+                    title="Delete" (click)="onDelete(n.id, $event)" aria-label="Delete notification">
+              <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+      }
+    }
+
+    <!-- Infinite scroll sentinel / footer -->
+    @if (!isLoading() && allNotifications().length > 0) {
+      <div class="flex items-center justify-center p-4 min-h-[56px]">
+        @if (isLoadingMore()) {
+          <div class="notif-spinner w-5 h-5 border-2 border-slate-200 border-t-indigo-500 rounded-full"></div>
+        } @else if (hasMore()) {
+          <button class="text-xs font-semibold text-indigo-500 bg-transparent border-none cursor-pointer px-4 py-1.5 rounded-md hover:bg-indigo-50 transition-colors"
+                  (click)="loadMore()">
+            Load more
+          </button>
+        } @else {
+          <span class="text-xs text-slate-400">You're all caught up ✓</span>
+        }
+      </div>
+    }
+
+  </div>
+</div>
+
+<!-- Backdrop (closes panel on outside click) -->
+<div class="fixed inset-0 z-[9998]" (click)="close.emit()" aria-hidden="true"></div>

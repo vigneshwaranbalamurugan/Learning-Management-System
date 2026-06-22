@@ -1,0 +1,46 @@
+<!-- Popup stack — fixed top-right (below topbar), items stack downward -->
+<div class="fixed top-[84px] right-6 z-[99999] flex flex-col gap-3 pointer-events-none"
+     aria-live="polite" aria-label="Notification alerts">
+
+  @for (popup of popups(); track popup.popupId) {
+    <div
+      class="popup-entering relative flex items-center gap-3 w-[360px] max-w-[calc(100vw-48px)] p-3.5 pl-4 bg-white border border-slate-200 rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.10),0_2px_8px_rgba(0,0,0,0.05)] cursor-pointer pointer-events-auto overflow-hidden hover:-translate-y-0.5 hover:shadow-[0_12px_40px_rgba(0,0,0,0.13)] transition-all duration-200"
+      [class.popup-leaving]="popup.isLeaving"
+      (click)="onClick(popup)"
+      role="alert"
+      [attr.aria-label]="popup.title"
+    >
+      <!-- Auto-dismiss progress bar -->
+      <div
+        class="popup-progress-bar absolute bottom-0 left-0 h-[3px] w-full rounded-b-2xl opacity-70"
+        [style.background]="getTypeColor(popup.type)"
+      ></div>
+
+      <!-- Type icon -->
+      <div
+        class="flex-shrink-0 w-10 h-10 rounded-[10px] flex items-center justify-center"
+        [style.background]="getTypeColor(popup.type) + '1a'"
+      >
+        <span class="text-xl leading-none">{{ getTypeIcon(popup.type) }}</span>
+      </div>
+
+      <!-- Title + message -->
+      <div class="flex-1 min-w-0">
+        <p class="text-[13.5px] font-bold text-slate-900 m-0 mb-[3px] truncate">{{ popup.title }}</p>
+        <p class="text-xs text-slate-500 m-0 leading-snug line-clamp-2">{{ popup.message }}</p>
+      </div>
+
+      <!-- Dismiss button -->
+      <button
+        class="flex-shrink-0 self-start flex items-center justify-center w-[26px] h-[26px] bg-transparent border-none rounded-md cursor-pointer text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors"
+        (click)="$event.stopPropagation(); dismiss(popup.popupId)"
+        aria-label="Dismiss"
+      >
+        <svg class="w-[13px] h-[13px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+      </button>
+    </div>
+  }
+
+</div>

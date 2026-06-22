@@ -1,0 +1,55 @@
+<div class="flex min-h-screen bg-slate-50">
+
+  <!-- Mobile Sidebar Backdrop -->
+  <div class="fixed inset-0 bg-black/40 backdrop-blur-xs z-[95] transition-opacity md:hidden"
+       *ngIf="sidebar.isMobile() && sidebar.isMobileSidebarOpen()"
+       (click)="sidebar.toggle()">
+  </div>
+
+  <!-- Sidebar — self-contained, reads SidebarService directly -->
+  <app-sidebar (logout)="onLogout()"></app-sidebar>
+
+  <!-- Main Content Wrapper -->
+  <div class="flex flex-col flex-1 min-h-screen transition-all duration-300 ease-in-out"
+       [style.marginLeft]="sidebar.isMobile() ? '0px' : (sidebar.isCollapsed() ? '80px' : '280px')">
+
+    <!-- Topbar -->
+    <app-topbar
+      [user]="userProfile"
+      [isCollapsed]="sidebar.isCollapsed()"
+      [isMobile]="sidebar.isMobile()"
+      (toggleSidebar)="sidebar.toggle()"
+      (logout)="onLogout()">
+    </app-topbar>
+
+    <!-- Page Content -->
+    <main class="flex-grow p-6 mt-[72px] bg-slate-50 overflow-y-auto">
+      <router-outlet></router-outlet>
+    </main>
+  </div>
+</div>
+
+<!-- Logout Confirmation Modal -->
+<app-confirm-modal
+  [isOpen]="showLogoutModal()"
+  title="Confirm Logout"
+  message="Are you sure you want to log out of the system?"
+  confirmText="Logout"
+  cancelText="Cancel"
+  [isDanger]="true"
+  (confirm)="confirmLogout()"
+  (cancel)="closeLogoutModal()">
+</app-confirm-modal>
+ 
+@if (isLoggingOut()) {
+  <div class="fixed inset-0 z-[1000] bg-slate-950/40 backdrop-blur-xs flex flex-col items-center justify-center gap-3 select-none pointer-events-none">
+    <div class="bg-white p-6 rounded-2xl shadow-xl flex flex-col items-center gap-4 border border-gray-150">
+      <app-loader></app-loader>
+      <span class="text-xs font-bold text-gray-700">Logging out safely...</span>
+    </div>
+  </div>
+}
+
+<!-- Global real-time notification popup alerts -->
+<app-notification-popup></app-notification-popup>
+
