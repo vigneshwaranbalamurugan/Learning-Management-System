@@ -17,6 +17,7 @@ namespace LMSApi.BALLibrary.Services
         private readonly INotificationService _notificationService;
         private readonly IUserRepository _userRepository;
         private readonly ICourseRepository _courseRepository;
+        private readonly IUserNotificationsService _userNotificationsService;
 
         public InstructorPayoutService(
             IInstructorPayoutRepository payoutRepo,
@@ -26,7 +27,8 @@ namespace LMSApi.BALLibrary.Services
             ILogger<InstructorPayoutService> logger,
             INotificationService notificationService,
             IUserRepository userRepository,
-            ICourseRepository courseRepository)
+            ICourseRepository courseRepository,
+            IUserNotificationsService userNotificationsService)
         {
             _payoutRepo = payoutRepo;
             _accountRepo = accountRepo;
@@ -35,6 +37,7 @@ namespace LMSApi.BALLibrary.Services
             _notificationService = notificationService;
             _userRepository = userRepository;
             _courseRepository = courseRepository;
+            _userNotificationsService = userNotificationsService;
             _razorpayProvider = providers.First(p =>
                 p.ProviderName.Equals("Razorpay", StringComparison.OrdinalIgnoreCase));
         }
@@ -216,6 +219,19 @@ namespace LMSApi.BALLibrary.Services
                     payout.Amount, payout.RazorpayPayoutId);
                 Message msg = new EmailMessage(instructorUser.Email, "Payout Initiated!", html) { IsHtml = true };
                 await _notificationService.Send(msg);
+
+                try
+                {
+                    await _userNotificationsService.CreateAndSendNotificationAsync(
+                        userId: instructorId,
+                        title: "Payout Initiated",
+                        message: $"A payout of ₹{payout.Amount} has been initiated for '{course.Title}'.",
+                        type: NotificationType.General);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Failed to send payout initiated realtime notification to Instructor {InstructorId}", instructorId);
+                }
             }
             catch (Exception ex)
             {
@@ -253,6 +269,19 @@ namespace LMSApi.BALLibrary.Services
                         "Processed successfully", payout.RazorpayPayoutId ?? razorpayTransferId, null);
                     Message processedMsg = new EmailMessage(processedInstructor.Email, "Payout Processed", processedHtml) { IsHtml = true };
                     await _notificationService.Send(processedMsg);
+
+                    try
+                    {
+                        await _userNotificationsService.CreateAndSendNotificationAsync(
+                            userId: payout.InstructorId,
+                            title: "Payout Processed",
+                            message: $"Your payout of ₹{payout.Amount} has been processed successfully.",
+                            type: NotificationType.General);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Failed to send payout processed realtime notification to Instructor {InstructorId}", payout.InstructorId);
+                    }
                     break;
 
                 case "transfer.failed":
@@ -268,6 +297,19 @@ namespace LMSApi.BALLibrary.Services
                         "Failed", payout.RazorpayPayoutId ?? razorpayTransferId, payout.FailureReason);
                     Message failedMsg = new EmailMessage(failedInstructor.Email, "Payout Failed", failedHtml) { IsHtml = true };
                     await _notificationService.Send(failedMsg);
+
+                    try
+                    {
+                        await _userNotificationsService.CreateAndSendNotificationAsync(
+                            userId: payout.InstructorId,
+                            title: "Payout Failed",
+                            message: $"Your payout of ₹{payout.Amount} failed. Reason: {payout.FailureReason}",
+                            type: NotificationType.General);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Failed to send payout failed realtime notification to Instructor {InstructorId}", payout.InstructorId);
+                    }
                     break;
 
                 case "transfer.reversed":

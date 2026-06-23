@@ -68,6 +68,12 @@ namespace LMSApi.BALLibrary.Mappers
             CreateMap<UpdateResourceRequest, LessonResources>()
                 .ForAllMembers(opts => opts.Condition((src, dest, srcMember) => srcMember != null));
 
+            // ─── Assignment ─────────────────────────────────────────────────
+            CreateMap<Assignments, AssignmentResponse>();
+            CreateMap<CreateAssignmentRequest, Assignments>();
+            CreateMap<UpdateAssignmentRequest, Assignments>()
+                .ForAllMembers(opts => opts.Condition((src, dest, srcMember) => srcMember != null));
+
             // ─── Batch ─────────────────────────────────────────────────────
             // AvailableSeats is [NotMapped] and populated by the PostgreSQL function before mapping.
             CreateMap<CourseBatch, BatchResponse>();

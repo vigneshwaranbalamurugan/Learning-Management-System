@@ -89,6 +89,20 @@ export class InstructorCourseLayout implements OnInit {
           data.sections.forEach((section: any) => {
             if (section.lessons) {
               section.lessons.sort((a: any, b: any) => (a.sortOrder || 0) - (b.sortOrder || 0));
+              section.lessons.forEach((lesson: any) => {
+                if (lesson.lessonResources && !lesson.resources) {
+                  lesson.resources = lesson.lessonResources;
+                }
+                if (lesson.resources) {
+                  lesson.resources.sort((a: any, b: any) => (a.sortOrder || 0) - (b.sortOrder || 0));
+                }
+              });
+            }
+            if (section.quizzes) {
+              section.quizzes.sort((a: any, b: any) => (a.order || 0) - (b.order || 0));
+            }
+            if (section.assignments) {
+              section.assignments.sort((a: any, b: any) => (a.sortOrder || 0) - (b.sortOrder || 0));
             }
           });
         }

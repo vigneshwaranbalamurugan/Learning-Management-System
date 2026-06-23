@@ -39,6 +39,8 @@ namespace LMSApi.Tests.Services
             var progressService = new Mock<IStudentProgressService>();
             var batchRepo = new CourseBatchRepository(DbContext);
 
+            var mockUserNotificationsService = new Mock<IUserNotificationsService>();
+
             _quizAttemptService = new QuizAttemptService(
                 quizRepository,
                 attemptRepo,
@@ -48,7 +50,8 @@ namespace LMSApi.Tests.Services
                 courseRepository,
                 progressService.Object,
                 Mapper,
-                new Mock<ILogger<QuizAttemptService>>().Object
+                new Mock<ILogger<QuizAttemptService>>().Object,
+                mockUserNotificationsService.Object
             );
 
             _quizQuestionService = new QuizQuestionService(

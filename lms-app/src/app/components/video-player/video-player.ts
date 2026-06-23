@@ -12,6 +12,7 @@ export class VideoPlayer implements OnInit {
   @Input() src: SafeResourceUrl | string | null = null;
   @Input() preventForward: boolean = false;
   @Input() initialMaxTime: number = 0;
+  @Input() autoplay: boolean = true;
   @Output() timeWatchedUpdate = new EventEmitter<number>();
 
   @ViewChild('videoPlayer') videoElement!: ElementRef<HTMLVideoElement>;

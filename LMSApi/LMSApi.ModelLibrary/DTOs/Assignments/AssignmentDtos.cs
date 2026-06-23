@@ -42,6 +42,9 @@ namespace LMSApi.ModelLibrary.DTOs
         public int MaxSubmissions { get; set; } = 1;
 
         public bool IsLateSubmissionAllowed { get; set; }
+
+        [Range(0, int.MaxValue)]
+        public int SortOrder { get; set; }
     }
 
     public class UpdateAssignmentRequest
@@ -77,6 +80,9 @@ namespace LMSApi.ModelLibrary.DTOs
 
         public bool? IsLateSubmissionAllowed { get; set; }
 
+        [Range(0, int.MaxValue)]
+        public int? SortOrder { get; set; }
+
         public PublishStatus? Status { get; set; }
     }
 
@@ -85,6 +91,18 @@ namespace LMSApi.ModelLibrary.DTOs
     public class PublishAssignmentRequest
     {
         public bool Publish { get; set; }
+    }
+
+    public class ReorderAssignmentsRequest
+    {
+        [Required]
+        public List<AssignmentOrderItem> AssignmentOrders { get; set; } = [];
+    }
+
+    public class AssignmentOrderItem
+    {
+        public int AssignmentId { get; set; }
+        public int SortOrder { get; set; }
     }
 
     public class AssignmentResponse
@@ -103,6 +121,7 @@ namespace LMSApi.ModelLibrary.DTOs
         public DateTime? DeadlineDate { get; set; }
         public int MaxSubmissions { get; set; }
         public bool IsLateSubmissionAllowed { get; set; }
+        public int SortOrder { get; set; }
         public PublishStatus Status { get; set; }
         public DateTime CreatedAt { get; set; }
     }

@@ -45,6 +45,22 @@ namespace LMSApi.ModelLibrary.DTOs
         public PublishStatus? Status { get; set; }
     }
 
+    public class ReorderResourcesRequest
+    {
+        [Required]
+        [MinLength(1, ErrorMessage = "At least one resource must be provided.")]
+        public List<ResourceOrderItem> Resources { get; set; } = new();
+    }
+
+    public class ResourceOrderItem
+    {
+        [Required]
+        public int ResourceId { get; set; }
+
+        [Required]
+        public int SortOrder { get; set; }
+    }
+
     // ─── Responses ───────────────────────────────────────────────────────────
 
     public class ResourceResponse
@@ -56,6 +72,7 @@ namespace LMSApi.ModelLibrary.DTOs
         public string ResourceUrl { get; set; }
         public string? Description { get; set; }
         public PublishStatus Status { get; set; }
+        public int SortOrder { get; set; }
         public DateTime UploadedAt { get; set; }
     }
 }

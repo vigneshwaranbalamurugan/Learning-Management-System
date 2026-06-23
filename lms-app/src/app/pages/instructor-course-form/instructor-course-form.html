@@ -1,0 +1,535 @@
+<div class="flex flex-col gap-6 animate-[fadeInContent_400ms_ease]">
+
+  <!-- Loading Metadata -->
+  <div *ngIf="isMetaLoading()" class="flex items-center justify-center py-24">
+    <app-loader />
+  </div>
+
+  <ng-container *ngIf="!isMetaLoading()">
+
+    <!-- ── Top Banner ─────────────────────────────────────────────────────── -->
+    <div class="relative overflow-hidden bg-slate-950 text-white rounded-2xl p-7 flex items-center justify-between shadow-sm">
+      <!-- Background image -->
+      <img src="/explore-banner.png" alt="Create Course Banner"
+        class="absolute inset-0 w-full h-full object-cover opacity-30 select-none pointer-events-none" />
+
+      <!-- Gradient overlay -->
+      <div class="absolute inset-0 bg-gradient-to-r from-primary/90 via-slate-950/80 to-transparent"></div>
+
+      <!-- Decorative blobs -->
+      <div class="absolute -right-16 -top-16 w-48 h-48 bg-secondary/15 rounded-full blur-2xl animate-pulse"></div>
+      <div class="absolute left-1/2 bottom-0 w-64 h-64 bg-white/5 rounded-full blur-3xl"></div>
+
+      <!-- Left: Text -->
+      <div class="flex flex-col relative z-10">
+        <div class="bg-white/15 border border-white/20 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider self-start mb-3">
+          Instructor Portal
+        </div>
+        <h1 class="text-2xl sm:text-3xl font-extrabold mb-2 tracking-tight">Create New Course</h1>
+        <p class="text-white/80 text-xs sm:text-sm max-w-[520px] leading-relaxed">
+          Fill in the details below to launch your course. A great title, clear description,
+          and a compelling thumbnail will help learners discover and enroll in your content.
+        </p>
+      </div>
+
+      <!-- Right: Back button -->
+      <div class="relative z-10 shrink-0">
+        <app-button (click)="onCancel()" variant="outline"
+          customClass="!text-white border-white/20 !bg-white/10 hover:!bg-white/20 !px-4 !py-2 !w-auto text-xs font-semibold flex items-center gap-1.5">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+          </svg>
+          Back to Courses
+        </app-button>
+      </div>
+    </div>
+
+    <!-- ── Form Grid ──────────────────────────────────────────────────────── -->
+    <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+
+      <!-- LEFT: Main Form Fields -->
+      <div class="xl:col-span-2 flex flex-col gap-5">
+
+        <!-- ── Basic Information ─────────────────────────────────────────── -->
+        <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+          <div class="flex items-center gap-3 mb-5 pb-4 border-b border-gray-100">
+            <div class="w-9 h-9 rounded-xl bg-indigo-50 text-[#1C1C7B] flex items-center justify-center shrink-0">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+              </svg>
+            </div>
+            <div>
+              <h2 class="text-sm font-bold text-slate-800">Basic Information</h2>
+              <p class="text-xs text-gray-400 mt-0.5">Course title, description, and category</p>
+            </div>
+          </div>
+
+          <!-- Title -->
+          <div class="mb-4">
+            <label class="text-xs font-semibold text-slate-600 mb-1.5 block">
+              Course Title <span class="text-red-500">*</span>
+            </label>
+            <input
+              id="course-title"
+              type="text"
+              [(ngModel)]="form.title"
+              placeholder="e.g. CSS Fundamentals - Design Modern Responsive Websites"
+              maxlength="300"
+              [class]="'w-full py-3 px-4 text-sm rounded-xl border outline-none transition-all duration-200 bg-white ' +
+                (errors.title ? 'border-red-400 focus:border-red-400 focus:ring-1 focus:ring-red-400' : 'border-gray-200 focus:border-[#1C1C7B] focus:ring-1 focus:ring-[#1C1C7B]')"
+            />
+            <div *ngIf="errors.title" class="text-xs text-red-500 mt-1 flex items-center gap-1">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0Zm-9 3.75h.008v.008H12v-.008z" />
+              </svg>
+              {{ errors.title }}
+            </div>
+            <p class="text-[10px] text-gray-400 mt-1 text-right">{{ form.title.length }}/300</p>
+          </div>
+
+          <!-- Description -->
+          <div class="mb-4">
+            <div class="flex items-center justify-between mb-1.5">
+              <label class="text-xs font-semibold text-slate-600 block">
+                Description <span class="text-red-500">*</span>
+              </label>
+              <div class="flex bg-gray-100 rounded-lg p-0.5">
+                <button type="button" (click)="activeTab['description'] = 'write'"
+                  [class]="'text-[10px] font-medium px-2.5 py-1 rounded-md transition-colors ' + (activeTab['description'] === 'write' ? 'bg-white text-slate-800 shadow-sm' : 'text-gray-500 hover:text-slate-700')">
+                  Write
+                </button>
+                <button type="button" (click)="activeTab['description'] = 'preview'"
+                  [class]="'text-[10px] font-medium px-2.5 py-1 rounded-md transition-colors ' + (activeTab['description'] === 'preview' ? 'bg-white text-slate-800 shadow-sm' : 'text-gray-500 hover:text-slate-700')">
+                  Preview
+                </button>
+              </div>
+            </div>
+            
+            <textarea
+              *ngIf="activeTab['description'] === 'write'"
+              id="course-description"
+              [(ngModel)]="form.description"
+              placeholder="Describe what learners will achieve in this course... (Markdown supported)"
+              rows="5"
+              maxlength="2000"
+              [class]="'w-full py-3 px-4 text-sm rounded-xl border outline-none transition-all duration-200 bg-white resize-none ' +
+                (errors.description ? 'border-red-400 focus:border-red-400 focus:ring-1 focus:ring-red-400' : 'border-gray-200 focus:border-[#1C1C7B] focus:ring-1 focus:ring-[#1C1C7B]')"
+            ></textarea>
+            
+            <div *ngIf="activeTab['description'] === 'preview'" 
+              class="w-full min-h-[140px] py-3 px-4 text-sm rounded-xl border border-gray-200 bg-gray-50 prose prose-sm max-w-none overflow-y-auto"
+              [innerHTML]="descriptionPreview">
+            </div>
+            <div *ngIf="activeTab['description'] === 'preview' && !form.description" class="text-gray-400 italic text-sm mt-1">Nothing to preview</div>
+
+            <div *ngIf="errors.description && activeTab['description'] === 'write'" class="text-xs text-red-500 mt-1 flex items-center gap-1">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0Zm-9 3.75h.008v.008H12v-.008z" />
+              </svg>
+              {{ errors.description }}
+            </div>
+            <p *ngIf="activeTab['description'] === 'write'" class="text-[10px] text-gray-400 mt-1 text-right">{{ form.description.length }}/2000</p>
+          </div>
+
+          <!-- Category -->
+          <div>
+            <label class="text-xs font-semibold text-slate-600 mb-1.5 block">
+              Category <span class="text-red-500">*</span>
+            </label>
+            <app-dropdown
+              [value]="form.categoryId"
+              (valueChange)="form.categoryId = $event"
+              [options]="categoryOptions()"
+              placeholder="Select a category"
+              [error]="errors.categoryId || ''"
+            />
+          </div>
+        </div>
+
+        <!-- ── Requirements & Outcomes ─────────────────────────────────── -->
+        <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+          <div class="flex items-center gap-3 mb-5 pb-4 border-b border-gray-100">
+            <div class="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <div>
+              <h2 class="text-sm font-bold text-slate-800">Requirements & Outcomes</h2>
+              <p class="text-xs text-gray-400 mt-0.5">What learners need to know and what they'll learn</p>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- Requirements -->
+            <div>
+              <div class="flex items-center justify-between mb-1.5">
+                <label class="text-xs font-semibold text-slate-600 block">Prerequisites / Requirements</label>
+                <div class="flex bg-gray-100 rounded-lg p-0.5">
+                  <button type="button" (click)="activeTab['requirements'] = 'write'"
+                    [class]="'text-[10px] font-medium px-2.5 py-1 rounded-md transition-colors ' + (activeTab['requirements'] === 'write' ? 'bg-white text-slate-800 shadow-sm' : 'text-gray-500 hover:text-slate-700')">
+                    Write
+                  </button>
+                  <button type="button" (click)="activeTab['requirements'] = 'preview'"
+                    [class]="'text-[10px] font-medium px-2.5 py-1 rounded-md transition-colors ' + (activeTab['requirements'] === 'preview' ? 'bg-white text-slate-800 shadow-sm' : 'text-gray-500 hover:text-slate-700')">
+                    Preview
+                  </button>
+                </div>
+              </div>
+              <textarea
+                *ngIf="activeTab['requirements'] === 'write'"
+                id="course-requirements"
+                [(ngModel)]="form.requirements"
+                placeholder="e.g. Basic HTML knowledge&#10;No programming experience needed&#10;(Markdown supported)"
+                rows="5"
+                class="w-full py-3 px-4 text-sm rounded-xl border border-gray-200 outline-none transition-all duration-200 bg-white resize-none focus:border-[#1C1C7B] focus:ring-1 focus:ring-[#1C1C7B]"
+              ></textarea>
+              <div *ngIf="activeTab['requirements'] === 'preview'" 
+                class="w-full min-h-[120px] py-3 px-4 text-sm rounded-xl border border-gray-200 bg-gray-50 prose prose-sm max-w-none overflow-y-auto"
+                [innerHTML]="requirementsPreview">
+              </div>
+              <div *ngIf="activeTab['requirements'] === 'preview' && !form.requirements" class="text-gray-400 italic text-sm mt-1">Nothing to preview</div>
+              <p *ngIf="activeTab['requirements'] === 'write'" class="text-[10px] text-gray-400 mt-1">Markdown is supported.</p>
+            </div>
+
+            <!-- Learning Outcomes -->
+            <div>
+              <div class="flex items-center justify-between mb-1.5">
+                <label class="text-xs font-semibold text-slate-600 block">Learning Outcomes</label>
+                <div class="flex bg-gray-100 rounded-lg p-0.5">
+                  <button type="button" (click)="activeTab['outcomes'] = 'write'"
+                    [class]="'text-[10px] font-medium px-2.5 py-1 rounded-md transition-colors ' + (activeTab['outcomes'] === 'write' ? 'bg-white text-slate-800 shadow-sm' : 'text-gray-500 hover:text-slate-700')">
+                    Write
+                  </button>
+                  <button type="button" (click)="activeTab['outcomes'] = 'preview'"
+                    [class]="'text-[10px] font-medium px-2.5 py-1 rounded-md transition-colors ' + (activeTab['outcomes'] === 'preview' ? 'bg-white text-slate-800 shadow-sm' : 'text-gray-500 hover:text-slate-700')">
+                    Preview
+                  </button>
+                </div>
+              </div>
+              <textarea
+                *ngIf="activeTab['outcomes'] === 'write'"
+                id="course-outcomes"
+                [(ngModel)]="form.learningOutcomes"
+                placeholder="e.g. Style web pages with CSS&#10;Create responsive layouts using Flexbox&#10;Add smooth animations&#10;(Markdown supported)"
+                rows="5"
+                class="w-full py-3 px-4 text-sm rounded-xl border border-gray-200 outline-none transition-all duration-200 bg-white resize-none focus:border-[#1C1C7B] focus:ring-1 focus:ring-[#1C1C7B]"
+              ></textarea>
+              <div *ngIf="activeTab['outcomes'] === 'preview'" 
+                class="w-full min-h-[120px] py-3 px-4 text-sm rounded-xl border border-gray-200 bg-gray-50 prose prose-sm max-w-none overflow-y-auto"
+                [innerHTML]="outcomesPreview">
+              </div>
+              <div *ngIf="activeTab['outcomes'] === 'preview' && !form.learningOutcomes" class="text-gray-400 italic text-sm mt-1">Nothing to preview</div>
+              <p *ngIf="activeTab['outcomes'] === 'write'" class="text-[10px] text-gray-400 mt-1">Markdown is supported.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── Pricing ─────────────────────────────────────────────────── -->
+        <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+          <div class="flex items-center gap-3 mb-5 pb-4 border-b border-gray-100">
+            <div class="w-9 h-9 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <div>
+              <h2 class="text-sm font-bold text-slate-800">Pricing</h2>
+              <p class="text-xs text-gray-400 mt-0.5">Set your course pricing model</p>
+            </div>
+          </div>
+
+          <!-- Premium Toggle -->
+          <div class="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-100 mb-4">
+            <div>
+              <p class="text-sm font-semibold text-slate-700">Premium Course</p>
+              <p class="text-xs text-gray-400 mt-0.5">Enable to charge learners for this course</p>
+            </div>
+            <button
+              type="button"
+              id="premium-toggle"
+              (click)="form.isPremium = !form.isPremium"
+              [class]="'relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 focus:outline-none ' +
+                (form.isPremium ? 'bg-[#1C1C7B]' : 'bg-gray-300')"
+            >
+              <span [class]="'inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform duration-200 ' +
+                (form.isPremium ? 'translate-x-6' : 'translate-x-1')"></span>
+            </button>
+          </div>
+
+          <!-- Price Input (shown only if premium) -->
+          <div *ngIf="form.isPremium">
+            <label class="text-xs font-semibold text-slate-600 mb-1.5 block">
+              Price (₹) <span class="text-red-500">*</span>
+            </label>
+            <div class="relative">
+              <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-semibold text-sm">₹</span>
+              <input
+                id="course-price"
+                type="number"
+                min="0"
+                [(ngModel)]="form.price"
+                placeholder="850"
+                [class]="'w-full py-3 pl-9 pr-4 text-sm rounded-xl border outline-none transition-all duration-200 bg-white ' +
+                  (errors.price ? 'border-red-400 focus:ring-1 focus:ring-red-400' : 'border-gray-200 focus:border-[#1C1C7B] focus:ring-1 focus:ring-[#1C1C7B]')"
+              />
+            </div>
+            <div *ngIf="errors.price" class="text-xs text-red-500 mt-1 flex items-center gap-1">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0Zm-9 3.75h.008v.008H12v-.008z" />
+              </svg>
+              {{ errors.price }}
+            </div>
+          </div>
+
+          <div *ngIf="!form.isPremium"
+            class="flex items-center gap-2 text-xs text-emerald-600 bg-emerald-50 border border-emerald-100 rounded-xl px-4 py-3">
+            <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            This course will be <strong class="ml-1">free</strong> for all learners.
+          </div>
+        </div>
+
+      </div>
+
+      <!-- RIGHT: Course Settings & Media -->
+      <div class="flex flex-col gap-5">
+
+        <!-- ── Course Settings ────────────────────────────────────────── -->
+        <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+          <div class="flex items-center gap-3 mb-5 pb-4 border-b border-gray-100">
+            <div class="w-9 h-9 rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center shrink-0">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+            </div>
+            <div>
+              <h2 class="text-sm font-bold text-slate-800">Course Settings</h2>
+              <p class="text-xs text-gray-400 mt-0.5">Level, language, access & duration</p>
+            </div>
+          </div>
+
+          <div class="flex flex-col gap-4">
+            <!-- Level -->
+            <div>
+              <label class="text-xs font-semibold text-slate-600 mb-1.5 block">Level <span class="text-red-500">*</span></label>
+              <app-dropdown
+                [value]="form.level"
+                (valueChange)="form.level = $event"
+                [options]="levelOptions"
+                placeholder="Select level"
+                [error]="errors.level || ''"
+              />
+            </div>
+
+            <!-- Language -->
+            <div>
+              <label class="text-xs font-semibold text-slate-600 mb-1.5 block">Language <span class="text-red-500">*</span></label>
+              <app-dropdown
+                [value]="form.languageId"
+                (valueChange)="form.languageId = $event"
+                [options]="languageOptions()"
+                placeholder="Select language"
+                [error]="errors.languageId || ''"
+              />
+            </div>
+
+            <!-- Course Access Type -->
+            <div>
+              <label class="text-xs font-semibold text-slate-600 mb-1.5 block">Access Type <span class="text-red-500">*</span></label>
+              <app-dropdown
+                [value]="form.courseAccessType"
+                (valueChange)="form.courseAccessType = $event"
+                [options]="accessTypeOptions"
+                placeholder="Select access type"
+                [error]="errors.courseAccessType || ''"
+              />
+            </div>
+
+            <!-- Deadline Days (Self Paced only) -->
+            <div *ngIf="showDeadlineDays">
+              <label class="text-xs font-semibold text-slate-600 mb-1.5 block">Access Duration (days)</label>
+              <input
+                id="deadline-days"
+                type="number"
+                min="1"
+                [(ngModel)]="form.defaultDeadlineDays"
+                placeholder="e.g. 30"
+                class="w-full py-3 px-4 text-sm rounded-xl border border-gray-200 outline-none transition-all duration-200 bg-white focus:border-[#1C1C7B] focus:ring-1 focus:ring-[#1C1C7B]"
+              />
+              <p class="text-[10px] text-gray-400 mt-1">Days before learner access expires. Leave empty for lifetime access.</p>
+            </div>
+
+            <!-- Estimated Duration -->
+            <div>
+              <label class="text-xs font-semibold text-slate-600 mb-1.5 block">
+                Duration (hours) <span class="text-red-500">*</span>
+              </label>
+              <input
+                id="course-duration"
+                type="number"
+                min="0.5"
+                step="0.5"
+                [(ngModel)]="form.estimatedDurationHours"
+                placeholder="e.g. 8"
+                [class]="'w-full py-3 px-4 text-sm rounded-xl border outline-none transition-all duration-200 bg-white ' +
+                  (errors.estimatedDurationHours ? 'border-red-400' : 'border-gray-200 focus:border-[#1C1C7B] focus:ring-1 focus:ring-[#1C1C7B]')"
+              />
+              <div *ngIf="errors.estimatedDurationHours" class="text-xs text-red-500 mt-1">
+                {{ errors.estimatedDurationHours }}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── Thumbnail ──────────────────────────────────────────────── -->
+        <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+          <div class="flex items-center gap-3 mb-5 pb-4 border-b border-gray-100">
+            <div class="w-9 h-9 rounded-xl bg-pink-50 text-pink-500 flex items-center justify-center shrink-0">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+            </div>
+            <div>
+              <h2 class="text-sm font-bold text-slate-800">Course Thumbnail</h2>
+              <p class="text-xs text-gray-400 mt-0.5">JPG, PNG, or WebP · Max 5 MB</p>
+            </div>
+          </div>
+
+          <!-- Preview -->
+          <div *ngIf="thumbnailPreview"
+            class="relative mb-4 rounded-xl overflow-hidden border border-gray-100 aspect-video group">
+            <img [src]="thumbnailPreview" alt="Thumbnail Preview" class="w-full h-full object-cover" />
+            <button
+              type="button"
+              (click)="removeThumbnail()"
+              class="absolute top-2 right-2 bg-red-500 text-white w-7 h-7 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-md"
+              title="Remove thumbnail">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+
+          <!-- Upload zone -->
+          <label *ngIf="!thumbnailPreview"
+            for="thumbnail-upload"
+            class="flex flex-col items-center justify-center w-full aspect-video border-2 border-dashed border-gray-200 rounded-xl cursor-pointer bg-gray-50 hover:bg-indigo-50 hover:border-[#1C1C7B]/40 transition-all duration-200 group">
+            <svg class="w-10 h-10 text-gray-300 group-hover:text-[#1C1C7B]/40 transition-colors mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+            <p class="text-xs font-semibold text-gray-400 group-hover:text-[#1C1C7B]/60 transition-colors">Click to upload thumbnail</p>
+            <p class="text-[10px] text-gray-300 mt-0.5">1280×720 recommended</p>
+            <input id="thumbnail-upload" type="file" class="hidden" accept="image/jpeg,image/png,image/webp"
+              (change)="onThumbnailSelected($event)" />
+          </label>
+
+          <div *ngIf="thumbnailFile && !errors.thumbnail"
+            class="flex items-center gap-2 mt-3 text-xs text-emerald-600 bg-emerald-50 border border-emerald-100 rounded-xl px-3 py-2">
+            <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span class="truncate font-medium">{{ thumbnailFile.name }}</span>
+          </div>
+          <div *ngIf="errors.thumbnail" class="text-xs text-red-500 mt-2 flex items-center gap-1">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0Zm-9 3.75h.008v.008H12v-.008z" />
+            </svg>
+            {{ errors.thumbnail }}
+          </div>
+        </div>
+
+        <!-- ── Intro Video ────────────────────────────────────────────── -->
+        <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+          <div class="flex items-center gap-3 mb-5 pb-4 border-b border-gray-100">
+            <div class="w-9 h-9 rounded-xl bg-purple-50 text-purple-500 flex items-center justify-center shrink-0">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <div>
+              <h2 class="text-sm font-bold text-slate-800">Intro Video <span class="text-gray-400 font-normal">(Optional)</span></h2>
+              <p class="text-xs text-gray-400 mt-0.5">MP4, WebM, or OGG · Max 500 MB</p>
+            </div>
+          </div>
+
+          <!-- Video selected state -->
+          <div *ngIf="introVideoFile"
+            class="flex items-center justify-between gap-3 p-4 bg-purple-50 border border-purple-100 rounded-xl">
+            <div class="flex items-center gap-3 min-w-0">
+              <div class="w-9 h-9 bg-purple-100 text-purple-600 rounded-xl flex items-center justify-center shrink-0">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                </svg>
+              </div>
+              <div class="min-w-0">
+                <p class="text-xs font-semibold text-purple-800 truncate">{{ introVideoName }}</p>
+                <p class="text-[10px] text-purple-500 mt-0.5">{{ (introVideoFile.size / (1024*1024)).toFixed(1) }} MB</p>
+              </div>
+            </div>
+            <button type="button" (click)="removeVideo()"
+              class="text-purple-400 hover:text-red-500 transition-colors p-1.5 rounded-lg hover:bg-red-50">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+
+          <!-- Upload zone -->
+          <label *ngIf="!introVideoFile"
+            for="video-upload"
+            class="flex flex-col items-center justify-center w-full py-8 border-2 border-dashed border-gray-200 rounded-xl cursor-pointer bg-gray-50 hover:bg-purple-50 hover:border-purple-300 transition-all duration-200 group">
+            <svg class="w-10 h-10 text-gray-300 group-hover:text-purple-400 transition-colors mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+            </svg>
+            <p class="text-xs font-semibold text-gray-400 group-hover:text-purple-600 transition-colors">Click to upload intro video</p>
+            <p class="text-[10px] text-gray-300 mt-0.5">MP4, WebM · Max 500 MB</p>
+            <input id="video-upload" type="file" class="hidden" accept="video/mp4,video/webm,video/ogg"
+              (change)="onVideoSelected($event)" />
+          </label>
+        </div>
+
+        <!-- ── Submit Actions ────────────────────────────────────────── -->
+        <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex flex-col gap-3">
+          <app-button
+            (click)="onSubmit()"
+            variant="primary"
+            [loading]="isSubmitting()"
+            [disabled]="isSubmitting()"
+            customClass="!w-full !py-3 text-sm font-bold flex items-center justify-center gap-2">
+            <svg *ngIf="!isSubmitting()" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
+                d="M12 4v16m8-8H4" />
+            </svg>
+            {{ isSubmitting() ? 'Creating Course...' : 'Create Course' }}
+          </app-button>
+          <app-button
+            (click)="onCancel()"
+            variant="outline"
+            [disabled]="isSubmitting()"
+            customClass="!w-full !py-2.5 text-sm font-semibold">
+            Cancel
+          </app-button>
+          <p class="text-[10px] text-center text-gray-400 leading-relaxed">
+            Course will be saved as <strong>Draft</strong>. You can publish it after adding lessons and sections.
+          </p>
+        </div>
+
+      </div>
+    </div>
+
+  </ng-container>
+</div>

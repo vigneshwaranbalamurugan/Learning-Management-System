@@ -20,6 +20,7 @@ namespace LMSApi.Tests.Services
         private Mock<ILogger<AssignmentService>> _mockLogger = null!;
         private Mock<IUploadService> _mockUploadService = null!;
         private Mock<INotificationService> _mockNotificationService = null!;
+        private Mock<IUserNotificationsService> _mockUserNotificationsService = null!;
         private IAssignmentService _assignmentService = null!;
 
         [SetUp]
@@ -30,6 +31,7 @@ namespace LMSApi.Tests.Services
             _mockLogger = new Mock<ILogger<AssignmentService>>();
             _mockUploadService = new Mock<IUploadService>();
             _mockNotificationService = new Mock<INotificationService>();
+            _mockUserNotificationsService = new Mock<IUserNotificationsService>();
 
             var assignmentRepo = new AssignmentRepository(DbContext);
             var sectionRepo = new CourseSectionRepository(DbContext);
@@ -46,7 +48,8 @@ namespace LMSApi.Tests.Services
                 Mapper,
                 _mockLogger.Object,
                 _mockNotificationService.Object,
-                batchRepo
+                batchRepo,
+                _mockUserNotificationsService.Object
             );
         }
 

@@ -140,6 +140,42 @@ export interface LessonSummary {
   status: number | string;         // PublishStatus enum
   contentUrl?: string;             // available for preview lessons
   content?: string;                // available for article lessons
+  resources?: ResourceResponse[];
+}
+
+export interface ResourceResponse {
+  id: number;
+  lessonId: number;
+  resourceType: number | string;
+  resourceTitle: string;
+  resourceUrl: string;
+  description?: string;
+  status: number | string;
+  sortOrder: number;
+  uploadedAt: string;
+}
+
+export interface CreateResourceRequest {
+  lessonId: number;
+  resourceType: number | string;
+  resourceTitle: string;
+  resourceUrl?: string;
+  description?: string;
+  status: number | string;
+  file?: File;
+}
+
+export interface UpdateResourceRequest {
+  resourceType?: number | string;
+  resourceTitle?: string;
+  resourceUrl?: string;
+  description?: string;
+  status?: number | string;
+  file?: File;
+}
+
+export interface ReorderResourcesRequest {
+  resources: { resourceId: number; sortOrder: number }[];
 }
 
 // CourseSectionDetail mirrors the backend SectionResponse DTO.
@@ -158,6 +194,7 @@ export interface CourseSectionDetail {
   lessons?: LessonSummary[];       // Optional: populated if backend maps lessons in sections
   quizzes?: QuizResponse[];
   assignments?: AssignmentResponse[];
+  resources?:ResourceResponse[]
 }
 
 export interface BatchSummary {

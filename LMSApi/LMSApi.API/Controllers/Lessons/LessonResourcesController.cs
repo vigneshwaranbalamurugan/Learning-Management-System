@@ -153,6 +153,13 @@ namespace LMSApi.API.Controllers
             var result = await _resourceService.PublishResourceAsync(id, request);
             return Ok(result);
         }
-
+        [Authorize(Roles = "Instructor,Admin")]
+        [HttpPut("reorder/{lessonId:int}")]
+        public async Task<IActionResult> Reorder(int lessonId, [FromBody] ReorderResourcesRequest request)
+        {
+            await _ownershipService.EnforceLessonOwnershipAsync(lessonId, User.GetUserId(), User.IsAdmin(), "You do not have permission to modify resources in this lesson.");
+            await _resourceService.ReorderResourcesAsync(lessonId, request);
+            return NoContent();
+        }
     }
 }

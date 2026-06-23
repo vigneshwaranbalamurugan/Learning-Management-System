@@ -3,12 +3,14 @@
      (mousemove)="onMouseMove()"
      (mouseleave)="onMouseLeave()">
   <video #videoPlayer
-         autoplay
+         [autoplay]="autoplay"
          class="w-full h-full object-contain cursor-pointer"
          [src]="src"
          (timeupdate)="onTimeUpdate(videoPlayer)"
          (loadedmetadata)="onLoadedMetadata(videoPlayer)"
          (ended)="onVideoEnded(videoPlayer)"
+         (play)="isPlaying.set(true)"
+         (pause)="isPlaying.set(false)"
          (contextmenu)="$event.preventDefault()"
          controlsList="nodownload"
          disablePictureInPicture

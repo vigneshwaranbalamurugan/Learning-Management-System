@@ -5,6 +5,7 @@ import { Router } from '@angular/router';
 import { InstructorCourseLayout } from '../instructor-course-layout/instructor-course-layout';
 import { ToastService } from '@services/toast.service';
 import { DashboardService } from '@services/dashboard.service';
+import { LessonResourcesService } from '@services/lesson-resources.service';
 import { ConfirmModal } from '@components/confirm-modal/confirm-modal';
 import { FormInput } from '@components/form-input/form-input';
 import { Button } from '@components/button/button';
@@ -20,7 +21,63 @@ export class InstructorCourseBuilder {
   protected layout = inject(InstructorCourseLayout);
   private toastService = inject(ToastService);
   private dashboardService = inject(DashboardService);
+  private resourcesService = inject(LessonResourcesService);
   private router = inject(Router);
+
+  // Section expand/collapse state
+  protected expandedSections = signal<Record<number, boolean>>({});
+
+  protected toggleSection(sectionId: number, event: Event) {
+    const target = event.target as HTMLElement;
+    if (target.closest('button') || target.closest('.cursor-grab') || target.closest('app-button')) {
+      return;
+    }
+    this.expandedSections.update(expanded => ({
+      ...expanded,
+      [sectionId]: !this.isSectionExpanded(sectionId)
+    }));
+  }
+
+  protected isSectionExpanded(sectionId: number): boolean {
+    const expanded = this.expandedSections();
+    return expanded[sectionId] !== false;
+  }
+
+  // Lesson expand/collapse state
+  protected expandedLessons = signal<Record<number, boolean>>({});
+
+  protected toggleLesson(lessonId: number, event: Event) {
+    event.stopPropagation();
+    
+    const isExpanded = !this.isLessonExpanded(lessonId);
+    this.expandedLessons.update(expanded => ({
+      ...expanded,
+      [lessonId]: isExpanded
+    }));
+
+    // If expanding, fetch resources manually as fallback if empty
+    if (isExpanded) {
+      let currentLesson: any = null;
+      this.course?.sections?.forEach((s: any) => {
+        const found = s.lessons?.find((l: any) => l.id === lessonId);
+        if (found) currentLesson = found;
+      });
+      
+      if (currentLesson && (!currentLesson.resources || currentLesson.resources.length === 0)) {
+        this.resourcesService.getResourcesByLesson(lessonId).subscribe({
+          next: (res) => {
+            currentLesson.resources = res || [];
+            currentLesson.resources.sort((a: any, b: any) => (a.sortOrder || 0) - (b.sortOrder || 0));
+          },
+          error: (err) => console.error('Failed to fetch resources for lesson', err)
+        });
+      }
+    }
+  }
+
+  protected isLessonExpanded(lessonId: number): boolean {
+    return !!this.expandedLessons()[lessonId];
+  }
 
   // Section modal state
   protected showSectionModal = signal(false);
@@ -61,19 +118,33 @@ export class InstructorCourseBuilder {
 
   // Confirmation Modal state
   protected showDeleteModal = false;
-  protected deleteType: 'section' | 'lesson' | null = null;
+  protected deleteType: 'section' | 'lesson' | 'quiz' | 'assignment' | null = null;
   protected idToDelete: number | null = null;
 
   protected get course() { return this.layout.course(); }
 
   protected get deleteModalTitle(): string {
-    return this.deleteType === 'section' ? 'Delete Section' : 'Delete Lesson';
+    if (this.deleteType === 'section') return 'Delete Section';
+    if (this.deleteType === 'lesson') return 'Delete Lesson';
+    if (this.deleteType === 'quiz') return 'Delete Quiz';
+    if (this.deleteType === 'assignment') return 'Delete Assignment';
+    return 'Delete Item';
   }
 
   protected get deleteModalMessage(): string {
-    return this.deleteType === 'section'
-      ? 'Delete this section and all its contents? This action cannot be undone.'
-      : 'Delete this lesson permanently? This action cannot be undone.';
+    if (this.deleteType === 'section') {
+      return 'Delete this section and all its contents? This action cannot be undone.';
+    }
+    if (this.deleteType === 'lesson') {
+      return 'Delete this lesson permanently? This action cannot be undone.';
+    }
+    if (this.deleteType === 'quiz') {
+      return 'Delete this quiz permanently? This action cannot be undone.';
+    }
+    if (this.deleteType === 'assignment') {
+      return 'Delete this assignment permanently? This action cannot be undone.';
+    }
+    return 'Are you sure you want to delete this item?';
   }
 
   protected lessonTypeLabel(type: string | number): string {
@@ -96,6 +167,8 @@ export class InstructorCourseBuilder {
   protected draggedSectionIndex: number | null = null;
   protected draggedLessonIndex: number | null = null;
   protected draggedLessonSectionId: number | null = null;
+  protected draggedResourceIndex: number | null = null;
+  protected draggedResourceLessonId: number | null = null;
   protected isReordering = signal(false);
 
   // ── Section Reordering ──────────────────────────────────────────────────────
@@ -153,6 +226,7 @@ export class InstructorCourseBuilder {
       next: () => {
         this.isReordering.set(false);
         this.toastService.showSuccess('Section order saved');
+        this.layout.loadCourse(this.course!.id); // reload course
       },
       error: (err) => {
         this.isReordering.set(false);
@@ -160,6 +234,99 @@ export class InstructorCourseBuilder {
         this.layout.loadCourse(this.course!.id); // revert
       }
     });
+  }
+
+  // ── Resource Reordering ───────────────────────────────────────────────────────
+  
+  protected moveResource(lesson: any, resourceIndex: number, direction: 'up' | 'down') {
+    if (!lesson || !lesson.resources) return;
+    
+    const newIndex = direction === 'up' ? resourceIndex - 1 : resourceIndex + 1;
+    if (newIndex < 0 || newIndex >= lesson.resources.length) return;
+    
+    const temp = lesson.resources[resourceIndex];
+    lesson.resources[resourceIndex] = lesson.resources[newIndex];
+    lesson.resources[newIndex] = temp;
+    
+    this.saveResourceOrder(lesson);
+  }
+
+  protected onResourceDragStart(lessonId: number, resourceIndex: number, event: DragEvent) {
+    this.draggedResourceLessonId = lessonId;
+    this.draggedResourceIndex = resourceIndex;
+    this.draggedLessonIndex = null;
+    this.draggedSectionIndex = null;
+    event.stopPropagation();
+    if (event.dataTransfer) {
+      event.dataTransfer.effectAllowed = 'move';
+    }
+  }
+
+  protected onResourceDragOver(lessonId: number, resourceIndex: number, event: DragEvent) {
+    event.preventDefault();
+    event.stopPropagation();
+    
+    if (this.draggedResourceLessonId !== lessonId) return; // Disallow cross-lesson drag
+    if (this.draggedResourceIndex === null || this.draggedResourceIndex === resourceIndex) return;
+
+    let lesson: any = null;
+    this.course?.sections?.forEach((s: any) => {
+      const found = s.lessons?.find((l: any) => l.id === lessonId);
+      if (found) lesson = found;
+    });
+    if (!lesson || !lesson.resources) return;
+    
+    const draggedItem = lesson.resources[this.draggedResourceIndex];
+    lesson.resources.splice(this.draggedResourceIndex, 1);
+    lesson.resources.splice(resourceIndex, 0, draggedItem);
+    this.draggedResourceIndex = resourceIndex;
+  }
+
+  protected onResourceDrop(lessonId: number, event: DragEvent) {
+    event.preventDefault();
+    event.stopPropagation();
+    if (this.draggedResourceIndex !== null && this.draggedResourceLessonId === lessonId) {
+      let lesson: any = null;
+      this.course?.sections?.forEach((s: any) => {
+        const found = s.lessons?.find((l: any) => l.id === lessonId);
+        if (found) lesson = found;
+      });
+      if (lesson) {
+        this.saveResourceOrder(lesson);
+      }
+      this.draggedResourceIndex = null;
+      this.draggedResourceLessonId = null;
+    }
+  }
+
+  protected saveResourceOrder(lesson: any) {
+    if (!lesson || !lesson.resources) return;
+    this.isReordering.set(true);
+    
+    const resourceOrders = lesson.resources.map((res: any, index: number) => ({
+      resourceId: res.id,
+      sortOrder: index + 1
+    }));
+
+    this.resourcesService.reorderResources(lesson.id, { resources: resourceOrders }).subscribe({
+      next: () => {
+        this.isReordering.set(false);
+        this.toastService.showSuccess('Resource order saved');
+        this.layout.loadCourse(this.course!.id); // reload course
+      },
+      error: (err) => {
+        this.isReordering.set(false);
+        this.toastService.showApiError(err, 'Failed to save resource order');
+        this.layout.loadCourse(this.course!.id); // revert
+      }
+    });
+  }
+
+  protected confirmDeleteResource(id: number, event: Event) {
+    event.stopPropagation();
+    this.deleteType = 'resource' as any;
+    this.idToDelete = id;
+    this.showDeleteModal = true;
   }
 
   // ── Lesson Reordering ───────────────────────────────────────────────────────
@@ -360,7 +527,245 @@ export class InstructorCourseBuilder {
           this.closeDeleteModal();
         }
       });
+    } else if (this.deleteType === 'quiz') {
+      this.dashboardService.deleteQuiz(this.idToDelete).subscribe({
+        next: () => {
+          this.toastService.showSuccess('Quiz deleted successfully.');
+          this.layout.loadCourse(this.course!.id);
+          this.closeDeleteModal();
+        },
+        error: (err) => {
+          this.toastService.showApiError(err, 'Failed to delete quiz.');
+          this.closeDeleteModal();
+        }
+      });
+    } else if (this.deleteType === 'assignment') {
+      this.dashboardService.deleteAssignment(this.idToDelete).subscribe({
+        next: () => {
+          this.toastService.showSuccess('Assignment deleted successfully.');
+          this.layout.loadCourse(this.course!.id);
+          this.closeDeleteModal();
+        },
+        error: (err) => {
+          this.toastService.showApiError(err, 'Failed to delete assignment.');
+          this.closeDeleteModal();
+        }
+      });
+    } else if (this.deleteType === 'resource' as any) {
+      this.resourcesService.deleteResource(this.idToDelete).subscribe({
+        next: () => {
+          this.toastService.showSuccess('Resource deleted successfully.');
+          this.layout.loadCourse(this.course!.id);
+          this.closeDeleteModal();
+        },
+        error: (err) => {
+          this.toastService.showApiError(err, 'Failed to delete resource.');
+          this.closeDeleteModal();
+        }
+      });
     }
+  }
+
+  // ── Quiz & Assignment Operations ───────────────────────────────────────────
+
+  protected openEditQuiz(quizId: number, event?: Event) {
+    event?.stopPropagation();
+    if (!this.course) return;
+    this.router.navigate(['/instructor/courses', this.course.slug, 'quizzes', quizId, 'questions']);
+  }
+
+  protected confirmDeleteQuiz(quizId: number, event?: Event) {
+    event?.stopPropagation();
+    this.deleteType = 'quiz';
+    this.idToDelete = quizId;
+    this.showDeleteModal = true;
+  }
+
+  protected openEditAssignment(assignmentId: number, event?: Event) {
+    event?.stopPropagation();
+    if (!this.course) return;
+    this.router.navigate(['/instructor/courses', this.course.slug, 'assignments', assignmentId, 'edit']);
+  }
+
+  protected confirmDeleteAssignment(assignmentId: number, event?: Event) {
+    event?.stopPropagation();
+    this.deleteType = 'assignment';
+    this.idToDelete = assignmentId;
+    this.showDeleteModal = true;
+  }
+
+  protected openAddResource(lessonId: number) {
+    if (!this.course) return;
+    this.router.navigate(['/instructor/courses', this.course.slug, 'lessons', lessonId, 'resources', 'new']);
+  }
+
+  protected openEditResource(resource: any) {
+    if (!this.course) return;
+    this.router.navigate(['/instructor/courses', this.course.slug, 'resources', resource.id, 'edit']);
+  }
+
+  // ── Quiz Navigation ─────────────────────────────────────────────────────────
+
+  protected moveQuiz(sectionIndex: number, quizIndex: number, direction: 'up' | 'down') {
+    if (!this.course || !this.course.sections) return;
+    const section = this.course.sections[sectionIndex];
+    if (!section || !section.quizzes) return;
+    
+    const newIndex = direction === 'up' ? quizIndex - 1 : quizIndex + 1;
+    if (newIndex < 0 || newIndex >= section.quizzes.length) return;
+    
+    const temp = section.quizzes[quizIndex];
+    section.quizzes[quizIndex] = section.quizzes[newIndex];
+    section.quizzes[newIndex] = temp;
+    
+    this.saveQuizOrder(section);
+  }
+
+  protected draggedQuizIndex: number | null = null;
+  protected draggedQuizSectionId: number | null = null;
+
+  protected onQuizDragStart(sectionId: number, quizIndex: number, event: DragEvent) {
+    this.draggedQuizSectionId = sectionId;
+    this.draggedQuizIndex = quizIndex;
+    this.draggedSectionIndex = null;
+    event.stopPropagation();
+    if (event.dataTransfer) {
+      event.dataTransfer.effectAllowed = 'move';
+    }
+  }
+
+  protected onQuizDragOver(sectionId: number, quizIndex: number, event: DragEvent) {
+    event.preventDefault();
+    event.stopPropagation();
+    
+    if (this.draggedQuizSectionId !== sectionId) return; // Disallow cross-section drag
+    if (this.draggedQuizIndex === null || this.draggedQuizIndex === quizIndex) return;
+
+    const section = this.course?.sections?.find((s: any) => s.id === sectionId);
+    if (!section || !section.quizzes) return;
+    
+    const draggedItem = section.quizzes[this.draggedQuizIndex];
+    section.quizzes.splice(this.draggedQuizIndex, 1);
+    section.quizzes.splice(quizIndex, 0, draggedItem);
+    this.draggedQuizIndex = quizIndex;
+  }
+
+  protected onQuizDrop(sectionId: number, event: DragEvent) {
+    event.preventDefault();
+    event.stopPropagation();
+    if (this.draggedQuizIndex !== null && this.draggedQuizSectionId === sectionId) {
+      const section = this.course?.sections?.find((s: any) => s.id === sectionId);
+      if (section) {
+        this.saveQuizOrder(section);
+      }
+      this.draggedQuizIndex = null;
+      this.draggedQuizSectionId = null;
+    }
+  }
+
+  protected saveQuizOrder(section: any) {
+    if (!section || !section.quizzes) return;
+    this.isReordering.set(true);
+    
+    const quizOrders = section.quizzes.map((quiz: any, index: number) => ({
+      quizId: quiz.id,
+      sortOrder: index + 1
+    }));
+
+    this.dashboardService.reorderQuizzes(quizOrders).subscribe({
+      next: () => {
+        this.isReordering.set(false);
+        this.toastService.showSuccess('Quiz order saved');
+        if (this.course) this.layout.loadCourse(this.course.id);
+      },
+      error: (err) => {
+        this.isReordering.set(false);
+        this.toastService.showApiError(err, 'Failed to save quiz order');
+        if (this.course) this.layout.loadCourse(this.course.id); // revert
+      }
+    });
+  }
+
+  // ── Assignment Reordering ──────────────────────────────────────────────────
+
+  protected moveAssignment(sectionIndex: number, assignmentIndex: number, direction: 'up' | 'down') {
+    if (!this.course || !this.course.sections) return;
+    const section = this.course.sections[sectionIndex];
+    if (!section || !section.assignments) return;
+    
+    const newIndex = direction === 'up' ? assignmentIndex - 1 : assignmentIndex + 1;
+    if (newIndex < 0 || newIndex >= section.assignments.length) return;
+    
+    const temp = section.assignments[assignmentIndex];
+    section.assignments[assignmentIndex] = section.assignments[newIndex];
+    section.assignments[newIndex] = temp;
+    
+    this.saveAssignmentOrder(section);
+  }
+
+  protected draggedAssignmentIndex: number | null = null;
+  protected draggedAssignmentSectionId: number | null = null;
+
+  protected onAssignmentDragStart(sectionId: number, assignmentIndex: number, event: DragEvent) {
+    this.draggedAssignmentSectionId = sectionId;
+    this.draggedAssignmentIndex = assignmentIndex;
+    this.draggedSectionIndex = null;
+    event.stopPropagation();
+    if (event.dataTransfer) {
+      event.dataTransfer.effectAllowed = 'move';
+    }
+  }
+
+  protected onAssignmentDragOver(sectionId: number, assignmentIndex: number, event: DragEvent) {
+    event.preventDefault();
+    event.stopPropagation();
+    
+    if (this.draggedAssignmentSectionId !== sectionId) return; // Disallow cross-section drag
+    if (this.draggedAssignmentIndex === null || this.draggedAssignmentIndex === assignmentIndex) return;
+
+    const section = this.course?.sections?.find((s: any) => s.id === sectionId);
+    if (!section || !section.assignments) return;
+    
+    const draggedItem = section.assignments[this.draggedAssignmentIndex];
+    section.assignments.splice(this.draggedAssignmentIndex, 1);
+    section.assignments.splice(assignmentIndex, 0, draggedItem);
+    this.draggedAssignmentIndex = assignmentIndex;
+  }
+
+  protected onAssignmentDrop(sectionId: number, event: DragEvent) {
+    event.preventDefault();
+    event.stopPropagation();
+    if (this.draggedAssignmentIndex !== null && this.draggedAssignmentSectionId === sectionId) {
+      const section = this.course?.sections?.find((s: any) => s.id === sectionId);
+      if (section) {
+        this.saveAssignmentOrder(section);
+      }
+      this.draggedAssignmentIndex = null;
+      this.draggedAssignmentSectionId = null;
+    }
+  }
+
+  protected saveAssignmentOrder(section: any) {
+    if (!section || !section.assignments) return;
+    this.isReordering.set(true);
+
+    const assignmentOrders = section.assignments.map((assignment: any, index: number) => ({
+      assignmentId: assignment.id,
+      sortOrder: index + 1
+    }));
+
+    this.dashboardService.reorderAssignments(assignmentOrders).subscribe({
+      next: () => {
+        this.isReordering.set(false);
+        this.toastService.showSuccess('Assignment order saved');
+        if (this.course) this.layout.loadCourse(this.course.id);
+      },
+      error: (err) => {
+        this.isReordering.set(false);
+        this.toastService.showApiError(err, 'Failed to save assignment order');
+        if (this.course) this.layout.loadCourse(this.course.id); // revert
+      }
+    });
   }
 
   protected closeDeleteModal() {

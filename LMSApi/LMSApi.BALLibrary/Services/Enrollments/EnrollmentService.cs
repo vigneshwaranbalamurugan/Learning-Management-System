@@ -22,6 +22,7 @@ namespace LMSApi.BALLibrary.Services
         private readonly IInstructorPayoutService _payoutService;
         private readonly IUserRepository _userRepository;
         private readonly INotificationService _notificationService;
+        private readonly IUserNotificationsService _userNotificationsService;
 
         public EnrollmentService(
             IEnrollmentRepository enrollmentRepository,
@@ -34,7 +35,8 @@ namespace LMSApi.BALLibrary.Services
             IPlatformFeeService feeService,
             IInstructorPayoutService payoutService,
             IUserRepository userRepository,
-            INotificationService notificationService)
+            INotificationService notificationService,
+            IUserNotificationsService userNotificationsService)
         {
             _enrollmentRepository = enrollmentRepository;
             _courseRepository = courseRepository;
@@ -47,6 +49,7 @@ namespace LMSApi.BALLibrary.Services
             _payoutService = payoutService;
             _userRepository = userRepository;
             _notificationService = notificationService;
+            _userNotificationsService = userNotificationsService;
         }
 
         public async Task<EnrollmentResponse> EnrollInFreeCourseAsync(int userId, int courseId, int? batchId)
@@ -98,6 +101,20 @@ namespace LMSApi.BALLibrary.Services
                 var html = EmailTemplate.GetCourseEnrollmentTemplate(learnerName, course.Title, course.CourseAccessType, batchName);
                 Message msg = new EmailMessage(learner.Email, $"You're enrolled in {course.Title}!", html) { IsHtml = true };
                 await _notificationService.Send(msg);
+
+                try
+                {
+                    await _userNotificationsService.CreateAndSendNotificationAsync(
+                        userId: userId,
+                        title: "Course Enrollment",
+                        message: $"You have successfully enrolled in the course: {course.Title}",
+                        type: NotificationType.CourseEnrollment,
+                        redirectUrl: $"/course/{course.Id}");
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Failed to send course enrollment realtime notification for User {UserId}", userId);
+                }
 
                 var saved = await _enrollmentRepository.GetActiveEnrollmentAsync(userId, courseId);
                 return _mapper.Map<EnrollmentResponse>(saved);
@@ -259,6 +276,26 @@ namespace LMSApi.BALLibrary.Services
                 Message msg = new EmailMessage(learner.Email, $"You're enrolled in {course.Title}!", html) { IsHtml = true };
                 await _notificationService.Send(msg);
 
+                try
+                {
+                    await _userNotificationsService.CreateAndSendNotificationAsync(
+                        userId: userId,
+                        title: "Course Enrollment",
+                        message: $"You have successfully enrolled in the course: {course.Title}",
+                        type: NotificationType.CourseEnrollment,
+                        redirectUrl: $"/course/{course.Id}");
+
+                    await _userNotificationsService.CreateAndSendNotificationAsync(
+                        userId: userId,
+                        title: "Payment Successful",
+                        message: $"Payment of {payment.Amount} for '{course.Title}' was successful.",
+                        type: NotificationType.PaymentSuccess);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Failed to send enrollment/payment success realtime notification for User {UserId}", userId);
+                }
+
                 // ── Initiate instructor payout ───
                 if (payment.InstructorAmount > 0)
                 {
@@ -348,6 +385,26 @@ namespace LMSApi.BALLibrary.Services
                     Message msg = new EmailMessage(learner.Email, $"You're enrolled in {course.Title}!", html) { IsHtml = true };
                     await _notificationService.Send(msg);
 
+                    try
+                    {
+                        await _userNotificationsService.CreateAndSendNotificationAsync(
+                            userId: payment.UserId,
+                            title: "Course Enrollment",
+                            message: $"You have successfully enrolled in the course: {course.Title}",
+                            type: NotificationType.CourseEnrollment,
+                            redirectUrl: $"/course/{course.Id}");
+
+                        await _userNotificationsService.CreateAndSendNotificationAsync(
+                            userId: payment.UserId,
+                            title: "Payment Successful",
+                            message: $"Payment of {payment.Amount} for '{course.Title}' was successful.",
+                            type: NotificationType.PaymentSuccess);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Failed to send enrollment/payment success realtime notification for User {UserId}", payment.UserId);
+                    }
+
                     if (payment.InstructorAmount > 0)
                     {
                         try
@@ -374,6 +431,20 @@ namespace LMSApi.BALLibrary.Services
                 payment.RawResponse = rawResponse ?? "WebhookFailed";
                 await _paymentRepository.UpdateAsync(payment);
                 _logger.LogInformation("Webhook Payment Failed: OrderId={OrderId}, PaymentId={PaymentId}", providerOrderId, providerPaymentId);
+
+                try
+                {
+                    var course = await _courseRepository.GetByIdAsync(payment.CourseId);
+                    await _userNotificationsService.CreateAndSendNotificationAsync(
+                        userId: payment.UserId,
+                        title: "Payment Failed",
+                        message: $"Payment of {payment.Amount} for '{course.Title}' failed.",
+                        type: NotificationType.PaymentFailed);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Failed to send payment failed realtime notification for User {UserId}", payment.UserId);
+                }
             }
             else if (eventType == "payment.authorized" || eventType == "payment.pending")
             {

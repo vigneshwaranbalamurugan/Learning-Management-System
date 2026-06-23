@@ -19,6 +19,7 @@ namespace LMSApi.BALLibrary.Services
         private readonly ILogger<AssignmentService> _logger;
         private readonly INotificationService _notificationService;
         private readonly ICourseBatchRepository _batchRepository;
+        private readonly IUserNotificationsService _userNotificationsService;
 
         public AssignmentService(
             IAssignmentRepository assignmentRepository,
@@ -29,7 +30,8 @@ namespace LMSApi.BALLibrary.Services
             IMapper mapper,
             ILogger<AssignmentService> logger,
             INotificationService notificationService,
-            ICourseBatchRepository batchRepository)
+            ICourseBatchRepository batchRepository,
+            IUserNotificationsService userNotificationsService)
         {
             _assignmentRepository = assignmentRepository;
             _sectionRepository = sectionRepository;
@@ -40,6 +42,7 @@ namespace LMSApi.BALLibrary.Services
             _logger = logger;
             _notificationService = notificationService;
             _batchRepository = batchRepository;
+            _userNotificationsService = userNotificationsService;
         }
 
         // ─── Assignment CRUD ────────────────────────────────────────────────
@@ -117,6 +120,13 @@ namespace LMSApi.BALLibrary.Services
                         throw new ArgumentException($"DeadlineDate ({request.DeadlineDate.Value:yyyy-MM-dd}) cannot be after the Batch '{batch.Name}' end date ({batch.EndDate:yyyy-MM-dd}).");
                     }
                 }
+            }
+
+            // Auto-assign SortOrder if not provided (default 0)
+            if (request.SortOrder == 0)
+            {
+                var existingAssignments = await _assignmentRepository.GetAssignmentsBySectionAsync(request.CourseSectionId);
+                request.SortOrder = existingAssignments.Any() ? existingAssignments.Max(a => a.SortOrder) + 1 : 1;
             }
 
             var assignment = _mapper.Map<Assignments>(request);
@@ -269,6 +279,8 @@ namespace LMSApi.BALLibrary.Services
                 assignment.Status = PublishStatus.Published;
             }
 
+            if (request.SortOrder.HasValue) assignment.SortOrder = request.SortOrder.Value;
+
             if (request.TotalMarks.HasValue) assignment.TotalMarks = request.TotalMarks.Value;
             if (request.PassingMarks.HasValue) assignment.PassingMarks = request.PassingMarks.Value;
 
@@ -285,6 +297,21 @@ namespace LMSApi.BALLibrary.Services
         {
             await _assignmentRepository.DeleteAsync(id);
             _logger.LogInformation("Assignment Deleted: Id={Id}", id);
+        }
+
+        public async Task ReorderAssignmentsAsync(ReorderAssignmentsRequest request)
+        {
+            if (request == null) throw new ArgumentNullException(nameof(request));
+            if (request.AssignmentOrders == null) throw new ArgumentException("Assignment orders list cannot be null.", nameof(request.AssignmentOrders));
+
+            foreach (var item in request.AssignmentOrders)
+            {
+                var assignment = await _assignmentRepository.GetByIdAsync(item.AssignmentId);
+                assignment.SortOrder = item.SortOrder;
+                await _assignmentRepository.UpdateAsync(assignment);
+            }
+
+            _logger.LogInformation("Assignments Reordered: {Count} assignments updated", request.AssignmentOrders.Count);
         }
 
         public async Task<AssignmentResponse> PublishAssignmentAsync(int id, bool publish)
@@ -308,6 +335,7 @@ namespace LMSApi.BALLibrary.Services
                 var enrollments = await _enrollmentRepository.GetActiveEnrollmentsByCourseAsync(course.Id);
                 var emailsToSend = enrollments.Select(e => new
                 {
+                    UserId = e.UserId,
                     Email = e.User.Email,
                     Name = e.User.UserProfile?.FirstName ?? e.User.Email,
                     BatchName = e.Batch?.Name ?? ""
@@ -330,6 +358,20 @@ namespace LMSApi.BALLibrary.Services
                         catch (Exception ex)
                         {
                             _logger.LogError(ex, "Failed to send assignment published email to {Email}", e.Email);
+                        }
+
+                        try
+                        {
+                            await _userNotificationsService.CreateAndSendNotificationAsync(
+                                userId: e.UserId,
+                                title: "New Assignment Published",
+                                message: $"A new assignment '{assignmentTitle}' is available in '{courseTitle}'.",
+                                type: NotificationType.AssignmentCreated,
+                                redirectUrl: $"/courses/{course.Id}/assignments/{assignment.Id}");
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogError(ex, "Failed to send assignment published realtime notification to User {UserId}", e.UserId);
                         }
                     }
                 });

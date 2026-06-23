@@ -3,6 +3,7 @@ using System;
 using LMSApi.DALLibrary.Contexts;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace LMSApi.DALLibrary.Migrations
 {
     [DbContext(typeof(LMSDbContext))]
-    partial class LMSDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260623044343_Assignmentorder")]
+    partial class Assignmentorder
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1133,9 +1136,6 @@ namespace LMSApi.DALLibrary.Migrations
                         .HasMaxLength(1000)
                         .HasColumnType("character varying(1000)");
 
-                    b.Property<int>("SortOrder")
-                        .HasColumnType("integer");
-
                     b.Property<int>("Status")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("integer")
@@ -1784,26 +1784,26 @@ namespace LMSApi.DALLibrary.Migrations
                         new
                         {
                             Id = 1,
-                            CreatedAt = new DateTime(2026, 6, 23, 10, 35, 33, 134, DateTimeKind.Utc).AddTicks(2420),
+                            CreatedAt = new DateTime(2026, 6, 23, 4, 43, 43, 295, DateTimeKind.Utc).AddTicks(8430),
                             Description = "Learner account",
                             RoleName = "Learner",
-                            UpdatedAt = new DateTime(2026, 6, 23, 10, 35, 33, 134, DateTimeKind.Utc).AddTicks(2420)
+                            UpdatedAt = new DateTime(2026, 6, 23, 4, 43, 43, 295, DateTimeKind.Utc).AddTicks(8430)
                         },
                         new
                         {
                             Id = 2,
-                            CreatedAt = new DateTime(2026, 6, 23, 10, 35, 33, 134, DateTimeKind.Utc).AddTicks(2430),
+                            CreatedAt = new DateTime(2026, 6, 23, 4, 43, 43, 295, DateTimeKind.Utc).AddTicks(8430),
                             Description = "Instructor account",
                             RoleName = "Instructor",
-                            UpdatedAt = new DateTime(2026, 6, 23, 10, 35, 33, 134, DateTimeKind.Utc).AddTicks(2430)
+                            UpdatedAt = new DateTime(2026, 6, 23, 4, 43, 43, 295, DateTimeKind.Utc).AddTicks(8430)
                         },
                         new
                         {
                             Id = 3,
-                            CreatedAt = new DateTime(2026, 6, 23, 10, 35, 33, 134, DateTimeKind.Utc).AddTicks(2430),
+                            CreatedAt = new DateTime(2026, 6, 23, 4, 43, 43, 295, DateTimeKind.Utc).AddTicks(8430),
                             Description = "Admin account",
                             RoleName = "Admin",
-                            UpdatedAt = new DateTime(2026, 6, 23, 10, 35, 33, 134, DateTimeKind.Utc).AddTicks(2430)
+                            UpdatedAt = new DateTime(2026, 6, 23, 4, 43, 43, 295, DateTimeKind.Utc).AddTicks(8430)
                         });
                 });
 
@@ -1883,7 +1883,7 @@ namespace LMSApi.DALLibrary.Migrations
                         new
                         {
                             Id = 1,
-                            CreatedAt = new DateTime(2026, 6, 23, 10, 35, 33, 133, DateTimeKind.Utc).AddTicks(9020),
+                            CreatedAt = new DateTime(2026, 6, 23, 4, 43, 43, 295, DateTimeKind.Utc).AddTicks(5120),
                             Email = "admin@gmail.com",
                             IsActive = true,
                             IsEmailVerified = true,
@@ -1891,7 +1891,7 @@ namespace LMSApi.DALLibrary.Migrations
                             PasswordHash = "TPZPlYPS43ldK8EYFX67pHzyMNFmt69wd9N2cUNObYs=",
                             PasswordSalt = "K5CamRmhDuuJEyr50OpNsA==",
                             RoleId = 3,
-                            UpdatedAt = new DateTime(2026, 6, 23, 10, 35, 33, 133, DateTimeKind.Utc).AddTicks(9030)
+                            UpdatedAt = new DateTime(2026, 6, 23, 4, 43, 43, 295, DateTimeKind.Utc).AddTicks(5120)
                         });
                 });
 

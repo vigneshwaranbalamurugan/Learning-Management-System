@@ -11,5 +11,6 @@ namespace LMSApi.BALLibrary.Interfaces
         Task<QuizResponse> UpdateQuizAsync(int id, UpdateQuizRequest request);
         Task DeleteQuizAsync(int id);
         Task<QuizResponse> PublishQuizAsync(int quizId, PublishQuizRequest request);
+        Task ReorderQuizzesAsync(ReorderQuizzesRequest request);
     }
 }

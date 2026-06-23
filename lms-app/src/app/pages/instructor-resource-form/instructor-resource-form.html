@@ -1,0 +1,306 @@
+<div class="max-w-7xl mx-auto py-4 px-3 sm:px-5 lg:px-6 space-y-4">
+  <!-- Loading state -->
+  <div *ngIf="isLoading()" class="flex justify-center items-center py-20">
+    <app-loader></app-loader>
+  </div>
+
+  <!-- Main Content when loaded -->
+  <div *ngIf="!isLoading()" class="space-y-4">
+
+    <!-- =========================================================================
+         PAGE HEADER
+         ========================================================================= -->
+    <header class="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-3 border-b border-slate-100">
+      <div class="flex items-center gap-3">
+        <!-- Back Button -->
+        <button (click)="navigateBack()"
+          class="group p-2 bg-white border border-slate-200 hover:border-slate-300 text-slate-600 hover:text-slate-900 rounded-xl transition-all duration-300 hover:shadow-sm">
+          <svg class="w-4 h-4 transition-transform group-hover:-translate-x-1" fill="none" stroke="currentColor"
+            stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+          </svg>
+        </button>
+
+        <!-- Breadcrumb & Title Info -->
+        <div>
+          <nav class="flex mb-0.5" aria-label="Breadcrumb">
+            <ol class="inline-flex items-center space-x-1 md:space-x-1.5 text-[11px] font-medium text-slate-500">
+              <li class="inline-flex items-center">
+                <a routerLink="/instructor/courses" class="hover:text-[#1C1C7B] transition-colors">Courses</a>
+              </li>
+              <li>
+                <div class="flex items-center">
+                  <svg class="w-2.5 h-2.5 text-slate-300 mx-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                  </svg>
+                  <a [routerLink]="['/instructor/courses', courseSlug, 'builder']"
+                    class="hover:text-[#1C1C7B] transition-colors max-w-[120px] truncate">
+                    {{ layout.course()?.title || 'Course' }}
+                  </a>
+                </div>
+              </li>
+              <li>
+                <div class="flex items-center">
+                  <svg class="w-2.5 h-2.5 text-slate-300 mx-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                  </svg>
+                  <span class="text-slate-400">Resources</span>
+                </div>
+              </li>
+              <li aria-current="page">
+                <div class="flex items-center">
+                  <svg class="w-2.5 h-2.5 text-slate-300 mx-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                  </svg>
+                  <span class="text-slate-800 font-bold truncate max-w-[130px]">{{ isEditMode ? 'Edit Resource' : 'Create Resource' }}</span>
+                </div>
+              </li>
+            </ol>
+          </nav>
+          <h1 class="text-xl md:text-2xl font-bold text-slate-900 tracking-tight">
+            {{ isEditMode ? 'Edit Resource' : 'Create New Resource' }}
+          </h1>
+          <p class="text-xs text-slate-500">
+            Add downloadable files or external links to supplement your lesson.
+          </p>
+        </div>
+      </div>
+
+      <!-- Right Header Actions -->
+      <div class="flex items-center gap-2">
+        <button *ngIf="isEditMode" (click)="deleteResource()"
+          class="px-3.5 py-1.5 text-xs font-semibold text-red-600 bg-red-50 border border-red-100 rounded-lg hover:bg-red-100 transition-all duration-300 shadow-sm active:scale-95">
+          Delete
+        </button>
+        <button *ngIf="!isSelfPaced" (click)="saveDraft()" [disabled]="isSaving()"
+          class="px-3.5 py-1.5 text-xs font-semibold text-white bg-slate-750 bg-slate-700 rounded-lg hover:bg-slate-800 transition-all duration-300 shadow-sm active:scale-95">
+          Save Draft
+        </button>
+        <button (click)="saveChanges()" [disabled]="isSaving() || !title.trim()"
+          class="px-4 py-1.5 text-xs font-semibold text-white bg-[#1C1C7B] rounded-lg hover:bg-[#15155C] transition-all duration-300 shadow-sm active:scale-95 disabled:opacity-50 disabled:pointer-events-none hover:shadow-md">
+          {{ isSelfPaced ? 'Save Resource' : 'Save Changes' }}
+        </button>
+      </div>
+    </header>
+
+    <!-- =========================================================================
+         MAIN LAYOUT: TWO COLUMNS (70% Content, 30% Sidebar)
+         ========================================================================= -->
+    <div class="grid grid-cols-1 lg:grid-cols-10 gap-4 items-start mt-4">
+
+      <!-- Left Column: Main Editor Fields (70% width -> 7 cols) -->
+      <main class="lg:col-span-7 space-y-4">
+
+        <!-- SECTION 1: BASIC INFORMATION -->
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-4 md:p-5 space-y-4">
+          <div class="flex items-center gap-1.5 border-b border-slate-100 pb-2">
+            <span class="text-base">ℹ️</span>
+            <h3 class="text-sm font-bold text-slate-800">Basic Information</h3>
+          </div>
+
+          <div class="space-y-3">
+            <!-- Resource Title -->
+            <div class="space-y-1">
+              <div class="flex justify-between items-center">
+                <label class="text-xs font-bold text-slate-700">Resource Title <span class="text-red-500">*</span></label>
+                <span class="text-[10px] text-slate-400 font-medium">{{ title.length }} / 300</span>
+              </div>
+              <input type="text" [(ngModel)]="title" placeholder="e.g. Reference Architecture Diagram" maxlength="300"
+                class="w-full border border-slate-200 rounded-lg p-2.5 text-xs focus:outline-none focus:ring-2 focus:ring-[#1C1C7B]/20 focus:border-[#1C1C7B] transition-all duration-300" />
+            </div>
+
+            <!-- Description -->
+            <div class="space-y-1">
+              <div class="flex justify-between items-center">
+                <label class="text-xs font-bold text-slate-700">Description</label>
+                <span class="text-[10px] text-slate-400 font-medium">{{ description.length }} / 1000</span>
+              </div>
+              <textarea [(ngModel)]="description" placeholder="Summarize the resource..."
+                rows="3" maxlength="1000"
+                class="w-full border border-slate-200 rounded-lg p-2.5 text-xs focus:outline-none focus:ring-2 focus:ring-[#1C1C7B]/20 focus:border-[#1C1C7B] transition-all duration-300"></textarea>
+            </div>
+          </div>
+        </div>
+
+        <!-- SECTION 2: CONTENT CONFIGURATION -->
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-4 md:p-5 space-y-4">
+          <div class="flex items-center gap-1.5 border-b border-slate-100 pb-2">
+            <span class="text-base">⚙️</span>
+            <h3 class="text-sm font-bold text-slate-800">Resource Configuration</h3>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- Resource Type -->
+            <div class="space-y-1">
+              <label class="text-xs font-bold text-slate-700 block">Resource Type <span
+                  class="text-red-500">*</span></label>
+              <app-dropdown [value]="type" (valueChange)="type = $event" [options]="resourceTypeOptions"
+                placeholder="Select type..." />
+            </div>
+
+            <!-- Publish Status Picker (Only for Cohort Courses) -->
+            <div *ngIf="!isSelfPaced" class="space-y-1">
+              <label class="text-xs font-bold text-slate-700 block">Publish Visibility</label>
+              <app-dropdown [value]="status" (valueChange)="status = $event" [options]="statusOptions"
+                placeholder="Status" />
+            </div>
+          </div>
+        </div>
+
+        <!-- SECTION 3: CONTENT MANAGEMENT -->
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-4 md:p-5 space-y-4">
+          <div class="flex items-center justify-between border-b border-slate-100 pb-2">
+            <div class="flex items-center gap-1.5">
+              <span class="text-base">📁</span>
+              <h3 class="text-sm font-bold text-slate-800">Content Management</h3>
+            </div>
+            <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">
+              Type: {{ type }}
+            </span>
+          </div>
+
+          <!-- PDF: Drag & Drop Zone -->
+          <div *ngIf="type === 'Pdf'" class="space-y-3">
+
+            <div (dragover)="onDragOver($event)" (dragleave)="onDragLeave($event)" (drop)="onDrop($event)"
+              class="relative border-2 border-dashed rounded-xl p-6 text-center transition-all duration-300 cursor-pointer flex flex-col items-center justify-center space-y-2"
+              [ngClass]="isDragOver ? 'border-[#1C1C7B] bg-[#1C1C7B]/5 scale-[0.99] shadow-inner' : 'border-slate-300 hover:border-[#1C1C7B] bg-slate-50/50 hover:bg-slate-50/80'">
+
+              <input type="file" (change)="onFileSelected($event)" id="fileInput"
+                class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
+
+              <div class="p-2.5 bg-white rounded-full shadow-sm border border-slate-150">
+                <svg class="w-6 h-6 text-slate-400" fill="none" stroke="currentColor" stroke-width="2"
+                  viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round"
+                    d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                </svg>
+              </div>
+
+              <div>
+                <p class="text-xs font-bold text-slate-800">Drag & Drop file here, or <span
+                    class="text-[#1C1C7B] underline">browse files</span></p>
+                <p class="text-[10px] text-slate-500 mt-0.5">
+                  Supports PDF (up to {{ maxPdfSizeMB }}MB)
+                </p>
+              </div>
+            </div>
+
+            <!-- Upload progress bar -->
+            <div *ngIf="selectedFile && !isUploaded()"
+              class="bg-slate-50 border border-slate-200 rounded-lg p-3 space-y-1.5">
+              <div class="flex items-center justify-between text-[11px] font-semibold text-slate-700">
+                <span class="truncate max-w-[180px]">{{ selectedFile.name }}</span>
+                <span>{{ uploadProgress() }}%</span>
+              </div>
+              <div class="w-full bg-slate-200 rounded-full h-1.5 overflow-hidden">
+                <div class="bg-[#1C1C7B] h-1.5 rounded-full transition-all duration-300"
+                  [style.width.%]="uploadProgress()"></div>
+              </div>
+            </div>
+
+            <!-- Current File / Uploaded File Card -->
+            <div *ngIf="selectedFile && isUploaded()"
+              class="flex items-center justify-between p-3 bg-emerald-50 border border-emerald-150 rounded-lg">
+              <div class="flex items-center gap-2">
+                <div class="p-2 bg-white border border-emerald-150 text-emerald-700 rounded-lg shadow-sm text-lg">
+                  📄
+                </div>
+                <div>
+                  <h4 class="text-xs font-bold text-slate-850 truncate max-w-[200px] sm:max-w-[320px]">{{
+                    selectedFile.name }}</h4>
+                  <p class="text-[10px] text-slate-500">{{ getFormattedFileSize(selectedFile.size) }} • Ready</p>
+                </div>
+              </div>
+              <button (click)="clearSelectedFile()" class="p-1.5 text-slate-400 hover:text-red-500 transition-colors">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+              </button>
+            </div>
+
+            <!-- Existing file details (in edit mode if file not replaced) -->
+            <div *ngIf="isEditMode && contentUrl && !selectedFile"
+              class="flex items-center justify-between p-3 bg-slate-50 border border-slate-200 rounded-lg">
+              <div class="flex items-center gap-2">
+                <div class="p-2 bg-white border border-slate-150 text-slate-650 rounded-lg shadow-sm text-lg">
+                  📄
+                </div>
+                <div>
+                  <h4 class="text-xs font-bold text-slate-800">Current Saved Resource</h4>
+                  <a [href]="contentUrl" target="_blank"
+                    class="text-[10px] text-[#1C1C7B] hover:underline truncate max-w-[200px] sm:max-w-[320px] block">
+                    {{ contentUrl }}
+                  </a>
+                </div>
+              </div>
+              <span
+                class="text-[10px] text-slate-500 font-semibold italic bg-slate-200/50 px-2.5 py-0.5 rounded-full">Active</span>
+            </div>
+          </div>
+
+          <!-- External Link URL -->
+          <div *ngIf="type === 'ExternalLink'" class="space-y-2">
+            <app-form-input label="External Link URL *" [value]="contentUrl" (valueChange)="contentUrl = $event"
+              placeholder="https://example.com/reference-doc" />
+          </div>
+        </div>
+      </main>
+
+      <!-- Right Column: Sticky Sidebar (30% width -> 3 cols) -->
+      <aside class="lg:col-span-3 space-y-4 lg:sticky lg:top-20">
+
+        <!-- Sidebar Card 1: Resource Summary -->
+        <div
+          class="bg-white rounded-xl border border-slate-200 shadow-sm p-4 space-y-3 transition-all duration-300 hover:shadow-md">
+          <h4 class="text-xs font-bold text-slate-800 border-b border-slate-100 pb-1.5 flex items-center gap-1">
+            📋 Resource Summary
+          </h4>
+          <ul class="space-y-2 text-xs text-slate-600">
+            <li class="flex items-center justify-between">
+              <span class="text-slate-400">Resource Type:</span>
+              <span class="font-bold text-slate-850">{{ type }}</span>
+            </li>
+            <li *ngIf="!isSelfPaced" class="flex items-center justify-between">
+              <span class="text-slate-400">Visibility:</span>
+              <span class="font-bold text-slate-850">{{ status }}</span>
+            </li>
+          </ul>
+        </div>
+      </aside>
+    </div>
+
+    <!-- =========================================================================
+         STICKY SAVE BAR
+         ========================================================================= -->
+    <div
+      class="fixed bottom-0 left-0 right-0 z-40 p-3 bg-white border-t border-slate-200 shadow-[0_-8px_30px_rgb(0,0,0,0.06)] flex items-center justify-between transition-transform duration-300 ease-out transform"
+      [ngClass]="isDirty ? 'translate-y-0' : 'translate-y-full'">
+      <div class="max-w-7xl mx-auto w-full flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <span class="relative flex h-2 w-2">
+            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+            <span class="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
+          </span>
+          <span class="text-xs font-bold text-slate-700">You have unsaved changes</span>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <button (click)="discardChanges()"
+            class="px-3 py-1.5 text-xs font-semibold text-slate-650 hover:text-slate-905 transition-colors">
+            Discard
+          </button>
+          <button *ngIf="!isSelfPaced" (click)="saveDraft()" [disabled]="isSaving()"
+            class="px-3.5 py-1.5 text-xs font-semibold text-white bg-slate-700 rounded-lg hover:bg-slate-800 transition-all duration-300">
+            Save Draft
+          </button>
+          <button (click)="saveChanges()" [disabled]="isSaving() || !title.trim()"
+            class="px-4 py-1.5 text-xs font-semibold text-white bg-[#1C1C7B] rounded-lg hover:bg-[#15155C] hover:shadow-md transition-all duration-300">
+            {{ isSaving() ? 'Saving...' : (isSelfPaced ? 'Save Resource' : 'Save Changes') }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

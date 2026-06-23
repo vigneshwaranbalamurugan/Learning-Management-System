@@ -1,4 +1,4 @@
-import { Component, OnInit, signal, computed, inject, DestroyRef, HostListener } from '@angular/core';
+import { Component, OnInit, signal, computed, inject, DestroyRef, HostListener, effect, untracked } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule, Router } from '@angular/router';
@@ -28,9 +28,17 @@ export class InstructorCourses implements OnInit {
   protected categories = signal<CategoryResponse[]>([]);
   protected isLoading = signal(true);
   
+  // Pagination States
+  protected pageNumber = signal(1);
+  protected pageSize = signal(6);
+  protected totalCount = signal(0);
+  protected totalPages = signal(0);
+  
+  protected allCoursesForStats = signal<CourseResponse[]>([]);
+  
   // Confirmation Modal state
-  protected showDeleteModal = false;
-  protected courseToDelete: number | null = null;
+  protected showArchiveModal = false;
+  protected courseToArchive: number | null = null;
   
   // Filtering States
   protected searchQuery = signal('');
@@ -72,79 +80,26 @@ export class InstructorCourses implements OnInit {
   // Active Dropdown
   protected activeDropdownId = signal<number | null>(null);
 
-  // Stats computed from backend payload
-  protected totalCourses = computed(() => this.courses().length);
+  // Stats computed from metadata payload
+  protected totalCourses = computed(() => this.allCoursesForStats().length);
   protected publishedCourses = computed(() => {
-    return this.courses().filter(c => {
+    return this.allCoursesForStats().filter(c => {
       const status = String(c.status).toLowerCase();
       return status === '2' || status === 'published';
     }).length;
   });
   protected draftCourses = computed(() => {
-    return this.courses().filter(c => {
+    return this.allCoursesForStats().filter(c => {
       const status = String(c.status).toLowerCase();
       return status === '1' || status === 'draft';
     }).length;
   });
   protected totalLearners = computed(() => {
-    return this.courses().reduce((sum, c) => sum + (c.enrolledCount || 0), 0);
+    return this.allCoursesForStats().reduce((sum, c) => sum + (c.enrolledCount || 0), 0);
   });
 
-  // Client-side filtering & sorting
-  protected filteredCourses = computed(() => {
-    let list = [...this.courses()];
-    const query = this.searchQuery().toLowerCase().trim();
-    const status = this.selectedStatus();
-    const category = this.selectedCategory();
-    const difficulty = this.selectedDifficulty();
-    const sort = this.sortBy();
-
-    // 1. Search Query
-    if (query) {
-      list = list.filter(c => c.title.toLowerCase().includes(query) || (c.description && c.description.toLowerCase().includes(query)));
-    }
-
-    // 2. Status Filter
-    if (status !== 'all') {
-      list = list.filter(c => {
-        const cStatus = String(c.status).toLowerCase();
-        if (status === 'draft') return cStatus === '1' || cStatus === 'draft';
-        if (status === 'published') return cStatus === '2' || cStatus === 'published';
-        if (status === 'archived') return cStatus === '3' || cStatus === 'archived';
-        if (status === 'pending') return cStatus === '4' || cStatus === 'pending approval';
-        return true;
-      });
-    }
-
-    // 3. Category Filter
-    if (category !== 'all') {
-      list = list.filter(c => String(c.categoryId) === category);
-    }
-
-    // 4. Difficulty Filter
-    if (difficulty !== 'all') {
-      list = list.filter(c => this.getLevelName(c.level).toLowerCase() === difficulty.toLowerCase());
-    }
-
-    // 5. Sorting
-    list.sort((a, b) => {
-      if (sort === 'newest') {
-        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-      }
-      if (sort === 'oldest') {
-        return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
-      }
-      if (sort === 'enrolled') {
-        return (b.enrolledCount || 0) - (a.enrolledCount || 0);
-      }
-      if (sort === 'rating') {
-        return (b.averageRating || 0) - (a.averageRating || 0);
-      }
-      return 0;
-    });
-
-    return list;
-  });
+  // Server-side filtered courses mapping
+  protected filteredCourses = computed(() => this.courses());
 
   // Check if any filter is active
   protected hasActiveFilters = computed(() => {
@@ -154,18 +109,89 @@ export class InstructorCourses implements OnInit {
       this.selectedDifficulty() !== 'all';
   });
 
-  ngOnInit(): void {
-    this.loadData();
+  constructor() {
+    effect(() => {
+      // Whenever filters change, reset pageNumber to 1
+      this.searchQuery();
+      this.selectedStatus();
+      this.selectedCategory();
+      this.selectedDifficulty();
+      this.sortBy();
+
+      untracked(() => {
+        this.pageNumber.set(1);
+      });
+    });
+
+    effect(() => {
+      // Trigger API fetch on filter/page changes
+      this.searchQuery();
+      this.selectedStatus();
+      this.selectedCategory();
+      this.selectedDifficulty();
+      this.sortBy();
+      this.pageNumber();
+      this.pageSize();
+
+      untracked(() => {
+        this.loadPagedCourses();
+      });
+    });
   }
 
-  private loadData(): void {
-    this.isLoading.set(true);
+  ngOnInit(): void {
+    // Load all courses (no pagination) once for the stats cards
     this.dashboardService.getMyCourses()
       .pipe(untilDestroyed(this.destroyRef))
       .subscribe({
         next: (data) => {
-          this.courses.set(data || []);
+          this.allCoursesForStats.set(data.courses || []);
           this.loadCategories();
+        },
+        error: (err) => {
+          this.toastService.showApiError(err, 'Failed to load courses metadata.');
+        }
+      });
+  }
+
+  private loadPagedCourses(): void {
+    this.isLoading.set(true);
+    
+    // Status mapping:
+    let statuses: string | undefined = undefined;
+    const statusVal = this.selectedStatus();
+    if (statusVal === 'draft') statuses = '1';
+    else if (statusVal === 'published') statuses = '2';
+    else if (statusVal === 'archived') statuses = '3';
+    else if (statusVal === 'pending') statuses = '4';
+
+    // Difficulty level mapping:
+    let levels: string | undefined = undefined;
+    const diff = this.selectedDifficulty();
+    if (diff === 'beginner') levels = '1';
+    else if (diff === 'intermediate') levels = '2';
+    else if (diff === 'advanced') levels = '3';
+
+    const categoryIds = this.selectedCategory() !== 'all' ? this.selectedCategory() : undefined;
+
+    const query = {
+      categoryIds,
+      levels,
+      statuses,
+      search: this.searchQuery().trim() || undefined,
+      sortBy: this.sortBy(),
+      pageNumber: this.pageNumber(),
+      pageSize: this.pageSize()
+    };
+
+    this.dashboardService.getMyCourses(query)
+      .pipe(untilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (data) => {
+          this.courses.set(data.courses || []);
+          this.totalCount.set(data.totalCount || 0);
+          this.totalPages.set(data.totalPages || 0);
+          this.isLoading.set(false);
         },
         error: (err) => {
           this.toastService.showApiError(err, 'Failed to load courses.');
@@ -180,11 +206,9 @@ export class InstructorCourses implements OnInit {
       .subscribe({
         next: (data) => {
           this.categories.set(data || []);
-          this.isLoading.set(false);
         },
         error: (err) => {
           this.toastService.showApiError(err, 'Failed to load categories.');
-          this.isLoading.set(false);
         }
       });
   }
@@ -232,6 +256,20 @@ export class InstructorCourses implements OnInit {
     return status === '2' || status === 'published';
   }
 
+  protected isCoursePendingApproval(course: CourseResponse): boolean {
+    const status = String(course.status).toLowerCase();
+    return status === '4' || status === 'pending' || status === 'pending approval';
+  }
+
+  protected canUnpublish(course: CourseResponse): boolean {
+    return this.isCoursePublished(course) || this.isCoursePendingApproval(course);
+  }
+
+  protected isCourseArchived(course: CourseResponse): boolean {
+    const status = String(course.status).toLowerCase();
+    return status === '3' || status === 'archived';
+  }
+
   protected getCategoryName(categoryId: number): string {
     const cat = this.categories().find(c => c.id === categoryId);
     return cat ? cat.name : 'General';
@@ -254,8 +292,7 @@ export class InstructorCourses implements OnInit {
 
   // Course actions
   protected onCreateCourse(): void {
-    this.toastService.showInfo('Redirecting to Course Creation wizard...');
-    // If a route exists, navigate: this.router.navigate(['/instructor/courses/new']);
+    this.router.navigate(['/instructor/courses/new']);
   }
 
   protected onImportCourse(): void {
@@ -268,7 +305,7 @@ export class InstructorCourses implements OnInit {
 
   protected previewCourse(slug: string, courseId: number): void {
     // Pass courseId via router state as CourseDetail relies on it if loaded directly from here
-    this.router.navigate([`/instructor/preview/${slug}`], { state: { courseId } });
+    this.router.navigate([`/instructor/courses/preview/${slug}`], { state: { courseId } });
   }
 
   protected duplicateCourse(courseId: number): void {
@@ -276,18 +313,19 @@ export class InstructorCourses implements OnInit {
   }
 
   protected togglePublishStatus(course: CourseResponse): void {
-    const isPublished = this.isCoursePublished(course);
-    const nextPublishState = !isPublished;
+    const shouldUnpublish = this.canUnpublish(course);
+    const nextPublishState = !shouldUnpublish;
     
     this.dashboardService.publishCourse(course.id, nextPublishState)
       .pipe(untilDestroyed(this.destroyRef))
       .subscribe({
         next: (updatedCourse) => {
           this.toastService.showSuccess(
-            nextPublishState ? 'Course published successfully!' : 'Course unpublished successfully!'
+            nextPublishState ? 'Course submitted for approval successfully!' : 'Course unpublished successfully!'
           );
-          // Update the locally-cached course item status
-          this.courses.update(list => list.map(c => c.id === course.id ? { ...c, status: nextPublishState ? 2 : 1 } : c));
+          // Update local signals
+          this.courses.update(list => list.map(c => c.id === course.id ? { ...c, status: updatedCourse.status } : c));
+          this.allCoursesForStats.update(list => list.map(c => c.id === course.id ? { ...c, status: updatedCourse.status } : c));
         },
         error: (err) => {
           this.toastService.showApiError(err, 'Failed to update course publish status.');
@@ -295,36 +333,35 @@ export class InstructorCourses implements OnInit {
       });
   }
 
-  protected archiveCourse(courseId: number): void {
-    this.toastService.showSuccess('Course archived successfully (Mocked).');
-    this.courses.update(list => list.map(c => c.id === courseId ? { ...c, status: 3 } : c));
+  protected isArchivingAction = true;
+
+  protected confirmArchiveCourse(courseId: number, archive: boolean): void {
+    this.courseToArchive = courseId;
+    this.isArchivingAction = archive;
+    this.showArchiveModal = true;
   }
 
-  protected confirmDeleteCourse(courseId: number): void {
-    this.courseToDelete = courseId;
-    this.showDeleteModal = true;
-  }
-
-  protected deleteCourse(): void {
-    if (this.courseToDelete === null) return;
-    this.dashboardService.deleteCourse(this.courseToDelete)
+  protected archiveCourse(): void {
+    if (this.courseToArchive === null) return;
+    this.dashboardService.archiveCourse(this.courseToArchive, this.isArchivingAction)
       .pipe(untilDestroyed(this.destroyRef))
       .subscribe({
-        next: () => {
-          this.toastService.showSuccess('Course deleted successfully.');
-          this.courses.update(list => list.filter(c => c.id !== this.courseToDelete));
-          this.closeDeleteModal();
+        next: (updatedCourse) => {
+          this.toastService.showSuccess(this.isArchivingAction ? 'Course archived successfully.' : 'Course unarchived successfully.');
+          this.courses.update(list => list.map(c => c.id === this.courseToArchive ? { ...c, status: this.isArchivingAction ? 3 : 1 } : c));
+          this.allCoursesForStats.update(list => list.map(c => c.id === this.courseToArchive ? { ...c, status: this.isArchivingAction ? 3 : 1 } : c));
+          this.closeArchiveModal();
         },
         error: (err) => {
-          this.toastService.showApiError(err, 'Failed to delete course.');
-          this.closeDeleteModal();
+          this.toastService.showApiError(err, this.isArchivingAction ? 'Failed to archive course.' : 'Failed to unarchive course.');
+          this.closeArchiveModal();
         }
       });
   }
 
-  protected closeDeleteModal(): void {
-    this.showDeleteModal = false;
-    this.courseToDelete = null;
+  protected closeArchiveModal(): void {
+    this.showArchiveModal = false;
+    this.courseToArchive = null;
   }
 
   protected removeFilter(filterName: string): void {
@@ -340,5 +377,11 @@ export class InstructorCourses implements OnInit {
     this.selectedCategory.set('all');
     this.selectedDifficulty.set('all');
     this.sortBy.set('newest');
+  }
+
+  protected Math = Math;
+
+  protected get pagesArray(): number[] {
+    return Array.from({ length: this.totalPages() }, (_, i) => i + 1);
   }
 }

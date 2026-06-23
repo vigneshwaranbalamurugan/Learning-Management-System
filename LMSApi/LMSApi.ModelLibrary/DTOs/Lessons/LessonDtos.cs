@@ -93,12 +93,12 @@ namespace LMSApi.ModelLibrary.DTOs
         public int SortOrder { get; set; }
         public bool IsPreview { get; set; }
         public PublishStatus Status { get; set; }
+        public List<ResourceResponse> Resources { get; set; } = [];
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
     }
 
     public class LessonDetailResponse : LessonResponse
     {
-        public List<ResourceResponse> Resources { get; set; } = [];
     }
 }

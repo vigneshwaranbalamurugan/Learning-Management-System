@@ -39,12 +39,34 @@ export class DashboardService {
     return this.http.get<InstructorAnalytics>(`${this.baseUrl}/analytics/instructor`);
   }
 
-  getMyCourses(): Observable<CourseResponse[]> {
-    return this.http.get<CourseResponse[]>(`${this.baseUrl}/Courses/my-courses`);
+  getMyCourses(query?: any): Observable<PagedCourseResponse> {
+    let params = new HttpParams();
+    if (query) {
+      if (query.categoryIds)        params = params.set('categoryIds', query.categoryIds);
+      if (query.levels)             params = params.set('levels', query.levels);
+      if (query.languageIds)        params = params.set('languageIds', query.languageIds);
+      if (query.sortBy)             params = params.set('sortBy', query.sortBy);
+      if (query.search)             params = params.set('search', query.search);
+      if (query.statuses)           params = params.set('statuses', query.statuses);
+      if (query.pageNumber != null) params = params.set('pageNumber', query.pageNumber.toString());
+      if (query.pageSize != null)   params = params.set('pageSize', query.pageSize.toString());
+    } else {
+      params = params.set('pageNumber', '1');
+      params = params.set('pageSize', '1000');
+    }
+    return this.http.get<PagedCourseResponse>(`${this.baseUrl}/Courses/my-courses`, { params });
+  }
+
+  createCourse(formData: FormData): Observable<CourseResponse> {
+    return this.http.post<CourseResponse>(`${this.baseUrl}/Courses`, formData);
   }
 
   publishCourse(courseId: number, publish: boolean): Observable<CourseResponse> {
     return this.http.patch<CourseResponse>(`${this.baseUrl}/Courses/${courseId}/publish`, { publish });
+  }
+
+  archiveCourse(courseId: number, archive: boolean): Observable<CourseResponse> {
+    return this.http.patch<CourseResponse>(`${this.baseUrl}/Courses/${courseId}/archive`, { archive });
   }
 
   deleteCourse(courseId: number): Observable<void> {
@@ -172,7 +194,7 @@ export class DashboardService {
   }
 
   getLesson(id: number): Observable<any> {
-    return this.http.get<any>(`${this.baseUrl}/Lessons/${id}`);
+    return this.http.get<any>(`${this.baseUrl}/Lessons/${id}/detail`);
   }
 
   createLesson(formData: FormData): Observable<any> {
@@ -234,6 +256,12 @@ export class DashboardService {
   }
   reorderLessons(lessonOrders: { lessonId: number; sortOrder: number }[]): Observable<void> {
     return this.http.put<void>(`${this.baseUrl}/Lessons/reorder`, { lessonOrders });
+  }
+  reorderQuizzes(quizOrders: { quizId: number; sortOrder: number }[]): Observable<void> {
+    return this.http.put<void>(`${this.baseUrl}/Quizzes/reorder`, { quizOrders });
+  }
+  reorderAssignments(assignmentOrders: { assignmentId: number; sortOrder: number }[]): Observable<void> {
+    return this.http.put<void>(`${this.baseUrl}/Assignments/reorder`, { assignmentOrders });
   }
 
   // ── Assignments ───────────────────────────────────────────────────────────

@@ -21,6 +21,7 @@ namespace LMSApi.Tests.Services
         private Mock<IPlatformFeeService> _mockPlatformFeeService = null!;
         private Mock<IInstructorPayoutService> _mockInstructorPayoutService = null!;
         private Mock<INotificationService> _mockNotificationService = null!;
+        private Mock<IUserNotificationsService> _mockUserNotificationsService = null!;
         private IEnrollmentService _enrollmentService = null!;
 
         [SetUp]
@@ -33,6 +34,7 @@ namespace LMSApi.Tests.Services
             _mockPlatformFeeService = new Mock<IPlatformFeeService>();
             _mockInstructorPayoutService = new Mock<IInstructorPayoutService>();
             _mockNotificationService = new Mock<INotificationService>();
+            _mockUserNotificationsService = new Mock<IUserNotificationsService>();
             
             var enrollmentRepository = new EnrollmentRepository(DbContext);
             var courseRepository = new CourseRepository(DbContext);
@@ -51,7 +53,8 @@ namespace LMSApi.Tests.Services
                 _mockPlatformFeeService.Object,
                 _mockInstructorPayoutService.Object,
                 userRepository,
-                _mockNotificationService.Object
+                _mockNotificationService.Object,
+                _mockUserNotificationsService.Object
             );
         }
 
@@ -226,10 +229,10 @@ namespace LMSApi.Tests.Services
             var (student, course) = await SetupCourse(CourseAccessType.SelfPaced, isPremium: true);
             var expectedOrderId = "order_test_123";
 
-            _mockPlatformFeeService.Setup(f => f.CalculateSplitAsync(course.Price.Value, FeeCategory.CourseFee, It.IsAny<System.DateTime>()))
+            _mockPlatformFeeService.Setup(f => f.CalculateSplitAsync(course.Price ?? 0m, FeeCategory.CourseFee, It.IsAny<System.DateTime>()))
                 .ReturnsAsync((10m, 90m, new PlatformFeeConfig { Id = 1 }));
 
-            _mockPaymentService.Setup(p => p.CreateOrderAsync("Razorpay", course.Price.Value, "INR", It.IsAny<string>()))
+            _mockPaymentService.Setup(p => p.CreateOrderAsync("Razorpay", course.Price ?? 0m, "INR", It.IsAny<string>()))
                 .ReturnsAsync(expectedOrderId);
 
             var result = await _enrollmentService.EnrollInPremiumCourseAsync(student.Id, course.Id, null, "Razorpay");

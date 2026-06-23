@@ -9,6 +9,7 @@ import { ConfirmModal } from '@components/confirm-modal/confirm-modal';
 import { DomSanitizer, SafeHtml, SafeResourceUrl } from '@angular/platform-browser';
 import { marked } from 'marked';
 import { InstructorCourseLayout } from '../instructor-course-layout/instructor-course-layout';
+import { LessonResourcesService } from '@services/lesson-resources.service';
 
 @Component({
   selector: 'app-instructor-lesson-detail',
@@ -19,6 +20,7 @@ import { InstructorCourseLayout } from '../instructor-course-layout/instructor-c
 export class InstructorLessonDetail implements OnInit, OnDestroy {
   private toastService = inject(ToastService);
   private dashboardService = inject(DashboardService);
+  private resourcesService = inject(LessonResourcesService);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
   private sanitizer = inject(DomSanitizer);
@@ -72,6 +74,23 @@ export class InstructorLessonDetail implements OnInit, OnDestroy {
       next: async (data) => {
         this.lesson = data;
         
+        // Check for various possible property names from backend
+        const resourcesFromBackend = this.lesson.resources || this.lesson.lessonResources || this.lesson.Resources || this.lesson.LessonResources;
+        
+        if (resourcesFromBackend && resourcesFromBackend.length > 0) {
+          this.lesson.resources = resourcesFromBackend;
+          this.lesson.resources.sort((a: any, b: any) => (a.sortOrder || 0) - (b.sortOrder || 0));
+        } else {
+          // Fallback: fetch directly from resources service
+          this.resourcesService.getResourcesByLesson(id).subscribe({
+            next: (res) => {
+              this.lesson.resources = res || [];
+              this.lesson.resources.sort((a: any, b: any) => (a.sortOrder || 0) - (b.sortOrder || 0));
+            },
+            error: (err) => console.error('Failed to fetch lesson resources directly', err)
+          });
+        }
+
         // Normalize the lesson type to a standard string
         const normalized = this.normalizeType(this.lesson.type);
         this.lesson.type = normalized;
@@ -183,6 +202,32 @@ export class InstructorLessonDetail implements OnInit, OnDestroy {
         this.closeDeleteModal();
       }
     });
+  }
+
+  protected openAddResource() {
+    if (!this.courseSlug || !this.lessonId) return;
+    this.router.navigate(['/instructor/courses', this.courseSlug, 'lessons', this.lessonId, 'resources', 'new']);
+  }
+
+  protected openEditResource(resource: any) {
+    if (!this.courseSlug) return;
+    this.router.navigate(['/instructor/courses', this.courseSlug, 'resources', resource.id, 'edit']);
+  }
+
+  protected deleteResource(id: number) {
+    if (confirm('Are you sure you want to delete this resource?')) {
+      this.resourcesService.deleteResource(id).subscribe({
+        next: () => {
+          this.toastService.showSuccess('Resource deleted successfully.');
+          if (this.lessonId) {
+            this.loadLesson(this.lessonId);
+          }
+        },
+        error: (err) => {
+          this.toastService.showApiError(err, 'Failed to delete resource.');
+        }
+      });
+    }
   }
 
   ngOnDestroy() {

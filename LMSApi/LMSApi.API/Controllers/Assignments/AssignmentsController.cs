@@ -177,5 +177,19 @@ namespace LMSApi.API.Controllers
             return Ok(result);
         }
 
+        /// <summary>Reorder assignments in a section (Instructor/Admin only).</summary>
+        [Authorize(Roles = "Instructor,Admin")]
+        [HttpPut("reorder")]
+        public async Task<IActionResult> Reorder([FromBody] ReorderAssignmentsRequest request)
+        {
+            foreach (var item in request.AssignmentOrders)
+            {
+                await _ownershipService.EnforceAssignmentOwnershipAsync(item.AssignmentId, User.GetUserId(), User.IsAdmin());
+            }
+
+            await _assignmentService.ReorderAssignmentsAsync(request);
+            return NoContent();
+        }
+
     }
 }

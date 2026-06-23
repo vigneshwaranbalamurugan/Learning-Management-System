@@ -81,5 +81,18 @@ namespace LMSApi.API.Controllers
             return Ok(result);
         }
 
+        [Authorize(Roles = "Instructor,Admin")]
+        [HttpPut("reorder")]
+        public async Task<IActionResult> Reorder([FromBody] ReorderQuizzesRequest request)
+        {
+            foreach (var item in request.QuizOrders)
+            {
+                await _ownershipService.EnforceQuizOwnershipAsync(item.QuizId, User.GetUserId(), User.IsAdmin());
+            }
+
+            await _quizService.ReorderQuizzesAsync(request);
+            return NoContent();
+        }
+
     }
 }

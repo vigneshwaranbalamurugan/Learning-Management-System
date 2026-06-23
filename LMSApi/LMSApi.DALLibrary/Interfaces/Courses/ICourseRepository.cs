@@ -5,6 +5,8 @@ namespace LMSApi.DALLibrary.Interfaces
     public interface ICourseRepository : IRepository<int, Courses>
     {
         Task<IEnumerable<Courses>> GetCoursesByInstructorAsync(int instructorId);
+        Task<(IEnumerable<Courses> Courses, int TotalCount)> GetCoursesByInstructorPagedAsync(
+            int instructorId, LMSApi.ModelLibrary.DTOs.CourseSearchQuery query);
         Task<IEnumerable<Courses>> GetCoursesByCategoryAsync(int categoryId);
         Task<IEnumerable<Courses>> GetPublishedCoursesAsync();
         Task<(IEnumerable<Courses> Courses, int TotalCount)> GetPublishedCoursesPagedAsync(

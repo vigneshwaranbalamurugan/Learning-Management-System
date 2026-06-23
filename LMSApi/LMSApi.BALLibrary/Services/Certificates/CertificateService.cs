@@ -4,6 +4,7 @@ using LMSApi.BALLibrary.Interfaces;
 using LMSApi.DALLibrary.Interfaces;
 using LMSApi.ModelLibrary.DTOs;
 using LMSApi.ModelLibrary.Models;
+using LMSApi.ModelLibrary.Enums;
 using Microsoft.Extensions.Logging;
 using PdfSharpCore.Drawing;
 using PdfSharpCore.Pdf;
@@ -23,6 +24,7 @@ namespace LMSApi.BALLibrary.Services
         private readonly IMapper _mapper;
         private readonly ILogger<CertificateService> _logger;
         private readonly IHttpClientFactory _httpClientFactory;
+        private readonly IUserNotificationsService _userNotificationsService;
 
         public CertificateService(
             ICertificateRepository certificateRepository,
@@ -33,7 +35,8 @@ namespace LMSApi.BALLibrary.Services
             IUserProfileRepository userProfileRepository,
             IMapper mapper,
             ILogger<CertificateService> logger,
-            IHttpClientFactory httpClientFactory)
+            IHttpClientFactory httpClientFactory,
+            IUserNotificationsService userNotificationsService)
         {
             _certificateRepository = certificateRepository;
             _courseRepository = courseRepository;
@@ -44,6 +47,7 @@ namespace LMSApi.BALLibrary.Services
             _mapper = mapper;
             _logger = logger;
             _httpClientFactory = httpClientFactory;
+            _userNotificationsService = userNotificationsService;
         }
 
         public async Task<CertificateResponse> IssueCertificateAsync(int userId, int courseId)
@@ -102,6 +106,20 @@ namespace LMSApi.BALLibrary.Services
 
             // 6. Queue email
             _backgroundJobClient.Enqueue<ICertificateEmailJob>(job => job.ExecuteAsync(userId, course.Title, cloudinaryUrl, certificateId));
+
+            try
+            {
+                await _userNotificationsService.CreateAndSendNotificationAsync(
+                    userId: userId,
+                    title: "Certificate Issued",
+                    message: $"Congratulations! Your certificate for '{course.Title}' has been issued.",
+                    type: NotificationType.CertificateIssued,
+                    redirectUrl: cloudinaryUrl);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to send certificate issued realtime notification to User {UserId}", userId);
+            }
 
             _logger.LogInformation("Certificate {CertificateId} generated successfully for user {UserId} and course {CourseId}.", certificateId, userId, courseId);
 

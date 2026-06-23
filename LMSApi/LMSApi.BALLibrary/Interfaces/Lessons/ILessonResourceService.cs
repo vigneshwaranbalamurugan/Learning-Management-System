@@ -10,5 +10,6 @@ namespace LMSApi.BALLibrary.Interfaces
         Task<ResourceResponse> UpdateResourceAsync(int id, UpdateResourceRequest request, System.IO.Stream? fileStream = null, string? fileName = null);
         Task DeleteResourceAsync(int id);
         Task<ResourceResponse> PublishResourceAsync(int id, PublishResourceRequest request);
+        Task ReorderResourcesAsync(int lessonId, ReorderResourcesRequest request);
     }
 }

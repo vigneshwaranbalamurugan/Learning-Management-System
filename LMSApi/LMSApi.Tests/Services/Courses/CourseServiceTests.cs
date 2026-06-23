@@ -21,6 +21,7 @@ namespace LMSApi.Tests.Services
         private Mock<IUploadService> _mockUploadService = null!;
         private Mock<INotificationService> _mockNotificationService = null!;
         private Mock<IWishListRepository> _mockWishListRepository = null!;
+        private Mock<IUserNotificationsService> _mockUserNotificationsService = null!;
         private ICourseService _courseService = null!;
 
         [SetUp]
@@ -32,6 +33,7 @@ namespace LMSApi.Tests.Services
             _mockUploadService = new Mock<IUploadService>();
             _mockNotificationService = new Mock<INotificationService>();
             _mockWishListRepository = new Mock<IWishListRepository>();
+            _mockUserNotificationsService = new Mock<IUserNotificationsService>();
             
             var courseRepository = new CourseRepository(DbContext);
             var categoryRepository = new CourseCategoryRepository(DbContext);
@@ -47,7 +49,8 @@ namespace LMSApi.Tests.Services
                 Mapper,
                 _mockLogger.Object,
                 _mockNotificationService.Object,
-                _mockWishListRepository.Object
+                _mockWishListRepository.Object,
+                _mockUserNotificationsService.Object
             );
         }
 

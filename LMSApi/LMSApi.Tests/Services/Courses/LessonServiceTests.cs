@@ -34,6 +34,7 @@ namespace LMSApi.Tests.Services
             var sectionRepository = new CourseSectionRepository(DbContext);
             var courseRepository = new CourseRepository(DbContext);
             var enrollmentRepository = new EnrollmentRepository(DbContext);
+            var mockUserNotificationsService = new Mock<IUserNotificationsService>();
 
             _lessonService = new LessonService(
                 lessonRepository,
@@ -43,7 +44,8 @@ namespace LMSApi.Tests.Services
                 Mapper,
                 _mockLogger.Object,
                 enrollmentRepository,
-                _mockNotificationService.Object
+                _mockNotificationService.Object,
+                mockUserNotificationsService.Object
             );
         }
 

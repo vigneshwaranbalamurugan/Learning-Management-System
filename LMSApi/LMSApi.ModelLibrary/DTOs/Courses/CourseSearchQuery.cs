@@ -12,6 +12,7 @@ namespace LMSApi.ModelLibrary.DTOs
         public string? CourseAccessTypes { get; set; }
         public string? SortBy { get; set; }
         public string? Search { get; set; }
+        public string? Statuses { get; set; }
         public int PageNumber { get; set; } = 1;
         public int PageSize { get; set; } = 6;
         public string? ExcludeCourseIds { get; set; }

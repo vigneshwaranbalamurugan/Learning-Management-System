@@ -74,6 +74,11 @@ namespace LMSApi.ModelLibrary.DTOs
         public bool Publish { get; set; }
     }
 
+    public class ArchiveCourseRequest
+    {
+        public bool Archive { get; set; }
+    }
+
     public class ReviewCourseRequest
     {
         [Required(ErrorMessage = "Action is required (Approve or Reject).")]

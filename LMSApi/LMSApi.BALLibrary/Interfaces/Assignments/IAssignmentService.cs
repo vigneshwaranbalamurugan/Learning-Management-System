@@ -12,5 +12,6 @@ namespace LMSApi.BALLibrary.Interfaces
         Task<AssignmentResponse> UpdateAssignmentAsync(int id, UpdateAssignmentRequest request, Stream? attachmentStream = null, string? attachmentFileName = null);
         Task DeleteAssignmentAsync(int id);
         Task<AssignmentResponse> PublishAssignmentAsync(int id, bool publish);
+        Task ReorderAssignmentsAsync(ReorderAssignmentsRequest request);
     }
 }

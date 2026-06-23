@@ -65,6 +65,18 @@ namespace LMSApi.ModelLibrary.DTOs
         public bool Publish { get; set; }
     }
 
+    public class ReorderQuizzesRequest
+    {
+        [Required]
+        public List<QuizOrderItem> QuizOrders { get; set; } = [];
+    }
+
+    public class QuizOrderItem
+    {
+        public int QuizId { get; set; }
+        public int SortOrder { get; set; }
+    }
+
     // ─── Responses ───────────────────────────────────────────────────────────
 
     public class QuizResponse

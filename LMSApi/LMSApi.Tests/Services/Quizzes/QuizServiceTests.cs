@@ -19,8 +19,9 @@ namespace LMSApi.Tests.Services
     {
         private Mock<ILogger<QuizService>> _mockLogger = null!;
         private Mock<INotificationService> _mockNotificationService = null!;
+        private Mock<IUserNotificationsService> _mockUserNotificationsService = null!;
         private IQuizService _quizService = null!;
-
+        
         [SetUp]
         public override void SetUp()
         {
@@ -28,6 +29,7 @@ namespace LMSApi.Tests.Services
 
             _mockLogger = new Mock<ILogger<QuizService>>();
             _mockNotificationService = new Mock<INotificationService>();
+            _mockUserNotificationsService = new Mock<IUserNotificationsService>();
             
             var quizRepository = new QuizRepository(DbContext);
             var sectionRepository = new CourseSectionRepository(DbContext);
@@ -43,7 +45,8 @@ namespace LMSApi.Tests.Services
                 Mapper,
                 _mockLogger.Object,
                 _mockNotificationService.Object,
-                batchRepo
+                batchRepo,
+                _mockUserNotificationsService.Object
             );
         }
 

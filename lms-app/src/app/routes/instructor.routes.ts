@@ -18,7 +18,11 @@ export const instructorRoutes: Routes = [
         loadComponent: () => import('@pages/instructor-courses/instructor-courses').then(m => m.InstructorCourses)
       },
       {
-        path: 'preview/:slug',
+        path: 'courses/new',
+        loadComponent: () => import('@pages/instructor-course-form/instructor-course-form').then(m => m.InstructorCourseForm)
+      },
+      {
+        path: 'courses/preview/:slug',
         loadComponent: () => import('@pages/course-detail/course-detail').then(m => m.CourseDetail)
       },
       {
@@ -61,6 +65,14 @@ export const instructorRoutes: Routes = [
           {
             path: 'lessons/:lessonId/detail',
             loadComponent: () => import('@pages/instructor-lesson-detail/instructor-lesson-detail').then(m => m.InstructorLessonDetail)
+          },
+          {
+            path: 'lessons/:lessonId/resources/new',
+            loadComponent: () => import('@pages/instructor-resource-form/instructor-resource-form').then(m => m.InstructorResourceForm)
+          },
+          {
+            path: 'resources/:resourceId/edit',
+            loadComponent: () => import('@pages/instructor-resource-form/instructor-resource-form').then(m => m.InstructorResourceForm)
           },
           {
             path: 'quizzes/:quizId/questions',

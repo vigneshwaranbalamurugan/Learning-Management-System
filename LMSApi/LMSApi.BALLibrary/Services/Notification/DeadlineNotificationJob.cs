@@ -1,6 +1,7 @@
 using LMSApi.BALLibrary.Interfaces;
 using LMSApi.DALLibrary.Repositories;
 using LMSApi.ModelLibrary.Models;
+using LMSApi.ModelLibrary.Enums;
 using Microsoft.Extensions.Logging;
 
 namespace LMSApi.BALLibrary.Services.Notification
@@ -15,15 +16,18 @@ namespace LMSApi.BALLibrary.Services.Notification
         private readonly INotificationRepository _notificationRepository;
         private readonly INotificationService _notificationService;
         private readonly ILogger<DeadlineNotificationJob> _logger;
+        private readonly IUserNotificationsService _userNotificationsService;
 
         public DeadlineNotificationJob(
             INotificationRepository notificationRepository,
             INotificationService notificationService,
-            ILogger<DeadlineNotificationJob> logger)
+            ILogger<DeadlineNotificationJob> logger,
+            IUserNotificationsService userNotificationsService)
         {
             _notificationRepository = notificationRepository;
             _notificationService = notificationService;
             _logger = logger;
+            _userNotificationsService = userNotificationsService;
         }
 
         public async Task ExecuteAsync()
@@ -49,6 +53,19 @@ namespace LMSApi.BALLibrary.Services.Notification
                 catch (Exception ex)
                 {
                     _logger.LogError(ex, $"Failed to send deadline notification email to {deadline.UserEmail}");
+                }
+
+                try
+                {
+                    await _userNotificationsService.CreateAndSendNotificationAsync(
+                        userId: deadline.UserId,
+                        title: "Upcoming Deadline",
+                        message: $"Your {deadline.ItemType} '{deadline.ItemTitle}' in the course '{deadline.CourseName}' is due tomorrow.",
+                        type: NotificationType.AssignmentDeadline);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Failed to send deadline realtime notification to User {UserId}", deadline.UserId);
                 }
             }
 

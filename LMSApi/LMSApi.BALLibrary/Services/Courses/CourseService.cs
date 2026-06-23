@@ -20,6 +20,7 @@ namespace LMSApi.BALLibrary.Services
         private readonly ILogger<CourseService> _logger;
         private readonly INotificationService _notificationService;
         private readonly IWishListRepository _wishListRepository;
+        private readonly IUserNotificationsService _userNotificationsService;
 
         public CourseService(
             ICourseRepository courseRepository,
@@ -30,7 +31,8 @@ namespace LMSApi.BALLibrary.Services
             IMapper mapper,
             ILogger<CourseService> logger,
             INotificationService notificationService,
-            IWishListRepository wishListRepository)
+            IWishListRepository wishListRepository,
+            IUserNotificationsService userNotificationsService)
         {
             _courseRepository = courseRepository;
             _categoryRepository = categoryRepository;
@@ -41,6 +43,7 @@ namespace LMSApi.BALLibrary.Services
             _logger = logger;
             _notificationService = notificationService;
             _wishListRepository = wishListRepository;
+            _userNotificationsService = userNotificationsService;
         }
 
         public async Task<IEnumerable<CourseResponse>> GetAllCoursesAsync()
@@ -320,6 +323,26 @@ namespace LMSApi.BALLibrary.Services
             _logger.LogInformation("Course Deleted: Id={Id}", id);
         }
 
+        public async Task<CourseResponse> ArchiveCourseAsync(int id, ArchiveCourseRequest request)
+        {
+            var course = await _courseRepository.GetByIdAsync(id)
+                ?? throw new KeyNotFoundException($"Course with id '{id}' not found.");
+
+            if (request.Archive)
+            {
+                course.Status = CourseStatus.Archived;
+                _logger.LogInformation("Course Archived: Id={Id}", id);
+            }
+            else
+            {
+                course.Status = CourseStatus.Draft;
+                _logger.LogInformation("Course Unarchived (reverted to Draft): Id={Id}", id);
+            }
+
+            await _courseRepository.UpdateAsync(course);
+            return _mapper.Map<CourseResponse>(course);
+        }
+
         public async Task<CourseResponse> PublishCourseAsync(int id, PublishCourseRequest request)
         {
             if (request.Publish)
@@ -384,6 +407,20 @@ namespace LMSApi.BALLibrary.Services
                 Message msg = new EmailMessage(instructor.Email, $"Your course '{course.Title}' has been unpublished", html) { IsHtml = true };
                 await _notificationService.Send(msg);
 
+                try
+                {
+                    await _userNotificationsService.CreateAndSendNotificationAsync(
+                        userId: course.InstructorId,
+                        title: "Course Unpublished",
+                        message: $"Your course '{course.Title}' has been unpublished.",
+                        type: NotificationType.General,
+                        redirectUrl: $"/courses/{course.Id}");
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Failed to send course unpublished realtime notification to Instructor {InstructorId}", course.InstructorId);
+                }
+
                 return _mapper.Map<CourseResponse>(course);
             }
         }
@@ -433,6 +470,20 @@ namespace LMSApi.BALLibrary.Services
                 Message msg = new EmailMessage(instructor.Email, $"Your course '{course.Title}' has been published!", html) { IsHtml = true };
                 await _notificationService.Send(msg);
 
+                try
+                {
+                    await _userNotificationsService.CreateAndSendNotificationAsync(
+                        userId: course.InstructorId,
+                        title: "Course Published",
+                        message: $"Congratulations! Your course '{course.Title}' has been approved and published.",
+                        type: NotificationType.CoursePublished,
+                        redirectUrl: $"/courses/{course.Id}");
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Failed to send course published realtime notification to Instructor {InstructorId}", course.InstructorId);
+                }
+
                 return _mapper.Map<CourseResponse>(course);
             }
             else if (string.Equals(request.Action, "Reject", StringComparison.OrdinalIgnoreCase))
@@ -453,6 +504,20 @@ namespace LMSApi.BALLibrary.Services
                     course.Title, "Rejected", request.Reason);
                 Message msg = new EmailMessage(instructor.Email, $"Your course '{course.Title}' was not approved", html) { IsHtml = true };
                 await _notificationService.Send(msg);
+
+                try
+                {
+                    await _userNotificationsService.CreateAndSendNotificationAsync(
+                        userId: course.InstructorId,
+                        title: "Course Rejected",
+                        message: $"Your course '{course.Title}' was not approved. Reason: {request.Reason}",
+                        type: NotificationType.General,
+                        redirectUrl: $"/courses/{course.Id}");
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Failed to send course rejected realtime notification to Instructor {InstructorId}", course.InstructorId);
+                }
 
                 return _mapper.Map<CourseResponse>(course);
             }
@@ -491,6 +556,37 @@ namespace LMSApi.BALLibrary.Services
 
             await PopulateRatingStatsListAsync(responses);
             return responses;
+        }
+
+        public async Task<PagedCourseResponse> GetCoursesByInstructorPagedAsync(int instructorId, CourseSearchQuery query)
+        {
+            var (courses, totalCount) = await _courseRepository.GetCoursesByInstructorPagedAsync(instructorId, query);
+            var courseList = courses == null ? new List<CourseResponse>() : _mapper.Map<IEnumerable<CourseResponse>>(courses).ToList();
+
+            if (courses != null)
+            {
+                foreach (var response in courseList)
+                {
+                    var original = courses.FirstOrDefault(c => c.Id == response.Id);
+                    if (original != null)
+                    {
+                        response.EnrolledCount = original.Enrollments?.Count ?? 0;
+                    }
+                }
+            }
+
+            await PopulateRatingStatsListAsync(courseList);
+
+            var totalPages = (int)System.Math.Ceiling((double)totalCount / query.PageSize);
+
+            return new PagedCourseResponse
+            {
+                Courses = courseList,
+                TotalCount = totalCount,
+                PageNumber = query.PageNumber,
+                PageSize = query.PageSize,
+                TotalPages = totalPages
+            };
         }
 
         public async Task<IEnumerable<CourseResponse>> GetCoursesByCategoryAsync(int categoryId)

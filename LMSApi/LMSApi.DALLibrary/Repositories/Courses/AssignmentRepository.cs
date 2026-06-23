@@ -16,7 +16,7 @@ namespace LMSApi.DALLibrary.Repositories
         {
             return await _context.Assignments
                 .Where(a => a.CourseSectionId == sectionId)
-                .OrderBy(a => a.CreatedAt)
+                .OrderBy(a => a.SortOrder)
                 .ToListAsync();
         }
 

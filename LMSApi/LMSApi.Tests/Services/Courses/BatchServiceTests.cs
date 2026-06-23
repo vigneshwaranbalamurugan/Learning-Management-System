@@ -18,6 +18,7 @@ namespace LMSApi.Tests.Services
     {
         private Mock<ILogger<BatchService>> _mockLogger = null!;
         private Mock<INotificationService> _mockNotificationService = null!;
+        private Mock<IUserNotificationsService> _mockUserNotificationsService = null!;
         private IBatchService _batchService = null!;
 
         [SetUp]
@@ -27,6 +28,7 @@ namespace LMSApi.Tests.Services
 
             _mockLogger = new Mock<ILogger<BatchService>>();
             _mockNotificationService = new Mock<INotificationService>();
+            _mockUserNotificationsService = new Mock<IUserNotificationsService>();
             
             var batchRepository = new CourseBatchRepository(DbContext);
             var courseRepository = new CourseRepository(DbContext);
@@ -38,7 +40,8 @@ namespace LMSApi.Tests.Services
                 Mapper,
                 _mockLogger.Object,
                 enrollmentRepository,
-                _mockNotificationService.Object
+                _mockNotificationService.Object,
+                _mockUserNotificationsService.Object
             );
         }
 

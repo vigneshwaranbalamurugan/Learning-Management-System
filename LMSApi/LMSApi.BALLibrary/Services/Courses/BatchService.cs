@@ -16,6 +16,7 @@ namespace LMSApi.BALLibrary.Services
         private readonly ILogger<BatchService> _logger;
         private readonly IEnrollmentRepository _enrollmentRepository;
         private readonly INotificationService _notificationService;
+        private readonly IUserNotificationsService _userNotificationsService;
 
         public BatchService(
             ICourseBatchRepository batchRepository,
@@ -23,7 +24,8 @@ namespace LMSApi.BALLibrary.Services
             IMapper mapper,
             ILogger<BatchService> logger,
             IEnrollmentRepository enrollmentRepository,
-            INotificationService notificationService)
+            INotificationService notificationService,
+            IUserNotificationsService userNotificationsService)
         {
             _batchRepository = batchRepository;
             _courseRepository = courseRepository;
@@ -31,6 +33,7 @@ namespace LMSApi.BALLibrary.Services
             _logger = logger;
             _enrollmentRepository = enrollmentRepository;
             _notificationService = notificationService;
+            _userNotificationsService = userNotificationsService;
         }
 
         /// <inheritdoc/>
@@ -105,6 +108,7 @@ namespace LMSApi.BALLibrary.Services
                     
                     var emailsToSend = batchLearners.Select(e => new
                     {
+                        UserId = e.UserId,
                         Email = e.User.Email,
                         Name = e.User.UserProfile?.FirstName ?? e.User.Email
                     }).ToList();
@@ -127,6 +131,20 @@ namespace LMSApi.BALLibrary.Services
                             catch (Exception ex)
                             {
                                 _logger.LogError(ex, "Failed to send batch status email to {Email}", e.Email);
+                            }
+
+                            try
+                            {
+                                await _userNotificationsService.CreateAndSendNotificationAsync(
+                                    userId: e.UserId,
+                                    title: "Batch Status Updated",
+                                    message: $"The status of your batch '{batchName}' in course '{courseTitle}' has been updated to '{statusStr}'.",
+                                    type: NotificationType.BatchAnnouncement,
+                                    redirectUrl: $"/courses/{batch.CourseId}");
+                            }
+                            catch (Exception ex)
+                            {
+                                _logger.LogError(ex, "Failed to send batch status realtime notification to User {UserId}", e.UserId);
                             }
                         }
                     });

@@ -20,6 +20,7 @@ namespace LMSApi.BALLibrary.Services
         private readonly ILogger<QuizService> _logger;
         private readonly INotificationService _notificationService;
         private readonly ICourseBatchRepository _batchRepository;
+        private readonly IUserNotificationsService _userNotificationsService;
 
         public QuizService(
             IQuizRepository quizRepository,
@@ -29,7 +30,8 @@ namespace LMSApi.BALLibrary.Services
             IMapper mapper,
             ILogger<QuizService> logger,
             INotificationService notificationService,
-            ICourseBatchRepository batchRepository)
+            ICourseBatchRepository batchRepository,
+            IUserNotificationsService userNotificationsService)
         {
             _quizRepository = quizRepository;
             _sectionRepository = sectionRepository;
@@ -39,6 +41,7 @@ namespace LMSApi.BALLibrary.Services
             _logger = logger;
             _notificationService = notificationService;
             _batchRepository = batchRepository;
+            _userNotificationsService = userNotificationsService;
         }
 
         // ─── Quiz CRUD ──────────────────────────────────────────────────────
@@ -250,6 +253,21 @@ namespace LMSApi.BALLibrary.Services
             _logger.LogInformation("Quiz Deleted: Id={Id}", id);
         }
 
+        public async Task ReorderQuizzesAsync(ReorderQuizzesRequest request)
+        {
+            if (request == null) throw new ArgumentNullException(nameof(request));
+            if (request.QuizOrders == null) throw new ArgumentException("Quiz orders list cannot be null.", nameof(request.QuizOrders));
+
+            foreach (var item in request.QuizOrders)
+            {
+                var quiz = await _quizRepository.GetByIdAsync(item.QuizId);
+                quiz.Order = item.SortOrder;
+                await _quizRepository.UpdateAsync(quiz);
+            }
+
+            _logger.LogInformation("Quizzes Reordered: {Count} quizzes updated", request.QuizOrders.Count);
+        }
+
         public async Task<QuizResponse> PublishQuizAsync(int quizId, PublishQuizRequest request)
         {
             var quiz = await _quizRepository.GetQuizWithQuestionsAsync(quizId);
@@ -281,6 +299,7 @@ namespace LMSApi.BALLibrary.Services
                 var enrollments = await _enrollmentRepository.GetActiveEnrollmentsByCourseAsync(course.Id);
                 var emailsToSend = enrollments.Select(e => new
                 {
+                    UserId = e.UserId,
                     Email = e.User.Email,
                     Name = e.User.UserProfile?.FirstName ?? e.User.Email,
                     BatchName = e.Batch?.Name ?? ""
@@ -303,6 +322,20 @@ namespace LMSApi.BALLibrary.Services
                         catch (Exception ex)
                         {
                             _logger.LogError(ex, "Failed to send quiz published email to {Email}", e.Email);
+                        }
+
+                        try
+                        {
+                            await _userNotificationsService.CreateAndSendNotificationAsync(
+                                userId: e.UserId,
+                                title: "New Quiz Published",
+                                message: $"A new quiz '{quizTitle}' is available in '{courseTitle}'.",
+                                type: NotificationType.QuizCreated,
+                                redirectUrl: $"/courses/{course.Id}/quizzes/{quiz.Id}");
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogError(ex, "Failed to send quiz published realtime notification to User {UserId}", e.UserId);
                         }
                     }
                 });

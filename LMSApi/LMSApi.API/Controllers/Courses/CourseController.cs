@@ -131,10 +131,10 @@ namespace LMSApi.API.Controllers
 
         [Authorize(Roles = "Instructor,Admin")]
         [HttpGet("my-courses")]
-        public async Task<ActionResult<IEnumerable<CourseResponse>>> GetMyCourses()
+        public async Task<ActionResult<PagedCourseResponse>> GetMyCourses([FromQuery] CourseSearchQuery query)
         {
             var instructorId = User.GetUserId();
-            var result = await _courseService.GetCoursesByInstructorAsync(instructorId);
+            var result = await _courseService.GetCoursesByInstructorPagedAsync(instructorId, query);
             return Ok(result);
         }
 
@@ -241,6 +241,16 @@ namespace LMSApi.API.Controllers
         {
             await _ownershipService.EnforceCourseOwnershipAsync(id, User.GetUserId(), User.IsAdmin());
             var result = await _courseService.PublishCourseAsync(id, request);
+            return Ok(result);
+        }
+
+        /// <summary>Archive or unarchive a course. Instructor (own only) or Admin.</summary>
+        [Authorize(Roles = "Instructor,Admin")]
+        [HttpPatch("{id:int}/archive")]
+        public async Task<ActionResult<CourseResponse>> Archive(int id, [FromBody] ArchiveCourseRequest request)
+        {
+            await _ownershipService.EnforceCourseOwnershipAsync(id, User.GetUserId(), User.IsAdmin());
+            var result = await _courseService.ArchiveCourseAsync(id, request);
             return Ok(result);
         }
 

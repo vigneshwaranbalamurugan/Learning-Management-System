@@ -22,6 +22,81 @@ namespace LMSApi.DALLibrary.Repositories
                 .ToListAsync();
         }
 
+        public async Task<(IEnumerable<Courses> Courses, int TotalCount)> GetCoursesByInstructorPagedAsync(
+            int instructorId, LMSApi.ModelLibrary.DTOs.CourseSearchQuery query)
+        {
+            var queryable = _context.Courses
+                .Include(c => c.Category)
+                .Include(c => c.Language)
+                .Include(c => c.Enrollments)
+                .Include(c => c.Reviews)
+                .Where(c => c.InstructorId == instructorId)
+                .AsQueryable();
+
+            // 1. Categories
+            if (!string.IsNullOrWhiteSpace(query.CategoryIds))
+            {
+                var catIds = query.CategoryIds.Split(',').Select(int.Parse).ToList();
+                queryable = queryable.Where(c => catIds.Contains(c.CategoryId));
+            }
+
+            // 2. Levels
+            if (!string.IsNullOrWhiteSpace(query.Levels))
+            {
+                var lvlVals = query.Levels.Split(',').Select(s => (CourseLevel)int.Parse(s)).ToList();
+                queryable = queryable.Where(c => lvlVals.Contains(c.Level));
+            }
+
+            // 3. Languages
+            if (!string.IsNullOrWhiteSpace(query.LanguageIds))
+            {
+                var langIds = query.LanguageIds.Split(',').Select(int.Parse).ToList();
+                queryable = queryable.Where(c => langIds.Contains(c.LanguageId));
+            }
+
+            // 4. Statuses
+            if (!string.IsNullOrWhiteSpace(query.Statuses))
+            {
+                var statusVals = query.Statuses.Split(',').Select(s => (CourseStatus)int.Parse(s)).ToList();
+                queryable = queryable.Where(c => statusVals.Contains(c.Status));
+            }
+
+            // 5. Search
+            if (!string.IsNullOrWhiteSpace(query.Search))
+            {
+                var s = query.Search.Trim().ToLower();
+                queryable = queryable.Where(c => c.Title.ToLower().Contains(s) || 
+                                                (c.Description != null && c.Description.ToLower().Contains(s)));
+            }
+
+            var totalCount = await queryable.CountAsync();
+
+            // 6. Sorting
+            if (!string.IsNullOrWhiteSpace(query.SortBy))
+            {
+                var sort = query.SortBy.Trim().ToLower();
+                queryable = sort switch
+                {
+                    "enrolled" or "popular" => queryable.OrderByDescending(c => c.Enrollments.Count),
+                    "rating" => queryable.OrderByDescending(c => c.Reviews.Any() ? c.Reviews.Average(r => r.Rating) : 0),
+                    "newest" => queryable.OrderByDescending(c => c.CreatedAt),
+                    "oldest" => queryable.OrderBy(c => c.CreatedAt),
+                    _ => queryable.OrderByDescending(c => c.CreatedAt)
+                };
+            }
+            else
+            {
+                queryable = queryable.OrderByDescending(c => c.CreatedAt);
+            }
+
+            var courses = await queryable
+                .Skip((query.PageNumber - 1) * query.PageSize)
+                .Take(query.PageSize)
+                .ToListAsync();
+
+            return (courses, totalCount);
+        }
+
         public async Task<IEnumerable<Courses>> GetCoursesByCategoryAsync(int categoryId)
         {
             return await _context.Courses
@@ -193,7 +268,7 @@ namespace LMSApi.DALLibrary.Repositories
                     .ThenInclude(s => s.Quizzes.OrderBy(q => q.Order))
                         .ThenInclude(q => q.Questions)
                 .Include(c => c.Sections.OrderBy(s => s.SortOrder))
-                    .ThenInclude(s => s.Assignments)
+                    .ThenInclude(s => s.Assignments.OrderBy(a => a.SortOrder))
                 .Include(c => c.Batches)
                 .FirstOrDefaultAsync(c => c.Id == id);
         }
@@ -213,7 +288,7 @@ namespace LMSApi.DALLibrary.Repositories
                     .ThenInclude(s => s.Quizzes.OrderBy(q => q.Order))
                         .ThenInclude(q => q.Questions)
                 .Include(c => c.Sections.OrderBy(s => s.SortOrder))
-                    .ThenInclude(s => s.Assignments)
+                    .ThenInclude(s => s.Assignments.OrderBy(a => a.SortOrder))
                 .Include(c => c.Batches)
                 .FirstOrDefaultAsync(c => c.slug == slug);
         }

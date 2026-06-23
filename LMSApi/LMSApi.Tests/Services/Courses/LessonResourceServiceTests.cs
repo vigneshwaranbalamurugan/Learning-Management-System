@@ -18,6 +18,7 @@ namespace LMSApi.Tests.Services
         private Mock<ILogger<LessonResourceService>> _mockLogger = null!;
         private Mock<IUploadService> _mockUploadService = null!;
         private Mock<INotificationService> _mockNotificationService = null!;
+        private Mock<IUserNotificationsService> _mockUserNotificationsService = null!;
         private ILessonResourceService _resourceService = null!;
 
         [SetUp]
@@ -28,6 +29,7 @@ namespace LMSApi.Tests.Services
             _mockLogger = new Mock<ILogger<LessonResourceService>>();
             _mockUploadService = new Mock<IUploadService>();
             _mockNotificationService = new Mock<INotificationService>();
+            _mockUserNotificationsService = new Mock<IUserNotificationsService>();
             
             var resourceRepository = new LessonResourceRepository(DbContext);
             var lessonRepository = new LessonRepository(DbContext);
@@ -44,7 +46,8 @@ namespace LMSApi.Tests.Services
                 Mapper,
                 _mockLogger.Object,
                 enrollmentRepository,
-                _mockNotificationService.Object
+                _mockNotificationService.Object,
+                _mockUserNotificationsService.Object
             );
         }
 

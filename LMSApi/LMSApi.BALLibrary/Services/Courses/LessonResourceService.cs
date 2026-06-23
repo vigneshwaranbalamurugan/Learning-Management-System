@@ -19,6 +19,7 @@ namespace LMSApi.BALLibrary.Services
         private readonly ILogger<LessonResourceService> _logger;
         private readonly IEnrollmentRepository _enrollmentRepository;
         private readonly INotificationService _notificationService;
+        private readonly IUserNotificationsService _userNotificationsService;
 
         public LessonResourceService(
             ILessonResourceRepository resourceRepository,
@@ -29,7 +30,8 @@ namespace LMSApi.BALLibrary.Services
             IMapper mapper,
             ILogger<LessonResourceService> logger,
             IEnrollmentRepository enrollmentRepository,
-            INotificationService notificationService)
+            INotificationService notificationService,
+            IUserNotificationsService userNotificationsService)
         {
             _resourceRepository = resourceRepository;
             _lessonRepository = lessonRepository;
@@ -40,6 +42,7 @@ namespace LMSApi.BALLibrary.Services
             _logger = logger;
             _enrollmentRepository = enrollmentRepository;
             _notificationService = notificationService;
+            _userNotificationsService = userNotificationsService;
         }
 
         public async Task<IEnumerable<ResourceResponse>> GetResourcesByLessonAsync(int lessonId, int? currentUserId = null, bool isAdmin = false)
@@ -155,6 +158,9 @@ namespace LMSApi.BALLibrary.Services
             {
                 resource.Status = request.Status;
             }
+
+            var currentResources = await _resourceRepository.GetResourcesByLessonAsync(request.LessonId);
+            resource.SortOrder = currentResources.Any() ? currentResources.Max(r => r.SortOrder) + 1 : 1;
 
             await _resourceRepository.AddAsync(resource);
 
@@ -281,6 +287,7 @@ namespace LMSApi.BALLibrary.Services
                 var enrollments = await _enrollmentRepository.GetActiveEnrollmentsByCourseAsync(course.Id);
                 var emailsToSend = enrollments.Select(e => new
                 {
+                    UserId = e.UserId,
                     Email = e.User.Email,
                     Name = e.User.UserProfile?.FirstName ?? e.User.Email,
                     BatchName = e.Batch?.Name ?? ""
@@ -304,11 +311,45 @@ namespace LMSApi.BALLibrary.Services
                         {
                             _logger.LogError(ex, "Failed to send resource published email to {Email}", e.Email);
                         }
+
+                        try
+                        {
+                            await _userNotificationsService.CreateAndSendNotificationAsync(
+                                userId: e.UserId,
+                                title: "New Resource Published",
+                                message: $"A new resource '{resourceTitle}' has been published in '{courseTitle}'.",
+                                type: NotificationType.General,
+                                redirectUrl: $"/courses/{course.Id}/lessons/{lesson.Id}");
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogError(ex, "Failed to send resource published realtime notification to User {UserId}", e.UserId);
+                        }
                     }
                 });
             }
 
             return _mapper.Map<ResourceResponse>(resource);
+        }
+
+        public async Task ReorderResourcesAsync(int lessonId, ReorderResourcesRequest request)
+        {
+            var lesson = await _lessonRepository.GetByIdAsync(lessonId)
+                ?? throw new KeyNotFoundException($"Lesson with id '{lessonId}' not found.");
+
+            var resources = await _resourceRepository.GetResourcesByLessonAsync(lessonId);
+
+            foreach (var item in request.Resources)
+            {
+                var resource = resources.FirstOrDefault(r => r.Id == item.ResourceId);
+                if (resource != null)
+                {
+                    resource.SortOrder = item.SortOrder;
+                    await _resourceRepository.UpdateAsync(resource);
+                }
+            }
+
+            _logger.LogInformation("Resources reordered for LessonId={LessonId}", lessonId);
         }
     }
 }

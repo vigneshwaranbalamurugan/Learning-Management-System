@@ -21,6 +21,7 @@ namespace LMSApi.BALLibrary.Services
         private readonly IStudentProgressService _progressService;
         private readonly IMapper _mapper;
         private readonly ILogger<QuizAttemptService> _logger;
+        private readonly IUserNotificationsService _userNotificationsService;
 
         public QuizAttemptService(
             IQuizRepository quizRepository,
@@ -31,7 +32,8 @@ namespace LMSApi.BALLibrary.Services
             ICourseRepository courseRepository,
             IStudentProgressService progressService,
             IMapper mapper,
-            ILogger<QuizAttemptService> logger)
+            ILogger<QuizAttemptService> logger,
+            IUserNotificationsService userNotificationsService)
         {
             _quizRepository = quizRepository;
             _attemptRepository = attemptRepository;
@@ -42,6 +44,7 @@ namespace LMSApi.BALLibrary.Services
             _progressService = progressService;
             _mapper = mapper;
             _logger = logger;
+            _userNotificationsService = userNotificationsService;
         }
 
         // ─── Student Quiz-Taking ────────────────────────────────────────────
@@ -246,6 +249,21 @@ namespace LMSApi.BALLibrary.Services
             if (section != null)
             {
                 await _progressService.RecalculateCourseProgressAsync(userId, section.CourseId);
+            }
+
+            try
+            {
+                var resultText = attempt.IsPassed ? "Passed ✅" : "Failed ❌";
+                await _userNotificationsService.CreateAndSendNotificationAsync(
+                    userId: userId,
+                    title: $"Quiz Completed: {quiz.Title}",
+                    message: $"You completed '{quiz.Title}' with a score of {attempt.Score}/{totalMarks} — {resultText}.",
+                    type: NotificationType.QuizResult,
+                    redirectUrl: $"/courses/{section.CourseId}/quizzes/{quiz.Id}");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to send quiz result realtime notification to User {UserId}", userId);
             }
 
             return _mapper.Map<QuizAttemptResponse>(attempt);

@@ -91,7 +91,7 @@ export class InstructorDashboard implements OnInit {
           this.recentEnrollments.set(analytics.recentEnrollments);
         }
 
-        const mapped = courses.map(c => ({
+        const mapped = (courses.courses || []).map(c => ({
           title: c.title,
           students: 0,
           status: this.getStatusLabel(c.status),

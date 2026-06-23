@@ -31,7 +31,7 @@ export class InstructorProgressList implements OnInit {
       .pipe(untilDestroyed(this.destroyRef))
       .subscribe({
         next: (data) => {
-          this.courses.set(data || []);
+          this.courses.set(data?.courses || []);
           this.isLoading.set(false);
         },
         error: (err) => {

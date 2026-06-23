@@ -37,6 +37,9 @@ namespace LMSApi.DALLibrary.Contexts.Configurations
             builder.Property(a => a.IsLateSubmissionAllowed)
                 .HasDefaultValue(false);
 
+            builder.Property(a => a.SortOrder)
+                .HasDefaultValue(0);
+
             builder.Property(a => a.IsCompulsory)
                 .HasDefaultValue(false);
 

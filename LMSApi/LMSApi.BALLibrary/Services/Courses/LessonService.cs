@@ -18,6 +18,7 @@ namespace LMSApi.BALLibrary.Services
         private readonly ILogger<LessonService> _logger;
         private readonly IEnrollmentRepository _enrollmentRepository;
         private readonly INotificationService _notificationService;
+        private readonly IUserNotificationsService _userNotificationsService;
 
         public LessonService(
             ILessonRepository lessonRepository,
@@ -27,7 +28,8 @@ namespace LMSApi.BALLibrary.Services
             IMapper mapper,
             ILogger<LessonService> logger,
             IEnrollmentRepository enrollmentRepository,
-            INotificationService notificationService)
+            INotificationService notificationService,
+            IUserNotificationsService userNotificationsService)
         {
             _lessonRepository = lessonRepository;
             _sectionRepository = sectionRepository;
@@ -37,6 +39,7 @@ namespace LMSApi.BALLibrary.Services
             _logger = logger;
             _enrollmentRepository = enrollmentRepository;
             _notificationService = notificationService;
+            _userNotificationsService = userNotificationsService;
         }
 
         public async Task<IEnumerable<LessonResponse>> GetLessonsBySectionAsync(int sectionId, int? currentUserId = null, bool isAdmin = false)
@@ -308,6 +311,7 @@ namespace LMSApi.BALLibrary.Services
                 var enrollments = await _enrollmentRepository.GetActiveEnrollmentsByCourseAsync(course.Id);
                 var emailsToSend = enrollments.Select(e => new
                 {
+                    UserId = e.UserId,
                     Email = e.User.Email,
                     Name = e.User.UserProfile?.FirstName ?? e.User.Email,
                     BatchName = e.Batch?.Name ?? ""
@@ -330,6 +334,20 @@ namespace LMSApi.BALLibrary.Services
                         catch (Exception ex)
                         {
                             _logger.LogError(ex, "Failed to send lesson published email to {Email}", e.Email);
+                        }
+
+                        try
+                        {
+                            await _userNotificationsService.CreateAndSendNotificationAsync(
+                                userId: e.UserId,
+                                title: "New Lesson Published",
+                                message: $"A new lesson '{lessonTitle}' has been published in '{courseTitle}'.",
+                                type: NotificationType.General,
+                                redirectUrl: $"/courses/{course.Id}/lessons/{lesson.Id}");
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogError(ex, "Failed to send lesson published realtime notification to User {UserId}", e.UserId);
                         }
                     }
                 });

@@ -26,6 +26,7 @@ namespace LMSApi.ModelLibrary.Models
         public int MaxSubmissions { get; set; } = 1;
 
         public bool IsLateSubmissionAllowed { get; set; }
+        public int SortOrder { get; set; }
         public PublishStatus Status { get; set; } = PublishStatus.Draft;
 
         public DateTime CreatedAt { get; set; }
