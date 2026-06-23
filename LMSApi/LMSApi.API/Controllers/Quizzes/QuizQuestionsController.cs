@@ -68,6 +68,15 @@ namespace LMSApi.API.Controllers
         }
 
         [Authorize(Roles = "Instructor,Admin")]
+        [HttpPost("quiz/{quizId:int}/reorder")]
+        public async Task<IActionResult> ReorderQuestions(int quizId, [FromBody] BulkReorderQuestionsRequest request)
+        {
+            await _ownershipService.EnforceQuizOwnershipAsync(quizId, User.GetUserId(), User.IsAdmin(), "You do not have permission to reorder questions in this quiz.");
+            await _quizQuestionService.ReorderQuestionsAsync(quizId, request);
+            return NoContent();
+        }
+
+        [Authorize(Roles = "Instructor,Admin")]
         [HttpDelete("{questionId:int}")]
         public async Task<IActionResult> DeleteQuestion(int questionId)
         {

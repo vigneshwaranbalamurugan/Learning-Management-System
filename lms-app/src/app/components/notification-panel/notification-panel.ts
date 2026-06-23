@@ -17,7 +17,7 @@ import { NotificationService } from '@services/notification.service';
 import { SignalRService } from '@services/signalr.service';
 import { Notification, NotificationType } from '@models/notification';
 
-const PAGE_SIZE = 20;
+
 
 @Component({
   selector: 'app-notification-panel',
@@ -40,19 +40,17 @@ export class NotificationPanel implements OnInit, OnDestroy {
   protected isLoading = signal(false);
   protected isLoadingMore = signal(false);
 
-  protected visibleNotifications = computed(() =>
-    NotificationService.pageSlice(this.allNotifications(), this.currentPage())
-  );
+  protected hasMore = signal(true);
+
+  protected visibleNotifications = computed(() => this.allNotifications());
 
   protected unreadNotifications = computed(() =>
-    this.visibleNotifications().items.filter((n) => !n.isRead)
+    this.visibleNotifications().filter((n) => !n.isRead)
   );
 
   protected readNotifications = computed(() =>
-    this.visibleNotifications().items.filter((n) => n.isRead)
+    this.visibleNotifications().filter((n) => n.isRead)
   );
-
-  protected hasMore = computed(() => this.visibleNotifications().hasMore);
 
   // ─── Lifecycle ─────────────────────────────────────────────────────────────
 
@@ -77,31 +75,44 @@ export class NotificationPanel implements OnInit, OnDestroy {
   private loadAll() {
     this.isLoading.set(true);
     this.notificationService
-      .getNotifications()
+      .getNotifications(1, 10)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (data) => {
-          // Sort newest first
-          this.allNotifications.set(
-            [...data].sort(
-              (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-            )
-          );
+          this.allNotifications.set(data);
+          this.hasMore.set(data.length === 10);
           this.isLoading.set(false);
         },
         error: () => this.isLoading.set(false),
       });
   }
 
-  /** Called by the IntersectionObserver sentinel — loads the next page. */
   protected loadMore() {
     if (!this.hasMore() || this.isLoadingMore()) return;
     this.isLoadingMore.set(true);
-    // Simulate async page reveal
-    setTimeout(() => {
-      this.currentPage.update((p) => p + 1);
-      this.isLoadingMore.set(false);
-    }, 400);
+    const nextPage = this.currentPage() + 1;
+    this.notificationService
+      .getNotifications(nextPage, 10)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (data) => {
+          this.allNotifications.update((prev) => [...prev, ...data]);
+          this.hasMore.set(data.length === 10);
+          this.currentPage.set(nextPage);
+          this.isLoadingMore.set(false);
+        },
+        error: () => this.isLoadingMore.set(false),
+      });
+  }
+
+  protected onScroll(event: Event) {
+    const target = event.target as HTMLElement;
+    const scrollPosition = target.scrollTop + target.clientHeight;
+    const scrollHeight = target.scrollHeight;
+
+    if (scrollPosition >= scrollHeight - 50) {
+      this.loadMore();
+    }
   }
 
   // ─── Actions ───────────────────────────────────────────────────────────────

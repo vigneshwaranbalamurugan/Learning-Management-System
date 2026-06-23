@@ -43,7 +43,9 @@ namespace LMSApi.BALLibrary.Services
 				profile = CreateDefaultProfile(user.Id);
 				await _userProfileRepository.AddAsync(profile);
 			}
-			return _mapper.Map<ProfileResponse>(profile);
+			var response = _mapper.Map<ProfileResponse>(profile);
+			response.Role = user.Role?.RoleName;
+			return response;
 		}
 
 		public async Task<ProfileResponse> UpdateProfileAsync(string email, ProfileUpdateRequest request)
@@ -75,7 +77,9 @@ namespace LMSApi.BALLibrary.Services
 
 			await _userProfileRepository.UpdateAsync(profile);
 			_logger?.LogInformation("Profile updated successfully for user ID: {UserId}", user.Id);
-			return _mapper.Map<ProfileResponse>(profile);
+			var response = _mapper.Map<ProfileResponse>(profile);
+			response.Role = user.Role?.RoleName;
+			return response;
 		}
 
 		public async Task<ProfileResponse> UpdateProfileImageAsync(string email, Stream fileStream, string fileName, string contentType)
@@ -107,7 +111,9 @@ namespace LMSApi.BALLibrary.Services
 			await _userProfileRepository.UpdateAsync(profile);
 
 			_logger?.LogInformation("Profile image updated successfully for user ID: {UserId}. Image URL: {Url}", user.Id, profile.ProfilePictureUrl);
-			return _mapper.Map<ProfileResponse>(profile);
+			var response = _mapper.Map<ProfileResponse>(profile);
+			response.Role = user.Role?.RoleName;
+			return response;
 		}
 
         private static UserProfiles CreateDefaultProfile(int userId)

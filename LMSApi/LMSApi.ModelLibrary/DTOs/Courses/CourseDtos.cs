@@ -110,6 +110,7 @@ namespace LMSApi.ModelLibrary.DTOs
         public int TotalReviews { get; set; }
 
         public string InstructorName { get; set; } = string.Empty;
+        public string InstructorEmail { get; set; } = string.Empty;
         public int LessonsCount { get; set; }
         public int EnrolledCount { get; set; }
         public TimeSpan EstimatedDuration { get; set; }

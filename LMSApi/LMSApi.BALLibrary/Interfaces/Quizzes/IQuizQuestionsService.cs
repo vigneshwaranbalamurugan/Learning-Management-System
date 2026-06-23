@@ -9,6 +9,6 @@ namespace LMSApi.BALLibrary.Interfaces
         Task<QuizQuestionResponse> UpdateQuestionAsync(int id, UpdateQuizQuestionRequest request);
         Task DeleteQuestionAsync(int id);
         Task<BulkUploadResult> BulkUploadQuestionsAsync(int quizId, Stream excelStream);
-
+        Task ReorderQuestionsAsync(int quizId, BulkReorderQuestionsRequest request);
     }
 }

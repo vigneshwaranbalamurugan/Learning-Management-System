@@ -1,0 +1,153 @@
+<div class="space-y-6 max-w-3xl mx-auto pb-10" *ngIf="!isLoading(); else loadingTpl">
+  <div *ngIf="course">
+  <div class="flex items-center justify-between border-b border-gray-100 pb-4">
+    <div>
+      <app-button 
+        (click)="navigateBack()" 
+        variant="outline" 
+        customClass="!p-0 border-none !w-auto text-xs text-indigo-600 hover:underline !h-auto flex items-center gap-1">
+        ← Back to Assignments
+      </app-button>
+      <h3 class="text-xl font-bold text-slate-900">{{ isEditMode ? 'Edit Assignment' : 'Create New Assignment' }}</h3>
+      <p class="text-sm text-gray-500 mt-0.5">Configure details, marks, and instructions for this assignment.</p>
+    </div>
+  </div>
+
+  <div class="bg-white rounded-2xl border border-gray-150 p-6 shadow-sm space-y-6">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      
+      <!-- Left Column -->
+      <div class="space-y-5">
+        <div>
+          <app-dropdown
+            label="Select Section"
+            [value]="sectionIdStr"
+            (valueChange)="setSectionIdStr($event)"
+            [options]="sectionOptions"
+            placeholder="Select Section" />
+        </div>
+        
+        <div>
+          <app-form-input
+            label="Assignment Title"
+            [value]="title"
+            (valueChange)="title = $event"
+            placeholder="e.g. Final Capstone Project" />
+        </div>
+
+        <div>
+          <label class="text-sm font-bold text-slate-700 block mb-1">Description (Optional)</label>
+          <textarea [(ngModel)]="description" placeholder="Provide an overview of the project..." rows="3" class="w-full border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#1C1C7B] transition"></textarea>
+        </div>
+
+        <div>
+          <label class="text-sm font-bold text-slate-700 block mb-1">Instructions (Optional)</label>
+          <textarea [(ngModel)]="instructions" placeholder="Detailed submission guidelines and criteria..." rows="4" class="w-full border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#1C1C7B] transition"></textarea>
+        </div>
+
+        <div class="flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-gray-100">
+          <input type="checkbox" [(ngModel)]="isCompulsory" id="isCompulsory" class="w-4 h-4 text-[#1C1C7B] rounded focus:ring-[#1C1C7B] cursor-pointer" />
+          <label for="isCompulsory" class="text-sm font-bold text-slate-700 cursor-pointer">This is a Compulsory Assignment</label>
+        </div>
+      </div>
+
+      <!-- Right Column -->
+      <div class="space-y-5">
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <app-form-input
+              label="Total Marks"
+              type="number"
+              [value]="totalMarksStr"
+              (valueChange)="totalMarksStr = $event" />
+          </div>
+          <div>
+            <app-form-input
+              label="Passing Marks"
+              type="number"
+              [value]="passingMarksStr"
+              (valueChange)="passingMarksStr = $event" />
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <app-form-input
+              label="Deadline (Days)"
+              type="number"
+              [value]="deadlineInDaysStr"
+              (valueChange)="deadlineInDaysStr = $event" />
+          </div>
+          <div>
+            <app-form-input
+              label="Max Submissions"
+              type="number"
+              [value]="maxSubmissionsStr"
+              (valueChange)="maxSubmissionsStr = $event" />
+          </div>
+        </div>
+
+        <div class="flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-gray-100">
+          <input type="checkbox" [(ngModel)]="isLateSubmissionAllowed" id="isLateAllowed" class="w-4 h-4 text-[#1C1C7B] rounded focus:ring-[#1C1C7B] cursor-pointer" />
+          <label for="isLateAllowed" class="text-sm font-bold text-slate-700 cursor-pointer">Allow Late Submissions</label>
+        </div>
+
+        <div class="border-t border-gray-100 pt-5 mt-5">
+          <div class="mb-3">
+            <app-dropdown
+              label="Attachment Type"
+              [value]="attachmentTypeStr"
+              (valueChange)="setAttachmentTypeStr($event)"
+              [options]="attachmentTypeOptions"
+              placeholder="Select Attachment Type" />
+          </div>
+
+          <!-- Attachment Details -->
+          <div *ngIf="attachmentType == 1" class="p-4 bg-indigo-50/50 rounded-xl border border-indigo-100/50">
+            <div class="flex justify-between items-center mb-2">
+              <label class="text-sm font-bold text-slate-700 block">Upload Reference File</label>
+              <span class="text-[10px] font-bold text-indigo-700 bg-white px-2 py-0.5 rounded-md border border-indigo-100 uppercase tracking-wider">Max Size: {{ maxFileSizeMB }}MB</span>
+            </div>
+            <input type="file" (change)="onFileSelected($event)" class="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-white file:text-[#1C1C7B] file:shadow-sm hover:file:bg-gray-50 cursor-pointer" />
+            <p *ngIf="currentAttachmentPath" class="text-xs text-gray-500 mt-2">Current file attached.</p>
+          </div>
+          
+          <div *ngIf="attachmentType == 2" class="p-4 bg-indigo-50/50 rounded-xl border border-indigo-100/50">
+            <app-form-input
+              label="Attachment URL"
+              [value]="attachmentUrl"
+              (valueChange)="attachmentUrl = $event"
+              placeholder="https://example.com/resource" />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="flex justify-end gap-3 pt-6 border-t border-gray-100 mt-6">
+      <app-button 
+        (click)="navigateBack()" 
+        variant="outline"
+        customClass="!px-5 !py-2.5 !w-auto text-sm font-bold"
+        [disabled]="isSaving()">
+        Cancel
+      </app-button>
+      <app-button 
+        (click)="saveAssignment()" 
+        variant="primary"
+        customClass="!px-5 !py-2.5 !w-auto text-sm font-bold shadow-sm"
+        [loading]="isSaving()"
+        [disabled]="isSaving()">
+        {{ isEditMode ? 'Save Changes' : 'Create Assignment' }}
+      </app-button>
+    </div>
+  </div>
+  </div>
+</div>
+
+<ng-template #loadingTpl>
+  <div class="flex flex-col items-center justify-center py-20">
+    <app-loader></app-loader>
+    <p class="text-sm font-semibold text-gray-500 mt-4">Loading assignment details...</p>
+  </div>
+</ng-template>

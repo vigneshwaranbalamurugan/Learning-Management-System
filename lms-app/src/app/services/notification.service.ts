@@ -18,8 +18,9 @@ export class NotificationService {
    * The backend currently returns all records; we slice client-side for
    * smooth infinite scroll while keeping the REST contract unchanged.
    */
-  getNotifications(page = 1): Observable<Notification[]> {
-    return this.http.get<Notification[]>(this.baseUrl);
+  getNotifications(page = 1, pageSize = 10): Observable<Notification[]> {
+    const params = new HttpParams().set('page', page).set('pageSize', pageSize);
+    return this.http.get<Notification[]>(this.baseUrl, { params });
   }
 
   getUnreadCount(): Observable<number> {
@@ -38,12 +39,5 @@ export class NotificationService {
     return this.http.delete<void>(`${this.baseUrl}/${id}`);
   }
 
-  /** Client-side paging helper — returns a slice of the full list. */
-  static pageSlice(all: Notification[], page: number): { items: Notification[]; hasMore: boolean } {
-    const end = page * PAGE_SIZE;
-    return {
-      items: all.slice(0, end),
-      hasMore: all.length > end,
-    };
-  }
+  /** Client-side paging helper removed as we use server-side pagination now. */
 }

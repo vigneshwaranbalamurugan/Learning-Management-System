@@ -14,6 +14,69 @@ export const instructorRoutes: Routes = [
         loadComponent: () => import('@pages/instructor-dashboard/instructor-dashboard').then(m => m.InstructorDashboard)
       },
       {
+        path: 'courses',
+        loadComponent: () => import('@pages/instructor-courses/instructor-courses').then(m => m.InstructorCourses)
+      },
+      {
+        path: 'preview/:slug',
+        loadComponent: () => import('@pages/course-detail/course-detail').then(m => m.CourseDetail)
+      },
+      {
+        path: 'courses/:slug',
+        loadComponent: () => import('@pages/instructor-course-layout/instructor-course-layout').then(m => m.InstructorCourseLayout),
+        children: [
+          { path: '', redirectTo: 'overview', pathMatch: 'full' },
+          {
+            path: 'overview',
+            loadComponent: () => import('@pages/instructor-course-overview/instructor-course-overview').then(m => m.InstructorCourseOverview)
+          },
+          {
+            path: 'builder',
+            loadComponent: () => import('@pages/instructor-course-builder/instructor-course-builder').then(m => m.InstructorCourseBuilder)
+          },
+          {
+            path: 'quizzes',
+            loadComponent: () => import('@pages/instructor-course-quizzes/instructor-course-quizzes').then(m => m.InstructorCourseQuizzes)
+          },
+          {
+            path: 'assignments',
+            loadComponent: () => import('@pages/instructor-course-assignments/instructor-course-assignments').then(m => m.InstructorCourseAssignments)
+          },
+          {
+            path: 'assignments/new',
+            loadComponent: () => import('@pages/instructor-assignment-form/instructor-assignment-form').then(m => m.InstructorAssignmentForm)
+          },
+          {
+            path: 'assignments/:assignmentId/edit',
+            loadComponent: () => import('@pages/instructor-assignment-form/instructor-assignment-form').then(m => m.InstructorAssignmentForm)
+          },
+          {
+            path: 'sections/:sectionId/lessons/new',
+            loadComponent: () => import('@pages/instructor-lesson-form/instructor-lesson-form').then(m => m.InstructorLessonForm)
+          },
+          {
+            path: 'lessons/:lessonId/edit',
+            loadComponent: () => import('@pages/instructor-lesson-form/instructor-lesson-form').then(m => m.InstructorLessonForm)
+          },
+          {
+            path: 'lessons/:lessonId/detail',
+            loadComponent: () => import('@pages/instructor-lesson-detail/instructor-lesson-detail').then(m => m.InstructorLessonDetail)
+          },
+          {
+            path: 'quizzes/:quizId/questions',
+            loadComponent: () => import('@pages/instructor-quiz-questions/instructor-quiz-questions').then(m => m.InstructorQuizQuestions)
+          },
+          {
+            path: 'analytics',
+            loadComponent: () => import('@pages/instructor-course-analytics/instructor-course-analytics').then(m => m.InstructorCourseAnalytics)
+          },
+          {
+            path: 'learners',
+            loadComponent: () => import('@pages/instructor-course-learners/instructor-course-learners').then(m => m.InstructorCourseLearners)
+          }
+        ]
+      },
+      {
         path: 'assignments',
         loadComponent: () => import('@pages/instructor-assignments/instructor-assignments').then(m => m.InstructorAssignments)
       },

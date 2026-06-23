@@ -30,7 +30,7 @@
   </div>
 
   <!-- ── Body / Scroll ───────────────────────────────────────────── -->
-  <div class="notif-scroll overflow-y-auto flex-1 py-2">
+  <div class="notif-scroll overflow-y-auto flex-1 py-2" (scroll)="onScroll($event)">
 
     <!-- Loading skeleton -->
     @if (isLoading()) {
@@ -135,10 +135,7 @@
         @if (isLoadingMore()) {
           <div class="notif-spinner w-5 h-5 border-2 border-slate-200 border-t-indigo-500 rounded-full"></div>
         } @else if (hasMore()) {
-          <button class="text-xs font-semibold text-indigo-500 bg-transparent border-none cursor-pointer px-4 py-1.5 rounded-md hover:bg-indigo-50 transition-colors"
-                  (click)="loadMore()">
-            Load more
-          </button>
+          <span class="text-xs text-slate-400">Scroll for more...</span>
         } @else {
           <span class="text-xs text-slate-400">You're all caught up ✓</span>
         }

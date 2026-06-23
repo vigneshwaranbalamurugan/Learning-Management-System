@@ -125,12 +125,41 @@ namespace LMSApi.BALLibrary.Services
             if (request.Explanation != null) question.Explanation = request.Explanation;
             if (request.SortOrder.HasValue) question.SortOrder = request.SortOrder.Value;
 
-            // If options provided, replace all existing options
+            // If options provided, replace/update all existing options in-place to avoid breaking FK constraints with QuizAnswers
             if (request.Options != null && request.Options.Count > 0)
             {
                 ValidateQuestionOptions(request.QuestionType ?? question.QuestionType, request.Options);
-                await _optionRepository.DeleteRangeAsync(question.Answers);
-                question.Answers = request.Options.Select(o => _mapper.Map<QuizOptions>(o)).ToList();
+
+                var existingOptions = question.Answers.OrderBy(a => a.Id).ToList();
+                var newOptions = request.Options;
+
+                int minCount = Math.Min(existingOptions.Count, newOptions.Count);
+                for (int i = 0; i < minCount; i++)
+                {
+                    existingOptions[i].OptionText = newOptions[i].OptionText;
+                    existingOptions[i].IsCorrect = newOptions[i].IsCorrect;
+                }
+
+                if (newOptions.Count > existingOptions.Count)
+                {
+                    // Add new options
+                    for (int i = existingOptions.Count; i < newOptions.Count; i++)
+                    {
+                        var opt = _mapper.Map<QuizOptions>(newOptions[i]);
+                        opt.QuestionId = question.Id;
+                        question.Answers.Add(opt);
+                    }
+                }
+                else if (existingOptions.Count > newOptions.Count)
+                {
+                    // Delete extra options
+                    var optionsToDelete = existingOptions.Skip(newOptions.Count).ToList();
+                    await _optionRepository.DeleteRangeAsync(optionsToDelete);
+                    foreach (var opt in optionsToDelete)
+                    {
+                        question.Answers.Remove(opt);
+                    }
+                }
             }
 
             await _questionRepository.UpdateAsync(question);
@@ -172,6 +201,36 @@ namespace LMSApi.BALLibrary.Services
                     _logger.LogWarning("Quiz unpublished due to validation failure after question deletion: QuizId={QuizId}", quizId);
                 }
             }
+        }
+
+        public async Task ReorderQuestionsAsync(int quizId, BulkReorderQuestionsRequest request)
+        {
+            if (request == null || request.Items == null || !request.Items.Any())
+                throw new ArgumentException("Reorder items cannot be empty.");
+
+            var quiz = await _quizRepository.GetQuizWithQuestionsAsync(quizId)
+                ?? throw new KeyNotFoundException($"Quiz with id '{quizId}' not found.");
+
+            // Phase 1: Shift all affected questions to a very high temporary sort order
+            // to avoid unique constraint collisions during the update sequence.
+            int tempBase = 500000;
+            foreach (var (item, idx) in request.Items.Select((it, i) => (it, i)))
+            {
+                var question = quiz.Questions.FirstOrDefault(q => q.Id == item.QuestionId)
+                    ?? throw new KeyNotFoundException($"Question with id '{item.QuestionId}' not found in quiz '{quizId}'.");
+                question.SortOrder = tempBase + idx;
+                await _questionRepository.UpdateAsync(question);
+            }
+
+            // Phase 2: Assign the real final sort orders
+            foreach (var item in request.Items)
+            {
+                var question = quiz.Questions.First(q => q.Id == item.QuestionId);
+                question.SortOrder = item.SortOrder;
+                await _questionRepository.UpdateAsync(question);
+            }
+
+            _logger.LogInformation("Questions reordered for QuizId={QuizId}, Count={Count}", quizId, request.Items.Count);
         }
 
         public async Task<BulkUploadResult> BulkUploadQuestionsAsync(int quizId, Stream excelStream)

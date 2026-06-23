@@ -59,3 +59,19 @@ export interface QuizAttemptDetailResponse {
   questions: QuizQuestionResponse[];
   answers: QuizAnswerResponse[];
 }
+
+export interface QuizResponse {
+  id: number;
+  courseSectionId: number;
+  title: string;
+  description?: string;
+  timeLimit: string; // TimeSpan formatted
+  totalMarks: number;
+  passingPercentage: number;
+  maxAttempts: number;
+  order: number;
+  status: number | string;
+  deadlineInDays: number;
+  deadlineDate?: string;
+  questionCount: number;
+}

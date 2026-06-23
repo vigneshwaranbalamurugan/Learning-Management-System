@@ -2,6 +2,7 @@ import { Component, output, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { SidebarService } from '@services/sidebar.service';
+import { AuthService } from '@services/auth.service';
 
 interface MenuItem {
   label: string;
@@ -19,6 +20,7 @@ interface MenuItem {
 export class Sidebar {
   // ── Injected service — single source of truth for sidebar state ──────────
   protected sidebar = inject(SidebarService);
+  private authService = inject(AuthService);
 
   // Logout still needs to be emitted up to DashboardLayout (which owns the modal)
   logout = output<void>();
@@ -26,7 +28,7 @@ export class Sidebar {
   private router = inject(Router);
 
   protected get userRole(): string {
-    return localStorage.getItem('user_role') || 'learner';
+    return this.authService.userRole() || 'learner';
   }
 
   protected menuItems: MenuItem[] = [
@@ -59,7 +61,8 @@ export class Sidebar {
     {
       label: 'Certificates',
       route: 'certificates',
-      iconPath: 'M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z'
+      iconPath: 'M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z',
+      hideForRole: 'instructor'
     },
     {
       label: 'Progress',
@@ -78,7 +81,8 @@ export class Sidebar {
   }
 
   protected isRouteActive(itemRoute: string): boolean {
-    return this.router.url === this.getAbsoluteRoute(itemRoute);
+    const absRoute = this.getAbsoluteRoute(itemRoute);
+    return this.router.url === absRoute || this.router.url.startsWith(`${absRoute}/`);
   }
 
   /** Close mobile drawer when any nav link is tapped */

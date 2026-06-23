@@ -229,12 +229,12 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-app.Use(async (context, next) =>
-{
-    await Task.Delay(3000);
+// app.Use(async (context, next) =>
+// {
+//     await Task.Delay(3000);
 
-    await next();
-});
+//     await next();
+// });
 
 // ── Exception handling must be FIRST so it wraps every middleware below ──
 app.UseMiddleware<ExceptionHandlingMiddleware>();

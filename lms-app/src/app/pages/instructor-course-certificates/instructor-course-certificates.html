@@ -1,0 +1,76 @@
+<div class="space-y-6" *ngIf="course">
+  <div class="flex items-center justify-between border-b border-gray-100 pb-4">
+    <div>
+      <h3 class="text-base font-bold text-slate-900">Certificates Configuration</h3>
+      <p class="text-xs text-gray-500 mt-0.5">Toggle student completion certificates and design completion templates.</p>
+    </div>
+    <button 
+      (click)="configureCertificate()" 
+      class="px-4 py-2 rounded-xl bg-[#1C1C7B] hover:bg-[#15155E] text-white text-xs font-semibold shadow-sm transition">
+      Configure Template
+    </button>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <!-- Configuration Summary -->
+    <div class="lg:col-span-2 space-y-4">
+      <div class="border border-gray-200 rounded-xl p-5 bg-white space-y-3 shadow-xs">
+        <h4 class="text-sm font-bold text-slate-800">Certificate Options</h4>
+        <div class="flex items-center justify-between py-2 border-b border-gray-50">
+          <div class="flex flex-col">
+            <span class="text-xs font-semibold text-slate-700">Issue on Completion</span>
+            <span class="text-[10px] text-gray-400 mt-0.5">Automatically send a digital certificate when a student finishes 100% of lessons.</span>
+          </div>
+          <span class="bg-emerald-50 text-emerald-700 text-[10px] font-bold px-2.5 py-1 rounded-lg">
+            {{ course.hasCertificate ? 'ENABLED' : 'DISABLED' }}
+          </span>
+        </div>
+        <div class="flex items-center justify-between py-2">
+          <div class="flex flex-col">
+            <span class="text-xs font-semibold text-slate-700">Verify URL QR Code</span>
+            <span class="text-[10px] text-gray-400 mt-0.5">Print a verification QR code linking back to CourseHub validation page.</span>
+          </div>
+          <span class="bg-emerald-50 text-emerald-700 text-[10px] font-bold px-2.5 py-1 rounded-lg">ENABLED</span>
+        </div>
+      </div>
+
+      <!-- Graduates list -->
+      <div class="border border-gray-200 rounded-xl p-5 bg-white space-y-4 shadow-xs">
+        <h4 class="text-sm font-bold text-slate-800">Graduate Learners (Eligible)</h4>
+        <div class="divide-y divide-gray-100">
+          <div class="py-3 flex items-center justify-between">
+            <div class="flex flex-col">
+              <span class="text-xs font-bold text-slate-700">Rohan Dev</span>
+              <span class="text-[10px] text-gray-400">Completed on June 01, 2026</span>
+            </div>
+            <button 
+              (click)="issueCertificate('Rohan Dev')"
+              class="px-3.5 py-1.5 rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100 text-xs font-semibold transition">
+              Issue Certificate
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Certificate preview card -->
+    <div class="border border-gray-200 rounded-xl p-5 bg-slate-50/50 flex flex-col justify-between items-center text-center shadow-xs">
+      <span class="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-4">Template Preview</span>
+      
+      <!-- Tiny Certificate Art -->
+      <div class="w-full border-4 border-double border-indigo-250 p-4 bg-white rounded-lg shadow-sm flex flex-col items-center space-y-2">
+        <span class="text-[8px] font-extrabold text-[#1C1C7B] tracking-widest uppercase">Certificate of Completion</span>
+        <span class="text-[6px] text-gray-400">THIS IS PROUDLY PRESENTED TO</span>
+        <span class="text-[10px] font-black text-slate-800 border-b border-gray-200 pb-1 w-2/3">Student Name</span>
+        <span class="text-[5px] text-gray-400">FOR SUCCESSFULLY COMPLETING THE ONLINE COURSE</span>
+        <span class="text-[8px] font-bold text-slate-700 italic line-clamp-1">{{ course.title }}</span>
+      </div>
+
+      <button 
+        (click)="configureCertificate()"
+        class="mt-6 w-full py-2.5 rounded-xl border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 text-xs font-bold transition">
+        Edit Layout Template
+      </button>
+    </div>
+  </div>
+</div>

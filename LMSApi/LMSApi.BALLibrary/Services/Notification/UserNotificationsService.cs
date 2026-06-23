@@ -27,9 +27,9 @@ namespace LMSApi.BALLibrary.Services
             _logger = logger;
         }
 
-        public async Task<IEnumerable<NotificationResponse>> GetUserNotificationsAsync(int userId)
+        public async Task<IEnumerable<NotificationResponse>> GetUserNotificationsAsync(int userId, int skip, int take)
         {
-            var notifications = await _notificationsRepository.GetByUserIdAsync(userId);
+            var notifications = await _notificationsRepository.GetByUserIdAsync(userId, skip, take);
             return _mapper.Map<IEnumerable<NotificationResponse>>(notifications);
         }
 
@@ -111,7 +111,7 @@ namespace LMSApi.BALLibrary.Services
             var unreadCount = await _notificationsRepository.GetUnreadCountByUserIdAsync(userId);
             await _realtimeService.SendUnreadCountAsync(userId, unreadCount);
 
-            _logger?.LogInformation("Real-time notification pushed to user {UserId}. Unread count: {Count}", userId, unreadCount);
+            _logger?.LogInformation("Real-time notification pushed successfully to user {UserId}. Unread count: {Count}", userId, unreadCount);
         }
     }
 }

@@ -1,0 +1,76 @@
+<div class="space-y-6" *ngIf="course">
+  <div class="flex items-center justify-between border-b border-gray-100 pb-4">
+    <div>
+      <h3 class="text-base font-bold text-slate-900">Assignments Manager</h3>
+      <p class="text-xs text-gray-500 mt-0.5">Define student projects, specify total marks, and evaluate submissions.</p>
+    </div>
+    <app-button 
+      (click)="openAddAssignment()" 
+      variant="primary"
+      customClass="!px-4 !py-2 !w-auto text-xs font-semibold shadow-sm transition">
+      + Create Assignment
+    </app-button>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <!-- Gather Assignments from Course Sections -->
+    <ng-container *ngFor="let section of course.sections; let i = index">
+      <ng-container *ngFor="let assignment of section.assignments">
+        <div 
+          class="border border-gray-200 rounded-xl p-5 flex flex-col justify-between hover:shadow-xs transition bg-white relative overflow-hidden group">
+          
+          <div class="absolute top-0 left-0 right-0 h-1 bg-[#1C1C7B]"></div>
+          
+          <div class="space-y-2">
+            <span class="text-[9px] text-[#1C1C7B] font-bold uppercase tracking-wider">Section {{ i + 1 }} • Assignment</span>
+            <h4 class="text-sm font-bold text-slate-800 line-clamp-1">{{ assignment.title }}</h4>
+            <p class="text-xs text-gray-500 line-clamp-2" *ngIf="assignment.description">{{ assignment.description }}</p>
+            <div class="grid grid-cols-2 gap-2 pt-2 text-[11px] text-gray-400 font-medium">
+              <span>Total Marks: {{ assignment.totalMarks }}</span>
+              <span>Passing Marks: {{ assignment.passingMarks }}</span>
+              <span>Deadline: {{ assignment.deadlineInDays }} days</span>
+              <span>Section: {{ section.title }}</span>
+            </div>
+          </div>
+
+          <div class="flex items-center justify-between mt-5 pt-3 border-t border-gray-50">
+            <div class="flex gap-2">
+              <app-button 
+                (click)="editAssignment(assignment.id)" 
+                variant="outline"
+                customClass="!px-3.5 !py-1.5 !w-auto text-xs font-semibold transition">
+                Edit Assignment
+              </app-button>
+              <app-button 
+                (click)="confirmDeleteAssignment(assignment.id)" 
+                variant="danger"
+                customClass="!px-3 !py-1.5 !w-auto text-xs font-semibold transition">
+                Delete
+              </app-button>
+            </div>
+          </div>
+
+        </div>
+      </ng-container>
+    </ng-container>
+
+    <!-- If no assignments -->
+    <div 
+      class="col-span-full py-12 border-2 border-dashed border-gray-250 rounded-xl text-center text-xs text-gray-400 bg-slate-50/50"
+      *ngIf="!(course | json).includes('assignments') || course.sections.length === 0">
+      No assignments found inside this course. Create an Assignment by clicking "+ Create Assignment" to see it here.
+    </div>
+  </div>
+
+  <app-confirm-modal
+    [isOpen]="showDeleteModal"
+    title="Delete Assignment"
+    message="Are you sure you want to delete this assignment? This action cannot be undone."
+    confirmText="Delete"
+    cancelText="Cancel"
+    [isDanger]="true"
+    (confirm)="deleteAssignment()"
+    (cancel)="closeDeleteModal()">
+  </app-confirm-modal>
+
+</div>

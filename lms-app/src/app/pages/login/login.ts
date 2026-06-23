@@ -148,8 +148,8 @@ export class Login implements OnInit {
             role = response.role;
           }
 
-          localStorage.setItem('user_role', role);
-          localStorage.setItem('user_email', this.email);
+          const storage = this.rememberMe ? localStorage : sessionStorage;
+          storage.setItem('user_email', this.email);
           this.authService.userRole.set(role);
 
           if (this.rememberMe) {

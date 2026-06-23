@@ -8,6 +8,7 @@ namespace LMSApi.BALLibrary.Interfaces
         Task<PagedCourseResponse> GetPublishedCoursesPagedAsync(
             CourseSearchQuery query, int? currentUserId = null);
         Task<CourseDetailsResponse> GetCourseByIdAsync(int id, int? currentUserId = null, bool isAdmin = false);
+        Task<CourseDetailsResponse> GetCourseBySlugAsync(string slug, int? currentUserId = null, bool isAdmin = false);
         Task<CourseResponse> CreateCourseAsync(
             int instructorId,
             CreateCourseRequest request,

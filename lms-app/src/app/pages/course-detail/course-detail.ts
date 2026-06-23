@@ -1,4 +1,4 @@
-import { Component, OnInit, signal, inject, DestroyRef } from '@angular/core';
+import { Component, OnInit, signal, computed, inject, DestroyRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { DashboardService } from '@services/dashboard.service';
@@ -7,13 +7,17 @@ import {
   CourseDetailResponse,
   EnrollmentResponse
 } from '@models/dashboard';
+import { AuthService } from '@services/auth.service';
 import { untilDestroyed } from '../../rxjs/until-destroyed';
 import { forkJoin } from 'rxjs';
+import { DomSanitizer, SafeResourceUrl, SafeHtml } from '@angular/platform-browser';
+import { marked } from 'marked';
+import { VideoPlayer } from '../../components/video-player/video-player';
 
 @Component({
   selector: 'app-course-detail',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, VideoPlayer],
   templateUrl: './course-detail.html'
 })
 export class CourseDetail implements OnInit {
@@ -22,12 +26,45 @@ export class CourseDetail implements OnInit {
   private route            = inject(ActivatedRoute);
   private router           = inject(Router);
   private destroyRef       = inject(DestroyRef);
+  private authService      = inject(AuthService);
 
   // ── Data ─────────────────────────────────────────────────────────────────
   protected course            = signal<CourseDetailResponse | null>(null);
   protected enrollment        = signal<EnrollmentResponse | null>(null);
   protected isEnrolled        = signal(false);
   protected enrollmentProgress = signal(0);
+  protected isInstructor      = signal(false);
+
+  // ── Preview Modal State ──────────────────────────────────────────────────
+  protected previewUrl     = signal<SafeResourceUrl | null>(null);
+  protected previewContent = signal<SafeHtml | null>(null);
+  protected previewTitle   = signal<string>('');
+  protected previewType    = signal<'video' | 'pdf' | 'article' | 'link' | null>(null);
+  private sanitizer        = inject(DomSanitizer);
+
+  // ── Video Progress Persistence ──────────────────────────────────────────
+  protected currentVideoUrl = signal<string | null>(null);
+  protected currentVideoProgress = signal<number>(0);
+  private videoProgressMap = new Map<string, number>();
+
+  // ── Computed Markdown ──────────────────────────────────────────────────
+  protected descriptionHtml = computed(() => {
+    const c = this.course();
+    if (!c?.description) return null;
+    return this.sanitizer.bypassSecurityTrustHtml(marked.parse(c.description, { async: false }) as string);
+  });
+
+  protected learningOutcomesHtml = computed(() => {
+    const c = this.course();
+    if (!c?.learningOutcomes) return null;
+    return this.sanitizer.bypassSecurityTrustHtml(marked.parse(c.learningOutcomes, { async: false }) as string);
+  });
+
+  protected requirementsHtml = computed(() => {
+    const c = this.course();
+    if (!c?.requirements) return null;
+    return this.sanitizer.bypassSecurityTrustHtml(marked.parse(c.requirements, { async: false }) as string);
+  });
 
   // ── UI State ─────────────────────────────────────────────────────────────
   protected isLoading   = signal(true);
@@ -38,6 +75,10 @@ export class CourseDetail implements OnInit {
   private courseId: number | null = null;
 
   ngOnInit(): void {
+    if (this.authService.userRole() === 'Instructor') {
+      this.isInstructor.set(true);
+    }
+
     // Router state can be read via history.state (Angular router sets it there)
     // getCurrentNavigation() is only valid during the navigation itself, not in ngOnInit
     const historyState = history.state;
@@ -151,7 +192,12 @@ export class CourseDetail implements OnInit {
   }
 
   protected goBack(): void {
-    this.router.navigate(['/learner/explore']);
+    if (this.isInstructor()) {
+      // If there's history we could use location.back(), but just redirect to instructor dashboard
+      this.router.navigate(['/instructor/dashboard']);
+    } else {
+      this.router.navigate(['/learner/explore']);
+    }
   }
 
   protected navigateToCourses(): void {
@@ -159,6 +205,64 @@ export class CourseDetail implements OnInit {
   }
 
   // ── Helpers ───────────────────────────────────────────────────────────────
+
+  protected async openPreview(
+    url: string | undefined, 
+    content: string | undefined, 
+    title: string, 
+    typeValue: string | number
+  ): Promise<void> {
+    const typeStr = this.getLessonTypeName(typeValue).toLowerCase();
+
+    this.previewTitle.set(title);
+    
+    if (typeStr === 'video') {
+      this.currentVideoUrl.set(url || null);
+      const savedTime = url ? (this.videoProgressMap.get(url) || 0) : 0;
+      this.currentVideoProgress.set(savedTime);
+      this.previewUrl.set(url ? this.sanitizer.bypassSecurityTrustResourceUrl(url) : null);
+      this.previewContent.set(null);
+      this.previewType.set('video');
+    } else if (typeStr === 'pdf') {
+      this.previewUrl.set(url ? this.sanitizer.bypassSecurityTrustResourceUrl(url) : null);
+      this.previewContent.set(null);
+      this.previewType.set('pdf');
+    } else if (typeStr === 'article') {
+      this.previewUrl.set(null);
+      if (content) {
+        // Parse markdown content and then sanitize
+        const { marked } = await import('marked');
+        const parsedHtml = await marked.parse(content);
+        this.previewContent.set(this.sanitizer.bypassSecurityTrustHtml(parsedHtml));
+      } else {
+        this.previewContent.set(null);
+      }
+      this.previewType.set('article');
+    } else if (typeStr === 'link') {
+      // Use URL or content string depending on where the link is saved
+      const targetUrl = url || content || '';
+      if (targetUrl) {
+        window.open(targetUrl, '_blank', 'noopener,noreferrer');
+      }
+    }
+  }
+
+  protected closePreview(): void {
+    this.previewUrl.set(null);
+    this.previewContent.set(null);
+    this.previewTitle.set('');
+    this.previewType.set('video');
+    this.currentVideoUrl.set(null);
+    this.currentVideoProgress.set(0);
+  }
+
+  protected onTimeWatchedUpdate(time: number): void {
+    const url = this.currentVideoUrl();
+    if (url) {
+      this.videoProgressMap.set(url, time);
+      this.currentVideoProgress.set(time);
+    }
+  }
 
   protected getLevelName(level: number | string): string {
     switch (Number(level)) {
@@ -190,22 +294,11 @@ export class CourseDetail implements OnInit {
     return s > 0 ? `${s}s` : '';
   }
 
-  protected getLessonTypeIcon(type: number | string): string {
-    switch (String(type).toLowerCase()) {
-      case '0': case 'video':        return '🎬';
-      case '1': case 'article':      return '📄';
-      case '2': case 'pdf':          return '📑';
-      case '3': case 'externallink': return '🔗';
-      case '4': case 'quiz':         return '📝';
-      default:                       return '📖';
-    }
-  }
-
   protected getLessonTypeName(type: number | string): string {
     switch (String(type).toLowerCase()) {
       case '0': case 'video':        return 'Video';
-      case '1': case 'article':      return 'Article';
-      case '2': case 'pdf':          return 'PDF';
+      case '1': case 'pdf':          return 'PDF';
+      case '2': case 'article':      return 'Article';
       case '3': case 'externallink': return 'Link';
       case '4': case 'quiz':         return 'Quiz';
       default:                       return 'Lesson';
@@ -224,6 +317,22 @@ export class CourseDetail implements OnInit {
   protected parseRequirements(raw: string | null | undefined): string[] {
     if (!raw) return [];
     return raw.split(/\n|;/).map(l => l.trim()).filter(l => l.length > 0);
+  }
+
+  protected maskEmail(email: string | undefined): string {
+    if (!email) return '';
+    const parts = email.split('@');
+    if (parts.length !== 2) return email;
+    const name = parts[0];
+    const domain = parts[1];
+    
+    if (name.length <= 3) {
+      return name[0] + '***@' + domain;
+    } else if (name.length <= 5) {
+      return name.substring(0, 2) + '***' + name.substring(name.length - 1) + '@' + domain;
+    } else {
+      return name.substring(0, 3) + '***' + name.substring(name.length - 2) + '@' + domain;
+    }
   }
 
   protected starsArray(rating: number): boolean[] {

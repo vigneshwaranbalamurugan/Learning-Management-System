@@ -82,6 +82,43 @@ namespace LMSApi.API.Controllers
             return Ok(result);
         }
 
+        /// <summary>Get a course with full details (sections + lessons) by slug.</summary>
+        [HttpGet("slug/{slug}")]
+        [EnableRateLimiting("PublicCourseListing")]
+        public async Task<ActionResult<CourseDetailsResponse>> GetBySlug(string slug)
+        {
+            int? userId = null;
+            bool isAdmin = false;
+            if (User.Identity?.IsAuthenticated == true)
+            {
+                try
+                {
+                    userId = User.GetUserId();
+                    isAdmin = User.IsAdmin();
+                }
+                catch (UnauthorizedAccessException)
+                {
+                }
+            }
+            var result = await _courseService.GetCourseBySlugAsync(slug, userId, isAdmin);
+            return Ok(result);
+        }
+
+        /// <summary>Get course details by slug for instructor workspace (enforces ownership).</summary>
+        [Authorize(Roles = "Instructor,Admin")]
+        [HttpGet("instructor/slug/{slug}")]
+        public async Task<ActionResult<CourseDetailsResponse>> GetInstructorCourseBySlug(string slug)
+        {
+            var userId = User.GetUserId();
+            var isAdmin = User.IsAdmin();
+            var result = await _courseService.GetCourseBySlugAsync(slug, userId, isAdmin);
+            
+            // Enforce ownership: Instructor must be the owner of the course
+            await _ownershipService.EnforceCourseOwnershipAsync(result.Id, userId, isAdmin);
+            
+            return Ok(result);
+        }
+
         /// <summary>Get all courses in a specific category.</summary>
         [HttpGet("category/{categoryId:int}")]
         [EnableRateLimiting("PublicCourseListing")]

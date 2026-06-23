@@ -1,3 +1,6 @@
+import { QuizResponse } from './quiz';
+import { AssignmentResponse } from './assignment';
+
 export interface LearnerAnalytics {
   totalEnrolledCourses: number;
   completedCourses: number;
@@ -70,6 +73,7 @@ export interface CourseResponse {
   totalReviews: number;
   // Enriched fields from backend
   instructorName: string;
+  instructorEmail: string;
   lessonsCount: number;
   enrolledCount: number;
   estimatedDuration: string; // TimeSpan serialized as "HH:MM:SS"
@@ -135,6 +139,7 @@ export interface LessonSummary {
   isPreview: boolean;
   status: number | string;         // PublishStatus enum
   contentUrl?: string;             // available for preview lessons
+  content?: string;                // available for article lessons
 }
 
 // CourseSectionDetail mirrors the backend SectionResponse DTO.
@@ -151,6 +156,8 @@ export interface CourseSectionDetail {
   sortOrder: number;
   status: number | string;         // PublishStatus enum
   lessons?: LessonSummary[];       // Optional: populated if backend maps lessons in sections
+  quizzes?: QuizResponse[];
+  assignments?: AssignmentResponse[];
 }
 
 export interface BatchSummary {

@@ -1,7 +1,7 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, of } from 'rxjs';
-import { catchError, tap, finalize } from 'rxjs/operators';
+import { catchError, tap, finalize, shareReplay } from 'rxjs/operators';
 import { Router } from '@angular/router';
 import { environment } from '@environments/environment';
 import { LoginModel } from '@models/auth';
@@ -19,6 +19,20 @@ export class AuthService {
   currentUser = signal<UserProfile | null>(null);
   userRole = signal<string | null>(null);
   isAuthenticating = signal(false);
+  private initAuth$?: Observable<UserProfile | null>;
+
+  constructor() {
+    const cachedProfile = localStorage.getItem('user_profile') || sessionStorage.getItem('user_profile');
+    if (cachedProfile) {
+      try {
+        const profile = JSON.parse(cachedProfile) as UserProfile;
+        this.currentUser.set(profile);
+        this.userRole.set(profile.role || 'Learner');
+      } catch (e) {
+        console.error('Error parsing cached profile:', e);
+      }
+    }
+  }
 
   loginApiCall(credentials: LoginModel): Observable<any> {
     return this.http.post<any>(`${this.baseUrl}/auth/login`, {
@@ -28,22 +42,25 @@ export class AuthService {
   }
 
   initializeAuth(): Observable<UserProfile | null> {
-    const role = localStorage.getItem('user_role');
-    const email = localStorage.getItem('user_email');
+    if (this.initAuth$) return this.initAuth$;
+
+    const email = localStorage.getItem('user_email') || sessionStorage.getItem('user_email');
     
-    if (role && email) {
-      this.userRole.set(role);
+    if (email) {
       this.isAuthenticating.set(true);
-      return this.profileService.getProfile().pipe(
+      this.initAuth$ = this.profileService.getProfile().pipe(
         tap((profile) => {
-          const updatedProfile = { ...profile, email, role };
+          const actualRole = profile.role || 'Learner';
+          const updatedProfile = { ...profile, email, role: actualRole };
           this.currentUser.set(updatedProfile);
-          localStorage.setItem('user_profile', JSON.stringify(updatedProfile));
+          this.userRole.set(actualRole);
+          const storage = localStorage.getItem('user_email') ? localStorage : sessionStorage;
+          storage.setItem('user_profile', JSON.stringify(updatedProfile));
           
           // Auto redirect to appropriate dashboard if on login or root landing page
-          const currentUrl = this.router.url;
-          if (currentUrl === '/' || currentUrl.startsWith('/login')) {
-            this.redirectToDashboard(role);
+          const currentPath = window.location.pathname;
+          if (currentPath === '/' || currentPath.startsWith('/login')) {
+            this.redirectToDashboard(actualRole);
           }
         }),
         catchError((err) => {
@@ -52,8 +69,11 @@ export class AuthService {
         }),
         finalize(() => {
           this.isAuthenticating.set(false);
-        })
+          this.initAuth$ = undefined;
+        }),
+        shareReplay(1)
       );
+      return this.initAuth$;
     }
     return of(null);
   }
@@ -69,9 +89,10 @@ export class AuthService {
   }
 
   clearSession() {
-    localStorage.removeItem('user_role');
     localStorage.removeItem('user_email');
     localStorage.removeItem('user_profile');
+    sessionStorage.removeItem('user_email');
+    sessionStorage.removeItem('user_profile');
     this.currentUser.set(null);
     this.userRole.set(null);
   }

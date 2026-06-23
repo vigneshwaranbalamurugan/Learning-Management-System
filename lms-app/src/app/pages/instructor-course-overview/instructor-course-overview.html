@@ -1,0 +1,200 @@
+<div class="space-y-6" *ngIf="course">
+  <div class="flex flex-col md:flex-row gap-6">
+    <!-- Course Image Cover -->
+    <div class="w-full md:w-80 h-48 bg-slate-900 rounded-xl overflow-hidden shadow-sm shrink-0">
+      <img 
+        [src]="course.thumbnailUrl || '/course-placeholder.jpg'" 
+        alt="Course cover" 
+        class="w-full h-full object-cover" 
+        onerror="this.src='/course-placeholder.jpg'" />
+    </div>
+
+    <!-- Quick Info Cards -->
+    <div class="flex-1 grid grid-cols-2 sm:grid-cols-3 gap-4">
+      <div class="bg-slate-50 border border-slate-100 rounded-xl p-4 flex flex-col justify-between">
+        <span class="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Level</span>
+        <span [class]="'mt-2 text-xs font-bold px-2.5 py-1 rounded-lg self-start ' + getLevelBadgeClass(course.level)">
+          {{ getLevelName(course.level) }}
+        </span>
+      </div>
+
+      <div class="bg-slate-50 border border-slate-100 rounded-xl p-4 flex flex-col justify-between">
+        <span class="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Estimated Duration</span>
+        <span class="mt-2 text-sm font-bold text-slate-800">{{ course.estimatedDuration || 'Self-paced' }}</span>
+      </div>
+
+      <div class="bg-slate-50 border border-slate-100 rounded-xl p-4 flex flex-col justify-between">
+        <span class="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Language</span>
+        <span class="mt-2 text-sm font-bold text-slate-800">{{ course.languageName || 'English' }}</span>
+      </div>
+
+      <div class="bg-slate-50 border border-slate-100 rounded-xl p-4 flex flex-col justify-between">
+        <span class="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Pricing Type</span>
+        <span class="mt-2 text-sm font-bold text-slate-800">{{ course.isPremium ? 'Premium (₹' + course.price + ')' : 'Free Course' }}</span>
+      </div>
+
+      <div class="bg-slate-50 border border-slate-100 rounded-xl p-4 flex flex-col justify-between">
+        <span class="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Status</span>
+        <span class="mt-2 text-sm font-bold text-slate-800">{{ course.status }}</span>
+      </div>
+
+      <div class="bg-slate-50 border border-slate-100 rounded-xl p-4 flex flex-col justify-between">
+        <span class="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Certificates</span>
+        <span class="mt-2 text-sm font-bold text-slate-800">{{ course.hasCertificate ? 'Issued upon completion' : 'No certificate' }}</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="border-t border-gray-100 pt-6 space-y-4 relative">
+    <div class="flex items-center justify-between">
+      <h3 class="text-lg font-bold text-slate-900">Course Overview</h3>
+      <app-button 
+        *ngIf="!isEditMode"
+        (click)="toggleEditMode()" 
+        variant="outline" 
+        customClass="!px-3 !py-1.5 !w-auto text-xs font-semibold">
+        Edit Overview
+      </app-button>
+    </div>
+
+    <!-- Read-Only View -->
+    <div *ngIf="!isEditMode" class="space-y-6">
+      <div>
+        <h4 class="text-base font-bold text-slate-900">Course Description</h4>
+        <div class="prose prose-sm max-w-none mt-2 text-slate-600 prose-headings:text-slate-800 prose-a:text-[#1C1C7B]" [innerHTML]="parsedDescription"></div>
+      </div>
+
+      <div *ngIf="course.requirements">
+        <h4 class="text-base font-bold text-slate-900">Requirements</h4>
+        <div class="prose prose-sm max-w-none mt-2 text-slate-600 prose-headings:text-slate-800 prose-a:text-[#1C1C7B]" [innerHTML]="parsedRequirements"></div>
+      </div>
+
+      <div *ngIf="course.learningOutcomes">
+        <h4 class="text-base font-bold text-slate-900">What Students Will Learn</h4>
+        <div class="prose prose-sm max-w-none mt-2 text-slate-600 prose-headings:text-slate-800 prose-a:text-[#1C1C7B]" [innerHTML]="parsedOutcomes"></div>
+      </div>
+    </div>
+
+    <!-- Edit View -->
+    <div *ngIf="isEditMode" class="space-y-6 bg-slate-50 p-5 rounded-xl border border-slate-200">
+      
+      <!-- Basic Info -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="space-y-1">
+          <label class="text-xs font-bold text-slate-700 block">Course Title</label>
+          <app-form-input [value]="title" (valueChange)="title = $event" placeholder="e.g. Advanced Angular Course"></app-form-input>
+        </div>
+        <div class="space-y-1">
+          <label class="text-xs font-bold text-slate-700 block">Estimated Duration</label>
+          <app-form-input type="text" [value]="estimatedDuration" (valueChange)="estimatedDuration = $event" placeholder="e.g. 10:30:00"></app-form-input>
+        </div>
+      </div>
+
+      <!-- Metadata -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="space-y-1">
+          <label class="text-xs font-bold text-slate-700 block">Category</label>
+          <app-dropdown [value]="categoryIdStr" (valueChange)="categoryIdStr = $event" [options]="categoryOptions" placeholder="Select category..."></app-dropdown>
+        </div>
+        <div class="space-y-1">
+          <label class="text-xs font-bold text-slate-700 block">Language</label>
+          <app-dropdown [value]="languageIdStr" (valueChange)="languageIdStr = $event" [options]="languageOptions" placeholder="Select language..."></app-dropdown>
+        </div>
+        <div class="space-y-1">
+          <label class="text-xs font-bold text-slate-700 block">Level</label>
+          <app-dropdown [value]="levelStr" (valueChange)="levelStr = $event" [options]="levelOptions" placeholder="Select level..."></app-dropdown>
+        </div>
+      </div>
+
+      <!-- Pricing & Thumbnail -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="space-y-1">
+          <label class="text-xs font-bold text-slate-700 block mb-2">Pricing Type</label>
+          <div class="flex items-center gap-4 bg-white p-3 border border-slate-200 rounded-lg">
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input type="radio" name="pricingType" [value]="false" [(ngModel)]="isPremium" class="text-[#1C1C7B] focus:ring-[#1C1C7B]">
+              <span class="text-xs font-medium text-slate-700">Free</span>
+            </label>
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input type="radio" name="pricingType" [value]="true" [(ngModel)]="isPremium" class="text-[#1C1C7B] focus:ring-[#1C1C7B]">
+              <span class="text-xs font-medium text-slate-700">Premium</span>
+            </label>
+            
+            <div *ngIf="isPremium" class="ml-4 flex-1">
+              <app-form-input type="number" [value]="priceStr" (valueChange)="priceStr = $event" placeholder="Price (₹)"></app-form-input>
+            </div>
+          </div>
+        </div>
+
+        <div class="space-y-1">
+          <label class="text-xs font-bold text-slate-700 block">Course Thumbnail</label>
+          <div class="flex items-center gap-4 bg-white p-3 border border-slate-200 rounded-lg">
+            <input type="file" accept="image/*" (change)="onThumbnailSelected($event)" class="text-xs text-slate-600 file:mr-3 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-indigo-50 file:text-[#1C1C7B] hover:file:bg-indigo-100">
+            <div *ngIf="thumbnailPreview" class="w-12 h-12 rounded overflow-hidden border border-slate-100 shrink-0">
+              <img [src]="thumbnailPreview" class="w-full h-full object-cover" alt="Thumbnail Preview" onerror="this.src='/course-placeholder.jpg'">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Description Edit -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div>
+          <label class="text-xs font-bold text-slate-700 block mb-1">Course Description (Markdown supported)</label>
+          <textarea 
+            [(ngModel)]="description" 
+            (ngModelChange)="updateMarkdownPreview()"
+            rows="6" 
+            class="w-full border border-slate-200 rounded-lg p-2.5 text-xs focus:outline-none focus:ring-2 focus:ring-[#1C1C7B]/20 font-mono"></textarea>
+        </div>
+        <div>
+          <label class="text-xs font-bold text-slate-700 block mb-1">Preview</label>
+          <div class="p-3 border border-slate-200 rounded-lg bg-white h-[140px] overflow-y-auto prose prose-sm max-w-none" [innerHTML]="parsedDescription"></div>
+        </div>
+      </div>
+
+      <!-- Requirements Edit -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div>
+          <label class="text-xs font-bold text-slate-700 block mb-1">Requirements (Markdown supported)</label>
+          <textarea 
+            [(ngModel)]="requirements" 
+            (ngModelChange)="updateMarkdownPreview()"
+            rows="6" 
+            class="w-full border border-slate-200 rounded-lg p-2.5 text-xs focus:outline-none focus:ring-2 focus:ring-[#1C1C7B]/20 font-mono"></textarea>
+        </div>
+        <div>
+          <label class="text-xs font-bold text-slate-700 block mb-1">Preview</label>
+          <div class="p-3 border border-slate-200 rounded-lg bg-white h-[140px] overflow-y-auto prose prose-sm max-w-none" [innerHTML]="parsedRequirements"></div>
+        </div>
+      </div>
+
+      <!-- Outcomes Edit -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div>
+          <label class="text-xs font-bold text-slate-700 block mb-1">What Students Will Learn (Markdown supported)</label>
+          <textarea 
+            [(ngModel)]="learningOutcomes" 
+            (ngModelChange)="updateMarkdownPreview()"
+            rows="6" 
+            class="w-full border border-slate-200 rounded-lg p-2.5 text-xs focus:outline-none focus:ring-2 focus:ring-[#1C1C7B]/20 font-mono"></textarea>
+        </div>
+        <div>
+          <label class="text-xs font-bold text-slate-700 block mb-1">Preview</label>
+          <div class="p-3 border border-slate-200 rounded-lg bg-white h-[140px] overflow-y-auto prose prose-sm max-w-none" [innerHTML]="parsedOutcomes"></div>
+        </div>
+      </div>
+
+      <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-200">
+        <app-button (click)="cancelEdit()" variant="outline" customClass="!px-4 !py-2 text-xs font-semibold">Cancel</app-button>
+        <app-button 
+          (click)="saveChanges()" 
+          variant="primary" 
+          [loading]="isSaving"
+          customClass="!px-4 !py-2 text-xs font-semibold">
+          Save Changes
+        </app-button>
+      </div>
+    </div>
+  </div>
+</div>

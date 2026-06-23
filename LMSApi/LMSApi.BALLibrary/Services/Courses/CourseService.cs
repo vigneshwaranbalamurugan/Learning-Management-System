@@ -122,6 +122,7 @@ namespace LMSApi.BALLibrary.Services
             }
 
             var response = _mapper.Map<CourseDetailsResponse>(course);
+            response.EnrolledCount = course.Enrollments?.Count ?? 0;
 
             var stats = await _courseRepository.GetCourseRatingStatsAsync(id);
             response.AverageRating = stats.AverageRating;
@@ -130,6 +131,45 @@ namespace LMSApi.BALLibrary.Services
             if (currentUserId.HasValue)
             {
                 response.IsWishlisted = await _wishListRepository.CheckExistsAsync(currentUserId.Value, id);
+            }
+
+            return response;
+        }
+
+        public async Task<CourseDetailsResponse> GetCourseBySlugAsync(string slug, int? currentUserId = null, bool isAdmin = false)
+        {
+            var course = await _courseRepository.GetCourseBySlugWithDetailsAsync(slug)
+                ?? throw new KeyNotFoundException($"Course with slug '{slug}' not found.");
+
+            if (currentUserId == null || (course.InstructorId != currentUserId && !isAdmin))
+            {
+                course.Sections = course.Sections
+                    .Where(s => s.Status == PublishStatus.Published)
+                    .Select(s =>
+                    {
+                        s.Lessons = s.Lessons
+                            .Where(l => l.Status == PublishStatus.Published)
+                            .Select(l =>
+                            {
+                                l.Resources = l.Resources.Where(r => r.Status == PublishStatus.Published).ToList();
+                                return l;
+                            }).ToList();
+                        s.Quizzes = s.Quizzes.Where(q => q.Status == PublishStatus.Published).ToList();
+                        s.Assignments = s.Assignments.Where(a => a.Status == PublishStatus.Published).ToList();
+                        return s;
+                    }).ToList();
+            }
+
+            var response = _mapper.Map<CourseDetailsResponse>(course);
+            response.EnrolledCount = course.Enrollments?.Count ?? 0;
+
+            var stats = await _courseRepository.GetCourseRatingStatsAsync(course.Id);
+            response.AverageRating = stats.AverageRating;
+            response.TotalReviews = stats.TotalReviews;
+
+            if (currentUserId.HasValue)
+            {
+                response.IsWishlisted = await _wishListRepository.CheckExistsAsync(currentUserId.Value, course.Id);
             }
 
             return response;
@@ -307,12 +347,32 @@ namespace LMSApi.BALLibrary.Services
             }
             else
             {
-                var course = await _courseRepository.GetByIdAsync(id);
+                var course = await _courseRepository.GetCourseWithDetailsAsync(id)
+                    ?? throw new KeyNotFoundException($"Course with id '{id}' not found.");
 
                 if (course.Status != CourseStatus.Published && course.Status != CourseStatus.PendingApproval)
                     throw new InvalidOperationException($"Course with id '{id}' is not published or pending approval.");
 
                 course.Status = CourseStatus.Draft;
+
+                if (course.CourseAccessType == CourseAccessType.SelfPaced)
+                {
+                    foreach (var section in course.Sections)
+                    {
+                        section.Status = PublishStatus.Draft;
+                        foreach (var lesson in section.Lessons)
+                        {
+                            lesson.Status = PublishStatus.Draft;
+                            foreach (var resource in lesson.Resources)
+                            {
+                                resource.Status = PublishStatus.Draft;
+                            }
+                        }
+                        foreach (var quiz in section.Quizzes) quiz.Status = PublishStatus.Draft;
+                        foreach (var assignment in section.Assignments) assignment.Status = PublishStatus.Draft;
+                    }
+                }
+
                 await _courseRepository.UpdateAsync(course);
 
                 _logger.LogInformation("Course unpublished/cancelled: Id={Id}", id);

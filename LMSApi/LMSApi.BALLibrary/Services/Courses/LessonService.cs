@@ -182,6 +182,22 @@ namespace LMSApi.BALLibrary.Services
             var section = await _sectionRepository.GetByIdAsync(lesson.CourseSectionId);
             var course = await _courseRepository.GetByIdAsync(section.CourseId);
 
+            if (request.CourseSectionId.HasValue && request.CourseSectionId.Value != lesson.CourseSectionId)
+            {
+                var newSection = await _sectionRepository.GetByIdAsync(request.CourseSectionId.Value);
+                if (newSection == null || newSection.CourseId != course.Id)
+                {
+                    throw new InvalidOperationException("Invalid target section. The section must belong to the same course.");
+                }
+                lesson.CourseSectionId = request.CourseSectionId.Value;
+                
+                if (!request.SortOrder.HasValue)
+                {
+                    var existingLessons = await _lessonRepository.GetLessonsBySectionAsync(newSection.Id);
+                    lesson.SortOrder = existingLessons.Any() ? existingLessons.Max(l => l.SortOrder) + 1 : 1;
+                }
+            }
+
             if (request.Title != null)
             {
                 if (string.IsNullOrWhiteSpace(request.Title))

@@ -43,6 +43,14 @@ export class DashboardService {
     return this.http.get<CourseResponse[]>(`${this.baseUrl}/Courses/my-courses`);
   }
 
+  publishCourse(courseId: number, publish: boolean): Observable<CourseResponse> {
+    return this.http.patch<CourseResponse>(`${this.baseUrl}/Courses/${courseId}/publish`, { publish });
+  }
+
+  deleteCourse(courseId: number): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}/Courses/${courseId}`);
+  }
+
   getAllCourses(query: CourseSearchQuery): Observable<PagedCourseResponse> {
     let params = new HttpParams();
     if (query.categoryIds)      params = params.set('categoryIds', query.categoryIds);
@@ -75,6 +83,18 @@ export class DashboardService {
 
   getCourseById(courseId: number): Observable<CourseDetailResponse> {
     return this.http.get<CourseDetailResponse>(`${this.baseUrl}/Courses/${courseId}`);
+  }
+
+  getCourseBySlug(slug: string): Observable<CourseDetailResponse> {
+    return this.http.get<CourseDetailResponse>(`${this.baseUrl}/Courses/slug/${slug}`);
+  }
+
+  getInstructorCourseBySlug(slug: string): Observable<CourseDetailResponse> {
+    return this.http.get<CourseDetailResponse>(`${this.baseUrl}/Courses/instructor/slug/${slug}`);
+  }
+
+  updateCourse(courseId: number, formData: FormData): Observable<CourseResponse> {
+    return this.http.put<CourseResponse>(`${this.baseUrl}/Courses/${courseId}`, formData);
   }
 
   // ── Reviews ───────────────────────────────────────────────────────────────
@@ -135,5 +155,110 @@ export class DashboardService {
 
   getAssignmentStatus(assignmentId: number): Observable<any> {
     return this.http.get<any>(`${this.baseUrl}/AssignmentSubmissions/assignment/${assignmentId}/status`);
+  }
+
+  // ── Course Builder (Sections & Lessons) ───────────────────────────────────
+
+  createSection(data: { courseId: number; title: string; description?: string; estimatedDuration: string; sortOrder?: number }): Observable<any> {
+    return this.http.post<any>(`${this.baseUrl}/CourseSections`, data);
+  }
+
+  updateSection(id: number, data: { title?: string; description?: string; estimatedDuration?: string; sortOrder?: number; status?: number }): Observable<any> {
+    return this.http.put<any>(`${this.baseUrl}/CourseSections/${id}`, data);
+  }
+
+  deleteSection(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}/CourseSections/${id}`);
+  }
+
+  getLesson(id: number): Observable<any> {
+    return this.http.get<any>(`${this.baseUrl}/Lessons/${id}`);
+  }
+
+  createLesson(formData: FormData): Observable<any> {
+    return this.http.post<any>(`${this.baseUrl}/Lessons`, formData);
+  }
+
+  updateLesson(id: number, formData: FormData): Observable<any> {
+    return this.http.put<any>(`${this.baseUrl}/Lessons/${id}`, formData);
+  }
+
+  deleteLesson(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}/Lessons/${id}`);
+  }
+
+  getLessonUploadLimits(): Observable<{ videoMaxFileSizeMB: number, pdfMaxFileSizeMB: number }> {
+    return this.http.get<{ videoMaxFileSizeMB: number, pdfMaxFileSizeMB: number }>(`${this.baseUrl}/Lessons/upload-limits`);
+  }
+
+  // ── Quizzes ───────────────────────────────────────────────────────────────
+
+  getQuiz(id: number): Observable<any> {
+    return this.http.get<any>(`${this.baseUrl}/Quizzes/${id}`);
+  }
+
+  createQuiz(data: any): Observable<any> {
+    return this.http.post<any>(`${this.baseUrl}/Quizzes`, data);
+  }
+
+  updateQuiz(id: number, data: any): Observable<any> {
+    return this.http.put<any>(`${this.baseUrl}/Quizzes/${id}`, data);
+  }
+
+  deleteQuiz(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}/Quizzes/${id}`);
+  }
+
+  // ── Quiz Questions ────────────────────────────────────────────────────────
+
+  addQuizQuestion(quizId: number, data: any): Observable<any> {
+    return this.http.post<any>(`${this.baseUrl}/QuizQuestions/quiz/${quizId}`, data);
+  }
+
+  updateQuizQuestion(questionId: number, data: any): Observable<any> {
+    return this.http.put<any>(`${this.baseUrl}/QuizQuestions/${questionId}`, data);
+  }
+
+  deleteQuizQuestion(questionId: number): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}/QuizQuestions/${questionId}`);
+  }
+
+  reorderQuizQuestions(quizId: number, items: { questionId: number; sortOrder: number }[]): Observable<void> {
+    return this.http.post<void>(`${this.baseUrl}/QuizQuestions/quiz/${quizId}/reorder`, { items });
+  }
+
+  // ── Reordering ────────────────────────────────────────────────────────────
+
+  reorderSections(sectionOrders: { sectionId: number; sortOrder: number }[]): Observable<void> {
+    return this.http.put<void>(`${this.baseUrl}/CourseSections/reorder`, { sectionOrders });
+  }
+  reorderLessons(lessonOrders: { lessonId: number; sortOrder: number }[]): Observable<void> {
+    return this.http.put<void>(`${this.baseUrl}/Lessons/reorder`, { lessonOrders });
+  }
+
+  // ── Assignments ───────────────────────────────────────────────────────────
+
+  getAssignment(id: number): Observable<any> {
+    return this.http.get<any>(`${this.baseUrl}/Assignments/${id}`);
+  }
+
+  getAssignmentUploadLimits(): Observable<{ maxFileSizeMB: number }> {
+    return this.http.get<{ maxFileSizeMB: number }>(`${this.baseUrl}/Assignments/upload-limits`);
+  }
+
+  createAssignment(formData: FormData): Observable<any> {
+    return this.http.post<any>(`${this.baseUrl}/Assignments`, formData);
+  }
+
+  updateAssignment(id: number, formData: FormData): Observable<any> {
+    return this.http.put<any>(`${this.baseUrl}/Assignments/${id}`, formData);
+  }
+
+  deleteAssignment(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}/Assignments/${id}`);
+  }
+
+  getStudentsProgress(courseId: number): Observable<any[]> {
+    return this.http.get<any[]>(`${this.baseUrl}/Progress/course/${courseId}/students`);
   }
 }

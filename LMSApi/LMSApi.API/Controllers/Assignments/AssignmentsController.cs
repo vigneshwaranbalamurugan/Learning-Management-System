@@ -5,6 +5,7 @@ using LMSApi.ModelLibrary.DTOs;
 using LMSApi.API.Handlers;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
 using LMSApi.ModelLibrary.Enums;
 
 namespace LMSApi.API.Controllers
@@ -27,15 +28,18 @@ namespace LMSApi.API.Controllers
         private readonly IAssignmentService _assignmentService;
         private readonly AssignmentUploadHandler _assignmentUploadHandler;
         private readonly IOwnershipService _ownershipService;
+        private readonly IConfiguration _configuration;
 
         public AssignmentsController(
             IAssignmentService assignmentService,
             AssignmentUploadHandler assignmentUploadHandler,
-            IOwnershipService ownershipService)
+            IOwnershipService ownershipService,
+            IConfiguration configuration)
         {
             _assignmentService = assignmentService;
             _assignmentUploadHandler = assignmentUploadHandler;
             _ownershipService = ownershipService;
+            _configuration = configuration;
         }
 
         /// <summary>List all assignments in a section.</summary>
@@ -57,6 +61,15 @@ namespace LMSApi.API.Controllers
             var userId = User.GetUserId();
             var result = await _assignmentService.GetInstructorAssignmentsAsync(userId);
             return Ok(result);
+        }
+
+        /// <summary>Get assignment upload limits.</summary>
+        [Authorize]
+        [HttpGet("upload-limits")]
+        public ActionResult<object> GetUploadLimits()
+        {
+            int allowedSizeMB = _configuration["FileSizeLimits:AssignmentAttachmentInMB"] is string s ? int.Parse(s) : 10;
+            return Ok(new { maxFileSizeMB = allowedSizeMB });
         }
 
         /// <summary>Get a single assignment by Id.</summary>

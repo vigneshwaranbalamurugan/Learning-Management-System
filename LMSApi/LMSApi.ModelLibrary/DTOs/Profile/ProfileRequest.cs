@@ -27,6 +27,7 @@ namespace LMSApi.ModelLibrary.DTOs
         public DateOnly? DateOfBirth { get; set; }=null;
         public string? Location { get; set; }= string.Empty;
         public string? ProfilePictureUrl { get; set; } = string.Empty;
+        public string? Role { get; set; } = string.Empty;
     }
 
 }

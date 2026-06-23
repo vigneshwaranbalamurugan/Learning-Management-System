@@ -184,15 +184,38 @@ namespace LMSApi.DALLibrary.Repositories
                 .Include(c => c.Category)
                 .Include(c => c.Language)
                 .Include(c => c.Instructor)
-                .Include(c => c.Sections)
-                    .ThenInclude(s => s.Lessons)
+                    .ThenInclude(i => i.UserProfile)
+                .Include(c => c.Enrollments)
+                .Include(c => c.Sections.OrderBy(s => s.SortOrder))
+                    .ThenInclude(s => s.Lessons.OrderBy(l => l.SortOrder))
                         .ThenInclude(l => l.Resources)
-                .Include(c => c.Sections)
-                    .ThenInclude(s => s.Quizzes)
-                .Include(c => c.Sections)
+                .Include(c => c.Sections.OrderBy(s => s.SortOrder))
+                    .ThenInclude(s => s.Quizzes.OrderBy(q => q.Order))
+                        .ThenInclude(q => q.Questions)
+                .Include(c => c.Sections.OrderBy(s => s.SortOrder))
                     .ThenInclude(s => s.Assignments)
                 .Include(c => c.Batches)
                 .FirstOrDefaultAsync(c => c.Id == id);
+        }
+
+        public async Task<Courses?> GetCourseBySlugWithDetailsAsync(string slug)
+        {
+            return await _context.Courses
+                .Include(c => c.Category)
+                .Include(c => c.Language)
+                .Include(c => c.Instructor)
+                    .ThenInclude(i => i.UserProfile)
+                .Include(c => c.Enrollments)
+                .Include(c => c.Sections.OrderBy(s => s.SortOrder))
+                    .ThenInclude(s => s.Lessons.OrderBy(l => l.SortOrder))
+                        .ThenInclude(l => l.Resources)
+                .Include(c => c.Sections.OrderBy(s => s.SortOrder))
+                    .ThenInclude(s => s.Quizzes.OrderBy(q => q.Order))
+                        .ThenInclude(q => q.Questions)
+                .Include(c => c.Sections.OrderBy(s => s.SortOrder))
+                    .ThenInclude(s => s.Assignments)
+                .Include(c => c.Batches)
+                .FirstOrDefaultAsync(c => c.slug == slug);
         }
 
         public async Task<LMSApi.ModelLibrary.DTOs.CourseRatingStatsDto> GetCourseRatingStatsAsync(int courseId)

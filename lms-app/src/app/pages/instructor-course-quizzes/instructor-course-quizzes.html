@@ -1,0 +1,146 @@
+<div class="space-y-6" *ngIf="course">
+  <div class="flex items-center justify-between border-b border-gray-100 pb-4">
+    <div>
+      <h3 class="text-base font-bold text-slate-900">Quizzes Manager</h3>
+      <p class="text-xs text-gray-500 mt-0.5">Assess student knowledge by creating quizzes and editing questions.</p>
+    </div>
+    <app-button 
+      (click)="openAddQuiz()" 
+      variant="primary"
+      customClass="!px-4 !py-2 !w-auto text-xs font-semibold shadow-sm transition">
+      + Create Quiz
+    </app-button>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <!-- Gather Quizzes from Course Sections -->
+    <ng-container *ngFor="let section of course.sections; let i = index">
+      <ng-container *ngFor="let quiz of section.quizzes">
+        <div 
+          class="border border-gray-200 rounded-xl p-5 flex flex-col justify-between hover:shadow-xs transition bg-white relative overflow-hidden group">
+          
+          <div class="absolute top-0 left-0 right-0 h-1 bg-[#FF8C00]"></div>
+          
+          <div class="space-y-2">
+            <span class="text-[9px] text-[#FF8C00] font-bold uppercase tracking-wider">Section {{ i + 1 }} • Quiz</span>
+            <h4 class="text-sm font-bold text-slate-800 line-clamp-1">{{ quiz.title }}</h4>
+            <p class="text-xs text-gray-500 line-clamp-2" *ngIf="quiz.description">{{ quiz.description }}</p>
+            <div class="grid grid-cols-2 gap-2 pt-2 text-[11px] text-gray-400 font-medium">
+              <span>Time Limit: {{ quiz.timeLimit }}</span>
+              <span>Passing: {{ quiz.passingPercentage }}%</span>
+              <span>Attempts: {{ quiz.maxAttempts }}</span>
+              <span>Section: {{ section.title }}</span>
+            </div>
+          </div>
+
+          <div class="flex items-center justify-between mt-5 pt-3 border-t border-gray-50">
+            <div class="flex gap-2">
+              <app-button 
+                (click)="editQuiz(quiz.id)" 
+                variant="outline"
+                customClass="!px-3.5 !py-1.5 !w-auto text-xs font-semibold !h-auto">
+                Manage Questions
+              </app-button>
+              <app-button 
+                (click)="confirmDeleteQuiz(quiz.id)" 
+                variant="danger"
+                customClass="!px-3 !py-1.5 !w-auto text-xs font-semibold !h-auto">
+                Delete
+              </app-button>
+            </div>
+          </div>
+
+        </div>
+      </ng-container>
+    </ng-container>
+
+    <!-- If no quizzes -->
+    <div 
+      class="col-span-full py-12 border-2 border-dashed border-gray-250 rounded-xl text-center text-xs text-gray-400 bg-slate-50/50"
+      *ngIf="!(course | json).includes('quizzes') || course.sections.length === 0">
+      No quizzes found inside this course. Create a Quiz by clicking "+ Create Quiz" to see it here.
+    </div>
+  </div>
+
+  <!-- Create Quiz Modal -->
+  <div *ngIf="showQuizModal()" class="fixed inset-0 z-[1000] bg-slate-950/40 backdrop-blur-xs flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl border border-gray-150 p-6 w-full max-w-md shadow-xl space-y-4 max-h-[90vh] overflow-y-auto">
+      <h3 class="text-base font-bold text-slate-900">Create New Quiz</h3>
+      <div class="space-y-3 text-left">
+        <div>
+          <app-dropdown
+            label="Select Section"
+            [value]="quizSectionIdStr"
+            (valueChange)="setQuizSectionIdStr($event)"
+            [options]="sectionOptions"
+            placeholder="Select Section" />
+        </div>
+        <div>
+          <app-form-input
+            label="Quiz Title"
+            [value]="quizTitle"
+            (valueChange)="quizTitle = $event"
+            placeholder="e.g. Chapter 1 Assessment" />
+        </div>
+        <div>
+          <label class="text-xs font-bold text-slate-700 block mb-1">Description (Optional)</label>
+          <textarea [(ngModel)]="quizDescription" placeholder="Instructions or description..." rows="2" class="w-full border border-gray-200 rounded-xl p-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-[#1C1C7B]"></textarea>
+        </div>
+        <div>
+          <app-form-input
+            label="Time Limit (HH:MM:SS)"
+            [value]="quizTimeLimit"
+            (valueChange)="quizTimeLimit = $event"
+            placeholder="00:30:00" />
+        </div>
+        <div>
+          <app-form-input
+            label="Passing Percentage (%)"
+            type="number"
+            [value]="quizPassingPercentageStr"
+            (valueChange)="quizPassingPercentageStr = $event" />
+        </div>
+        <div>
+          <app-form-input
+            label="Max Attempts Allowed"
+            type="number"
+            [value]="quizMaxAttemptsStr"
+            (valueChange)="quizMaxAttemptsStr = $event" />
+        </div>
+        <div>
+          <app-form-input
+            label="Deadline in Days (From Enrollment)"
+            type="number"
+            [value]="quizDeadlineInDaysStr"
+            (valueChange)="quizDeadlineInDaysStr = $event" />
+        </div>
+      </div>
+      <div class="flex justify-end gap-2 pt-2">
+        <app-button 
+          (click)="closeQuizModal()" 
+          variant="outline"
+          customClass="!px-4 !py-2 !w-auto text-xs font-bold">
+          Cancel
+        </app-button>
+        <app-button 
+          (click)="saveQuiz()" 
+          variant="primary"
+          customClass="!px-4 !py-2 !w-auto text-xs font-bold shadow-xs">
+          Save Quiz
+        </app-button>
+      </div>
+    </div>
+  </div>
+
+  <app-confirm-modal
+    [isOpen]="showDeleteModal"
+    title="Delete Quiz"
+    message="Are you sure you want to delete this quiz permanently? This action cannot be undone."
+    confirmText="Delete"
+    cancelText="Cancel"
+    [isDanger]="true"
+    (confirm)="deleteQuiz()"
+    (cancel)="closeDeleteModal()">
+  </app-confirm-modal>
+
+</div>

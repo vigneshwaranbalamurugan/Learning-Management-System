@@ -29,6 +29,7 @@ export class InstructorDashboard implements OnInit {
 
   protected courses = signal<any[]>([]);
   protected recentEnrollments = signal<any[]>([]);
+  protected isLoading = signal(true);
 
   protected getInitials(name: string): string {
     if (!name) return 'U';
@@ -97,9 +98,11 @@ export class InstructorDashboard implements OnInit {
           rating: c.averageRating
         }));
         this.courses.set(mapped);
+        this.isLoading.set(false);
       },
       error: (err) => {
         console.error('Failed to load instructor dashboard analytics:', err);
+        this.isLoading.set(false);
       }
     });
   }

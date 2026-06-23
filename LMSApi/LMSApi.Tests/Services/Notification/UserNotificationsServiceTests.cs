@@ -126,7 +126,7 @@ namespace LMSApi.Tests.Services
             await DbContext.SaveChangesAsync();
 
             // Act
-            var results = (await _service.GetUserNotificationsAsync(_testUser.Id)).ToList();
+            var results = (await _service.GetUserNotificationsAsync(_testUser.Id, 0, 10)).ToList();
 
             // Assert
             Assert.That(results.Count, Is.EqualTo(2));

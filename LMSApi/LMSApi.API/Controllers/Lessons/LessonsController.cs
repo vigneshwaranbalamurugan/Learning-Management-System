@@ -64,6 +64,15 @@ namespace LMSApi.API.Controllers
             return Ok(result);
         }
 
+        [Authorize]
+        [HttpGet("upload-limits")]
+        public ActionResult GetUploadLimits([FromServices] IConfiguration configuration)
+        {
+            int videoLimitMB = configuration["FileSizeLimits:LessonVideoInMB"] is string v ? int.Parse(v) : 500;
+            int pdfLimitMB = configuration["FileSizeLimits:LessonPdfInMB"] is string p ? int.Parse(p) : 50;
+            return Ok(new { videoMaxFileSizeMB = videoLimitMB, pdfMaxFileSizeMB = pdfLimitMB });
+        }
+
         [Authorize(Roles = "Instructor,Admin")]
         [HttpPost]
         [Consumes("multipart/form-data")]
@@ -169,6 +178,7 @@ namespace LMSApi.API.Controllers
 
             var request = new UpdateLessonRequest
             {
+                CourseSectionId = form.CourseSectionId,
                 Title = form.Title,
                 Description = form.Description,
                 Content = form.Content,

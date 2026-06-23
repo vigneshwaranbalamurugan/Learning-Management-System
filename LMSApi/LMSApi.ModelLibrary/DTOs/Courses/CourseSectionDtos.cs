@@ -70,5 +70,9 @@ namespace LMSApi.ModelLibrary.DTOs
         public PublishStatus Status { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
+
+        public IEnumerable<LessonResponse> Lessons { get; set; } = [];
+        public IEnumerable<QuizResponse> Quizzes { get; set; } = [];
+        public IEnumerable<AssignmentResponse> Assignments { get; set; } = [];
     }
 }

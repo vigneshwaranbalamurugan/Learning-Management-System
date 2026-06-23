@@ -23,10 +23,11 @@ namespace LMSApi.API.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<NotificationResponse>>> GetNotifications()
+        public async Task<ActionResult<IEnumerable<NotificationResponse>>> GetNotifications([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
         {
             var userId = User.GetUserId();
-            var result = await _notificationsService.GetUserNotificationsAsync(userId);
+            var skip = (page - 1) * pageSize;
+            var result = await _notificationsService.GetUserNotificationsAsync(userId, skip, pageSize);
             return Ok(result);
         }
 

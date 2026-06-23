@@ -11,12 +11,14 @@ namespace LMSApi.DALLibrary.Repositories
         {
         }
 
-        public async Task<IEnumerable<Notifications>> GetByUserIdAsync(int userId)
+        public async Task<IEnumerable<Notifications>> GetByUserIdAsync(int userId, int skip, int take)
         {
             return await _context.Notifications
                 .Where(n => n.UserId == userId)
                 .OrderByDescending(n => n.CreatedAt)
                 .ThenByDescending(n => n.Id)
+                .Skip(skip)
+                .Take(take)
                 .ToListAsync();
         }
 

@@ -53,7 +53,7 @@ export class Profile implements OnInit {
     } else {
       this.profileService.getProfile().subscribe({
         next: (data) => {
-          const role = localStorage.getItem('user_role') || 'Learner';
+          const role = this.authService.userRole() || 'Learner';
           const email = localStorage.getItem('user_email') || '';
           const updated = { ...data, email, role };
           this.authService.currentUser.set(updated);

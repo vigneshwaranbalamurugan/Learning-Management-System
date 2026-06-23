@@ -95,4 +95,15 @@ namespace LMSApi.ModelLibrary.DTOs
         public int Id { get; set; }
         public string OptionText { get; set; }
     }
+
+    public class BulkReorderQuestionItem
+    {
+        public int QuestionId { get; set; }
+        public int SortOrder { get; set; }
+    }
+
+    public class BulkReorderQuestionsRequest
+    {
+        public List<BulkReorderQuestionItem> Items { get; set; } = [];
+    }
 }

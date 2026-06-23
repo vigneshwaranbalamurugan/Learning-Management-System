@@ -1,0 +1,79 @@
+<div class="space-y-6" *ngIf="course">
+  <div class="border-b border-gray-100 pb-4">
+    <h3 class="text-base font-bold text-slate-900">Enrolled Learners</h3>
+    <p class="text-xs text-gray-500 mt-0.5">Track individual learner progress and completion rates.</p>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading()" class="border border-gray-200 rounded-xl overflow-hidden shadow-xs bg-white divide-y divide-gray-100 animate-pulse">
+    <div class="hidden sm:flex items-center justify-between p-4 bg-slate-50 text-[10px] text-gray-400 font-bold uppercase tracking-wider">
+      <span class="w-1/3">Student</span>
+      <span class="w-1/4">Registration Date</span>
+      <span class="w-1/3">Course Progress</span>
+    </div>
+    <div *ngFor="let item of [1, 2, 3]" class="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div class="sm:w-1/3 flex items-center gap-3">
+        <div class="w-9 h-9 rounded-full bg-gray-200 shrink-0"></div>
+        <div class="space-y-1.5 flex-1">
+          <div class="h-3 bg-gray-200 rounded w-1/2"></div>
+          <div class="h-2 bg-gray-200 rounded w-1/3"></div>
+        </div>
+      </div>
+      <div class="sm:w-1/4 h-3 bg-gray-200 rounded w-1/4"></div>
+      <div class="sm:w-1/3 h-2 bg-gray-200 rounded w-1/2"></div>
+    </div>
+  </div>
+
+  <!-- Learners List -->
+  <div *ngIf="!isLoading()" class="border border-gray-200 rounded-xl overflow-hidden shadow-xs bg-white">
+    <div class="divide-y divide-gray-100">
+      
+      <!-- Table Header -->
+      <div class="hidden sm:flex items-center justify-between p-4 bg-slate-50 text-[10px] text-gray-400 font-bold uppercase tracking-wider">
+        <span class="w-1/3">Student</span>
+        <span class="w-1/4">Registration Date</span>
+        <span class="w-1/3">Course Progress</span>
+      </div>
+
+      <!-- Student Row -->
+      <div 
+        *ngFor="let learner of learners()" 
+        class="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-0 hover:bg-slate-50/50 transition">
+        
+        <!-- Student Identity -->
+        <div class="sm:w-1/3 flex items-center gap-3">
+          <div class="w-9 h-9 rounded-full bg-[#1C1C7B] text-white flex items-center justify-center text-xs font-bold shrink-0">
+            {{ getInitials(learner.studentName) }}
+          </div>
+          <div class="flex flex-col">
+            <span class="text-xs font-bold text-slate-800">{{ learner.studentName }}</span>
+            <span class="text-[10px] text-gray-400 mt-0.5">{{ learner.studentEmail }}</span>
+          </div>
+        </div>
+
+        <!-- Date -->
+        <div class="sm:w-1/4 text-xs font-medium text-slate-600">
+          {{ learner.enrolledAt | date:'mediumDate' }}
+        </div>
+
+        <!-- Progress -->
+        <div class="sm:w-1/3 flex items-center gap-3">
+          <div class="flex-1 w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+            <div 
+              class="h-full rounded-full transition-all duration-500" 
+              [style.width]="learner.progressPercentage + '%'"
+              [class.bg-[#FF8C00]]="learner.progressPercentage < 100"
+              [class.bg-emerald-500]="learner.progressPercentage === 100">
+            </div>
+          </div>
+          <span class="text-xs font-bold text-slate-700 w-10 shrink-0 text-right">{{ learner.progressPercentage }}%</span>
+        </div>
+
+      </div>
+
+      <div *ngIf="learners().length === 0" class="p-8 text-center text-xs text-gray-400">
+        No students enrolled in this course yet.
+      </div>
+    </div>
+  </div>
+</div>
