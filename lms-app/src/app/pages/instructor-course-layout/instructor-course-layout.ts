@@ -1,11 +1,11 @@
 import { Component, OnInit, signal, inject, DestroyRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, ActivatedRoute, Router } from '@angular/router';
-import { DashboardService } from '@services/dashboard.service';
-import { CourseDetailResponse } from '@models/dashboard';
+import { CourseDetailResponse } from '@models/course';
 import { untilDestroyed } from '../../rxjs/until-destroyed';
 import { Loader } from '@components/loader/loader';
 import { ToastService } from '@services/toast.service';
+import { CourseService } from '@services/course.service';
 
 @Component({
   selector: 'app-instructor-course-layout',
@@ -16,7 +16,7 @@ import { ToastService } from '@services/toast.service';
 export class InstructorCourseLayout implements OnInit {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
-  private dashboardService = inject(DashboardService);
+  private courseService = inject(CourseService);
   private destroyRef = inject(DestroyRef);
   private toastService = inject(ToastService);
 
@@ -79,8 +79,8 @@ export class InstructorCourseLayout implements OnInit {
   public loadCourse(slugOrId: string | number) {
     this.isLoading.set(true);
     const request$ = typeof slugOrId === 'number'
-      ? this.dashboardService.getCourseById(slugOrId)
-      : this.dashboardService.getInstructorCourseBySlug(slugOrId);
+      ? this.courseService.getCourseById(slugOrId)
+      : this.courseService.getInstructorCourseBySlug(slugOrId);
 
     request$.subscribe({
       next: (data) => {

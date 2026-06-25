@@ -8,14 +8,14 @@ export const guestGuard: CanActivateFn = () => {
   const authService = inject(AuthService);
   const router = inject(Router);
   
-  const email = localStorage.getItem('user_email') || sessionStorage.getItem('user_email');
-  if (!email) {
-    return true;
-  }
-
-  if (authService.userRole()) {
+  if (authService.currentUser()) {
     authService.redirectToDashboard(authService.userRole()!);
     return false;
+  }
+
+  // Session already confirmed dead — user is not logged in, allow access to login page
+  if (authService.sessionChecked()) {
+    return true;
   }
 
   return authService.initializeAuth().pipe(

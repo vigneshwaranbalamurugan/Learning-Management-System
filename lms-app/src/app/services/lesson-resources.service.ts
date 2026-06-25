@@ -2,12 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
-import { 
-  ResourceResponse, 
-  CreateResourceRequest, 
-  UpdateResourceRequest, 
-  ReorderResourcesRequest 
-} from '@models/dashboard';
+import { ResourceResponse, CreateResourceRequest, UpdateResourceRequest, ReorderResourcesRequest } from '@models/course';
 
 @Injectable({
   providedIn: 'root'

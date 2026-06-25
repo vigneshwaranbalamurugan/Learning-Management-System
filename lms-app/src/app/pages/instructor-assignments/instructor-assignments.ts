@@ -27,6 +27,12 @@ export class InstructorAssignments implements OnInit {
   protected totalPendingSubmissions = computed(() => 
     this.assignments().reduce((sum, a) => sum + (a.pendingSubmissionsCount || 0), 0)
   );
+  protected fullyGradedCount = computed(() => 
+    this.assignments().filter(a => a.pendingSubmissionsCount === 0).length
+  );
+  protected uniqueCoursesCount = computed(() => 
+    new Set(this.assignments().map(a => a.courseTitle)).size
+  );
 
   // Client-side filtering by query
   protected filteredAssignments = computed(() => {

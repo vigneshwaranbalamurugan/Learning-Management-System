@@ -2,12 +2,12 @@ import { Component, OnInit, signal, computed, inject, DestroyRef } from '@angula
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule, Router } from '@angular/router';
-import { DashboardService } from '@services/dashboard.service';
 import { ToastService } from '@services/toast.service';
 import { QuizAttemptResponse, QuizAttemptDetailResponse } from '@models/quiz';
 import { untilDestroyed } from '../../rxjs/until-destroyed';
 
 import { Loader } from '@components/loader/loader';
+import { QuizService } from '@services/quiz.service';
 
 @Component({
   selector: 'app-quizzes-page',
@@ -16,7 +16,7 @@ import { Loader } from '@components/loader/loader';
   templateUrl: './quizzes.html'
 })
 export class QuizzesPage implements OnInit {
-  private dashboardService = inject(DashboardService);
+  private quizService = inject(QuizService);
   private toastService = inject(ToastService);
   private router = inject(Router);
   private destroyRef = inject(DestroyRef);
@@ -51,7 +51,7 @@ export class QuizzesPage implements OnInit {
 
   private loadAttempts(): void {
     this.isLoading.set(true);
-    this.dashboardService.getMyQuizAttempts()
+    this.quizService.getMyQuizAttempts()
       .pipe(untilDestroyed(this.destroyRef))
       .subscribe({
         next: (data) => {

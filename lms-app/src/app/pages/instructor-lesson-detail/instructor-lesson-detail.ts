@@ -2,7 +2,6 @@ import { Component, inject, OnInit, OnDestroy, signal, HostListener } from '@ang
 import { CommonModule, DatePipe } from '@angular/common';
 import { Router, ActivatedRoute, RouterModule } from '@angular/router';
 import { ToastService } from '@services/toast.service';
-import { DashboardService } from '@services/dashboard.service';
 import { Button } from '@components/button/button';
 import { Loader } from '@components/loader/loader';
 import { ConfirmModal } from '@components/confirm-modal/confirm-modal';
@@ -10,6 +9,7 @@ import { DomSanitizer, SafeHtml, SafeResourceUrl } from '@angular/platform-brows
 import { marked } from 'marked';
 import { InstructorCourseLayout } from '../instructor-course-layout/instructor-course-layout';
 import { LessonResourcesService } from '@services/lesson-resources.service';
+import { CourseBuilderService } from '@services/course-builder.service';
 
 @Component({
   selector: 'app-instructor-lesson-detail',
@@ -19,7 +19,7 @@ import { LessonResourcesService } from '@services/lesson-resources.service';
 })
 export class InstructorLessonDetail implements OnInit, OnDestroy {
   private toastService = inject(ToastService);
-  private dashboardService = inject(DashboardService);
+  private courseBuilderService = inject(CourseBuilderService);
   private resourcesService = inject(LessonResourcesService);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
@@ -70,7 +70,7 @@ export class InstructorLessonDetail implements OnInit, OnDestroy {
     this.isLoading.set(true);
     this.isTheaterMode = false;
     document.body.style.overflow = '';
-    this.dashboardService.getLesson(id).subscribe({
+    this.courseBuilderService.getLesson(id).subscribe({
       next: async (data) => {
         this.lesson = data;
         
@@ -192,7 +192,7 @@ export class InstructorLessonDetail implements OnInit, OnDestroy {
 
   protected deleteLesson() {
     if (!this.lessonId) return;
-    this.dashboardService.deleteLesson(this.lessonId).subscribe({
+    this.courseBuilderService.deleteLesson(this.lessonId).subscribe({
       next: () => {
         this.toastService.showSuccess('Lesson deleted successfully.');
         this.navigateBack();

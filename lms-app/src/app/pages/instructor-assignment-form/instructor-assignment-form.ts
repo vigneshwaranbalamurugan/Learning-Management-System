@@ -4,11 +4,11 @@ import { FormsModule } from '@angular/forms';
 import { Router, ActivatedRoute, RouterModule } from '@angular/router';
 import { InstructorCourseLayout } from '../instructor-course-layout/instructor-course-layout';
 import { ToastService } from '@services/toast.service';
-import { DashboardService } from '@services/dashboard.service';
 import { FormInput } from '@components/form-input/form-input';
 import { Dropdown } from '@components/dropdown/dropdown';
 import { Button } from '@components/button/button';
 import { Loader } from '@components/loader/loader';
+import { AssignmentService } from '@services/assignment.service';
 
 @Component({
   selector: 'app-instructor-assignment-form',
@@ -20,7 +20,7 @@ import { Loader } from '@components/loader/loader';
 export class InstructorAssignmentForm implements OnInit {
   protected layout = inject(InstructorCourseLayout);
   private toastService = inject(ToastService);
-  private dashboardService = inject(DashboardService);
+  private assignmentService = inject(AssignmentService);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
 
@@ -128,7 +128,7 @@ export class InstructorAssignmentForm implements OnInit {
       }
     });
 
-    this.dashboardService.getAssignmentUploadLimits().subscribe({
+    this.assignmentService.getAssignmentUploadLimits().subscribe({
       next: (limits) => {
         this.maxFileSizeMB = limits.maxFileSizeMB;
       },
@@ -139,7 +139,7 @@ export class InstructorAssignmentForm implements OnInit {
   }
 
   private loadAssignmentDetails(id: number) {
-    this.dashboardService.getAssignment(id).subscribe({
+    this.assignmentService.getAssignment(id).subscribe({
       next: (assignment) => {
         this.sectionId = assignment.courseSectionId;
         this.title = assignment.title;
@@ -204,8 +204,8 @@ export class InstructorAssignmentForm implements OnInit {
 
     this.isSaving.set(true);
     const request = this.isEditMode && this.assignmentId
-      ? this.dashboardService.updateAssignment(this.assignmentId, formData)
-      : this.dashboardService.createAssignment(formData);
+      ? this.assignmentService.updateAssignment(this.assignmentId, formData)
+      : this.assignmentService.createAssignment(formData);
 
     request.subscribe({
       next: () => {

@@ -1,11 +1,11 @@
 import { Component, OnInit, signal, inject, DestroyRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
-import { DashboardService } from '@services/dashboard.service';
 import { ToastService } from '@services/toast.service';
-import { CourseProgressResponse } from '@models/dashboard';
+import { CourseProgressResponse } from '@models/progress';
 import { untilDestroyed } from '../../rxjs/until-destroyed';
 import { Loader } from '@components/loader/loader';
+import { ProgressService } from '@services/progress.service';
 
 @Component({
   selector: 'app-progress-detail-page',
@@ -14,7 +14,7 @@ import { Loader } from '@components/loader/loader';
   templateUrl: './progress-detail.html'
 })
 export class ProgressDetailPage implements OnInit {
-  private dashboardService = inject(DashboardService);
+  private progressService = inject(ProgressService);
   private toastService = inject(ToastService);
   private route = inject(ActivatedRoute);
   private router = inject(Router);
@@ -34,7 +34,7 @@ export class ProgressDetailPage implements OnInit {
 
   private loadProgress(courseId: number): void {
     this.isLoading.set(true);
-    this.dashboardService.getCourseProgress(courseId)
+    this.progressService.getCourseProgress(courseId)
       .pipe(untilDestroyed(this.destroyRef))
       .subscribe({
         next: (data) => {

@@ -9,13 +9,7 @@ export const authGuard = (allowedRoles?: string[]): CanActivateFn => {
     const authService = inject(AuthService);
     const router = inject(Router);
 
-    const email = localStorage.getItem('user_email') || sessionStorage.getItem('user_email');
-    if (!email) {
-      router.navigate(['/login']);
-      return false;
-    }
-
-    if (authService.userRole()) {
+    if (authService.currentUser()) {
       const role = authService.userRole()!;
       if (allowedRoles && allowedRoles.length > 0) {
         const hasRole = allowedRoles.some(r => r.toLowerCase() === role.toLowerCase());
@@ -25,6 +19,12 @@ export const authGuard = (allowedRoles?: string[]): CanActivateFn => {
         }
       }
       return true;
+    }
+
+    // Session already confirmed dead — no need to hit the backend
+    if (authService.sessionChecked()) {
+      router.navigate(['/login']);
+      return false;
     }
 
     return authService.initializeAuth().pipe(

@@ -14,6 +14,8 @@ namespace LMSApi.ModelLibrary.DTOs
 
         [Required(ErrorMessage = "Password is required")]
         public string Password { get; set; }
+
+        public bool RememberMe { get; set; } = false;
     }
 
     public class LoginResponse
@@ -22,15 +24,14 @@ namespace LMSApi.ModelLibrary.DTOs
         public string Token { get; set; }
         public DateTime ExpiresAt { get; set; }
         public string RefreshToken { get; set; }
+        public DateTime RefreshTokenExpiresAt { get; set; }
         public string Message { get; set; }
+        public bool RememberMe { get; set; }
     }
 
     public class RefreshTokenRequest
     {
-        [Required(ErrorMessage = "AccessToken is required")]
         public string AccessToken { get; set; }
-
-        [Required(ErrorMessage = "RefreshToken is required")]
         public string RefreshToken { get; set; }
     }
 
@@ -39,6 +40,8 @@ namespace LMSApi.ModelLibrary.DTOs
         public string AccessToken { get; set; }
         public string RefreshToken { get; set; }
         public DateTime ExpiresAt { get; set; }
+        public DateTime RefreshTokenExpiresAt { get; set; }
+        public bool RememberMe { get; set; }
     }
 
     public class ForgotPasswordRequest

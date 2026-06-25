@@ -1,0 +1,377 @@
+<div class="flex flex-col gap-6 animate-[fadeInContent_400ms_ease]">
+
+  <!-- ═══════════ HEADER BANNER ═══════════ -->
+  <div class="relative overflow-hidden bg-slate-950 text-white rounded-2xl p-7 flex items-center justify-between shadow-xs">
+    <img src="/explore-banner.png" alt="Instructor Banner" class="absolute inset-0 w-full h-full object-cover opacity-30 select-none pointer-events-none" />
+    <div class="absolute inset-0 bg-gradient-to-r from-primary/90 via-slate-950/80 to-transparent"></div>
+    <div class="flex flex-col relative z-10">
+      <button (click)="goBack()" class="flex items-center gap-1.5 text-xs text-primary-light font-semibold mb-3 hover:text-white transition cursor-pointer self-start">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+        </svg>
+        Back to Assignments
+      </button>
+      <h2 class="text-2xl sm:text-3xl font-extrabold mb-2 tracking-tight flex items-center gap-2.5">
+        Graded Submissions
+        <svg class="w-8 h-8 drop-shadow-md" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 20h9" stroke="#FF8C00" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z" stroke="#1C1C7B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </h2>
+      <p class="text-white/85 text-xs sm:text-sm max-w-[500px] leading-relaxed">
+        Review student files, text answers, and assign marks and qualitative feedback for: <strong class="text-secondary">{{ assignment()?.title }}</strong>
+      </p>
+    </div>
+    <div class="hidden lg:flex flex-col items-end relative z-10">
+      <svg class="w-24 h-24 opacity-80 drop-shadow-lg" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="50" cy="50" r="40" fill="#1C1C7B" opacity="0.2"/>
+        <path d="M35 50l10 10 20-20" stroke="#FF8C00" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+        <rect x="25" y="20" width="50" height="60" rx="4" stroke="#1C1C7B" stroke-width="4" stroke-dasharray="4 4"/>
+      </svg>
+    </div>
+  </div>
+
+  @if (isLoading()) {
+    <div class="flex items-center justify-center min-h-[50vh]">
+      <app-loader></app-loader>
+    </div>
+  }
+
+  @if (!isLoading()) {
+    <!-- ═══════════ ASSIGNMENT DETAILS CARD ═══════════ -->
+    <div class="bg-white border border-gray-200 rounded-2xl p-6 shadow-xs flex flex-col gap-4">
+      <div class="flex items-center justify-between border-b border-gray-150 pb-3">
+        <h3 class="text-sm font-bold text-slate-800 uppercase tracking-wider mb-0 flex items-center gap-2">
+          📖 Assignment Properties
+        </h3>
+        <div class="flex gap-2">
+          <span class="px-2.5 py-0.5 bg-gray-100 text-gray-700 text-[10px] font-extrabold rounded-full uppercase">
+            Total Marks: {{ assignment()?.totalMarks }}
+          </span>
+          <span class="px-2.5 py-0.5 bg-secondary-light text-secondary-hover text-[10px] font-extrabold rounded-full uppercase">
+            Passing: {{ assignment()?.passingMarks }}
+          </span>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs text-slate-700">
+        <!-- Description & Instructions -->
+        <div class="flex flex-col gap-3">
+          @if (assignment()?.description) {
+            <div>
+              <span class="text-[9px] text-gray-400 font-bold uppercase tracking-wider block mb-1">Description</span>
+              <p class="m-0 leading-relaxed text-gray-600">{{ assignment()?.description }}</p>
+            </div>
+          }
+          @if (assignment()?.instructions) {
+            <div>
+              <span class="text-[9px] text-gray-400 font-bold uppercase tracking-wider block mb-1">Instructions</span>
+              <p class="m-0 leading-relaxed text-gray-600 whitespace-pre-line">{{ assignment()?.instructions }}</p>
+            </div>
+          }
+          @if (!assignment()?.description && !assignment()?.instructions) {
+            <span class="text-gray-400 italic">No description or instructions provided for this assignment.</span>
+          }
+        </div>
+
+        <!-- Attachment and Settings -->
+        <div class="flex flex-col gap-3 bg-gray-50 border border-gray-150 p-4 rounded-xl">
+          <div>
+            <span class="text-[9px] text-gray-400 font-bold uppercase tracking-wider block mb-1.5">Assignment Reference File/Link</span>
+            @if (assignment()?.attachmentUrl) {
+              @if (assignment()?.attachmentType === 1) {
+                <a [href]="assignment()?.attachmentUrl" target="_blank"
+                   class="inline-flex items-center gap-1.5 px-3 py-2 bg-primary-light/50 hover:bg-primary-light border border-primary/20 text-primary-hover rounded-lg font-bold transition">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  Download Reference File
+                </a>
+              } @else if (assignment()?.attachmentType === 2) {
+                <a [href]="assignment()?.attachmentUrl" target="_blank"
+                   class="inline-flex items-center gap-1.5 px-3 py-2 bg-primary-light/50 hover:bg-primary-light border border-primary/20 text-primary-hover rounded-lg font-bold transition">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                  </svg>
+                  Visit Reference Link
+                </a>
+              }
+            } @else {
+              <span class="text-gray-400 italic">No reference attachment uploaded.</span>
+            }
+          </div>
+
+          <div class="grid grid-cols-2 gap-3 text-[11px] mt-2 pt-2 border-t border-gray-250">
+            <div>
+              <span class="text-gray-400 font-bold uppercase text-[8px] tracking-wider block">Max Attempts</span>
+              <span class="font-black text-slate-800">{{ assignment()?.maxSubmissions }} submissions max</span>
+            </div>
+            <div>
+              <span class="text-gray-400 font-bold uppercase text-[8px] tracking-wider block">Late Submission Allowed</span>
+              <span class="font-black" [class.text-primary-hover]="assignment()?.isLateSubmissionAllowed" [class.text-red-700]="!assignment()?.isLateSubmissionAllowed">
+                {{ assignment()?.isLateSubmissionAllowed ? 'Yes' : 'No' }}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════ SUBMISSIONS LIST ═══════════ -->
+    <div class="bg-white border border-gray-200 rounded-2xl shadow-xs overflow-hidden">
+      <div class="px-6 py-4 border-b border-gray-150 flex items-center justify-between bg-gray-50">
+        <h3 class="text-xs font-extrabold text-slate-800 uppercase tracking-wider mb-0">Graded Student Submissions</h3>
+        <span class="text-xs text-gray-500 font-bold">{{ submissions().length }} graded</span>
+      </div>
+
+      @if (submissions().length > 0) {
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse text-xs">
+            <thead>
+              <tr class="bg-gray-100/50 text-gray-500 font-bold uppercase border-b border-gray-150 select-none">
+                <th class="px-6 py-3.5">Student</th>
+                <th class="px-6 py-3.5">Attempt</th>
+                <th class="px-6 py-3.5">Submitted At</th>
+                <th class="px-6 py-3.5">Submission Details</th>
+                <th class="px-6 py-3.5">Grading Details</th>
+                <th class="px-6 py-3.5 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100 text-slate-700">
+              @for (sub of submissions(); track sub.id) {
+                <tr class="hover:bg-gray-50/70 transition-colors">
+                  <!-- Student Details -->
+                  <td class="px-6 py-4.5">
+                    <div class="flex flex-col gap-0.5">
+                      <span class="font-bold text-slate-900 text-sm">{{ sub.studentName || 'Student Name' }}</span>
+                      <span class="text-gray-400 text-[10px] font-medium">{{ sub.studentEmail }}</span>
+                    </div>
+                  </td>
+                  
+                  <!-- Attempt -->
+                  <td class="px-6 py-4.5">
+                    <span class="px-2 py-0.5 bg-gray-100 text-gray-700 font-bold rounded-md">
+                      Attempt #{{ sub.attemptNumber }}
+                    </span>
+                  </td>
+
+                  <!-- Submitted At & Late Indicator -->
+                  <td class="px-6 py-4.5">
+                    <div class="flex flex-col gap-1">
+                      <span class="font-medium text-gray-600">{{ sub.submittedAt | date:'MMM dd, yyyy - hh:mm a' }}</span>
+                      @if (sub.isLate) {
+                        <span class="inline-flex items-center gap-0.5 text-[9px] bg-red-100 text-red-700 font-extrabold px-2 py-0.5 rounded-md uppercase self-start">
+                          ⚠️ Late Submission
+                        </span>
+                      }
+                    </div>
+                  </td>
+
+                  <!-- Details / Attachments -->
+                  <td class="px-6 py-4.5 max-w-[280px]">
+                    <div class="flex flex-col gap-2">
+                      @if (sub.submissionText) {
+                        <p class="text-gray-600 line-clamp-2 leading-relaxed m-0 italic bg-gray-50/70 p-2 rounded-lg border border-gray-150 text-[11px]">
+                          "{{ sub.submissionText }}"
+                        </p>
+                      }
+                      
+                      @if (sub.submittedAssignmentUrl) {
+                        <div class="flex items-center gap-1.5 mt-0.5">
+                          @if (sub.attachmentType === 0) {
+                            <a [href]="sub.submittedAssignmentUrl" target="_blank"
+                               class="inline-flex items-center gap-1 px-2.5 py-1 bg-primary-light/50 hover:bg-primary-light text-primary rounded-lg font-bold border border-primary/20 transition">
+                              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                              </svg>
+                              Download File Attachment
+                            </a>
+                          } @else if (sub.attachmentType === 1) {
+                            <a [href]="sub.submittedAssignmentUrl" target="_blank"
+                               class="inline-flex items-center gap-1 px-2.5 py-1 bg-primary-light/50 hover:bg-primary-light text-primary rounded-lg font-bold border border-primary/20 transition">
+                              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                              </svg>
+                              Open Submission Link
+                            </a>
+                          }
+                        </div>
+                      }
+                    </div>
+                  </td>
+
+                  <!-- Grading Details -->
+                  <td class="px-6 py-4.5 max-w-[200px]">
+                    <div class="flex flex-col gap-1.5 text-[11px]">
+                      <div class="flex items-center gap-2">
+                        <span class="font-bold text-slate-800">Score: <span class="text-primary">{{ sub.marksAwarded }} / {{ assignment()?.totalMarks }}</span></span>
+                        @if (sub.isPassed) {
+                          <span class="px-1.5 py-0.5 bg-green-100 text-green-700 font-extrabold rounded text-[9px] uppercase">Passed</span>
+                        } @else {
+                          <span class="px-1.5 py-0.5 bg-red-100 text-red-700 font-extrabold rounded text-[9px] uppercase">Failed</span>
+                        }
+                      </div>
+                      @if (sub.feedback) {
+                        <p class="m-0 text-gray-500 line-clamp-2 leading-relaxed italic">"{{ sub.feedback }}"</p>
+                      }
+                    </div>
+                  </td>
+
+                  <!-- Action -->
+                  <td class="px-6 py-4.5 text-right">
+                    <button (click)="selectSubmission(sub)"
+                      class="px-4 py-2 bg-primary hover:bg-primary-hover text-white rounded-lg font-bold transition shadow-xs cursor-pointer">
+                      Update Grade
+                    </button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      } @else {
+        <div class="flex flex-col items-center justify-center py-16 px-6 text-center">
+          <svg class="w-20 h-20 text-gray-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <h4 class="text-sm font-bold text-slate-800 m-0 mb-1">No Graded Submissions</h4>
+          <p class="text-xs text-gray-400 max-w-xs leading-relaxed">
+            There are no student attempts that have been graded for this assignment yet.
+          </p>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- ═══════════ GRADING SLIDE-OVER PANEL ═══════════ -->
+  @if (selectedSubmission()) {
+    <div class="fixed inset-0 z-50 flex justify-end bg-black/45 backdrop-blur-xs animate-[fadeIn_200ms_ease]" (click)="closeGradingPanel()">
+      <div class="w-full max-w-md bg-white h-full flex flex-col shadow-2xl p-6 relative overflow-y-auto animate-[slideInRight_250ms_ease-out]" (click)="$event.stopPropagation()">
+        
+        <!-- Header -->
+        <div class="flex items-center justify-between border-b border-gray-150 pb-4 mb-5">
+          <h3 class="text-base font-extrabold text-slate-900 m-0">Update Grade</h3>
+          <button (click)="closeGradingPanel()" class="text-gray-400 hover:text-gray-600 transition cursor-pointer">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        <!-- Student Summary Details -->
+        <div class="bg-gray-50 border border-gray-200 rounded-xl p-4 mb-5 text-xs flex flex-col gap-2">
+          <div class="flex justify-between">
+            <span class="text-gray-400 font-semibold uppercase">Student</span>
+            <span class="font-bold text-slate-800">{{ selectedSubmission()?.studentName }}</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-gray-400 font-semibold uppercase">Email</span>
+            <span class="font-bold text-slate-700">{{ selectedSubmission()?.studentEmail }}</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-gray-400 font-semibold uppercase">Attempt</span>
+            <span class="font-bold text-slate-700">Attempt #{{ selectedSubmission()?.attemptNumber }}</span>
+          </div>
+          @if (selectedSubmission()?.studentDeadline) {
+            <div class="flex justify-between">
+              <span class="text-gray-400 font-semibold uppercase">Deadline</span>
+              <span class="font-bold text-slate-700">{{ selectedSubmission()?.studentDeadline | date:'MMM dd, yyyy - hh:mm a' }}</span>
+            </div>
+          }
+          <div class="flex justify-between items-center">
+            <span class="text-gray-400 font-semibold uppercase">Submission Status</span>
+            @if (selectedSubmission()?.isLate) {
+              <span class="px-2 py-0.5 bg-red-100 text-red-700 text-[10px] font-extrabold rounded-md uppercase">
+                Late
+              </span>
+            } @else {
+              <span class="px-2 py-0.5 bg-primary-light text-primary text-[10px] font-extrabold rounded-md uppercase">
+                On Time
+              </span>
+            }
+          </div>
+        </div>
+
+        <!-- Submission Content display inside modal -->
+        @if (selectedSubmission()?.submissionText) {
+          <div class="mb-5">
+            <span class="text-[10px] text-gray-400 font-bold uppercase tracking-wider block mb-2">Student Response Text</span>
+            <div class="bg-slate-50 border border-gray-150 rounded-xl p-3.5 italic text-slate-700 text-xs whitespace-pre-wrap leading-relaxed">
+              "{{ selectedSubmission()?.submissionText }}"
+            </div>
+          </div>
+        }
+
+        @if (selectedSubmission()?.submittedAssignmentUrl) {
+          <div class="mb-5">
+            <span class="text-[10px] text-gray-400 font-bold uppercase tracking-wider block mb-2">Submitted Attachment</span>
+            <a [href]="selectedSubmission()?.submittedAssignmentUrl" target="_blank"
+               class="w-full flex items-center justify-between p-3 border border-primary/30 bg-primary-light/30 hover:bg-primary-light/50 text-primary-hover rounded-xl transition text-xs font-bold">
+              <span class="flex items-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                {{ selectedSubmission()?.attachmentType === 0 ? 'Download Attachment File' : 'Open Link Attachment' }}
+              </span>
+              <svg class="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+              </svg>
+            </a>
+          </div>
+        }
+
+        <hr class="border-gray-150 my-2">
+
+        <!-- Grading Form -->
+        <div class="flex flex-col gap-4 mt-4">
+          <!-- Marks Awarded -->
+          <div class="flex flex-col gap-1.5">
+            <label for="marks-awarded" class="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Marks Awarded (Max: {{ assignment()?.totalMarks }})</label>
+            <div class="relative rounded-lg shadow-xs">
+              <input type="number"
+                id="marks-awarded"
+                [max]="assignment()?.totalMarks || 100"
+                min="0"
+                [(ngModel)]="marksAwarded"
+                class="w-full px-3 py-2 border border-gray-200 rounded-lg text-xs bg-white text-gray-800 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition" />
+              <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                <span class="text-gray-400 text-xs">/ {{ assignment()?.totalMarks }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Feedback -->
+          <div class="flex flex-col gap-1.5">
+            <label for="grading-feedback" class="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Feedback Comments</label>
+            <textarea
+              id="grading-feedback"
+              rows="5"
+              [(ngModel)]="feedback"
+              placeholder="Provide constructive review remarks on their solution..."
+              class="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-xs bg-white text-gray-800 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition resize-none"></textarea>
+          </div>
+
+          <!-- Actions -->
+          <div class="flex gap-3 mt-4">
+            <button (click)="closeGradingPanel()"
+              class="w-1/2 py-2.5 border border-gray-250 text-gray-600 hover:bg-gray-50 rounded-lg text-xs font-bold transition cursor-pointer">
+              Cancel
+            </button>
+            <button (click)="submitGrade()"
+              [disabled]="isSubmitting()"
+              class="w-1/2 py-2.5 bg-primary hover:bg-primary-hover disabled:bg-primary/50 text-white rounded-lg text-xs font-bold transition shadow-sm flex items-center justify-center gap-1.5 cursor-pointer">
+              @if (isSubmitting()) {
+                <span class="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                Saving...
+              } @else {
+                <span>Update Grade</span>
+              }
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  }
+
+</div>

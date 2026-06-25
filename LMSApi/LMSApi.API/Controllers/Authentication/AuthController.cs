@@ -51,24 +51,28 @@ namespace LMSApi.API.Controllers
 		{
 			var result = await _authService.AuthenticateAsync(request);
 
-			// SameSite=Lax + Secure=false works over HTTP (LAN/dev).
-			// Change to SameSite=None + Secure=true when deploying over HTTPS.
 			var cookieOptions = new Microsoft.AspNetCore.Http.CookieOptions
 			{
 				HttpOnly = true,
-				Secure = false,
-				SameSite = Microsoft.AspNetCore.Http.SameSiteMode.Lax,
-				Expires = result.ExpiresAt
+				//For Network
+				// Secure = false,
+				// SameSite = Microsoft.AspNetCore.Http.SameSiteMode.Lax,
+				//For Localhost
+				Secure=true,
+				SameSite=Microsoft.AspNetCore.Http.SameSiteMode.None
 			};
 			Response.Cookies.Append("access_token", result.Token, cookieOptions);
 
 			var refreshCookieOptions = new Microsoft.AspNetCore.Http.CookieOptions
 			{
 				HttpOnly = true,
-				Secure = false,
-				SameSite = Microsoft.AspNetCore.Http.SameSiteMode.Lax,
-				Expires = DateTime.UtcNow.AddDays(7)
+				Secure=true,
+				SameSite=Microsoft.AspNetCore.Http.SameSiteMode.None
 			};
+			if (result.RememberMe)
+			{
+				refreshCookieOptions.Expires = result.RefreshTokenExpiresAt;
+			}
 			Response.Cookies.Append("refresh_token", result.RefreshToken, refreshCookieOptions);
 
 			return Ok(result);
@@ -104,12 +108,13 @@ namespace LMSApi.API.Controllers
 
 			if (string.IsNullOrEmpty(accessToken) || string.IsNullOrEmpty(refreshToken))
 			{
+				Console.WriteLine($"Access token or refresh token is missing. Access: {accessToken}, Refresh: {refreshToken}");
 				return Unauthorized("Access token or refresh token is missing.");
 			}
 
 			var req = new RefreshTokenRequest { AccessToken = accessToken, RefreshToken = refreshToken };
 			var result = await _authService.RefreshTokenAsync(req);
-
+			
 			var cookieOptions = new Microsoft.AspNetCore.Http.CookieOptions
 			{
 				HttpOnly = true,
@@ -118,22 +123,20 @@ namespace LMSApi.API.Controllers
 				// SameSite = Microsoft.AspNetCore.Http.SameSiteMode.Lax,
 				//For Localhost
 				Secure=true,
-				SameSite=Microsoft.AspNetCore.Http.SameSiteMode.None,
-				Expires = result.ExpiresAt
+				SameSite=Microsoft.AspNetCore.Http.SameSiteMode.None
 			};
 			Response.Cookies.Append("access_token", result.AccessToken, cookieOptions);
 
 			var refreshCookieOptions = new Microsoft.AspNetCore.Http.CookieOptions
 			{
 				HttpOnly = true,
-				// For Network
-				// Secure = false,
-				// SameSite = Microsoft.AspNetCore.Http.SameSiteMode.Lax,
-				//For Localhost
 				Secure=true,
-				SameSite=Microsoft.AspNetCore.Http.SameSiteMode.None,
-				Expires = DateTime.UtcNow.AddDays(7)
+				SameSite=Microsoft.AspNetCore.Http.SameSiteMode.None
 			};
+			if (result.RememberMe)
+			{
+				refreshCookieOptions.Expires = result.RefreshTokenExpiresAt;
+			}
 			Response.Cookies.Append("refresh_token", result.RefreshToken, refreshCookieOptions);
 
 			return Ok(result);

@@ -2,10 +2,10 @@ import { Component, OnInit, signal, computed, inject, DestroyRef } from '@angula
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { DomSanitizer } from '@angular/platform-browser';
-import { DashboardService } from '@services/dashboard.service';
 import { ToastService } from '@services/toast.service';
-import { CertificateResponse } from '@models/dashboard';
+import { CertificateResponse } from '@models/certificate';
 import { untilDestroyed } from '../../rxjs/until-destroyed';
+import { CertificateService } from '@services/certificate.service';
 
 @Component({
   selector: 'app-certificate-detail-page',
@@ -14,7 +14,7 @@ import { untilDestroyed } from '../../rxjs/until-destroyed';
   templateUrl: './certificate-detail.html'
 })
 export class CertificateDetailPage implements OnInit {
-  private dashboardService = inject(DashboardService);
+  private certificateService = inject(CertificateService);
   private toastService = inject(ToastService);
   private route = inject(ActivatedRoute);
   private router = inject(Router);
@@ -45,7 +45,7 @@ export class CertificateDetailPage implements OnInit {
   private loadCertificate(certId: string): void {
     this.isLoading.set(true);
     // Alternatively, we could get all and filter, but verifyCertificate is perfect
-    this.dashboardService.verifyCertificate(certId)
+    this.certificateService.verifyCertificate(certId)
       .pipe(untilDestroyed(this.destroyRef))
       .subscribe({
         next: (data) => {

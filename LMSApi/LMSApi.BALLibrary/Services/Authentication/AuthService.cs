@@ -66,19 +66,27 @@ namespace LMSApi.BALLibrary.Services
                 throw new InvalidOperationException("User role is not configured.");
             }
 
-            var (token, expires) = _tokenService.GenerateToken(user.Id, user.Email, user.Role.RoleName);
+            var (token, expires) = _tokenService.GenerateToken(user.Id, user.Email, user.Role.RoleName, 15);
             
             var refreshToken = _tokenService.GenerateRefreshToken();
-            var refreshTokenDaysStr = _configuration["Jwt:RefreshTokenExpiresDays"] ?? "7";
-            if (!int.TryParse(refreshTokenDaysStr, out var refreshDays)) refreshDays = 7;
+
+            // Pick expiry based on RememberMe flag
+            var rememberMeDaysStr = _configuration["Jwt:RefreshTokenExpiresDays"] ?? "7";
+            var sessionDaysStr = _configuration["Jwt:SessionRefreshTokenExpiresDays"] ?? "1";
+            if (!int.TryParse(rememberMeDaysStr, out var rememberMeDays)) rememberMeDays = 7;
+            if (!int.TryParse(sessionDaysStr, out var sessionDays)) sessionDays = 1;
+            var refreshDays = request.RememberMe ? rememberMeDays : sessionDays;
+
+            var refreshTokenExpiresAt = DateTime.UtcNow.AddDays(refreshDays);
 
             user.LastLoginAt = DateTime.UtcNow;
             user.RefreshToken = refreshToken;
-            user.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(refreshDays);
+            user.RefreshTokenExpiryTime = refreshTokenExpiresAt;
+            user.IsRemembered = request.RememberMe; // ← Store the preference
             await _userRepository.UpdateAsync(user);
 
-            _logger?.LogInformation("User {Email} authenticated successfully. Token expires at: {ExpiresAt}", request.Email, expires);
-            return new LoginResponse { Email = request.Email, Token = token, ExpiresAt = expires, RefreshToken = refreshToken, Message = "Authenticated" };
+            _logger?.LogInformation("User {Email} authenticated successfully. Token expires at: {ExpiresAt}, RefreshToken expires at: {RefreshExpiry}", request.Email, expires, refreshTokenExpiresAt);
+            return new LoginResponse { Email = request.Email, Token = token, ExpiresAt = expires, RefreshToken = refreshToken, Message = "Authenticated", RememberMe = request.RememberMe, RefreshTokenExpiresAt = refreshTokenExpiresAt };
         }
 
         public async Task<RegisterResponse> RegisterAsync(RegisterRequest request)
@@ -294,21 +302,29 @@ namespace LMSApi.BALLibrary.Services
                 throw new UnauthorizedAccessException("Invalid access token or refresh token");
             }
 
-            var (newAccessToken, expiresAt) = _tokenService.GenerateToken(user.Id, user.Email, user.Role.RoleName);
+            var (newAccessToken, expiresAt) = _tokenService.GenerateToken(user.Id, user.Email, user.Role.RoleName, 15);
             var newRefreshToken = _tokenService.GenerateRefreshToken();
 
-            var refreshTokenDaysStr = _configuration["Jwt:RefreshTokenExpiresDays"] ?? "7";
-            if (!int.TryParse(refreshTokenDaysStr, out var refreshDays)) refreshDays = 7;
+            // Preserve exactly the original expiry time
+            var newRefreshTokenExpiresAt = user.RefreshTokenExpiryTime ?? DateTime.UtcNow.AddDays(7);
+
+            // Optional: determine if this was a remember me session (for the response DTO)
+            var sessionDaysStr = _configuration["Jwt:SessionRefreshTokenExpiresDays"] ?? "1";
+            if (!int.TryParse(sessionDaysStr, out var sessionDays)) sessionDays = 1;
+            var remaining = (newRefreshTokenExpiresAt - DateTime.UtcNow).TotalDays;
+            var isRememberMe = remaining > sessionDays;
 
             user.RefreshToken = newRefreshToken;
-            user.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(refreshDays);
+            user.RefreshTokenExpiryTime = newRefreshTokenExpiresAt;
             await _userRepository.UpdateAsync(user);
 
             return new RefreshTokenResponse
             {
                 AccessToken = newAccessToken,
                 RefreshToken = newRefreshToken,
-                ExpiresAt = expiresAt
+                ExpiresAt = expiresAt,
+                RefreshTokenExpiresAt = newRefreshTokenExpiresAt,
+                RememberMe = isRememberMe
             };
         }
 

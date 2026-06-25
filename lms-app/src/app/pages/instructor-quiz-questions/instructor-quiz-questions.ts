@@ -3,11 +3,11 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, ActivatedRoute, RouterModule } from '@angular/router';
 import { ToastService } from '@services/toast.service';
-import { DashboardService } from '@services/dashboard.service';
 import { ConfirmModal } from '@components/confirm-modal/confirm-modal';
 import { FormInput } from '@components/form-input/form-input';
 import { Dropdown } from '@components/dropdown/dropdown';
 import { Loader } from '@components/loader/loader';
+import { QuizService } from '@services/quiz.service';
 
 interface QuizOption {
   id?: number;
@@ -34,7 +34,7 @@ interface QuizQuestion {
 })
 export class InstructorQuizQuestions implements OnInit {
   private toastService = inject(ToastService);
-  private dashboardService = inject(DashboardService);
+  private quizService = inject(QuizService);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
   private ngZone = inject(NgZone);
@@ -83,7 +83,7 @@ export class InstructorQuizQuestions implements OnInit {
 
   private loadQuiz(quizId: number) {
     this.isLoading.set(true);
-    this.dashboardService.getQuiz(quizId).subscribe({
+    this.quizService.getQuiz(quizId).subscribe({
       next: (quiz) => {
         if (quiz && quiz.questions) {
           quiz.questions.sort((a: any, b: any) => a.sortOrder - b.sortOrder);
@@ -230,7 +230,7 @@ export class InstructorQuizQuestions implements OnInit {
     this.isSaving.set(true);
 
     if (this.isEditingQuestion && this.currentQuestion.id) {
-      this.dashboardService.updateQuizQuestion(this.currentQuestion.id, payload).subscribe({
+      this.quizService.updateQuizQuestion(this.currentQuestion.id, payload).subscribe({
         next: () => {
           this.toastService.showSuccess('Question updated successfully.');
           this.loadQuiz(this.quizId!);
@@ -243,7 +243,7 @@ export class InstructorQuizQuestions implements OnInit {
         }
       });
     } else {
-      this.dashboardService.addQuizQuestion(this.quizId, payload).subscribe({
+      this.quizService.addQuizQuestion(this.quizId, payload).subscribe({
         next: () => {
           this.toastService.showSuccess('Question added successfully.');
           this.loadQuiz(this.quizId!);
@@ -270,7 +270,7 @@ export class InstructorQuizQuestions implements OnInit {
 
   protected deleteQuestion() {
     if (this.questionToDelete !== null) {
-      this.dashboardService.deleteQuizQuestion(this.questionToDelete).subscribe({
+      this.quizService.deleteQuizQuestion(this.questionToDelete).subscribe({
         next: () => {
           this.toastService.showSuccess('Question deleted successfully.');
           this.loadQuiz(this.quizId!);
@@ -383,7 +383,7 @@ export class InstructorQuizQuestions implements OnInit {
     if (!this.quizId) return;
     const items = questions.map(q => ({ questionId: q.id, sortOrder: q.sortOrder }));
     this.isSaving.set(true);
-    this.dashboardService.reorderQuizQuestions(this.quizId, items).subscribe({
+    this.quizService.reorderQuizQuestions(this.quizId, items).subscribe({
       next: () => {
         this.isSaving.set(false);
         this.toastService.showSuccess('Question order saved.');

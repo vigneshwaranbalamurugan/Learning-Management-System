@@ -2,13 +2,15 @@ import { Component, OnInit, signal, computed, inject, DestroyRef } from '@angula
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule, Router } from '@angular/router';
-import { DashboardService } from '@services/dashboard.service';
 import { ToastService } from '@services/toast.service';
 import { untilDestroyed } from '../../rxjs/until-destroyed';
 import { Loader } from '@components/loader/loader';
 import { forkJoin, of } from 'rxjs';
 import { catchError, map, switchMap } from 'rxjs/operators';
 import { AssignmentResponse, AssignmentStatusResponse } from '@models/assignment';
+import { CourseService } from '@services/course.service';
+import { EnrollmentService } from '@services/enrollment.service';
+import { AssignmentService } from '@services/assignment.service';
 
 interface EnrichedAssignment {
   id: number;
@@ -35,7 +37,9 @@ interface EnrichedAssignment {
   templateUrl: './assignments.html'
 })
 export class AssignmentsPage implements OnInit {
-  private dashboardService = inject(DashboardService);
+  private assignmentService = inject(AssignmentService);
+  private enrollmentService = inject(EnrollmentService);
+  private courseService = inject(CourseService);
   private toastService = inject(ToastService);
   private router = inject(Router);
   private destroyRef = inject(DestroyRef);
@@ -72,7 +76,7 @@ export class AssignmentsPage implements OnInit {
   private loadAssignments(): void {
     this.isLoading.set(true);
 
-    this.dashboardService.getMyEnrollments()
+    this.enrollmentService.getMyEnrollments()
       .pipe(
         untilDestroyed(this.destroyRef),
         switchMap(enrollments => {
@@ -82,7 +86,7 @@ export class AssignmentsPage implements OnInit {
 
           // Fetch full details (sections) for all enrolled courses
           const courseDetailObs = enrollments.map(e => 
-            this.dashboardService.getCourseById(e.courseId).pipe(
+            this.courseService.getCourseById(e.courseId).pipe(
               catchError(() => of(null))
             )
           );
@@ -114,7 +118,7 @@ export class AssignmentsPage implements OnInit {
 
               // Fetch assignments for each section
               const assignmentsObs = sectionsList.map(sec => 
-                this.dashboardService.getAssignmentsBySection(sec.sectionId).pipe(
+                this.assignmentService.getAssignmentsBySection(sec.sectionId).pipe(
                   map(assignments => (assignments || []).map(a => ({
                     ...a,
                     courseTitle: sec.courseTitle,
@@ -133,7 +137,7 @@ export class AssignmentsPage implements OnInit {
 
                   // Fetch status for each assignment
                   const statusObs = allAssignments.map(a => 
-                    this.dashboardService.getAssignmentStatus(a.id).pipe(
+                    this.assignmentService.getAssignmentStatus(a.id).pipe(
                       map(status => ({
                         ...a,
                         statusInfo: status

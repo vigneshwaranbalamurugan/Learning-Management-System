@@ -16,6 +16,9 @@ namespace LMSApi.DALLibrary.Interfaces
         /// <summary>Returns all submissions with status Submitted or UnderReview for instructor review.</summary>
         Task<IEnumerable<AssignmentSubmissions>> GetPendingSubmissionsAsync(int assignmentId);
 
+        /// <summary>Returns all submissions with status Graded for instructor view.</summary>
+        Task<IEnumerable<AssignmentSubmissions>> GetGradedSubmissionsAsync(int assignmentId);
+
         /// <summary>Calls PostgreSQL function get_submission_attempt_count.</summary>
         Task<int> GetSubmissionAttemptCountAsync(int assignmentId, int studentId);
 

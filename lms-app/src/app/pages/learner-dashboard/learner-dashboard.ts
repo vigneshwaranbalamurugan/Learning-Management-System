@@ -1,12 +1,13 @@
 import { Component, inject, OnInit, signal, DestroyRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AuthService } from '@services/auth.service';
-import { DashboardService } from '@services/dashboard.service';
-import { EnrollmentResponse } from '@models/dashboard';
+import { EnrollmentResponse } from '@models/enrollment';
 import { untilDestroyed } from '../../rxjs/until-destroyed';
 import { forkJoin } from 'rxjs';
 
 import { Loader } from '@components/loader/loader';
+import { AnalyticsService } from '@services/analytics.service';
+import { EnrollmentService } from '@services/enrollment.service';
 
 @Component({
   selector: 'app-learner-dashboard',
@@ -16,7 +17,8 @@ import { Loader } from '@components/loader/loader';
 })
 export class LearnerDashboard implements OnInit {
   protected authService = inject(AuthService);
-  private dashboardService = inject(DashboardService);
+  private enrollmentService = inject(EnrollmentService);
+  private analyticsService = inject(AnalyticsService);
   private destroyRef = inject(DestroyRef);
 
   protected get user() {
@@ -45,8 +47,8 @@ export class LearnerDashboard implements OnInit {
 
   ngOnInit(): void {
     forkJoin({
-      analytics: this.dashboardService.getLearnerAnalytics(),
-      enrollments: this.dashboardService.getMyEnrollments()
+      analytics: this.analyticsService.getLearnerAnalytics(),
+      enrollments: this.enrollmentService.getMyEnrollments()
     }).pipe(
       untilDestroyed(this.destroyRef)
     ).subscribe({

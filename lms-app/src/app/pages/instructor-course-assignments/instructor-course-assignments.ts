@@ -3,9 +3,9 @@ import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { InstructorCourseLayout } from '../instructor-course-layout/instructor-course-layout';
 import { ToastService } from '@services/toast.service';
-import { DashboardService } from '@services/dashboard.service';
 import { ConfirmModal } from '@components/confirm-modal/confirm-modal';
 import { Button } from '@components/button/button';
+import { AssignmentService } from '@services/assignment.service';
 
 @Component({
   selector: 'app-instructor-course-assignments',
@@ -16,7 +16,7 @@ import { Button } from '@components/button/button';
 export class InstructorCourseAssignments {
   protected layout = inject(InstructorCourseLayout);
   private toastService = inject(ToastService);
-  private dashboardService = inject(DashboardService);
+  private assignmentService = inject(AssignmentService);
   private router = inject(Router);
 
   protected showDeleteModal = false;
@@ -41,7 +41,7 @@ export class InstructorCourseAssignments {
 
   protected deleteAssignment() {
     if (!this.course || this.assignmentToDelete === null) return;
-    this.dashboardService.deleteAssignment(this.assignmentToDelete).subscribe({
+    this.assignmentService.deleteAssignment(this.assignmentToDelete).subscribe({
       next: () => {
         this.toastService.showSuccess('Assignment deleted successfully.');
         this.layout.loadCourse(this.course!.id);

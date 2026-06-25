@@ -22,5 +22,12 @@ namespace LMSApi.DALLibrary.Repositories
         {
             return await _context.Users.AnyAsync(u => u.Email == email);
         }
+
+        public async Task<Users?> GetByRefreshTokenAsync(string refreshToken)
+        {
+            return await _context.Users
+                .Include(u => u.Role)
+                .FirstOrDefaultAsync(u => u.RefreshToken == refreshToken) ?? null;
+        }
     }
 }

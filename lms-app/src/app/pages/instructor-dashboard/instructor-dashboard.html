@@ -81,7 +81,7 @@
 
         <!-- Actual List -->
         <ng-container *ngIf="!isLoading()">
-          <div class="p-4 border border-gray-100 bg-gray-50/50 rounded-lg flex flex-col gap-2.5" *ngFor="let course of courses()">
+          <div class="p-4 border border-gray-100 bg-gray-50/50 rounded-lg flex flex-col gap-2.5" *ngFor="let course of displayedCourses()">
             <div class="flex gap-3 items-center">
               <span class="bg-emerald-50 text-emerald-600 text-[10px] font-bold px-2 py-0.5 rounded" [class.bg-gray-100]="course.status === 'Draft'" [class.text-gray-500]="course.status === 'Draft'">{{ course.status }}</span>
               <span class="text-xs text-gray-500 font-medium" *ngIf="course.students > 0">{{ course.students }} Students</span>
@@ -92,6 +92,14 @@
               <span class="text-[11px] text-gray-400 font-medium">Rating</span>
             </div>
           </div>
+          
+          <button *ngIf="courses().length > 4" (click)="showAllCourses.set(!showAllCourses())" class="mt-2 text-xs font-bold text-primary hover:text-primary-hover transition bg-transparent border-none cursor-pointer self-center flex items-center gap-1">
+            {{ showAllCourses() ? 'Show Less' : 'Expand All' }}
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" [class.rotate-180]="showAllCourses()">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+
           <div *ngIf="courses().length === 0" class="py-8 text-center text-xs text-gray-400">
             No courses created yet.
           </div>
@@ -118,7 +126,7 @@
 
         <!-- Actual List -->
         <ng-container *ngIf="!isLoading()">
-          <div class="flex gap-3 items-center" *ngFor="let item of recentEnrollments()">
+          <div class="flex gap-3 items-center" *ngFor="let item of displayedEnrollments()">
             <div class="w-9 h-9 rounded-full bg-primary text-white flex items-center justify-center text-xs font-bold shrink-0">
               {{ getInitials(item.studentName) }}
             </div>
@@ -129,6 +137,14 @@
               </p>
             </div>
           </div>
+
+          <button *ngIf="recentEnrollments().length > 4" (click)="showAllEnrollments.set(!showAllEnrollments())" class="mt-2 text-xs font-bold text-primary hover:text-primary-hover transition bg-transparent border-none cursor-pointer self-center flex items-center gap-1">
+            {{ showAllEnrollments() ? 'Show Less' : 'Expand All' }}
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" [class.rotate-180]="showAllEnrollments()">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+
           <div *ngIf="recentEnrollments().length === 0" class="py-8 text-center text-xs text-gray-400">
             No recent student enrollments recorded.
           </div>

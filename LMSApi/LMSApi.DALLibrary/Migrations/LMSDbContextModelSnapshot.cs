@@ -1784,26 +1784,26 @@ namespace LMSApi.DALLibrary.Migrations
                         new
                         {
                             Id = 1,
-                            CreatedAt = new DateTime(2026, 6, 23, 10, 35, 33, 134, DateTimeKind.Utc).AddTicks(2420),
+                            CreatedAt = new DateTime(2026, 6, 24, 10, 46, 53, 467, DateTimeKind.Utc).AddTicks(7700),
                             Description = "Learner account",
                             RoleName = "Learner",
-                            UpdatedAt = new DateTime(2026, 6, 23, 10, 35, 33, 134, DateTimeKind.Utc).AddTicks(2420)
+                            UpdatedAt = new DateTime(2026, 6, 24, 10, 46, 53, 467, DateTimeKind.Utc).AddTicks(7700)
                         },
                         new
                         {
                             Id = 2,
-                            CreatedAt = new DateTime(2026, 6, 23, 10, 35, 33, 134, DateTimeKind.Utc).AddTicks(2430),
+                            CreatedAt = new DateTime(2026, 6, 24, 10, 46, 53, 467, DateTimeKind.Utc).AddTicks(7700),
                             Description = "Instructor account",
                             RoleName = "Instructor",
-                            UpdatedAt = new DateTime(2026, 6, 23, 10, 35, 33, 134, DateTimeKind.Utc).AddTicks(2430)
+                            UpdatedAt = new DateTime(2026, 6, 24, 10, 46, 53, 467, DateTimeKind.Utc).AddTicks(7700)
                         },
                         new
                         {
                             Id = 3,
-                            CreatedAt = new DateTime(2026, 6, 23, 10, 35, 33, 134, DateTimeKind.Utc).AddTicks(2430),
+                            CreatedAt = new DateTime(2026, 6, 24, 10, 46, 53, 467, DateTimeKind.Utc).AddTicks(7700),
                             Description = "Admin account",
                             RoleName = "Admin",
-                            UpdatedAt = new DateTime(2026, 6, 23, 10, 35, 33, 134, DateTimeKind.Utc).AddTicks(2430)
+                            UpdatedAt = new DateTime(2026, 6, 24, 10, 46, 53, 467, DateTimeKind.Utc).AddTicks(7700)
                         });
                 });
 
@@ -1837,6 +1837,9 @@ namespace LMSApi.DALLibrary.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")
                         .HasDefaultValue(false);
+
+                    b.Property<bool>("IsRemembered")
+                        .HasColumnType("boolean");
 
                     b.Property<DateTime>("LastLoginAt")
                         .HasColumnType("timestamp without time zone");
@@ -1883,15 +1886,16 @@ namespace LMSApi.DALLibrary.Migrations
                         new
                         {
                             Id = 1,
-                            CreatedAt = new DateTime(2026, 6, 23, 10, 35, 33, 133, DateTimeKind.Utc).AddTicks(9020),
+                            CreatedAt = new DateTime(2026, 6, 24, 10, 46, 53, 467, DateTimeKind.Utc).AddTicks(4400),
                             Email = "admin@gmail.com",
                             IsActive = true,
                             IsEmailVerified = true,
+                            IsRemembered = false,
                             LastLoginAt = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             PasswordHash = "TPZPlYPS43ldK8EYFX67pHzyMNFmt69wd9N2cUNObYs=",
                             PasswordSalt = "K5CamRmhDuuJEyr50OpNsA==",
                             RoleId = 3,
-                            UpdatedAt = new DateTime(2026, 6, 23, 10, 35, 33, 133, DateTimeKind.Utc).AddTicks(9030)
+                            UpdatedAt = new DateTime(2026, 6, 24, 10, 46, 53, 467, DateTimeKind.Utc).AddTicks(4400)
                         });
                 });
 

@@ -4,12 +4,12 @@ import { FormsModule } from '@angular/forms';
 import { Router, ActivatedRoute, RouterModule } from '@angular/router';
 import { ToastService } from '@services/toast.service';
 import { LessonResourcesService } from '@services/lesson-resources.service';
-import { DashboardService } from '@services/dashboard.service';
 import { FormInput } from '@components/form-input/form-input';
 import { Dropdown } from '@components/dropdown/dropdown';
 import { Button } from '@components/button/button';
 import { Loader } from '@components/loader/loader';
 import { InstructorCourseLayout } from '../instructor-course-layout/instructor-course-layout';
+import { CourseBuilderService } from '@services/course-builder.service';
 
 @Component({
   selector: 'app-instructor-resource-form',
@@ -20,7 +20,7 @@ import { InstructorCourseLayout } from '../instructor-course-layout/instructor-c
 export class InstructorResourceForm implements OnInit {
   private toastService = inject(ToastService);
   private resourcesService = inject(LessonResourcesService);
-  private dashboardService = inject(DashboardService);
+  private courseBuilderService = inject(CourseBuilderService);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
   protected layout = inject(InstructorCourseLayout);
@@ -84,7 +84,7 @@ export class InstructorResourceForm implements OnInit {
   }
 
   ngOnInit() {
-    this.dashboardService.getLessonUploadLimits().subscribe({
+    this.courseBuilderService.getLessonUploadLimits().subscribe({
       next: (limits) => {
         this.maxPdfSizeMB = limits.pdfMaxFileSizeMB;
       },

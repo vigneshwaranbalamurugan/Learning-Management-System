@@ -2,11 +2,11 @@ import { Component, OnInit, signal, inject, DestroyRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
-import { DashboardService } from '@services/dashboard.service';
 import { ToastService } from '@services/toast.service';
 import { untilDestroyed } from '../../rxjs/until-destroyed';
 import { Loader } from '@components/loader/loader';
 import { AssignmentResponse, AssignmentSubmissionResponse, AssignmentStatusResponse } from '@models/assignment';
+import { AssignmentService } from '@services/assignment.service';
 
 @Component({
   selector: 'app-assignment-detail',
@@ -15,7 +15,7 @@ import { AssignmentResponse, AssignmentSubmissionResponse, AssignmentStatusRespo
   templateUrl: './assignment-detail.html'
 })
 export class AssignmentDetailPage implements OnInit {
-  private dashboardService = inject(DashboardService);
+  private assignmentService = inject(AssignmentService);
   private toastService = inject(ToastService);
   private route = inject(ActivatedRoute);
   private router = inject(Router);
@@ -50,7 +50,7 @@ export class AssignmentDetailPage implements OnInit {
     this.isLoading.set(true);
 
     // Fetch assignment, status, and submissions in parallel/sequence
-    this.dashboardService.getAssignmentById(assignmentId)
+    this.assignmentService.getAssignmentById(assignmentId)
       .pipe(untilDestroyed(this.destroyRef))
       .subscribe({
         next: (assignmentData) => {
@@ -69,7 +69,7 @@ export class AssignmentDetailPage implements OnInit {
 
   private loadStatusAndSubmissions(assignmentId: number): void {
     // Fetch status
-    this.dashboardService.getAssignmentStatus(assignmentId)
+    this.assignmentService.getAssignmentStatus(assignmentId)
       .pipe(untilDestroyed(this.destroyRef))
       .subscribe({
         next: (statusData) => {
@@ -81,7 +81,7 @@ export class AssignmentDetailPage implements OnInit {
       });
 
     // Fetch submission history
-    this.dashboardService.getAssignmentSubmissions(assignmentId)
+    this.assignmentService.getAssignmentSubmissions(assignmentId)
       .pipe(untilDestroyed(this.destroyRef))
       .subscribe({
         next: (submissionsList) => {
@@ -132,7 +132,7 @@ export class AssignmentDetailPage implements OnInit {
       formData.append('SubmittedAssignmentUrl', this.submittedUrl);
     }
 
-    this.dashboardService.submitAssignment(formData)
+    this.assignmentService.submitAssignment(formData)
       .pipe(untilDestroyed(this.destroyRef))
       .subscribe({
         next: () => {

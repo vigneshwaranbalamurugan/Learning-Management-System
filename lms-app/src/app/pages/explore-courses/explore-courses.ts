@@ -2,14 +2,7 @@ import { Component, OnInit, signal, inject, DestroyRef, computed } from '@angula
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
-import { DashboardService } from '@services/dashboard.service';
-import {
-  CourseResponse,
-  CategoryResponse,
-  InstructorMetadata,
-  LanguageMetadata,
-  FiltersMetadataResponse
-} from '@models/dashboard';
+import { CourseResponse, CategoryResponse, InstructorMetadata, LanguageMetadata, FiltersMetadataResponse } from '@models/course';
 import { ToastService } from '@services/toast.service';
 import { untilDestroyed } from '../../rxjs/until-destroyed';
 import { PaginationComponent } from '../../components/pagination/pagination.component';
@@ -17,6 +10,8 @@ import { forkJoin, Subject } from 'rxjs';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 
 import { Loader } from '@components/loader/loader';
+import { CourseService } from '@services/course.service';
+import { EnrollmentService } from '@services/enrollment.service';
 
 @Component({
   selector: 'app-explore-courses',
@@ -25,7 +20,8 @@ import { Loader } from '@components/loader/loader';
   templateUrl: './explore-courses.html'
 })
 export class ExploreCourses implements OnInit {
-  private dashboardService = inject(DashboardService);
+  private enrollmentService = inject(EnrollmentService);
+  private courseService = inject(CourseService);
   private toastService     = inject(ToastService);
   private router           = inject(Router);
   private route            = inject(ActivatedRoute);
@@ -65,7 +61,6 @@ export class ExploreCourses implements OnInit {
   // ── UI state ─────────────────────────────────────────────────────────────
   protected isLoading       = signal(true);
   protected filtersLoading  = signal(true);
-  protected isEnrolling     = signal<number | null>(null);
   protected mobileFiltersOpen = signal(false);
   protected desktopFiltersOpen = signal(true);
   protected showMoreCategories = signal(false);
@@ -194,8 +189,8 @@ export class ExploreCourses implements OnInit {
     // Load filter metadata + enrollments
     this.filtersLoading.set(true);
     forkJoin({
-      metadata: this.dashboardService.getFiltersMetadata(),
-      enrollments: this.dashboardService.getMyEnrollments()
+      metadata: this.courseService.getFiltersMetadata(),
+      enrollments: this.enrollmentService.getMyEnrollments()
     }).pipe(untilDestroyed(this.destroyRef)).subscribe({
       next: ({ metadata, enrollments }) => {
         this.categories.set(metadata.categories ?? []);
@@ -220,7 +215,7 @@ export class ExploreCourses implements OnInit {
     this.isLoading.set(true);
     this.updateUrlParams();
 
-    this.dashboardService.getAllCourses({
+    this.courseService.getAllCourses({
       categoryIds:      this.selectedCategoryIds().join(',') || undefined,
       levels:           this.selectedLevels().join(',') || undefined,
       languageIds:      this.selectedLanguageIds().join(',') || undefined,
@@ -424,28 +419,7 @@ export class ExploreCourses implements OnInit {
     return this.showMoreInstructors() ? insts : insts.slice(0, 6);
   }
 
-  protected enroll(course: CourseResponse): void {
-    if (this.isEnrolled(course.id)) {
-      this.toastService.showInfo('You are already enrolled in this course.');
-      return;
-    }
-    if (course.isPremium) {
-      this.toastService.showWarning('Premium courses require payment. Please purchase this course.');
-      return;
-    }
-    this.isEnrolling.set(course.id);
-    this.dashboardService.enrollFreeCourse(course.id).pipe(untilDestroyed(this.destroyRef)).subscribe({
-      next: () => {
-        this.toastService.showSuccess(`Enrolled in "${course.title}"!`);
-        this.enrolledCourseIds.update(ids => [...ids, course.id]);
-        this.isEnrolling.set(null);
-      },
-      error: (err) => {
-        this.toastService.showApiError(err, 'Enrollment failed.');
-        this.isEnrolling.set(null);
-      }
-    });
-  }
+
 
   protected navigateToCourse(course: CourseResponse): void {
     this.router.navigate(['/learner/explore', course.slug], {

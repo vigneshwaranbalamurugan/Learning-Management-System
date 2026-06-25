@@ -33,6 +33,10 @@ export class InstructorAssignmentService {
     return this.http.get<AssignmentSubmissionResponse[]>(`${this.baseUrl}/AssignmentSubmissions/assignment/${assignmentId}/pending`);
   }
 
+  getGradedSubmissions(assignmentId: number): Observable<AssignmentSubmissionResponse[]> {
+    return this.http.get<AssignmentSubmissionResponse[]>(`${this.baseUrl}/AssignmentSubmissions/assignment/${assignmentId}/graded`);
+  }
+
   gradeSubmission(submissionId: number, marksAwarded: number, feedback: string): Observable<AssignmentSubmissionResponse> {
     return this.http.put<AssignmentSubmissionResponse>(`${this.baseUrl}/AssignmentSubmissions/${submissionId}/grade`, {
       marksAwarded,

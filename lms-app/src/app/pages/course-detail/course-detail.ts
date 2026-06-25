@@ -1,32 +1,41 @@
 import { Component, OnInit, signal, computed, inject, DestroyRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
-import { DashboardService } from '@services/dashboard.service';
 import { ToastService } from '@services/toast.service';
-import {
-  CourseDetailResponse,
-  EnrollmentResponse
-} from '@models/dashboard';
+import { CourseDetailResponse } from '@models/course';
+import { EnrollmentResponse } from '@models/enrollment';
 import { AuthService } from '@services/auth.service';
 import { untilDestroyed } from '../../rxjs/until-destroyed';
 import { forkJoin } from 'rxjs';
 import { DomSanitizer, SafeResourceUrl, SafeHtml } from '@angular/platform-browser';
 import { marked } from 'marked';
 import { VideoPlayer } from '../../components/video-player/video-player';
+import { CourseService } from '@services/course.service';
+import { CourseBuilderService } from '@services/course-builder.service';
+import { EnrollmentService } from '@services/enrollment.service';
+import { ReviewService } from '@services/review.service';
+import { ReviewResponse } from '@models/review';
+import { environment } from '@environments/environment';
+import { ConfirmModal } from '../../components/confirm-modal/confirm-modal';
+import { ConfettiComponent } from '../../components/confetti/confetti';
+import { Loader } from '../../components/loader/loader';
 
 @Component({
   selector: 'app-course-detail',
   standalone: true,
-  imports: [CommonModule, RouterModule, VideoPlayer],
+  imports: [CommonModule, RouterModule, VideoPlayer, ConfirmModal, ConfettiComponent, Loader],
   templateUrl: './course-detail.html'
 })
 export class CourseDetail implements OnInit {
-  private dashboardService = inject(DashboardService);
+  private enrollmentService = inject(EnrollmentService);
+  private courseBuilderService = inject(CourseBuilderService);
+  private courseService = inject(CourseService);
   private toastService     = inject(ToastService);
   private route            = inject(ActivatedRoute);
   private router           = inject(Router);
   private destroyRef       = inject(DestroyRef);
   private authService      = inject(AuthService);
+  private reviewService    = inject(ReviewService);
 
   // ── Data ─────────────────────────────────────────────────────────────────
   protected course            = signal<CourseDetailResponse | null>(null);
@@ -34,6 +43,7 @@ export class CourseDetail implements OnInit {
   protected isEnrolled        = signal(false);
   protected enrollmentProgress = signal(0);
   protected isInstructor      = signal(false);
+  protected reviews           = signal<ReviewResponse[]>([]);
 
   // ── Preview Modal State ──────────────────────────────────────────────────
   protected previewUrl     = signal<SafeResourceUrl | null>(null);
@@ -70,6 +80,10 @@ export class CourseDetail implements OnInit {
   protected isLoading   = signal(true);
   protected isEnrolling = signal(false);
   protected expandedSections = signal<Set<number>>(new Set());
+  protected showEnrollConfirmModal = signal(false);
+  protected showConfetti = signal(false);
+  protected isVerifyingPayment = signal(false);
+  protected isInitializingPayment = signal(false);
 
   // ── Stored course ID from router state ────────────────────────────────────
   private courseId: number | null = null;
@@ -107,11 +121,13 @@ export class CourseDetail implements OnInit {
     this.isLoading.set(true);
 
     forkJoin({
-      course: this.dashboardService.getCourseById(courseId),
-      enrollments: this.dashboardService.getMyEnrollments()
+      course: this.courseService.getCourseById(courseId),
+      enrollments: this.enrollmentService.getMyEnrollments(),
+      reviews: this.reviewService.getCourseReviews(courseId)
     }).pipe(untilDestroyed(this.destroyRef)).subscribe({
-      next: ({ course, enrollments }) => {
+      next: ({ course, enrollments, reviews }) => {
         this.course.set(course);
+        this.reviews.set(reviews);
 
         // Expand first section by default
         if (course.sections?.length > 0) {
@@ -147,22 +163,129 @@ export class CourseDetail implements OnInit {
       this.toastService.showInfo('You are already enrolled in this course.');
       return;
     }
+    this.showEnrollConfirmModal.set(true);
+  }
+
+  protected confirmEnrollment(): void {
+    const c = this.course();
+    if (!c) return;
+    
+    this.showEnrollConfirmModal.set(false);
+
     if (c.isPremium) {
-      this.toastService.showWarning('Premium courses require payment to enroll.');
+      this.purchasePremiumCourse(c);
       return;
     }
+
     this.isEnrolling.set(true);
-    this.dashboardService.enrollFreeCourse(c.id).pipe(untilDestroyed(this.destroyRef)).subscribe({
+    this.enrollmentService.enrollFreeCourse(c.id).pipe(untilDestroyed(this.destroyRef)).subscribe({
       next: () => {
         this.isEnrolled.set(true);
         this.isEnrolling.set(false);
-        this.toastService.showSuccess(`Successfully enrolled in "${c.title}"!`);
+        this.showConfetti.set(true);
+        this.loadCourse(c.id);
       },
       error: (err) => {
         this.toastService.showApiError(err, 'Enrollment failed.');
         this.isEnrolling.set(false);
       }
     });
+  }
+
+  protected closeEnrollConfirmModal(): void {
+    this.showEnrollConfirmModal.set(false);
+  }
+
+  private loadRazorpayScript(): Promise<boolean> {
+    return new Promise(resolve => {
+      if (document.getElementById('razorpay-checkout-js')) {
+        resolve(true);
+        return;
+      }
+      const script = document.createElement('script');
+      script.id = 'razorpay-checkout-js';
+      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      script.onload = () => resolve(true);
+      script.onerror = () => resolve(false);
+      document.body.appendChild(script);
+    });
+  }
+
+  protected async purchasePremiumCourse(course: CourseDetailResponse) {
+    this.isEnrolling.set(true);
+    this.isInitializingPayment.set(true);
+    
+    this.enrollmentService.enrollPremiumCourse(course.id, 'Razorpay')
+      .pipe(untilDestroyed(this.destroyRef))
+      .subscribe({
+        next: async (res) => {
+          const loaded = await this.loadRazorpayScript();
+          this.isInitializingPayment.set(false);
+          if (!loaded) {
+            this.toastService.showError('Failed to load payment gateway. Please check your connection.');
+            this.isEnrolling.set(false);
+            return;
+          }
+
+          const options = {
+            key: environment.razorpayKey,
+            order_id: res.providerOrderId,
+            name: 'CourseHub LMS',
+            description: `Purchase ${course.title}`,
+            handler: (response: any) => {
+              this.verifyRazorpayPayment(course.id, response);
+            },
+            modal: {
+              ondismiss: () => {
+                this.isEnrolling.set(false);
+                this.toastService.showWarning('Payment cancelled.');
+              }
+            },
+            prefill: {
+              name: this.authService.currentUser()?.fullName || '',
+              email: this.authService.currentUser()?.email || ''
+            },
+            theme: {
+              color: '#1C1C7B'
+            }
+          };
+
+          const rzp = new (window as any).Razorpay(options);
+          rzp.open();
+        },
+        error: (err) => {
+          this.toastService.showApiError(err, 'Failed to initiate payment.');
+          this.isEnrolling.set(false);
+          this.isInitializingPayment.set(false);
+        }
+      });
+  }
+
+  private verifyRazorpayPayment(courseId: number, paymentData: any) {
+    this.isVerifyingPayment.set(true);
+    const requestPayload = {
+      providerName: 'Razorpay',
+      providerOrderId: paymentData.razorpay_order_id,
+      providerPaymentId: paymentData.razorpay_payment_id,
+      providerSignature: paymentData.razorpay_signature
+    };
+
+    this.enrollmentService.verifyPayment(courseId, requestPayload)
+      .pipe(untilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.isEnrolled.set(true);
+          this.isEnrolling.set(false);
+          this.isVerifyingPayment.set(false);
+          this.showConfetti.set(true);
+          this.loadCourse(courseId);
+        },
+        error: (err) => {
+          this.toastService.showApiError(err, 'Payment verification failed.');
+          this.isEnrolling.set(false);
+          this.isVerifyingPayment.set(false);
+        }
+      });
   }
 
   protected toggleSection(sectionId: number): void {
@@ -194,7 +317,7 @@ export class CourseDetail implements OnInit {
   protected goBack(): void {
     if (this.isInstructor()) {
       // If there's history we could use location.back(), but just redirect to instructor dashboard
-      this.router.navigate(['/instructor/dashboard']);
+      this.router.navigate(['/instructor/courses']);
     } else {
       this.router.navigate(['/learner/explore']);
     }

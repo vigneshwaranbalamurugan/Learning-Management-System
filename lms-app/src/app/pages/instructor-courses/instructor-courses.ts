@@ -2,14 +2,14 @@ import { Component, OnInit, signal, computed, inject, DestroyRef, HostListener, 
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule, Router } from '@angular/router';
-import { DashboardService } from '@services/dashboard.service';
 import { ToastService } from '@services/toast.service';
-import { CourseResponse, CategoryResponse } from '@models/dashboard';
+import { CourseResponse, CategoryResponse } from '@models/course';
 import { untilDestroyed } from '../../rxjs/until-destroyed';
 import { Dropdown } from '@components/dropdown/dropdown';
 import { FormInput } from '@components/form-input/form-input';
 import { ConfirmModal } from '@components/confirm-modal/confirm-modal';
 import { Button } from '@components/button/button';
+import { CourseService } from '@services/course.service';
 
 @Component({
   selector: 'app-instructor-courses',
@@ -18,7 +18,7 @@ import { Button } from '@components/button/button';
   templateUrl: './instructor-courses.html'
 })
 export class InstructorCourses implements OnInit {
-  private dashboardService = inject(DashboardService);
+  private courseService = inject(CourseService);
   private toastService = inject(ToastService);
   private router = inject(Router);
   private destroyRef = inject(DestroyRef);
@@ -141,7 +141,7 @@ export class InstructorCourses implements OnInit {
 
   ngOnInit(): void {
     // Load all courses (no pagination) once for the stats cards
-    this.dashboardService.getMyCourses()
+    this.courseService.getMyCourses()
       .pipe(untilDestroyed(this.destroyRef))
       .subscribe({
         next: (data) => {
@@ -184,7 +184,7 @@ export class InstructorCourses implements OnInit {
       pageSize: this.pageSize()
     };
 
-    this.dashboardService.getMyCourses(query)
+    this.courseService.getMyCourses(query)
       .pipe(untilDestroyed(this.destroyRef))
       .subscribe({
         next: (data) => {
@@ -201,7 +201,7 @@ export class InstructorCourses implements OnInit {
   }
 
   private loadCategories(): void {
-    this.dashboardService.getAllCategories()
+    this.courseService.getAllCategories()
       .pipe(untilDestroyed(this.destroyRef))
       .subscribe({
         next: (data) => {
@@ -316,7 +316,7 @@ export class InstructorCourses implements OnInit {
     const shouldUnpublish = this.canUnpublish(course);
     const nextPublishState = !shouldUnpublish;
     
-    this.dashboardService.publishCourse(course.id, nextPublishState)
+    this.courseService.publishCourse(course.id, nextPublishState)
       .pipe(untilDestroyed(this.destroyRef))
       .subscribe({
         next: (updatedCourse) => {
@@ -343,7 +343,7 @@ export class InstructorCourses implements OnInit {
 
   protected archiveCourse(): void {
     if (this.courseToArchive === null) return;
-    this.dashboardService.archiveCourse(this.courseToArchive, this.isArchivingAction)
+    this.courseService.archiveCourse(this.courseToArchive, this.isArchivingAction)
       .pipe(untilDestroyed(this.destroyRef))
       .subscribe({
         next: (updatedCourse) => {

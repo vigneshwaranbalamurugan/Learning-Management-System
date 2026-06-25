@@ -2,10 +2,10 @@ import { Component, OnInit, signal, inject, DestroyRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
-import { DashboardService } from '@services/dashboard.service';
 import { ToastService } from '@services/toast.service';
 import { QuizAttemptDetailResponse } from '@models/quiz';
 import { untilDestroyed } from '../../rxjs/until-destroyed';
+import { QuizService } from '@services/quiz.service';
 
 @Component({
   selector: 'app-quizzes-detail',
@@ -14,7 +14,7 @@ import { untilDestroyed } from '../../rxjs/until-destroyed';
   templateUrl: './quizzes-detail.html'
 })
 export class QuizDetailPage implements OnInit {
-  private dashboardService = inject(DashboardService);
+  private quizService = inject(QuizService);
   private toastService = inject(ToastService);
   private route = inject(ActivatedRoute);
   private router = inject(Router);
@@ -38,7 +38,7 @@ export class QuizDetailPage implements OnInit {
 
   private loadAttemptDetail(attemptId: number): void {
     this.isLoading.set(true);
-    this.dashboardService.getQuizAttemptDetail(attemptId)
+    this.quizService.getQuizAttemptDetail(attemptId)
       .pipe(untilDestroyed(this.destroyRef))
       .subscribe({
         next: (data) => {

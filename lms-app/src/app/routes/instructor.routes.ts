@@ -97,6 +97,10 @@ export const instructorRoutes: Routes = [
         loadComponent: () => import('@pages/instructor-evaluate/instructor-evaluate').then(m => m.InstructorEvaluate)
       },
       {
+        path: 'assignments/:assignmentId/graded',
+        loadComponent: () => import('@pages/instructor-graded-submissions/instructor-graded-submissions').then(m => m.InstructorGradedSubmissions)
+      },
+      {
         path: 'progress',
         loadComponent: () => import('@pages/progress/instructor-progress-list').then(m => m.InstructorProgressList)
       },
@@ -107,6 +111,14 @@ export const instructorRoutes: Routes = [
       {
         path: 'profile',
         loadComponent: () => import('@pages/profile/profile').then(m => m.Profile)
+      },
+      {
+        path: 'revenue',
+        loadComponent: () => import('@pages/instructor-revenue/instructor-revenue').then(m => m.InstructorRevenue)
+      },
+      {
+        path: 'settings',
+        loadComponent: () => import('@pages/instructor-settings/instructor-settings').then(m => m.InstructorSettings)
       }
     ]
   }

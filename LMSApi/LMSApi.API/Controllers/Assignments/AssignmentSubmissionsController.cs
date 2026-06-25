@@ -96,6 +96,15 @@ namespace LMSApi.API.Controllers
             return Ok(result);
         }
 
+        /// <summary>Get graded submissions for an assignment — instructor view.</summary>
+        [Authorize(Roles = "Instructor,Admin")]
+        [HttpGet("assignment/{assignmentId:int}/graded")]
+        public async Task<ActionResult<IEnumerable<AssignmentSubmissionResponse>>> GetGradedReviews(int assignmentId)
+        {
+            var result = await _assignmentSubmissionService.GetGradedReviewsAsync(assignmentId);
+            return Ok(result);
+        }
+
         /// <summary>Get the authenticated student's status summary for an assignment.</summary>
         [Authorize]
         [HttpGet("assignment/{assignmentId:int}/status")]

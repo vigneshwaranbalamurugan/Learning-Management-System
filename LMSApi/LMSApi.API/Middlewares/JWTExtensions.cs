@@ -59,33 +59,10 @@ namespace LMSApi.API.Extensions
 						},
 						OnAuthenticationFailed = context =>
 						{
-							context.Response.StatusCode = Microsoft.AspNetCore.Http.StatusCodes.Status401Unauthorized;
-							context.Response.ContentType = "application/json";
-
-							string message = "Authentication failed.";
-							if (context.Exception is SecurityTokenExpiredException)
-							{
-								message = "Token has expired. Please log in again.";
-							}
-							else if (context.Exception is SecurityTokenInvalidSignatureException)
-							{
-								message = "Invalid token signature.";
-							}
-							else
-							{
-								message = $"Token validation failed: {context.Exception.Message}";
-							}
-
-							var errorResponse = new
-							{
-								success = false,
-								statusCode = Microsoft.AspNetCore.Http.StatusCodes.Status401Unauthorized,
-								message = message,
-								traceId = context.HttpContext.TraceIdentifier
-							};
-
-							var json = System.Text.Json.JsonSerializer.Serialize(errorResponse);
-							return context.Response.WriteAsync(json);
+							// Do NOT write to the response here! 
+							// Writing here breaks public endpoints (like login/refresh) if the user has an expired token.
+							// The error will be passed to OnChallenge which only fires for protected endpoints.
+							return Task.CompletedTask;
 						},
 						OnForbidden = context =>
 						{
@@ -115,17 +92,17 @@ namespace LMSApi.API.Extensions
 								var authHeader = context.Request.Headers["Authorization"].ToString();
 								string message;
 
-								if (string.IsNullOrWhiteSpace(authHeader))
-								{
-									message = "Authorization token is missing. Please log in to access this resource.";
-								}
-								else if (context.AuthenticateFailure is SecurityTokenExpiredException)
+								if (context.AuthenticateFailure is SecurityTokenExpiredException)
 								{
 									message = "Token has expired. Please log in again.";
 								}
 								else if (context.AuthenticateFailure != null)
 								{
 									message = $"Invalid token: {context.AuthenticateFailure.Message}";
+								}
+								else if (string.IsNullOrWhiteSpace(authHeader) && !context.Request.Cookies.ContainsKey("access_token"))
+								{
+									message = "Authorization token is missing. Please log in to access this resource.";
 								}
 								else
 								{

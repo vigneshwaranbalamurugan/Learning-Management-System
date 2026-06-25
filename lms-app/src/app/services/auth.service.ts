@@ -19,63 +19,63 @@ export class AuthService {
   currentUser = signal<UserProfile | null>(null);
   userRole = signal<string | null>(null);
   isAuthenticating = signal(false);
+  // True once we know for certain whether the user is logged in or not.
+  // Prevents guards from re-triggering initializeAuth() after a failed session check.
+  sessionChecked = signal(false);
   private initAuth$?: Observable<UserProfile | null>;
 
   constructor() {
-    const cachedProfile = localStorage.getItem('user_profile') || sessionStorage.getItem('user_profile');
-    if (cachedProfile) {
-      try {
-        const profile = JSON.parse(cachedProfile) as UserProfile;
-        this.currentUser.set(profile);
-        this.userRole.set(profile.role || 'Learner');
-      } catch (e) {
-        console.error('Error parsing cached profile:', e);
-      }
-    }
   }
 
-  loginApiCall(credentials: LoginModel): Observable<any> {
+  loginApiCall(credentials: LoginModel, rememberMe: boolean = false): Observable<any> {
     return this.http.post<any>(`${this.baseUrl}/auth/login`, {
       email: credentials.email,
-      password: credentials.password
+      password: credentials.password,
+      rememberMe: rememberMe
     });
   }
 
   initializeAuth(): Observable<UserProfile | null> {
     if (this.initAuth$) return this.initAuth$;
 
-    const email = localStorage.getItem('user_email') || sessionStorage.getItem('user_email');
-    
-    if (email) {
-      this.isAuthenticating.set(true);
-      this.initAuth$ = this.profileService.getProfile().pipe(
-        tap((profile) => {
-          const actualRole = profile.role || 'Learner';
-          const updatedProfile = { ...profile, email, role: actualRole };
-          this.currentUser.set(updatedProfile);
-          this.userRole.set(actualRole);
-          const storage = localStorage.getItem('user_email') ? localStorage : sessionStorage;
-          storage.setItem('user_profile', JSON.stringify(updatedProfile));
-          
-          // Auto redirect to appropriate dashboard if on login or root landing page
-          const currentPath = window.location.pathname;
-          if (currentPath === '/' || currentPath.startsWith('/login')) {
-            this.redirectToDashboard(actualRole);
-          }
-        }),
-        catchError((err) => {
-          this.clearSession();
-          return of(null);
-        }),
-        finalize(() => {
-          this.isAuthenticating.set(false);
-          this.initAuth$ = undefined;
-        }),
-        shareReplay(1)
-      );
-      return this.initAuth$;
+    // If we have already confirmed the session is dead, don't hit the backend again.
+    if (this.sessionChecked() && !this.currentUser()) {
+      return of(null);
     }
-    return of(null);
+
+    this.isAuthenticating.set(true);
+
+    // Try to load the profile using the existing access_token cookie.
+    // If the access token is expired (401), the auth interceptor will automatically:
+    //   1. Call POST /auth/refresh-token (using the refresh_token cookie)
+    //   2. Receive a new access_token cookie from the server
+    //   3. Retry this /profile request
+    // If the refresh token is also expired, the interceptor clears the session + redirects to /login.
+    this.initAuth$ = this.profileService.getProfile().pipe(
+      tap((profile) => {
+        const actualRole = profile.role || 'Learner';
+        const updatedProfile = { ...profile, role: actualRole };
+        this.currentUser.set(updatedProfile);
+        this.userRole.set(actualRole);
+
+        // Auto redirect to appropriate dashboard if on login or root landing page
+        const currentPath = window.location.pathname;
+        if (currentPath === '/' || currentPath.startsWith('/login')) {
+          this.redirectToDashboard(actualRole);
+        }
+      }),
+      catchError(() => {
+        this.clearSession();
+        return of(null);
+      }),
+      finalize(() => {
+        this.isAuthenticating.set(false);
+        this.sessionChecked.set(true); // Mark session as definitively checked
+        this.initAuth$ = undefined;
+      }),
+      shareReplay(1)
+    );
+    return this.initAuth$;
   }
 
   redirectToDashboard(role: string) {
@@ -89,18 +89,20 @@ export class AuthService {
   }
 
   clearSession() {
-    localStorage.removeItem('user_email');
-    localStorage.removeItem('user_profile');
-    sessionStorage.removeItem('user_email');
-    sessionStorage.removeItem('user_profile');
     this.currentUser.set(null);
     this.userRole.set(null);
+    this.sessionChecked.set(true); // Session is confirmed dead — stop all retry attempts
   }
 
   logout() {
+    // Clear the session FIRST so guards know the session is dead immediately.
+    // This prevents any redirect loop when the revoke call triggers the interceptor.
     this.clearSession();
-    // Hit backend revoke/logout endpoint to clear HttpOnly cookies
-    return this.http.post(`${this.baseUrl}/auth/revoke`, {});
+    return this.http.post(`${this.baseUrl}/auth/revoke`, {}, { withCredentials: true });
+  }
+
+  refreshToken(): Observable<any> {
+    return this.http.post(`${this.baseUrl}/auth/refresh-token`, {}, { withCredentials: true });
   }
 
   getRoleFromToken(token: string): string | null {
@@ -109,7 +111,7 @@ export class AuthService {
       const parts = token.split('.');
       if (parts.length !== 3) return null;
       const payload = JSON.parse(atob(parts[1]));
-      
+
       const roleClaimType = 'http://schemas.microsoft.com/ws/2008/06/identity/claims/role';
       return payload[roleClaimType] || payload['role'] || null;
     } catch (e) {

@@ -3,10 +3,10 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
-import { DashboardService } from '@services/dashboard.service';
 import { ToastService } from '@services/toast.service';
-import { CertificateResponse } from '@models/dashboard';
+import { CertificateResponse } from '@models/certificate';
 import { untilDestroyed } from '../../rxjs/until-destroyed';
+import { CertificateService } from '@services/certificate.service';
 
 @Component({
   selector: 'app-verify-certificate',
@@ -15,7 +15,7 @@ import { untilDestroyed } from '../../rxjs/until-destroyed';
   templateUrl: './verify-certificate.html'
 })
 export class VerifyCertificatePage implements OnInit {
-  private dashboardService = inject(DashboardService);
+  private certificateService = inject(CertificateService);
   private toastService = inject(ToastService);
   private route = inject(ActivatedRoute);
   private router = inject(Router);
@@ -64,7 +64,7 @@ export class VerifyCertificatePage implements OnInit {
     this.errorMsg.set(null);
     this.certificate.set(null);
 
-    this.dashboardService.verifyCertificate(guid)
+    this.certificateService.verifyCertificate(guid)
       .pipe(untilDestroyed(this.destroyRef))
       .subscribe({
         next: (data) => {

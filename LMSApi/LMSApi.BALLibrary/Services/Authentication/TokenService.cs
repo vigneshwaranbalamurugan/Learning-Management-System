@@ -16,7 +16,7 @@ namespace LMSApi.BALLibrary.Services
             _configuration = configuration;
         }
 
-        public (string Token, DateTime ExpiresAt) GenerateToken(int userId, string email, string role)
+        public (string Token, DateTime ExpiresAt) GenerateToken(int userId, string email, string role, int? expiresMinutesOverride = null)
         {
             try{
                 var key = _configuration["Jwt:Key"] ?? throw new InvalidOperationException("JWT key not configured");
@@ -24,6 +24,7 @@ namespace LMSApi.BALLibrary.Services
                 var audience = _configuration["Jwt:Audience"] ?? "LMSApiUsers";
                 var expiresMinutesStr = _configuration["Jwt:ExpiresMinutes"] ?? "60";
                 if (!int.TryParse(expiresMinutesStr, out var expiresMinutes)) expiresMinutes = 60;
+                if (expiresMinutesOverride.HasValue) expiresMinutes = expiresMinutesOverride.Value;
 
                 var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key));
                 var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);

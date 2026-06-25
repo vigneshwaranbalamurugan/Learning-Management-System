@@ -25,7 +25,7 @@ namespace LMSApi.DALLibrary.Repositories
             return await _context.Assignments
                 .Include(a => a.CourseSection)
                     .ThenInclude(cs => cs.Course)
-                .Where(a => a.CourseSection.Course.InstructorId == instructorId)
+                .Where(a => a.CourseSection.Course.InstructorId == instructorId && a.CourseSection.Course.Status == LMSApi.ModelLibrary.Enums.CourseStatus.Published)
                 .Select(a => new InstructorAssignmentSummaryDto
                 {
                     Id = a.Id,

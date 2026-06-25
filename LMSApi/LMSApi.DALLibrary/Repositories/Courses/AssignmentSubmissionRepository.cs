@@ -51,6 +51,16 @@ namespace LMSApi.DALLibrary.Repositories
                 .ToListAsync();
         }
 
+        public async Task<IEnumerable<AssignmentSubmissions>> GetGradedSubmissionsAsync(int assignmentId)
+        {
+            return await _context.AssignmentSubmissions
+                .Include(s => s.Student)
+                    .ThenInclude(u => u.UserProfile)
+                .Where(s => s.AssignmentId == assignmentId && s.Status == SubmissionStatus.Graded)
+                .OrderByDescending(s => s.GradedAt)
+                .ToListAsync();
+        }
+
         public async Task<int> GetSubmissionAttemptCountAsync(int assignmentId, int studentId)
         {
             return await _context.Database

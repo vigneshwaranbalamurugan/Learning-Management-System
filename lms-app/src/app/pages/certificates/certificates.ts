@@ -3,12 +3,12 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { DomSanitizer } from '@angular/platform-browser';
-import { DashboardService } from '@services/dashboard.service';
 import { ToastService } from '@services/toast.service';
-import { CertificateResponse } from '@models/dashboard';
+import { CertificateResponse } from '@models/certificate';
 import { untilDestroyed } from '../../rxjs/until-destroyed';
 
 import { Loader } from '@components/loader/loader';
+import { CertificateService } from '@services/certificate.service';
 
 @Component({
   selector: 'app-certificates-page',
@@ -17,7 +17,7 @@ import { Loader } from '@components/loader/loader';
   templateUrl: './certificates.html'
 })
 export class CertificatesPage implements OnInit {
-  private dashboardService = inject(DashboardService);
+  private certificateService = inject(CertificateService);
   private toastService = inject(ToastService);
   private route = inject(ActivatedRoute);
   private router = inject(Router);
@@ -48,7 +48,7 @@ export class CertificatesPage implements OnInit {
 
   private loadCertificates(): void {
     this.isLoading.set(true);
-    this.dashboardService.getMyCertificates()
+    this.certificateService.getMyCertificates()
       .pipe(untilDestroyed(this.destroyRef))
       .subscribe({
         next: (data) => {

@@ -53,12 +53,6 @@ export class Login implements OnInit {
         this.currentScreen.set('login');
       }
     });
-
-    const savedEmail = localStorage.getItem('rememberedEmail');
-    if (savedEmail) {
-      this.email = savedEmail;
-      this.rememberMe = true;
-    }
   }
 
   protected changeScreen(screen: AuthScreen): void {
@@ -136,7 +130,7 @@ export class Login implements OnInit {
 
     if (isEmailValid && isPasswordValid) {
       this.isSubmitting.set(true);
-      this.authService.loginApiCall(this.loginModel()).subscribe({
+      this.authService.loginApiCall(this.loginModel(), this.rememberMe).subscribe({
         next: (response: any) => {
           this.toastService.showSuccess('Login successful');
 
@@ -148,15 +142,10 @@ export class Login implements OnInit {
             role = response.role;
           }
 
-          const storage = this.rememberMe ? localStorage : sessionStorage;
-          storage.setItem('user_email', this.email);
           this.authService.userRole.set(role);
 
-          if (this.rememberMe) {
-            localStorage.setItem('rememberedEmail', this.email);
-          } else {
-            localStorage.removeItem('rememberedEmail');
-          }
+          // Reset sessionChecked so initializeAuth runs fresh after login
+          this.authService.sessionChecked.set(false);
 
           // Redirect to appropriate dashboard immediately
           this.authService.redirectToDashboard(role);

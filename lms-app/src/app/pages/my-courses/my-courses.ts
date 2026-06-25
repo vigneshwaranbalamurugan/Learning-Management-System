@@ -1,13 +1,13 @@
 import { Component, OnInit, signal, computed, inject, DestroyRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { DashboardService } from '@services/dashboard.service';
 import { ToastService } from '@services/toast.service';
-import { EnrollmentResponse } from '@models/dashboard';
+import { EnrollmentResponse } from '@models/enrollment';
 import { untilDestroyed } from '../../rxjs/until-destroyed';
 import { Router, RouterModule } from '@angular/router';
 
 import { Loader } from '@components/loader/loader';
+import { EnrollmentService } from '@services/enrollment.service';
 
 @Component({
   selector: 'app-my-courses',
@@ -16,7 +16,7 @@ import { Loader } from '@components/loader/loader';
   templateUrl: './my-courses.html'
 })
 export class MyCourses implements OnInit {
-  private dashboardService = inject(DashboardService);
+  private enrollmentService = inject(EnrollmentService);
   private toastService = inject(ToastService);
   private router = inject(Router);
   private destroyRef = inject(DestroyRef);
@@ -67,7 +67,7 @@ export class MyCourses implements OnInit {
 
   private loadMyEnrollments(): void {
     this.isLoading.set(true);
-    this.dashboardService.getMyEnrollments()
+    this.enrollmentService.getMyEnrollments()
       .pipe(untilDestroyed(this.destroyRef))
       .subscribe({
         next: (data) => {

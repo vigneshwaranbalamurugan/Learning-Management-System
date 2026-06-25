@@ -4,12 +4,14 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { InstructorCourseLayout } from '../instructor-course-layout/instructor-course-layout';
 import { ToastService } from '@services/toast.service';
-import { DashboardService } from '@services/dashboard.service';
 import { LessonResourcesService } from '@services/lesson-resources.service';
 import { ConfirmModal } from '@components/confirm-modal/confirm-modal';
 import { FormInput } from '@components/form-input/form-input';
 import { Button } from '@components/button/button';
 import { Loader } from '@components/loader/loader';
+import { CourseBuilderService } from '@services/course-builder.service';
+import { AssignmentService } from '@services/assignment.service';
+import { QuizService } from '@services/quiz.service';
 
 @Component({
   selector: 'app-instructor-course-builder',
@@ -20,7 +22,9 @@ import { Loader } from '@components/loader/loader';
 export class InstructorCourseBuilder {
   protected layout = inject(InstructorCourseLayout);
   private toastService = inject(ToastService);
-  private dashboardService = inject(DashboardService);
+  private quizService = inject(QuizService);
+  private assignmentService = inject(AssignmentService);
+  private courseBuilderService = inject(CourseBuilderService);
   private resourcesService = inject(LessonResourcesService);
   private router = inject(Router);
 
@@ -222,7 +226,7 @@ export class InstructorCourseBuilder {
       sortOrder: index + 1
     }));
 
-    this.dashboardService.reorderSections(sectionOrders).subscribe({
+    this.courseBuilderService.reorderSections(sectionOrders).subscribe({
       next: () => {
         this.isReordering.set(false);
         this.toastService.showSuccess('Section order saved');
@@ -394,7 +398,7 @@ export class InstructorCourseBuilder {
       sortOrder: index + 1
     }));
 
-    this.dashboardService.reorderLessons(lessonOrders).subscribe({
+    this.courseBuilderService.reorderLessons(lessonOrders).subscribe({
       next: () => {
         this.isReordering.set(false);
         this.toastService.showSuccess('Lesson order saved');
@@ -447,7 +451,7 @@ export class InstructorCourseBuilder {
     };
     
     if (this.editSectionId) {
-      this.dashboardService.updateSection(this.editSectionId, data).subscribe({
+      this.courseBuilderService.updateSection(this.editSectionId, data).subscribe({
         next: () => {
           this.toastService.showSuccess('Section updated successfully.');
           this.layout.loadCourse(this.course!.id);
@@ -456,7 +460,7 @@ export class InstructorCourseBuilder {
         error: (err) => this.toastService.showApiError(err, 'Failed to update section.')
       });
     } else {
-      this.dashboardService.createSection(data).subscribe({
+      this.courseBuilderService.createSection(data).subscribe({
         next: () => {
           this.toastService.showSuccess('Section created successfully.');
           this.layout.loadCourse(this.course!.id);
@@ -504,7 +508,7 @@ export class InstructorCourseBuilder {
   protected deleteItem() {
     if (!this.course || this.idToDelete === null || !this.deleteType) return;
     if (this.deleteType === 'section') {
-      this.dashboardService.deleteSection(this.idToDelete).subscribe({
+      this.courseBuilderService.deleteSection(this.idToDelete).subscribe({
         next: () => {
           this.toastService.showSuccess('Section deleted successfully.');
           this.layout.loadCourse(this.course!.id);
@@ -516,7 +520,7 @@ export class InstructorCourseBuilder {
         }
       });
     } else if (this.deleteType === 'lesson') {
-      this.dashboardService.deleteLesson(this.idToDelete).subscribe({
+      this.courseBuilderService.deleteLesson(this.idToDelete).subscribe({
         next: () => {
           this.toastService.showSuccess('Lesson deleted successfully.');
           this.layout.loadCourse(this.course!.id);
@@ -528,7 +532,7 @@ export class InstructorCourseBuilder {
         }
       });
     } else if (this.deleteType === 'quiz') {
-      this.dashboardService.deleteQuiz(this.idToDelete).subscribe({
+      this.quizService.deleteQuiz(this.idToDelete).subscribe({
         next: () => {
           this.toastService.showSuccess('Quiz deleted successfully.');
           this.layout.loadCourse(this.course!.id);
@@ -540,7 +544,7 @@ export class InstructorCourseBuilder {
         }
       });
     } else if (this.deleteType === 'assignment') {
-      this.dashboardService.deleteAssignment(this.idToDelete).subscribe({
+      this.assignmentService.deleteAssignment(this.idToDelete).subscribe({
         next: () => {
           this.toastService.showSuccess('Assignment deleted successfully.');
           this.layout.loadCourse(this.course!.id);
@@ -672,7 +676,7 @@ export class InstructorCourseBuilder {
       sortOrder: index + 1
     }));
 
-    this.dashboardService.reorderQuizzes(quizOrders).subscribe({
+    this.quizService.reorderQuizzes(quizOrders).subscribe({
       next: () => {
         this.isReordering.set(false);
         this.toastService.showSuccess('Quiz order saved');
@@ -754,7 +758,7 @@ export class InstructorCourseBuilder {
       sortOrder: index + 1
     }));
 
-    this.dashboardService.reorderAssignments(assignmentOrders).subscribe({
+    this.assignmentService.reorderAssignments(assignmentOrders).subscribe({
       next: () => {
         this.isReordering.set(false);
         this.toastService.showSuccess('Assignment order saved');

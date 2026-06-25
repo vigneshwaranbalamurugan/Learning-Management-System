@@ -44,6 +44,7 @@ namespace LMSApi.BALLibrary.Services
 				await _userProfileRepository.AddAsync(profile);
 			}
 			var response = _mapper.Map<ProfileResponse>(profile);
+			response.Email = user.Email;
 			response.Role = user.Role?.RoleName;
 			return response;
 		}
@@ -78,6 +79,7 @@ namespace LMSApi.BALLibrary.Services
 			await _userProfileRepository.UpdateAsync(profile);
 			_logger?.LogInformation("Profile updated successfully for user ID: {UserId}", user.Id);
 			var response = _mapper.Map<ProfileResponse>(profile);
+			response.Email = user.Email;
 			response.Role = user.Role?.RoleName;
 			return response;
 		}
@@ -112,6 +114,7 @@ namespace LMSApi.BALLibrary.Services
 
 			_logger?.LogInformation("Profile image updated successfully for user ID: {UserId}. Image URL: {Url}", user.Id, profile.ProfilePictureUrl);
 			var response = _mapper.Map<ProfileResponse>(profile);
+			response.Email = user.Email;
 			response.Role = user.Role?.RoleName;
 			return response;
 		}

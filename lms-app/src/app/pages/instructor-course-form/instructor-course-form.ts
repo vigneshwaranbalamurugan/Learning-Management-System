@@ -3,14 +3,14 @@ import { marked } from 'marked';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { DashboardService } from '@services/dashboard.service';
 import { ToastService } from '@services/toast.service';
-import { CategoryResponse } from '@models/dashboard';
+import { CategoryResponse } from '@models/course';
 import { untilDestroyed } from '../../rxjs/until-destroyed';
 import { Dropdown } from '@components/dropdown/dropdown';
 import { FormInput } from '@components/form-input/form-input';
 import { Button } from '@components/button/button';
 import { Loader } from '@components/loader/loader';
+import { CourseService } from '@services/course.service';
 
 interface CourseFormData {
   title: string;
@@ -46,7 +46,7 @@ interface FormErrors {
   templateUrl: './instructor-course-form.html'
 })
 export class InstructorCourseForm implements OnInit {
-  private dashboardService = inject(DashboardService);
+  private courseService = inject(CourseService);
   private toastService = inject(ToastService);
   private router = inject(Router);
   private destroyRef = inject(DestroyRef);
@@ -118,7 +118,7 @@ export class InstructorCourseForm implements OnInit {
 
   private loadMetadata(): void {
     this.isMetaLoading.set(true);
-    this.dashboardService.getFiltersMetadata()
+    this.courseService.getFiltersMetadata()
       .pipe(untilDestroyed(this.destroyRef))
       .subscribe({
         next: (data) => {
@@ -296,7 +296,7 @@ export class InstructorCourseForm implements OnInit {
 
     this.isSubmitting.set(true);
 
-    this.dashboardService.createCourse(formData)
+    this.courseService.createCourse(formData)
       .pipe(untilDestroyed(this.destroyRef))
       .subscribe({
         next: (course) => {

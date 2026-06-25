@@ -39,6 +39,17 @@ export class UserDropdown {
     this.close.emit();
   }
 
+  protected navigateToRevenue() {
+    this.router.navigate(['/instructor/revenue']);
+    this.close.emit();
+  }
+
+  protected navigateToSettings() {
+    const role = this.user.role?.toLowerCase() === 'instructor' ? 'instructor' : 'learner';
+    this.router.navigate([`/${role}/settings`]);
+    this.close.emit();
+  }
+
   protected onLogout() {
     this.logout.emit();
     this.close.emit();

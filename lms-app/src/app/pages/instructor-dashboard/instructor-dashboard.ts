@@ -1,9 +1,10 @@
-import { Component, inject, OnInit, signal, DestroyRef } from '@angular/core';
+import { Component, inject, OnInit, signal, DestroyRef, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AuthService } from '@services/auth.service';
-import { DashboardService } from '@services/dashboard.service';
 import { untilDestroyed } from '../../rxjs/until-destroyed';
 import { forkJoin } from 'rxjs';
+import { AnalyticsService } from '@services/analytics.service';
+import { CourseService } from '@services/course.service';
 
 @Component({
   selector: 'app-instructor-dashboard',
@@ -13,7 +14,8 @@ import { forkJoin } from 'rxjs';
 })
 export class InstructorDashboard implements OnInit {
   protected authService = inject(AuthService);
-  private dashboardService = inject(DashboardService);
+  private courseService = inject(CourseService);
+  private analyticsService = inject(AnalyticsService);
   private destroyRef = inject(DestroyRef);
 
   protected get user() {
@@ -28,7 +30,13 @@ export class InstructorDashboard implements OnInit {
   ]);
 
   protected courses = signal<any[]>([]);
+  protected showAllCourses = signal(false);
+  protected displayedCourses = computed(() => this.showAllCourses() ? this.courses() : this.courses().slice(0, 4));
+
   protected recentEnrollments = signal<any[]>([]);
+  protected showAllEnrollments = signal(false);
+  protected displayedEnrollments = computed(() => this.showAllEnrollments() ? this.recentEnrollments() : this.recentEnrollments().slice(0, 4));
+  
   protected isLoading = signal(true);
 
   protected getInitials(name: string): string {
@@ -74,8 +82,8 @@ export class InstructorDashboard implements OnInit {
 
   ngOnInit(): void {
     forkJoin({
-      analytics: this.dashboardService.getInstructorAnalytics(),
-      courses: this.dashboardService.getMyCourses()
+      analytics: this.analyticsService.getInstructorAnalytics(),
+      courses: this.courseService.getMyCourses()
     }).pipe(
       untilDestroyed(this.destroyRef)
     ).subscribe({

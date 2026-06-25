@@ -3,12 +3,12 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { InstructorCourseLayout } from '../instructor-course-layout/instructor-course-layout';
-import { DashboardService } from '@services/dashboard.service';
 import { ToastService } from '@services/toast.service';
 import { Button } from '@components/button/button';
 import { FormInput } from '@components/form-input/form-input';
 import { Dropdown } from '@components/dropdown/dropdown';
 import { marked } from 'marked';
+import { CourseService } from '@services/course.service';
 
 @Component({
   selector: 'app-instructor-course-overview',
@@ -18,7 +18,7 @@ import { marked } from 'marked';
 })
 export class InstructorCourseOverview implements OnInit {
   protected layout = inject(InstructorCourseLayout);
-  private dashboardService = inject(DashboardService);
+  private courseService = inject(CourseService);
   private toastService = inject(ToastService);
   private sanitizer = inject(DomSanitizer);
 
@@ -67,7 +67,7 @@ export class InstructorCourseOverview implements OnInit {
   }
 
   ngOnInit() {
-    this.dashboardService.getFiltersMetadata().subscribe({
+    this.courseService.getFiltersMetadata().subscribe({
       next: (data) => {
         this.categories = data.categories || [];
         this.languages = data.languages || [];
@@ -160,7 +160,7 @@ export class InstructorCourseOverview implements OnInit {
     if (this.levelStr) formData.append('Level', this.levelStr);
     if (this.thumbnailFile) formData.append('Thumbnail', this.thumbnailFile);
 
-    this.dashboardService.updateCourse(this.course.id, formData).subscribe({
+    this.courseService.updateCourse(this.course.id, formData).subscribe({
       next: () => {
         this.toastService.showSuccess('Course overview updated successfully.');
         this.layout.loadCourse(this.course!.id);

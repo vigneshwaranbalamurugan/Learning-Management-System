@@ -318,6 +318,42 @@ namespace LMSApi.BALLibrary.Services
             return responseList;
         }
 
+        public async Task<IEnumerable<AssignmentSubmissionResponse>> GetGradedReviewsAsync(int assignmentId)
+        {
+            var submissions = await _submissionRepository.GetGradedSubmissionsAsync(assignmentId);
+            var assignment = await _assignmentRepository.GetByIdAsync(assignmentId);
+            var section = await _sectionRepository.GetByIdAsync(assignment.CourseSectionId);
+            var course = await _courseRepository.GetByIdAsync(section.CourseId);
+
+            var responseList = new List<AssignmentSubmissionResponse>();
+
+            foreach (var sub in submissions)
+            {
+                var res = _mapper.Map<AssignmentSubmissionResponse>(sub);
+
+                DateTime? studentDeadline = null;
+                if (course.CourseAccessType == CourseAccessType.CohortBased)
+                {
+                    studentDeadline = assignment.DeadlineDate;
+                }
+                else if (assignment.DeadlineInDays > 0)
+                {
+                    var enrollment = await _enrollmentRepository.GetByUserAndCourseAsync(sub.StudentId, section.CourseId);
+                    if (enrollment != null)
+                    {
+                        studentDeadline = enrollment.EnrolledAt.AddDays(assignment.DeadlineInDays);
+                    }
+                }
+
+                res.StudentDeadline = studentDeadline;
+                res.IsLate = studentDeadline.HasValue && sub.SubmittedAt > studentDeadline.Value;
+
+                responseList.Add(res);
+            }
+
+            return responseList;
+        }
+
         public async Task<IEnumerable<AssignmentSubmissionResponse>> GetStudentSubmissionsAsync(int assignmentId, int studentId)
         {
             var submissions = await _submissionRepository.GetStudentSubmissionsAsync(assignmentId, studentId);

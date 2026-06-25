@@ -2,8 +2,8 @@ import { Component, inject, OnInit, signal, DestroyRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
 import { InstructorCourseLayout } from '../instructor-course-layout/instructor-course-layout';
-import { DashboardService } from '@services/dashboard.service';
 import { untilDestroyed } from '../../rxjs/until-destroyed';
+import { ProgressService } from '@services/progress.service';
 
 interface MonthlyStat {
   month: string;
@@ -20,7 +20,7 @@ interface MonthlyStat {
 })
 export class InstructorCourseAnalytics implements OnInit {
   protected layout = inject(InstructorCourseLayout);
-  private dashboardService = inject(DashboardService);
+  private progressService = inject(ProgressService);
   private route = inject(ActivatedRoute);
   private destroyRef = inject(DestroyRef);
 
@@ -47,7 +47,7 @@ export class InstructorCourseAnalytics implements OnInit {
 
   private loadLearnersData(courseId: number) {
     this.isLoading.set(true);
-    this.dashboardService.getStudentsProgress(courseId)
+    this.progressService.getStudentsProgress(courseId)
       .pipe(untilDestroyed(this.destroyRef))
       .subscribe({
         next: (students) => {

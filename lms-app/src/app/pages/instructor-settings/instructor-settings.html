@@ -1,0 +1,208 @@
+<div class="max-w-4xl mx-auto space-y-6 pb-20">
+
+  <!-- Header -->
+  <div class="relative w-full h-40 sm:h-48 rounded-2xl overflow-hidden mb-6 shadow-sm border border-gray-100 flex items-center bg-[#1C1C7B]">
+    <img src="assets/images/settings-banner.png" alt="Settings Banner" class="absolute inset-0 w-full h-full object-cover opacity-80 mix-blend-luminosity">
+    <div class="absolute inset-0 bg-gradient-to-r from-[#1C1C7B]/90 to-transparent"></div>
+    <div class="relative z-10 px-8">
+      <h1 class="text-3xl sm:text-4xl font-extrabold text-white m-0 drop-shadow-md">Payout Settings</h1>
+      <p class="text-sm sm:text-base text-[#FFF4E6] m-0 mt-2 font-medium drop-shadow max-w-lg">Manage your linked account and bank details for revenue payouts securely.</p>
+    </div>
+  </div>
+
+  <ng-container *ngIf="isLoading()">
+    <div class="flex justify-center items-center py-20">
+      <app-loader></app-loader>
+    </div>
+  </ng-container>
+
+  <ng-container *ngIf="!isLoading() && status()">
+    <!-- Overall Status Banner -->
+    <div class="rounded-xl p-4 flex items-center gap-3 border"
+         [ngClass]="{
+           'bg-emerald-50 border-emerald-100 text-emerald-800': status()!.currentStep === 'completed',
+           'bg-blue-50 border-blue-100 text-blue-800': status()!.currentStep !== 'completed'
+         }">
+      <svg *ngIf="status()!.currentStep === 'completed'" class="w-6 h-6 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+      <svg *ngIf="status()!.currentStep !== 'completed'" class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      <div class="flex-1">
+        <p class="text-sm font-bold m-0">
+          {{ status()!.currentStep === 'completed' ? 'Onboarding Complete' : 'Onboarding in Progress' }}
+        </p>
+        <p class="text-xs mt-0.5 opacity-90 m-0">
+          {{ status()!.currentStep === 'completed' ? 'Your payout account is fully verified and ready to receive funds.' : 'Please complete the remaining steps below to receive your payouts.' }}
+        </p>
+      </div>
+    </div>
+
+    <div class="space-y-6">
+
+      <!-- ================== STEP 1: LINKED ACCOUNT ================== -->
+      <div class="bg-white rounded-xl shadow-xs border border-gray-200 overflow-hidden">
+        <div class="p-5 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
+          <div>
+            <h2 class="text-lg font-bold text-[#1C1C7B] m-0">1. Basic Details</h2>
+            <p class="text-xs text-gray-500 m-0">Your primary business and contact information.</p>
+          </div>
+          <button *ngIf="status()!.account && editMode() !== 'account'" (click)="editMode.set('account')" class="text-sm font-semibold text-[#1C1C7B] hover:underline bg-transparent border-none cursor-pointer">
+            Edit
+          </button>
+        </div>
+
+        <div class="p-5">
+          <!-- View Mode -->
+          <div *ngIf="status()!.account && editMode() !== 'account'" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <span class="block text-xs text-gray-400 font-bold uppercase mb-1">Legal Business Name</span>
+              <span class="text-sm font-medium text-gray-900">{{ status()!.account!.legalBusinessName }}</span>
+            </div>
+            <div>
+              <span class="block text-xs text-gray-400 font-bold uppercase mb-1">Contact Name</span>
+              <span class="text-sm font-medium text-gray-900">{{ status()!.account!.contactName }}</span>
+            </div>
+            <div>
+              <span class="block text-xs text-gray-400 font-bold uppercase mb-1">Email</span>
+              <span class="text-sm font-medium text-gray-900">{{ status()!.account!.email }}</span>
+            </div>
+            <div>
+              <span class="block text-xs text-gray-400 font-bold uppercase mb-1">Phone</span>
+              <span class="text-sm font-medium text-gray-900">{{ status()!.account!.phone }}</span>
+            </div>
+          </div>
+
+          <!-- Edit/Create Form -->
+          <form *ngIf="!status()!.account || editMode() === 'account'" (ngSubmit)="submitAccount()" class="space-y-5">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <app-form-input label="Legal Business Name" [value]="accountForm().legalBusinessName" (valueChange)="updateAccountField('legalBusinessName', $event)" icon="user" placeholder="e.g. Acme EdTech Corp"></app-form-input>
+              <app-form-input label="Contact Name" [value]="accountForm().contactName" (valueChange)="updateAccountField('contactName', $event)" icon="user" placeholder="e.g. Jane Doe"></app-form-input>
+              <app-form-input label="Email" type="email" [value]="accountForm().email" (valueChange)="updateAccountField('email', $event)" icon="email" placeholder="e.g. jane@example.com"></app-form-input>
+              <app-form-input label="Phone" [value]="accountForm().phone" (valueChange)="updateAccountField('phone', $event)" placeholder="e.g. 9876543210"></app-form-input>
+              
+              <div *ngIf="!status()!.account" class="md:col-span-2">
+                <app-dropdown label="Business Type" [options]="businessTypeOptions" [value]="accountForm().businessType" (valueChange)="updateAccountField('businessType', $event)"></app-dropdown>
+              </div>
+
+              <!-- Address Fields -->
+              <div class="md:col-span-2"><h3 class="text-sm font-bold text-gray-700 mt-2 mb-0 border-b pb-2">Address</h3></div>
+              <div class="md:col-span-2">
+                <app-form-input label="Street Address 1" [value]="accountForm().street1" (valueChange)="updateAccountField('street1', $event)" placeholder="e.g. 123 Education Lane"></app-form-input>
+              </div>
+              <div class="md:col-span-2">
+                <app-form-input label="Street Address 2 (Optional)" [value]="accountForm().street2 || ''" (valueChange)="updateAccountField('street2', $event)" placeholder="e.g. Floor 2, Suite 100"></app-form-input>
+              </div>
+              <app-form-input label="City" [value]="accountForm().city" (valueChange)="updateAccountField('city', $event)" placeholder="e.g. Bangalore"></app-form-input>
+              <app-form-input label="State" [value]="accountForm().state" (valueChange)="updateAccountField('state', $event)" placeholder="e.g. Karnataka"></app-form-input>
+              <app-form-input label="Postal Code" [value]="accountForm().postalCode" (valueChange)="updateAccountField('postalCode', $event)" placeholder="e.g. 560001"></app-form-input>
+            </div>
+
+            <div class="flex justify-end gap-3 pt-4">
+              <app-button *ngIf="status()!.account" variant="outline" (onClick)="editMode.set('none')">Cancel</app-button>
+              <app-button type="submit" [loading]="isSubmitting()">Save Details</app-button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- ================== STEP 2: STAKEHOLDER ================== -->
+      <div *ngIf="status()!.account" class="bg-white rounded-xl shadow-xs border border-gray-200 overflow-hidden">
+        <div class="p-5 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
+          <div>
+            <h2 class="text-lg font-bold text-[#1C1C7B] m-0">2. Stakeholder Details</h2>
+            <p class="text-xs text-gray-500 m-0">The individual responsible for the account.</p>
+          </div>
+          <button *ngIf="status()!.stakeholder && editMode() !== 'stakeholder'" (click)="editMode.set('stakeholder')" class="text-sm font-semibold text-[#1C1C7B] hover:underline bg-transparent border-none cursor-pointer">
+            Edit
+          </button>
+        </div>
+
+        <div class="p-5">
+          <div *ngIf="status()!.stakeholder && editMode() !== 'stakeholder'" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <span class="block text-xs text-gray-400 font-bold uppercase mb-1">Name</span>
+              <span class="text-sm font-medium text-gray-900">{{ status()!.stakeholder!.name }}</span>
+            </div>
+            <div>
+              <span class="block text-xs text-gray-400 font-bold uppercase mb-1">Email</span>
+              <span class="text-sm font-medium text-gray-900">{{ status()!.stakeholder!.email }}</span>
+            </div>
+          </div>
+
+          <form *ngIf="!status()!.stakeholder || editMode() === 'stakeholder'" (ngSubmit)="submitStakeholder()" class="space-y-5">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <app-form-input label="Full Name" [value]="stakeholderForm().name" (valueChange)="updateStakeholderField('name', $event)" icon="user" placeholder="e.g. Jane Doe"></app-form-input>
+              <app-form-input label="Email Address" type="email" [value]="stakeholderForm().email" (valueChange)="updateStakeholderField('email', $event)" icon="email" placeholder="e.g. jane@example.com"></app-form-input>
+            </div>
+            <div class="flex justify-end gap-3 pt-2">
+              <app-button *ngIf="status()!.stakeholder" variant="outline" (onClick)="editMode.set('none')">Cancel</app-button>
+              <app-button type="submit" [loading]="isSubmitting()">Save Stakeholder</app-button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- ================== STEP 3: PRODUCT ================== -->
+      <div *ngIf="status()!.stakeholder" class="bg-white rounded-xl shadow-xs border border-gray-200 overflow-hidden">
+        <div class="p-5 border-b border-gray-100 bg-gray-50/50">
+          <h2 class="text-lg font-bold text-[#1C1C7B] m-0">3. Enable Payouts</h2>
+          <p class="text-xs text-gray-500 m-0">Activate route payouts for your account.</p>
+        </div>
+        <div class="p-5 flex items-center justify-between">
+          <div *ngIf="status()!.product">
+            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800">
+              Payouts Enabled
+            </span>
+          </div>
+          <div *ngIf="!status()!.product" class="w-full flex justify-between items-center">
+            <span class="text-sm text-gray-600">You must request payout capabilities to continue.</span>
+            <app-button (onClick)="requestProduct()" [loading]="isSubmitting()">Request Payouts</app-button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================== STEP 4: BANK CONFIGURATION ================== -->
+      <div *ngIf="status()!.product" class="bg-white rounded-xl shadow-xs border border-gray-200 overflow-hidden">
+        <div class="p-5 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
+          <div>
+            <h2 class="text-lg font-bold text-[#1C1C7B] m-0">4. Bank Account</h2>
+            <p class="text-xs text-gray-500 m-0">Where your earnings will be deposited.</p>
+          </div>
+          <button *ngIf="status()!.product!.accountNumber && editMode() !== 'bank'" (click)="editMode.set('bank')" class="text-sm font-semibold text-[#1C1C7B] hover:underline bg-transparent border-none cursor-pointer">
+            Update Bank
+          </button>
+        </div>
+
+        <div class="p-5">
+          <div *ngIf="status()!.product!.accountNumber && editMode() !== 'bank'" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <span class="block text-xs text-gray-400 font-bold uppercase mb-1">Beneficiary Name</span>
+              <span class="text-sm font-medium text-gray-900">{{ status()!.product!.beneficiaryName }}</span>
+            </div>
+            <div>
+              <span class="block text-xs text-gray-400 font-bold uppercase mb-1">Account Number</span>
+              <span class="text-sm font-medium text-gray-900">{{ status()!.product!.accountNumber }}</span>
+            </div>
+            <div>
+              <span class="block text-xs text-gray-400 font-bold uppercase mb-1">IFSC Code</span>
+              <span class="text-sm font-medium text-gray-900">{{ status()!.product!.ifscCode }}</span>
+            </div>
+          </div>
+
+          <form *ngIf="!status()!.product!.accountNumber || editMode() === 'bank'" (ngSubmit)="submitBank()" class="space-y-5">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <div class="md:col-span-2">
+                <app-form-input label="Beneficiary Name" [value]="bankForm().beneficiaryName" (valueChange)="updateBankField('beneficiaryName', $event)" icon="user" placeholder="e.g. Jane Doe"></app-form-input>
+              </div>
+              <app-form-input label="Account Number" [value]="bankForm().accountNumber" (valueChange)="updateBankField('accountNumber', $event)" placeholder="e.g. 123456789012"></app-form-input>
+              <app-form-input label="IFSC Code" [value]="bankForm().ifscCode" (valueChange)="updateBankField('ifscCode', $event)" placeholder="e.g. HDFC0000123"></app-form-input>
+            </div>
+            <div class="flex justify-end gap-3 pt-2">
+              <app-button *ngIf="status()!.product!.accountNumber" variant="outline" (onClick)="editMode.set('none')">Cancel</app-button>
+              <app-button type="submit" [loading]="isSubmitting()">Save Bank Details</app-button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+    </div>
+  </ng-container>
+</div>

@@ -3,10 +3,11 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { InstructorProgressService, StudentProgressSummaryDto, StudentCourseProgressResponse } from '@services/instructor-progress.service';
-import { DashboardService } from '@services/dashboard.service';
 import { ToastService } from '@services/toast.service';
 import { untilDestroyed } from '../../rxjs/until-destroyed';
 import { Loader } from '@components/loader/loader';
+import { CourseService } from '@services/course.service';
+import { ProgressService } from '@services/progress.service';
 
 @Component({
   selector: 'app-instructor-course-progress',
@@ -15,8 +16,9 @@ import { Loader } from '@components/loader/loader';
   templateUrl: './instructor-course-progress.html'
 })
 export class InstructorCourseProgress implements OnInit {
-  private progressService = inject(InstructorProgressService);
-  private dashboardService = inject(DashboardService);
+  private instructorProgressService = inject(InstructorProgressService);
+  private dashboardProgressService = inject(ProgressService);
+  private courseService = inject(CourseService);
   private toastService = inject(ToastService);
   private route = inject(ActivatedRoute);
   private router = inject(Router);
@@ -77,10 +79,15 @@ export class InstructorCourseProgress implements OnInit {
     this.isLoading.set(true);
 
     // Get Course details to show title
-    this.dashboardService.getCourseById(this.courseId)
+    this.courseService.getCourseById(this.courseId)
       .pipe(untilDestroyed(this.destroyRef))
       .subscribe({
         next: (course) => {
+          if (course.status !== 2 && course.status !== 'Published') {
+            this.toastService.showError('Cannot view progress for an unpublished course.');
+            this.router.navigate(['/instructor/progress']);
+            return;
+          }
           this.courseTitle.set(course.title);
           this.loadStudentsProgress();
         },
@@ -92,7 +99,7 @@ export class InstructorCourseProgress implements OnInit {
   }
 
   private loadStudentsProgress(): void {
-    this.progressService.getStudentsProgress(this.courseId)
+    this.dashboardProgressService.getStudentsProgress(this.courseId)
       .pipe(untilDestroyed(this.destroyRef))
       .subscribe({
         next: (data) => {
@@ -111,7 +118,7 @@ export class InstructorCourseProgress implements OnInit {
     this.isDetailLoading.set(true);
     this.detailedProgress.set(null);
 
-    this.progressService.getStudentDetailedProgress(this.courseId, student.studentId)
+    this.instructorProgressService.getStudentDetailedProgress(this.courseId, student.studentId)
       .pipe(untilDestroyed(this.destroyRef))
       .subscribe({
         next: (data) => {

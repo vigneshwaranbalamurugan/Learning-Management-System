@@ -3,7 +3,6 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, ActivatedRoute, RouterModule } from '@angular/router';
 import { ToastService } from '@services/toast.service';
-import { DashboardService } from '@services/dashboard.service';
 import { FormInput } from '@components/form-input/form-input';
 import { Dropdown } from '@components/dropdown/dropdown';
 import { Button } from '@components/button/button';
@@ -11,6 +10,7 @@ import { Loader } from '@components/loader/loader';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { marked } from 'marked';
 import { InstructorCourseLayout } from '../instructor-course-layout/instructor-course-layout';
+import { CourseBuilderService } from '@services/course-builder.service';
 
 @Component({
   selector: 'app-instructor-lesson-form',
@@ -20,7 +20,7 @@ import { InstructorCourseLayout } from '../instructor-course-layout/instructor-c
 })
 export class InstructorLessonForm implements OnInit {
   private toastService = inject(ToastService);
-  private dashboardService = inject(DashboardService);
+  private courseBuilderService = inject(CourseBuilderService);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
   private sanitizer = inject(DomSanitizer);
@@ -122,7 +122,7 @@ export class InstructorLessonForm implements OnInit {
   }
 
   ngOnInit() {
-    this.dashboardService.getLessonUploadLimits().subscribe({
+    this.courseBuilderService.getLessonUploadLimits().subscribe({
       next: (limits) => {
         this.maxVideoSizeMB = limits.videoMaxFileSizeMB;
         this.maxPdfSizeMB = limits.pdfMaxFileSizeMB;
@@ -159,7 +159,7 @@ export class InstructorLessonForm implements OnInit {
 
   private loadLesson(id: number) {
     this.isLoading.set(true);
-    this.dashboardService.getLesson(id).subscribe({
+    this.courseBuilderService.getLesson(id).subscribe({
       next: (lesson) => {
         this.title = lesson.title ?? '';
         this.description = lesson.description ?? '';
@@ -350,7 +350,7 @@ export class InstructorLessonForm implements OnInit {
   protected deleteLesson() {
     if (!this.isEditMode || !this.lessonId) return;
     if (confirm('Are you sure you want to delete this lesson?')) {
-      this.dashboardService.deleteLesson(this.lessonId).subscribe({
+      this.courseBuilderService.deleteLesson(this.lessonId).subscribe({
         next: () => {
           this.toastService.showSuccess('Lesson deleted successfully.');
           this.router.navigate(['/instructor/courses', this.courseSlug, 'builder']);
@@ -403,7 +403,7 @@ export class InstructorLessonForm implements OnInit {
     this.isSaving.set(true);
 
     if (this.isEditMode && this.lessonId) {
-      this.dashboardService.updateLesson(this.lessonId, formData).subscribe({
+      this.courseBuilderService.updateLesson(this.lessonId, formData).subscribe({
         next: () => {
           this.toastService.showSuccess('Lesson updated successfully.');
           this.isSaving.set(false);
@@ -419,7 +419,7 @@ export class InstructorLessonForm implements OnInit {
         }
       });
     } else {
-      this.dashboardService.createLesson(formData).subscribe({
+      this.courseBuilderService.createLesson(formData).subscribe({
         next: (result) => {
           this.toastService.showSuccess('Lesson created successfully.');
           this.isSaving.set(false);

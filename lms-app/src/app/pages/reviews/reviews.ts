@@ -1,13 +1,15 @@
 import { Component, OnInit, signal, WritableSignal, inject, DestroyRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { DashboardService } from '@services/dashboard.service';
 import { ToastService } from '@services/toast.service';
 import { AuthService } from '@services/auth.service';
-import { EnrollmentResponse, ReviewResponse } from '@models/dashboard';
+import { EnrollmentResponse } from '@models/enrollment';
+import { ReviewResponse } from '@models/review';
 import { untilDestroyed } from '../../rxjs/until-destroyed';
 import { forkJoin, of } from 'rxjs';
 import { catchError, finalize } from 'rxjs/operators';
+import { EnrollmentService } from '@services/enrollment.service';
+import { ReviewService } from '@services/review.service';
 
 interface CourseFeedbackState {
   course: EnrollmentResponse;
@@ -24,7 +26,8 @@ interface CourseFeedbackState {
   templateUrl: './reviews.html'
 })
 export class ReviewsPage implements OnInit {
-  private dashboardService = inject(DashboardService);
+  private reviewService = inject(ReviewService);
+  private enrollmentService = inject(EnrollmentService);
   private toastService = inject(ToastService);
   private authService = inject(AuthService);
   private destroyRef = inject(DestroyRef);
@@ -42,7 +45,7 @@ export class ReviewsPage implements OnInit {
   private loadEligibleCourses(): void {
     this.isLoading.set(true);
 
-    this.dashboardService.getMyEnrollments()
+    this.enrollmentService.getMyEnrollments()
       .pipe(untilDestroyed(this.destroyRef))
       .subscribe({
         next: (enrollments) => {
@@ -59,7 +62,7 @@ export class ReviewsPage implements OnInit {
 
           // Fetch reviews for all eligible courses to see if user has already reviewed them
           const reviewRequests = eligible.map(course => 
-            this.dashboardService.getCourseReviews(course.courseId).pipe(
+            this.reviewService.getCourseReviews(course.courseId).pipe(
               catchError(() => of([] as ReviewResponse[]))
             )
           );
@@ -120,7 +123,7 @@ export class ReviewsPage implements OnInit {
 
     if (state.myReview) {
       // Update existing review
-      this.dashboardService.updateReview(state.myReview.id, {
+      this.reviewService.updateReview(state.myReview.id, {
         rating: state.ratingForm,
         reviewText: state.textForm.trim()
       }).pipe(
@@ -137,7 +140,7 @@ export class ReviewsPage implements OnInit {
       });
     } else {
       // Create new review
-      this.dashboardService.submitReview({
+      this.reviewService.submitReview({
         courseId: state.course.courseId,
         rating: state.ratingForm,
         reviewText: state.textForm.trim()

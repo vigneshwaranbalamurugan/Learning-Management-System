@@ -392,6 +392,11 @@ namespace LMSApi.BALLibrary.Services
                 throw new UnauthorizedAccessException("You do not have permission to view progress details for this course.");
             }
 
+            if (course.Status != CourseStatus.Published)
+            {
+                throw new InvalidOperationException("Cannot view progress for an unpublished course.");
+            }
+
             var enrollments = await _enrollmentRepository.GetEnrollmentsByCourseAsync(courseId);
 
             return enrollments.Select(e => new StudentProgressSummaryDto
@@ -419,6 +424,11 @@ namespace LMSApi.BALLibrary.Services
             if (course.InstructorId != instructorId)
             {
                 throw new UnauthorizedAccessException("You do not have permission to view progress details for this course.");
+            }
+
+            if (course.Status != CourseStatus.Published)
+            {
+                throw new InvalidOperationException("Cannot view progress for an unpublished course.");
             }
 
             var enrollment = await _enrollmentRepository.GetByUserAndCourseAsync(studentId, courseId)

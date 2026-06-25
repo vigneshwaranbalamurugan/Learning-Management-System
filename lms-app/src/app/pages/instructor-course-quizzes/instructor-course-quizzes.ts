@@ -4,11 +4,11 @@ import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { InstructorCourseLayout } from '../instructor-course-layout/instructor-course-layout';
 import { ToastService } from '@services/toast.service';
-import { DashboardService } from '@services/dashboard.service';
 import { ConfirmModal } from '@components/confirm-modal/confirm-modal';
 import { FormInput } from '@components/form-input/form-input';
 import { Dropdown } from '@components/dropdown/dropdown';
 import { Button } from '@components/button/button';
+import { QuizService } from '@services/quiz.service';
 
 @Component({
   selector: 'app-instructor-course-quizzes',
@@ -19,7 +19,7 @@ import { Button } from '@components/button/button';
 export class InstructorCourseQuizzes {
   protected layout = inject(InstructorCourseLayout);
   private toastService = inject(ToastService);
-  private dashboardService = inject(DashboardService);
+  private quizService = inject(QuizService);
   private router = inject(Router);
 
   // Modal states
@@ -117,7 +117,7 @@ export class InstructorCourseQuizzes {
       deadlineInDays: this.quizDeadlineInDays
     };
 
-    this.dashboardService.createQuiz(data).subscribe({
+    this.quizService.createQuiz(data).subscribe({
       next: () => {
         this.toastService.showSuccess('Quiz created successfully.');
         this.layout.loadCourse(this.course!.id);
@@ -134,7 +134,7 @@ export class InstructorCourseQuizzes {
 
   protected deleteQuiz() {
     if (!this.course || this.quizToDelete === null) return;
-    this.dashboardService.deleteQuiz(this.quizToDelete).subscribe({
+    this.quizService.deleteQuiz(this.quizToDelete).subscribe({
       next: () => {
         this.toastService.showSuccess('Quiz deleted successfully.');
         this.layout.loadCourse(this.course!.id);

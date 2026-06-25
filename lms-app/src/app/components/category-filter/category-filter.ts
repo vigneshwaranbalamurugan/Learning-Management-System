@@ -1,6 +1,6 @@
 import { Component, input, output, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { CategoryResponse } from '@models/dashboard';
+import { CategoryResponse } from '@models/course';
 
 @Component({
   selector: 'app-category-filter',

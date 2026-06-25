@@ -3,11 +3,11 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { InstructorAssignmentService } from '@services/instructor-assignment.service';
-import { DashboardService } from '@services/dashboard.service';
 import { ToastService } from '@services/toast.service';
 import { untilDestroyed } from '../../rxjs/until-destroyed';
 import { Loader } from '@components/loader/loader';
 import { AssignmentSubmissionResponse, AssignmentResponse } from '@models/assignment';
+import { AssignmentService } from '@services/assignment.service';
 
 @Component({
   selector: 'app-instructor-evaluate',
@@ -16,8 +16,8 @@ import { AssignmentSubmissionResponse, AssignmentResponse } from '@models/assign
   templateUrl: './instructor-evaluate.html'
 })
 export class InstructorEvaluate implements OnInit {
-  private assignmentService = inject(InstructorAssignmentService);
-  private dashboardService = inject(DashboardService);
+  private instructorAssignmentService = inject(InstructorAssignmentService);
+  private assignmentService = inject(AssignmentService);
   private toastService = inject(ToastService);
   private route = inject(ActivatedRoute);
   private router = inject(Router);
@@ -53,7 +53,7 @@ export class InstructorEvaluate implements OnInit {
     this.isLoading.set(true);
 
     // Fetch assignment details to get total marks & title
-    this.dashboardService.getAssignmentById(this.assignmentId)
+    this.assignmentService.getAssignmentById(this.assignmentId)
       .pipe(untilDestroyed(this.destroyRef))
       .subscribe({
         next: (assignmentData) => {
@@ -70,7 +70,7 @@ export class InstructorEvaluate implements OnInit {
   }
 
   private loadPendingSubmissions(): void {
-    this.assignmentService.getPendingSubmissions(this.assignmentId)
+    this.instructorAssignmentService.getPendingSubmissions(this.assignmentId)
       .pipe(untilDestroyed(this.destroyRef))
       .subscribe({
         next: (data) => {
@@ -110,7 +110,7 @@ export class InstructorEvaluate implements OnInit {
     }
 
     this.isSubmitting.set(true);
-    this.assignmentService.gradeSubmission(submission.id, this.marksAwarded, this.feedback)
+    this.instructorAssignmentService.gradeSubmission(submission.id, this.marksAwarded, this.feedback)
       .pipe(untilDestroyed(this.destroyRef))
       .subscribe({
         next: () => {
