@@ -60,6 +60,7 @@ namespace LMSApi.DALLibrary.Contexts
         // Logs module
         public DbSet<ActivityLogs> ActivityLogs { get; set; }
         public DbSet<AuditLogs> AuditLogs { get; set; }
+        public DbSet<WebhookEventLog> WebhookEventLogs { get; set; }
 
         private readonly ICurrentUserProvider? _currentUserProvider;
         private readonly ILogger<LMSDbContext>? _logger;

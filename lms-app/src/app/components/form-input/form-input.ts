@@ -17,6 +17,7 @@ export class FormInput {
   @Input() icon: 'email' | 'lock' | 'user' | 'role' | 'none' = 'none';
   @Input() options: { value: string; label: string }[] = [];
   @Input() error: string = '';
+  @Input() disabled: boolean = false;
   @Output() valueChange = new EventEmitter<string>();
 
   protected showPassword = false;

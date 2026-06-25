@@ -60,9 +60,25 @@ export class InstructorSettings implements OnInit {
 
   // Dropdown options
   protected businessTypeOptions = [{ value: 'individual', label: 'Individual' }];
+  protected categoryOptions = [{ value: 'education', label: 'Education' }];
+  protected subCategoryOptions = [{ value: 'professional_courses', label: 'Professional Courses' }];
 
   // UI state
   protected editMode = signal<'none' | 'account' | 'stakeholder' | 'bank'>('none');
+  protected currentStepIndex = signal(0);
+  protected isInitialLoad = true;
+
+  protected isVerified = computed(() => {
+    const s = this.status();
+    return s?.accountStatus === 'activated' || s?.accountStatus === 'instantly_activated';
+  });
+
+  protected steps = [
+    { id: 'account', title: 'Basic Details', icon: 'business' },
+    { id: 'stakeholder', title: 'Stakeholder', icon: 'person' },
+    { id: 'product', title: 'Enable Payouts', icon: 'payments' },
+    { id: 'bank', title: 'Bank Account', icon: 'account_balance' }
+  ];
 
   ngOnInit() {
     this.fetchStatus();
@@ -74,6 +90,10 @@ export class InstructorSettings implements OnInit {
       next: (res) => {
         this.status.set(res);
         this.initializeForms(res);
+        if (this.isInitialLoad) {
+          this.setInitialStep(res);
+          this.isInitialLoad = false;
+        }
         this.isLoading.set(false);
       },
       error: (err) => {
@@ -81,6 +101,57 @@ export class InstructorSettings implements OnInit {
         this.isLoading.set(false);
       }
     });
+  }
+
+  private setInitialStep(status: OnboardingStatusResponse) {
+    if (status.currentStep === 'account') this.currentStepIndex.set(0);
+    else if (status.currentStep === 'stakeholder') this.currentStepIndex.set(1);
+    else if (status.currentStep === 'product') this.currentStepIndex.set(2);
+    else if (status.currentStep === 'bank') this.currentStepIndex.set(3);
+    else if (status.currentStep === 'completed') this.currentStepIndex.set(3);
+  }
+
+  protected nextStep() {
+    if (this.currentStepIndex() < this.steps.length - 1) {
+      this.currentStepIndex.update(i => i + 1);
+      this.editMode.set('none');
+    }
+  }
+
+  protected prevStep() {
+    if (this.currentStepIndex() > 0) {
+      this.currentStepIndex.update(i => i - 1);
+      this.editMode.set('none');
+    }
+  }
+
+  protected goToStep(index: number) {
+    const statusObj = this.status();
+    if (!statusObj) return;
+
+    let highestStep = 0;
+    if (statusObj.account) highestStep = 1;
+    if (statusObj.stakeholder) highestStep = 2;
+    if (statusObj.product) highestStep = 3;
+    if (statusObj.currentStep === 'completed') highestStep = 3;
+
+    if (index <= highestStep) {
+      this.currentStepIndex.set(index);
+      this.editMode.set('none');
+    }
+  }
+
+  protected getHighestStepAllowed(): number {
+    const statusObj = this.status();
+    if (!statusObj) return 0;
+
+    let highestStep = 0;
+    if (statusObj.account) highestStep = 1;
+    if (statusObj.stakeholder) highestStep = 2;
+    if (statusObj.product) highestStep = 3;
+    if (statusObj.currentStep === 'completed') highestStep = 3;
+
+    return highestStep;
   }
 
   private initializeForms(status: OnboardingStatusResponse) {
@@ -93,14 +164,14 @@ export class InstructorSettings implements OnInit {
         businessType: 'individual',
         profileCategory: 'education',
         profileSubcategory: 'professional_courses',
-        street1: '', // Address not returned in summary, user will have to re-enter if updating, or we can just leave it blank if they don't click edit
-        street2: '',
-        city: '',
-        state: '',
-        postalCode: '',
-        country: 'IN',
-        pan: null,
-        gst: null
+        street1: status.account.street1 || '',
+        street2: status.account.street2 || '',
+        city: status.account.city || '',
+        state: status.account.state || '',
+        postalCode: status.account.postalCode || '',
+        country: status.account.country || 'IN',
+        pan: status.account.pan || null,
+        gst: status.account.gst || null
       });
     }
 
@@ -113,7 +184,7 @@ export class InstructorSettings implements OnInit {
 
     if (status.product) {
       this.bankForm.set({
-        accountNumber: '',
+        accountNumber: status.product.accountNumber || '',
         ifscCode: status.product.ifscCode || '',
         beneficiaryName: status.product.beneficiaryName || ''
       });
@@ -141,6 +212,7 @@ export class InstructorSettings implements OnInit {
       next: () => {
         this.toastService.showSuccess(`Account ${isUpdate ? 'updated' : 'created'} successfully!`);
         this.editMode.set('none');
+        if (!isUpdate) this.nextStep();
         this.fetchStatus();
       },
       error: (err) => {
@@ -163,6 +235,7 @@ export class InstructorSettings implements OnInit {
       next: () => {
         this.toastService.showSuccess(`Stakeholder ${isUpdate ? 'updated' : 'created'} successfully!`);
         this.editMode.set('none');
+        if (!isUpdate) this.nextStep();
         this.fetchStatus();
       },
       error: (err) => {
@@ -177,6 +250,7 @@ export class InstructorSettings implements OnInit {
     this.onboardingService.requestProduct().subscribe({
       next: () => {
         this.toastService.showSuccess('Payout capabilities requested!');
+        this.nextStep();
         this.fetchStatus();
       },
       error: (err) => {

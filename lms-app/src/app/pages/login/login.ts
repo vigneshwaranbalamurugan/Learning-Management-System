@@ -38,7 +38,7 @@ export class Login implements OnInit {
   protected emailError = '';
   protected passwordError = '';
 
-  constructor(private route: ActivatedRoute) {}
+  constructor(private route: ActivatedRoute) { }
 
   ngOnInit(): void {
     this.route.queryParams.subscribe(params => {

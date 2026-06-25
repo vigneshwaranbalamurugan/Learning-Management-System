@@ -16,12 +16,12 @@ namespace LMSApi.DALLibrary.Repositories
             _context = context;
         }
 
-        public async Task<InstructorLinkedAccount?> GetActiveByInstructorIdAsync(int instructorId)
+        public async Task<InstructorLinkedAccount?> GetLatestByInstructorIdAsync(int instructorId)
         {
             return await _context.InstructorLinkedAccounts
                 .Include(a => a.Stakeholder)
                 .Include(a => a.PayoutProduct)
-                .Where(a => a.InstructorId == instructorId && a.IsActive)
+                .Where(a => a.InstructorId == instructorId)
                 .OrderByDescending(a => a.CreatedAt)
                 .FirstOrDefaultAsync();
         }

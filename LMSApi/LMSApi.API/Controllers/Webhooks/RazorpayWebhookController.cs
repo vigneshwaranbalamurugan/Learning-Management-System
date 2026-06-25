@@ -1,5 +1,7 @@
 using Asp.Versioning;
 using LMSApi.BALLibrary.Interfaces;
+using LMSApi.DALLibrary.Interfaces;
+using LMSApi.ModelLibrary.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using System.Text.Json;
@@ -7,9 +9,9 @@ using System.Text.Json;
 namespace LMSApi.API.Controllers
 {
     /// <summary>
-    /// Receives Razorpay webhook events for payout status updates.
-    /// Configure in Razorpay Dashboard: Webhooks → Add Webhook → URL: /api/v1/webhooks/razorpay/payouts
-    /// Active events: payout.processed, payout.failed, payout.reversed, payout.queued
+    /// Receives Razorpay webhook events for all event types defined in Prompt.yaml.
+    /// Configure in Razorpay Dashboard: Webhooks → Add Webhook → URL: /api/v1/webhooks/razorpay/payments
+    /// Active events: all order, settlement, transfer, account, product, payment events.
     /// </summary>
     [ApiController]
     [ApiVersion("1.0")]
@@ -22,6 +24,8 @@ namespace LMSApi.API.Controllers
         private readonly ILogger<RazorpayWebhookController> _logger;
         private readonly IEnrollmentService _enrollmentService;
         private readonly IInstructorOnboardingService _onboardingService;
+        private readonly IWebhookEventService _webhookEventService;
+        private readonly IWebhookEventLogRepository _webhookLogRepo;
 
         public RazorpayWebhookController(
             IInstructorPayoutService payoutService,
@@ -29,7 +33,9 @@ namespace LMSApi.API.Controllers
             IConfiguration configuration,
             ILogger<RazorpayWebhookController> logger,
             IEnrollmentService enrollmentService,
-            IInstructorOnboardingService onboardingService)
+            IInstructorOnboardingService onboardingService,
+            IWebhookEventService webhookEventService,
+            IWebhookEventLogRepository webhookLogRepo)
         {
             _payoutService = payoutService;
             _providers = providers;
@@ -37,17 +43,22 @@ namespace LMSApi.API.Controllers
             _logger = logger;
             _enrollmentService = enrollmentService;
             _onboardingService = onboardingService;
+            _webhookEventService = webhookEventService;
+            _webhookLogRepo = webhookLogRepo;
         }
 
         [HttpPost("payments")]
         public async Task<IActionResult> HandlePaymentWebhook()
         {
+            string payload = string.Empty;
+            string eventType = string.Empty;
+
             try
             {
                 // Read raw body
                 Request.EnableBuffering();
                 using var reader = new System.IO.StreamReader(Request.Body, leaveOpen: true);
-                var payload = await reader.ReadToEndAsync();
+                payload = await reader.ReadToEndAsync();
                 Request.Body.Position = 0;
 
                 // Get signature from header (check both case variants)
@@ -84,7 +95,7 @@ namespace LMSApi.API.Controllers
                 using var jsonDocument = JsonDocument.Parse(payload);
                 var root = jsonDocument.RootElement;
 
-                var eventType = root.TryGetProperty("event", out var evt) ? evt.GetString() ?? string.Empty : string.Empty;
+                eventType = root.TryGetProperty("event", out var evt) ? evt.GetString() ?? string.Empty : string.Empty;
                 _logger.LogInformation("Received Razorpay webhook event: {EventType}", eventType);
 
                 if (string.IsNullOrEmpty(eventType))
@@ -92,36 +103,42 @@ namespace LMSApi.API.Controllers
                     return BadRequest("Missing event type");
                 }
 
-                // Handle payout events
-                if (eventType.StartsWith("payout.", StringComparison.OrdinalIgnoreCase))
+                // ── Payout / Transfer events ─────────────────────────────────────────────────
+                if (eventType.StartsWith("payout.", StringComparison.OrdinalIgnoreCase) ||
+                    eventType.StartsWith("transfer.", StringComparison.OrdinalIgnoreCase))
                 {
                     string? payoutId = null;
                     string? failureReason = null;
 
-                    if (root.TryGetProperty("payload", out var payloadObj) &&
-                        payloadObj.TryGetProperty("payout", out var payoutObj) &&
-                        payoutObj.TryGetProperty("entity", out var entity))
+                    if (root.TryGetProperty("payload", out var payloadObj))
                     {
-                        payoutId = entity.TryGetProperty("id", out var idVal) ? idVal.GetString() : null;
+                        string propertyName = eventType.StartsWith("transfer.", StringComparison.OrdinalIgnoreCase) ? "transfer" : "payout";
+                        
+                        if (payloadObj.TryGetProperty(propertyName, out var obj) &&
+                            obj.TryGetProperty("entity", out var entity))
+                        {
+                            payoutId = entity.TryGetProperty("id", out var idVal) ? idVal.GetString() : null;
 
-                        if (entity.TryGetProperty("failure_reason", out var fr))
-                            failureReason = fr.GetString();
+                            if (entity.TryGetProperty("failure_reason", out var fr))
+                                failureReason = fr.GetString();
 
-                        if (entity.TryGetProperty("error", out var err) &&
-                            err.TryGetProperty("description", out var desc))
-                            failureReason = desc.GetString() ?? failureReason;
+                            if (entity.TryGetProperty("error", out var err) &&
+                                err.TryGetProperty("description", out var desc))
+                                failureReason = desc.GetString() ?? failureReason;
+                        }
                     }
 
                     if (!string.IsNullOrEmpty(payoutId))
                     {
                         await _payoutService.HandleWebhookAsync(payoutId, eventType, failureReason);
-                        _logger.LogInformation("Processed payout webhook: {Event} for {PayoutId}", eventType, payoutId);
+                        _logger.LogInformation("Processed payout/transfer webhook: {Event} for {PayoutId}", eventType, payoutId);
                     }
                     else
                     {
-                        _logger.LogWarning("Payout webhook missing payout ID for event: {Event}", eventType);
+                        _logger.LogWarning("Payout/transfer webhook missing payout ID for event: {Event}", eventType);
                     }
                 }
+                // ── Account events ─────────────────────────────────────────────────────────
                 else if (eventType.StartsWith("account.", StringComparison.OrdinalIgnoreCase))
                 {
                     string? accountId = null;
@@ -142,23 +159,65 @@ namespace LMSApi.API.Controllers
                         _logger.LogWarning("Account webhook missing account ID for event: {Event}", eventType);
                     }
                 }
+                // ── Product route events ───────────────────────────────────────────────
+                else if (eventType.StartsWith("product.route.", StringComparison.OrdinalIgnoreCase))
+                {
+                    string? accountId = null;
+                    if (root.TryGetProperty("payload", out var pl) &&
+                        pl.TryGetProperty("account", out var acct) &&
+                        acct.TryGetProperty("entity", out var acctEntity))
+                    {
+                        accountId = acctEntity.TryGetProperty("id", out var idVal) ? idVal.GetString() : null;
+                    }
+
+                    if (!string.IsNullOrEmpty(accountId))
+                    {
+                        await _webhookEventService.HandleProductRouteAsync(accountId, eventType);
+                        _logger.LogInformation("Processed product.route webhook: {Event} for account {AccountId}", eventType, accountId);
+                    }
+                    else
+                    {
+                        _logger.LogWarning("product.route webhook missing account ID for event: {Event}", eventType);
+                    }
+                }
+                // ── Settlement events ───────────────────────────────────────────────────
+                else if (eventType.StartsWith("settlement.", StringComparison.OrdinalIgnoreCase))
+                {
+                    string? settlementId = null;
+                    if (root.TryGetProperty("payload", out var pl) &&
+                        pl.TryGetProperty("settlement", out var settlement) &&
+                        settlement.TryGetProperty("entity", out var settlementEntity))
+                    {
+                        settlementId = settlementEntity.TryGetProperty("id", out var idVal) ? idVal.GetString() : null;
+                    }
+
+                    var sid = settlementId ?? $"unknown-{DateTime.UtcNow.Ticks}";
+                    await _webhookEventService.HandleSettlementAsync(sid, payload);
+                    _logger.LogInformation("Processed settlement webhook: {Event} for settlement {SettlementId}", eventType, sid);
+                }
+                // ── Payment downtime events ───────────────────────────────────────────
+                else if (eventType.StartsWith("payment.downtime.", StringComparison.OrdinalIgnoreCase))
+                {
+                    await _webhookEventService.HandlePaymentDowntimeAsync(eventType, payload);
+                }
+                // ── Payment / Order events ──────────────────────────────────────────────
                 else
                 {
-                    // Handle payment/order events
+                    // Handle payment/order events (including disputes and order.notification.*)
                     string? orderId = null;
                     string? paymentId = null;
 
-                    if (root.TryGetProperty("payload", out var payloadObj))
+                    if (root.TryGetProperty("payload", out var payloadData))
                     {
                         // Try to get order entity first
-                        if (payloadObj.TryGetProperty("order", out var orderObj) &&
+                        if (payloadData.TryGetProperty("order", out var orderObj) &&
                             orderObj.TryGetProperty("entity", out var orderEntity))
                         {
                             orderId = orderEntity.TryGetProperty("id", out var orderIdVal) ? orderIdVal.GetString() : null;
                         }
 
                         // Try to get payment entity
-                        if (payloadObj.TryGetProperty("payment", out var paymentObj) &&
+                        if (payloadData.TryGetProperty("payment", out var paymentObj) &&
                             paymentObj.TryGetProperty("entity", out var paymentEntity))
                         {
                             paymentId = paymentEntity.TryGetProperty("id", out var paymentIdVal) ? paymentIdVal.GetString() : null;
@@ -168,17 +227,33 @@ namespace LMSApi.API.Controllers
                             {
                                 orderId = paymentEntity.TryGetProperty("order_id", out var orderIdVal) ? orderIdVal.GetString() : null;
                             }
+
+                            // Extract dispute ID if present (for payment.dispute.* events)
+                            if (eventType.StartsWith("payment.dispute.", StringComparison.OrdinalIgnoreCase))
+                            {
+                                // dispute ID is under payload.dispute.entity.id
+                            }
+                        }
+
+                        // Extract dispute entity ID for dispute events
+                        if (eventType.StartsWith("payment.dispute.", StringComparison.OrdinalIgnoreCase) &&
+                            payloadData.TryGetProperty("dispute", out var disputeObj) &&
+                            disputeObj.TryGetProperty("entity", out var disputeEntity))
+                        {
+                            // disputeId stored in payment record via service
+                            _ = disputeEntity.TryGetProperty("id", out var _);
                         }
                     }
 
                     if (!string.IsNullOrEmpty(orderId))
                     {
-                        _logger.LogInformation("Processing Razorpay payment webhook: Event={Event}, OrderId={OrderId}, PaymentId={PaymentId}", eventType, orderId, paymentId);
+                        _logger.LogInformation("Processing payment/order webhook: Event={Event}, OrderId={OrderId}, PaymentId={PaymentId}",
+                            eventType, orderId, paymentId);
                         await _enrollmentService.ProcessWebhookPaymentAsync(orderId, paymentId ?? string.Empty, eventType, payload);
                     }
                     else
                     {
-                        _logger.LogWarning("Payment webhook event {Event} missing order ID.", eventType);
+                        _logger.LogWarning("Payment/order webhook event {Event} missing order ID.", eventType);
                     }
                 }
 
@@ -187,7 +262,26 @@ namespace LMSApi.API.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error processing Razorpay webhook.");
+                _logger.LogError(ex, "Error processing Razorpay webhook event {EventType}.", eventType);
+
+                // Log the failed event for retry/debugging
+                try
+                {
+                    await _webhookLogRepo.AddAsync(new WebhookEventLog
+                    {
+                        EventType = eventType,
+                        EntityId = null,
+                        RawPayload = payload,
+                        ReceivedAt = DateTime.UtcNow,
+                        Processed = false,
+                        ProcessingError = ex.Message
+                    });
+                }
+                catch (Exception logEx)
+                {
+                    _logger.LogError(logEx, "Failed to write webhook error log.");
+                }
+
                 // Return 500 so Razorpay retries if there's a transient server issue
                 return StatusCode(500);
             }

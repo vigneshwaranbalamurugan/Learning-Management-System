@@ -18,6 +18,13 @@ namespace LMSApi.ModelLibrary.Models
         public DateTime? PaidAt { get; set; }
         public string? RawResponse { get; set; }
 
+        // ── Dispute Tracking ────────────────────────────────────────────────────
+        /// <summary>Razorpay dispute ID (dis_xxx), set when a dispute.created event arrives.</summary>
+        public string? DisputeId { get; set; }
+
+        /// <summary>Current dispute lifecycle stage. Defaults to None when no dispute exists.</summary>
+        public DisputeStatus DisputeStatus { get; set; } = DisputeStatus.None;
+
         // ── Platform Fee Snapshot (immutable after payment) ───────────────────
         /// <summary>The fee config used at the time of this payment (null for free courses).</summary>
         public int? PlatformFeeConfigId { get; set; }

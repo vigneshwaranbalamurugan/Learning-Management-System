@@ -65,7 +65,7 @@ namespace LMSApi.Tests.Services
             DbContext.Users.Add(user);
             await DbContext.SaveChangesAsync();
 
-            _mockTokenService.Setup(x => x.GenerateToken(It.IsAny<int>(), It.IsAny<string>(), It.IsAny<string>()))
+            _mockTokenService.Setup(x => x.GenerateToken(It.IsAny<int>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>()))
                 .Returns(("mock_token", DateTime.UtcNow.AddHours(1)));
 
             var request = new LoginRequest { Email = "test@example.com", Password = "Password123!" };
@@ -94,7 +94,7 @@ namespace LMSApi.Tests.Services
             DbContext.Users.Add(user);
             await DbContext.SaveChangesAsync();
 
-            _mockTokenService.Setup(x => x.GenerateToken(It.IsAny<int>(), It.IsAny<string>(), It.IsAny<string>()))
+            _mockTokenService.Setup(x => x.GenerateToken(It.IsAny<int>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>()))
                 .Returns(("mock_token", DateTime.UtcNow.AddHours(1)));
 
             var request = new LoginRequest { Email = "logtest@example.com", Password = "Password123!" };
@@ -720,19 +720,12 @@ namespace LMSApi.Tests.Services
             DbContext.Users.Add(user);
             await DbContext.SaveChangesAsync();
 
-            var principal = new System.Security.Claims.ClaimsPrincipal(new System.Security.Claims.ClaimsIdentity(new[]
-            {
-                new System.Security.Claims.Claim(System.Security.Claims.ClaimTypes.Email, "refresh_test@example.com")
-            }));
-
-            _mockTokenService.Setup(x => x.GetPrincipalFromExpiredToken(It.IsAny<string>())).Returns(principal);
-            _mockTokenService.Setup(x => x.GenerateToken(It.IsAny<int>(), It.IsAny<string>(), It.IsAny<string>()))
+            _mockTokenService.Setup(x => x.GenerateToken(It.IsAny<int>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>()))
                 .Returns(("new_access_token", DateTime.UtcNow.AddHours(1)));
             _mockTokenService.Setup(x => x.GenerateRefreshToken()).Returns("new_refresh_token");
 
             var request = new RefreshTokenRequest
             {
-                AccessToken = "expired_access_token",
                 RefreshToken = "valid_refresh_token"
             };
 
@@ -748,22 +741,6 @@ namespace LMSApi.Tests.Services
             DbContext.ChangeTracker.Clear();
             var updatedUser = DbContext.Users.Find(user.Id)!;
             Assert.That(updatedUser.RefreshToken, Is.EqualTo("new_refresh_token"));
-        }
-
-        [Test]
-        public void RefreshTokenAsync_InvalidAccessToken_ThrowsUnauthorizedAccessException()
-        {
-            // Arrange
-            _mockTokenService.Setup(x => x.GetPrincipalFromExpiredToken(It.IsAny<string>())).Returns((System.Security.Claims.ClaimsPrincipal?)null);
-
-            var request = new RefreshTokenRequest
-            {
-                AccessToken = "invalid_access_token",
-                RefreshToken = "some_refresh_token"
-            };
-
-            // Act & Assert
-            Assert.ThrowsAsync<UnauthorizedAccessException>(() => _authService.RefreshTokenAsync(request));
         }
 
         [Test]
@@ -783,16 +760,8 @@ namespace LMSApi.Tests.Services
             DbContext.Users.Add(user);
             await DbContext.SaveChangesAsync();
 
-            var principal = new System.Security.Claims.ClaimsPrincipal(new System.Security.Claims.ClaimsIdentity(new[]
-            {
-                new System.Security.Claims.Claim(System.Security.Claims.ClaimTypes.Email, "refresh_test2@example.com")
-            }));
-
-            _mockTokenService.Setup(x => x.GetPrincipalFromExpiredToken(It.IsAny<string>())).Returns(principal);
-
             var request = new RefreshTokenRequest
             {
-                AccessToken = "expired_access_token",
                 RefreshToken = "incorrect_refresh_token"
             };
 
@@ -817,16 +786,8 @@ namespace LMSApi.Tests.Services
             DbContext.Users.Add(user);
             await DbContext.SaveChangesAsync();
 
-            var principal = new System.Security.Claims.ClaimsPrincipal(new System.Security.Claims.ClaimsIdentity(new[]
-            {
-                new System.Security.Claims.Claim(System.Security.Claims.ClaimTypes.Email, "refresh_test3@example.com")
-            }));
-
-            _mockTokenService.Setup(x => x.GetPrincipalFromExpiredToken(It.IsAny<string>())).Returns(principal);
-
             var request = new RefreshTokenRequest
             {
-                AccessToken = "expired_access_token",
                 RefreshToken = "expired_refresh_token"
             };
 

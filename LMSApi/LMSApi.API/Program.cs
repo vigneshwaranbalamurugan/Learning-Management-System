@@ -117,6 +117,7 @@ builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
 builder.Services.AddScoped<IUserNotificationsRepository, UserNotificationsRepository>();
 builder.Services.AddScoped<IActivityLogsRepository, ActivityLogsRepository>();
 builder.Services.AddScoped<IAuditLogsRepository, AuditLogsRepository>();
+builder.Services.AddScoped<IWebhookEventLogRepository, WebhookEventLogRepository>();
 #endregion
 
 #region Dependency Injection for Services
@@ -174,6 +175,7 @@ builder.Services.AddScoped<INotificationRealtimeService, NotificationRealtimeSer
 builder.Services.AddScoped<IActivityLogService, ActivityLogService>();
 builder.Services.AddScoped<IAdminLogService, AdminLogService>();
 builder.Services.AddScoped<ICurrentUserProvider, CurrentUserProvider>();
+builder.Services.AddScoped<IWebhookEventService, WebhookEventService>();
 #endregion
 
 builder.Services.AddAutoMapper(typeof(ApplicationAssemblyReference).Assembly);
@@ -229,12 +231,12 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-app.Use(async (context, next) =>
-{
-    await Task.Delay(3000);
+// app.Use(async (context, next) =>
+// {
+//     await Task.Delay(3000);
 
-    await next();
-});
+//     await next();
+// });
 
 // ── Exception handling must be FIRST so it wraps every middleware below ──
 app.UseMiddleware<ExceptionHandlingMiddleware>();

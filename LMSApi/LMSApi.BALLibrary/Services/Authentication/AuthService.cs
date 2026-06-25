@@ -66,7 +66,7 @@ namespace LMSApi.BALLibrary.Services
                 throw new InvalidOperationException("User role is not configured.");
             }
 
-            var (token, expires) = _tokenService.GenerateToken(user.Id, user.Email, user.Role.RoleName, 15);
+            var (token, expires) = _tokenService.GenerateToken(user.Id, user.Email, user.Role.RoleName);
             
             var refreshToken = _tokenService.GenerateRefreshToken();
 
@@ -281,28 +281,15 @@ namespace LMSApi.BALLibrary.Services
         public async Task<RefreshTokenResponse> RefreshTokenAsync(RefreshTokenRequest request)
         {
             if (request == null) throw new ArgumentNullException(nameof(request));
-            if (string.IsNullOrWhiteSpace(request.AccessToken)) throw new ArgumentException("Access token is required", nameof(request.AccessToken));
             if (string.IsNullOrWhiteSpace(request.RefreshToken)) throw new ArgumentException("Refresh token is required", nameof(request.RefreshToken));
 
-            var principal = _tokenService.GetPrincipalFromExpiredToken(request.AccessToken);
-            if (principal == null)
+            var user = await _userRepository.GetByRefreshTokenAsync(request.RefreshToken);
+            if (user == null || user.RefreshTokenExpiryTime <= DateTime.UtcNow)
             {
-                throw new UnauthorizedAccessException("Invalid access token or refresh token");
+                throw new UnauthorizedAccessException("Invalid refresh token");
             }
 
-            var email = principal.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value;
-            if (string.IsNullOrEmpty(email))
-            {
-                throw new UnauthorizedAccessException("Invalid access token or refresh token");
-            }
-
-            var user = await _userRepository.GetByEmailAsync(email);
-            if (user == null || user.RefreshToken != request.RefreshToken || user.RefreshTokenExpiryTime <= DateTime.UtcNow)
-            {
-                throw new UnauthorizedAccessException("Invalid access token or refresh token");
-            }
-
-            var (newAccessToken, expiresAt) = _tokenService.GenerateToken(user.Id, user.Email, user.Role.RoleName, 15);
+            var (newAccessToken, expiresAt) = _tokenService.GenerateToken(user.Id, user.Email, user.Role.RoleName);
             var newRefreshToken = _tokenService.GenerateRefreshToken();
 
             // Preserve exactly the original expiry time

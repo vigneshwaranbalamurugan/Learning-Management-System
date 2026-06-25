@@ -16,6 +16,7 @@ export class Dropdown {
   @Input() options: { value: string; label: string }[] = [];
   @Input() icon: 'email' | 'lock' | 'user' | 'role' | 'none' = 'none';
   @Input() error: string = '';
+  @Input() disabled: boolean = false;
   @Output() valueChange = new EventEmitter<string>();
 
   protected isOpen = false;

@@ -122,6 +122,16 @@ namespace LMSApi.ModelLibrary.DTOs
         public string Phone { get; set; } = string.Empty;
         public string BusinessType { get; set; } = string.Empty;
         public string AccountStatus { get; set; } = string.Empty;
+        
+        public string Street1 { get; set; } = string.Empty;
+        public string? Street2 { get; set; }
+        public string City { get; set; } = string.Empty;
+        public string State { get; set; } = string.Empty;
+        public string PostalCode { get; set; } = string.Empty;
+        public string Country { get; set; } = "IN";
+        public string? Pan { get; set; }
+        public string? Gst { get; set; }
+
         public bool IsActive { get; set; }
         public bool IsVerified { get; set; }
         public DateTime CreatedAt { get; set; }

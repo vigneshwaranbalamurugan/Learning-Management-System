@@ -29,5 +29,14 @@ namespace LMSApi.DALLibrary.Repositories
                 .Include(u => u.Role)
                 .FirstOrDefaultAsync(u => u.RefreshToken == refreshToken) ?? null;
         }
+
+        public async Task<IEnumerable<Users>> GetAdminUsersAsync()
+        {
+            return await _context.Users
+                .Include(u => u.Role)
+                .Include(u => u.UserProfile)
+                .Where(u => u.Role.RoleName.ToLower() == "admin" && u.IsActive)
+                .ToListAsync();
+        }
     }
 }

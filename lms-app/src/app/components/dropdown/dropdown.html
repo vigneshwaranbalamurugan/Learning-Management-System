@@ -7,10 +7,12 @@
     <!-- Dropdown Trigger Button -->
     <button
       type="button"
-      (click)="toggleDropdown()"
+      [disabled]="disabled"
+      (click)="!disabled && toggleDropdown()"
       [id]="id"
-      [class]="'w-full py-3 text-sm rounded-xl border text-left flex items-center justify-between transition-all duration-200 cursor-pointer bg-white focus:outline-none focus:ring-1 focus:ring-primary ' + 
+      [class]="'w-full py-3 text-sm rounded-xl border text-left flex items-center justify-between transition-all duration-200 bg-white focus:outline-none focus:ring-1 focus:ring-primary ' + 
         (icon !== 'none' ? 'pl-11 pr-10' : 'px-4 pr-10') + ' ' + 
+        (disabled ? 'opacity-60 cursor-not-allowed bg-gray-50 ' : 'cursor-pointer ') + 
         (error ? 'border-danger focus:border-danger focus:ring-danger' : 'border-border-default focus:border-primary')"
     >
       <!-- Prefix Icon -->

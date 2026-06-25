@@ -88,10 +88,10 @@ namespace LMSApi.BALLibrary.Services
         // Step 1: Create Linked Account
         public async Task<InstructorLinkedAccount> CreateLinkedAccountAsync(int instructorId, CreateLinkedAccountRequest request)
         {
-            var existing = await _linkedAccountRepo.GetActiveByInstructorIdAsync(instructorId);
-            if (existing != null)
+            var existing = await _linkedAccountRepo.GetLatestByInstructorIdAsync(instructorId);
+            if (existing != null && existing.IsActive)
             {
-                throw new InvalidOperationException("Instructor already has an active linked account.");
+                throw new InvalidOperationException("Instructor already has an active linked account. Please update it instead.");
             }
 
             try
@@ -161,10 +161,10 @@ namespace LMSApi.BALLibrary.Services
         // Step 1 (Update)
         public async Task<InstructorLinkedAccount> UpdateLinkedAccountAsync(int instructorId, UpdateLinkedAccountRequest request)
         {
-            var account = await _linkedAccountRepo.GetActiveByInstructorIdAsync(instructorId);
+            var account = await _linkedAccountRepo.GetLatestByInstructorIdAsync(instructorId);
             if (account == null)
             {
-                throw new KeyNotFoundException("No active linked account found for update.");
+                throw new KeyNotFoundException("No linked account found for update.");
             }
 
             try
@@ -224,7 +224,7 @@ namespace LMSApi.BALLibrary.Services
         // Step 2: Create Stakeholder
         public async Task<InstructorStakeholder> CreateStakeholderAsync(int instructorId, CreateStakeholderRequest request)
         {
-            var account = await _linkedAccountRepo.GetActiveByInstructorIdAsync(instructorId);
+            var account = await _linkedAccountRepo.GetLatestByInstructorIdAsync(instructorId);
             if (account == null)
             {
                 throw new InvalidOperationException("Linked account (Step 1) must be created before adding a stakeholder.");
@@ -274,7 +274,7 @@ namespace LMSApi.BALLibrary.Services
         // Step 2 (Update)
         public async Task<InstructorStakeholder> UpdateStakeholderAsync(int instructorId, UpdateStakeholderRequest request)
         {
-            var account = await _linkedAccountRepo.GetActiveByInstructorIdAsync(instructorId);
+            var account = await _linkedAccountRepo.GetLatestByInstructorIdAsync(instructorId);
             if (account == null)
             {
                 throw new InvalidOperationException("Linked account not found.");
@@ -320,7 +320,7 @@ namespace LMSApi.BALLibrary.Services
         // Step 3: Request Route Product
         public async Task<InstructorPayoutProduct> RequestProductAsync(int instructorId)
         {
-            var account = await _linkedAccountRepo.GetActiveByInstructorIdAsync(instructorId);
+            var account = await _linkedAccountRepo.GetLatestByInstructorIdAsync(instructorId);
             if (account == null)
             {
                 throw new InvalidOperationException("Linked account (Step 1) must be created before requesting a product.");
@@ -375,7 +375,7 @@ namespace LMSApi.BALLibrary.Services
         // Step 4: Configure Bank settles
         public async Task<InstructorPayoutProduct> ConfigureBankAsync(int instructorId, ConfigureBankRequest request)
         {
-            var account = await _linkedAccountRepo.GetActiveByInstructorIdAsync(instructorId);
+            var account = await _linkedAccountRepo.GetLatestByInstructorIdAsync(instructorId);
             if (account == null)
             {
                 throw new InvalidOperationException("Linked account not found.");
@@ -429,7 +429,7 @@ namespace LMSApi.BALLibrary.Services
         // Get Onboarding Status
         public async Task<OnboardingStatusResponse> GetOnboardingStatusAsync(int instructorId)
         {
-            var account = await _linkedAccountRepo.GetActiveByInstructorIdAsync(instructorId);
+            var account = await _linkedAccountRepo.GetLatestByInstructorIdAsync(instructorId);
             if (account == null)
             {
                 return new OnboardingStatusResponse
@@ -504,6 +504,26 @@ namespace LMSApi.BALLibrary.Services
                 title = "Payout Account Activated";
                 realtimeMessage = "Your payout account has been fully activated and verified.";
             }
+            else if (eventType.Equals("account.instantly_activated", StringComparison.OrdinalIgnoreCase))
+            {
+                account.AccountStatus = "instantly_activated";
+                account.IsVerified = true;
+                account.VerifiedAt = DateTime.UtcNow;
+
+                subject = "Payout Onboarding: Account Instantly Activated!";
+                emailBody = "Dear Instructor, your Razorpay Route payout account has been instantly activated. You are ready to receive payouts immediately.";
+                title = "Payout Account Instantly Activated";
+                realtimeMessage = "Your payout account has been instantly activated and is ready for payouts.";
+            }
+            else if (eventType.Equals("account.activated_kyc_pending", StringComparison.OrdinalIgnoreCase))
+            {
+                account.AccountStatus = "activated_kyc_pending";
+
+                subject = "Payout Onboarding: Account Activated (KYC Pending)";
+                emailBody = "Dear Instructor, your Razorpay Route payout account has been activated but your KYC verification is still pending. Please complete the KYC process to enable full payout functionality.";
+                title = "Payout Account Activated — KYC Pending";
+                realtimeMessage = "Your payout account is active but KYC verification is still pending. Please complete KYC.";
+            }
             else if (eventType.Equals("account.under_review", StringComparison.OrdinalIgnoreCase))
             {
                 account.AccountStatus = "under_review";
@@ -512,6 +532,33 @@ namespace LMSApi.BALLibrary.Services
                 emailBody = "Dear Instructor, your Razorpay Route payout account is now under review. We will notify you once the verification is complete.";
                 title = "Payout Account Under Review";
                 realtimeMessage = "Your payout account is currently under review.";
+            }
+            else if (eventType.Equals("account.needs_clarification", StringComparison.OrdinalIgnoreCase))
+            {
+                account.AccountStatus = "needs_clarification";
+
+                subject = "Payout Onboarding: Account Needs Clarification";
+                emailBody = "Dear Instructor, Razorpay requires additional clarification for your payout account. Please log in to the Razorpay dashboard and provide the requested documents or information.";
+                title = "Payout Account Needs Clarification";
+                realtimeMessage = "Razorpay needs more information to verify your payout account. Please check your Razorpay dashboard.";
+            }
+            else if (eventType.Equals("account.rejected", StringComparison.OrdinalIgnoreCase))
+            {
+                account.AccountStatus = "rejected";
+                account.IsActive = false;
+
+                subject = "Payout Onboarding: Account Rejected";
+                emailBody = "Dear Instructor, unfortunately your Razorpay Route payout account application has been rejected. Please contact our support team for assistance on next steps.";
+                title = "Payout Account Rejected";
+                realtimeMessage = "Your payout account application was rejected. Please contact support.";
+            }
+            else if (eventType.Equals("account.updated", StringComparison.OrdinalIgnoreCase))
+            {
+                // account.updated is informational — status does not change
+                subject = "Payout Onboarding: Account Details Updated";
+                emailBody = "Dear Instructor, your Razorpay Route payout account details have been updated.";
+                title = "Payout Account Updated";
+                realtimeMessage = "Your payout account details have been updated by Razorpay.";
             }
             else if (eventType.Equals("account.suspended", StringComparison.OrdinalIgnoreCase))
             {

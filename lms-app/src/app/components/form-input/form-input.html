@@ -30,11 +30,13 @@
       [id]="id"
       [type]="inputType"
       [value]="value"
+      [disabled]="disabled"
       (input)="onInput($event)"
       [placeholder]="placeholder"
       [class]="'w-full py-3 text-sm rounded-xl border outline-none transition-all duration-200 bg-white ' + 
         (icon !== 'none' ? 'pl-11 pr-4' : 'px-4') + ' ' + 
-        (error ? 'border-danger focus:border-danger focus:ring-1 focus:ring-danger' : 'border-border-default focus:border-primary focus:ring-1 focus:ring-primary') + ' ' + 
+        (disabled ? 'opacity-60 cursor-not-allowed bg-gray-50 ' : '') + 
+        (error ? 'border-danger focus:border-danger focus:ring-1 focus:ring-danger ' : 'border-border-default focus:border-primary focus:ring-1 focus:ring-primary ') + 
         (type === 'password' ? 'pr-11' : '')"
     />
 
@@ -43,10 +45,12 @@
       *ngIf="type === 'select'"
       [id]="id"
       [value]="value"
+      [disabled]="disabled"
       (change)="onInput($event)"
       [class]="'w-full py-3 text-sm rounded-xl border outline-none transition-all duration-200 bg-white appearance-none cursor-pointer ' + 
         (icon !== 'none' ? 'pl-11 pr-10' : 'px-4 pr-10') + ' ' + 
-        (error ? 'border-danger focus:border-danger focus:ring-1 focus:ring-danger' : 'border-border-default focus:border-primary focus:ring-1 focus:ring-primary')"
+        (disabled ? 'opacity-60 cursor-not-allowed bg-gray-50 ' : '') + 
+        (error ? 'border-danger focus:border-danger focus:ring-1 focus:ring-danger ' : 'border-border-default focus:border-primary focus:ring-1 focus:ring-primary ')"
     >
       <option value="" disabled selected hidden>{{ placeholder }}</option>
       <option *ngFor="let opt of options" [value]="opt.value">{{ opt.label }}</option>

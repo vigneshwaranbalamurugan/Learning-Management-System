@@ -5,7 +5,7 @@ namespace LMSApi.DALLibrary.Interfaces
 {
     public interface IInstructorLinkedAccountRepository
     {
-        Task<InstructorLinkedAccount?> GetActiveByInstructorIdAsync(int instructorId);
+        Task<InstructorLinkedAccount?> GetLatestByInstructorIdAsync(int instructorId);
         Task<InstructorLinkedAccount?> GetByIdAsync(int id);
         Task<InstructorLinkedAccount?> GetByRazorpayAccountIdAsync(string razorpayAccountId);
         Task AddAsync(InstructorLinkedAccount account);

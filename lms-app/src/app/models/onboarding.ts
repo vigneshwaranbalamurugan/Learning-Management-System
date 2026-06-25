@@ -58,6 +58,14 @@ export interface LinkedAccountResponse {
   phone: string;
   businessType: string;
   accountStatus: string;
+  street1: string;
+  street2?: string | null;
+  city: string;
+  state: string;
+  postalCode: string;
+  country: string;
+  pan?: string | null;
+  gst?: string | null;
   isActive: boolean;
   isVerified: boolean;
   createdAt: string;

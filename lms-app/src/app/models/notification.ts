@@ -20,6 +20,10 @@ export type NotificationType =
   | 'CertificateIssued'
   | 'PaymentSuccess'
   | 'PaymentFailed'
+  | 'PaymentDispute'    // payment.dispute.* webhook events
+  | 'PaymentDowntime'  // payment.downtime.* webhook events (admin)
+  | 'Settlement'       // settlement.processed webhook event (admin)
+  | 'ProductRoute'     // product.route.* webhook events (instructor)
   | 'BatchAnnouncement'
   | 'CoursePublished'
   | 'General';

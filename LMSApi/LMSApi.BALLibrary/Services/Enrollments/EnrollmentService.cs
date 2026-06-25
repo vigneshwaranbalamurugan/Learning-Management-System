@@ -330,7 +330,7 @@ namespace LMSApi.BALLibrary.Services
                 return;
             }
 
-            if (payment.Status == PaymentStatus.Completed)
+            if (payment.Status == PaymentStatus.Completed && (eventType == "order.paid" || eventType == "payment.captured"))
             {
                 _logger.LogInformation("Webhook ignored: Payment {OrderId} is already Completed.", providerOrderId);
                 return;
@@ -454,12 +454,207 @@ namespace LMSApi.BALLibrary.Services
                 await _paymentRepository.UpdateAsync(payment);
                 _logger.LogInformation("Webhook Payment Pending/Attempted: OrderId={OrderId}, PaymentId={PaymentId}", providerOrderId, providerPaymentId);
             }
+            // ── payment.dispute.* events ──────────────────────────────────────
+            else if (eventType.StartsWith("payment.dispute.", StringComparison.OrdinalIgnoreCase))
+            {
+                await HandleDisputeEventAsync(payment, eventType, rawResponse);
+            }
+            // ── order.notification.* events ──────────────────────────────────
+            else if (eventType == "order.notification.delivered" || eventType == "order.notification.failed")
+            {
+                await HandleOrderNotificationEventAsync(payment, eventType);
+            }
             else
             {
                 payment.ProviderPaymentId = providerPaymentId;
                 payment.RawResponse = rawResponse ?? $"WebhookEvent:{eventType}";
                 await _paymentRepository.UpdateAsync(payment);
                 _logger.LogInformation("Webhook event {EventType} recorded for OrderId: {OrderId}", eventType, providerOrderId);
+            }
+        }
+
+        // ── Dispute event handler ─────────────────────────────────────────────
+        private async Task HandleDisputeEventAsync(Payments payment, string eventType, string? rawResponse)
+        {
+            _logger.LogInformation("Processing dispute event {EventType} for Payment OrderId={OrderId}", eventType, payment.ProviderOrderId);
+
+            Courses course;
+            try { course = await _courseRepository.GetByIdAsync(payment.CourseId); }
+            catch { course = null!; }
+
+            string courseTitle = course?.Title ?? $"CourseId {payment.CourseId}";
+            int instructorId = course?.InstructorId ?? 0;
+
+            switch (eventType.ToLowerInvariant())
+            {
+                case "payment.dispute.created":
+                    payment.DisputeStatus = DisputeStatus.Created;
+                    payment.Status = PaymentStatus.Disputed;
+                    payment.RawResponse = rawResponse ?? eventType;
+                    _logger.LogWarning("Dispute created for Payment {OrderId}", payment.ProviderOrderId);
+                    await SendDisputeNotificationsAsync(payment, eventType, courseTitle, instructorId,
+                        learnerTitle: "Payment Dispute Raised",
+                        learnerMsg: $"A dispute has been raised for your payment of ₹{payment.Amount} for '{courseTitle}'. We are reviewing it.",
+                        instructorTitle: "Student Payment Dispute",
+                        instructorMsg: $"A dispute has been raised on a payment of ₹{payment.Amount} for '{courseTitle}'. This may affect your payout.");
+                    break;
+
+                case "payment.dispute.won":
+                    payment.DisputeStatus = DisputeStatus.Won;
+                    payment.Status = PaymentStatus.Completed; // dispute resolved in our favour
+                    payment.RawResponse = rawResponse ?? eventType;
+                    _logger.LogInformation("Dispute won for Payment {OrderId}", payment.ProviderOrderId);
+                    await SendDisputeNotificationsAsync(payment, eventType, courseTitle, instructorId,
+                        learnerTitle: "Payment Dispute Resolved",
+                        learnerMsg: $"The dispute for your payment of ₹{payment.Amount} for '{courseTitle}' has been resolved in your favour.",
+                        instructorTitle: "Dispute Won",
+                        instructorMsg: $"The payment dispute for '{courseTitle}' (₹{payment.Amount}) has been won. Your payout is unaffected.");
+                    break;
+
+                case "payment.dispute.lost":
+                    payment.DisputeStatus = DisputeStatus.Lost;
+                    payment.Status = PaymentStatus.Refunded;
+                    payment.RawResponse = rawResponse ?? eventType;
+                    _logger.LogWarning("Dispute lost for Payment {OrderId}", payment.ProviderOrderId);
+                    await SendDisputeNotificationsAsync(payment, eventType, courseTitle, instructorId,
+                        learnerTitle: "Payment Dispute: Refund Initiated",
+                        learnerMsg: $"The dispute for your payment of ₹{payment.Amount} for '{courseTitle}' has been resolved. A refund will be processed.",
+                        instructorTitle: "Dispute Lost — Payout Affected",
+                        instructorMsg: $"The payment dispute for '{courseTitle}' (₹{payment.Amount}) was lost. The payout for this payment may be reversed.");
+                    break;
+
+                case "payment.dispute.closed":
+                    payment.DisputeStatus = DisputeStatus.Closed;
+                    payment.RawResponse = rawResponse ?? eventType;
+                    _logger.LogInformation("Dispute closed for Payment {OrderId}", payment.ProviderOrderId);
+                    await SendDisputeNotificationsAsync(payment, eventType, courseTitle, instructorId,
+                        learnerTitle: "Payment Dispute Closed",
+                        learnerMsg: $"The dispute for your payment of ₹{payment.Amount} for '{courseTitle}' has been closed.",
+                        instructorTitle: "Payment Dispute Closed",
+                        instructorMsg: $"The payment dispute for '{courseTitle}' (₹{payment.Amount}) has been closed.");
+                    break;
+
+                case "payment.dispute.under_review":
+                    payment.DisputeStatus = DisputeStatus.UnderReview;
+                    payment.RawResponse = rawResponse ?? eventType;
+                    _logger.LogInformation("Dispute under review for Payment {OrderId}", payment.ProviderOrderId);
+                    await SendDisputeNotificationsAsync(payment, eventType, courseTitle, instructorId,
+                        learnerTitle: "Payment Dispute Under Review",
+                        learnerMsg: $"Your dispute for the payment of ₹{payment.Amount} for '{courseTitle}' is currently under review.",
+                        instructorTitle: "Payment Dispute Under Review",
+                        instructorMsg: $"A payment dispute for '{courseTitle}' (₹{payment.Amount}) is under review.");
+                    break;
+
+                case "payment.dispute.action_required":
+                    payment.DisputeStatus = DisputeStatus.ActionRequired;
+                    payment.RawResponse = rawResponse ?? eventType;
+                    _logger.LogWarning("Dispute action required for Payment {OrderId}", payment.ProviderOrderId);
+                    await SendDisputeNotificationsAsync(payment, eventType, courseTitle, instructorId,
+                        learnerTitle: "Payment Dispute: Action Required",
+                        learnerMsg: $"Your dispute for the payment of ₹{payment.Amount} for '{courseTitle}' requires action. Please check your Razorpay dashboard or contact support.",
+                        instructorTitle: "Dispute Action Required",
+                        instructorMsg: $"Action is required on the dispute for '{courseTitle}' (₹{payment.Amount}). Please check Razorpay dashboard.");
+                    break;
+
+                default:
+                    _logger.LogInformation("Unhandled dispute event: {EventType}", eventType);
+                    payment.RawResponse = rawResponse ?? eventType;
+                    break;
+            }
+
+            await _paymentRepository.UpdateAsync(payment);
+        }
+
+        // ── Helper: send dispute notifications to learner + instructor ─────────
+        private async Task SendDisputeNotificationsAsync(
+            Payments payment,
+            string eventType,
+            string courseTitle,
+            int instructorId,
+            string learnerTitle,
+            string learnerMsg,
+            string instructorTitle,
+            string instructorMsg)
+        {
+            // Notify learner
+            try
+            {
+                var learner = await _userRepository.GetByIdAsync(payment.UserId);
+                var learnerName = learner.UserProfile?.FirstName ?? learner.Email;
+
+                var html = EmailTemplate.GetPaymentDisputeTemplate(learnerName, eventType, courseTitle, payment.Amount, payment.DisputeId);
+                Message msg = new EmailMessage(learner.Email, learnerTitle, html) { IsHtml = true };
+                await _notificationService.Send(msg);
+
+                await _userNotificationsService.CreateAndSendNotificationAsync(
+                    userId: payment.UserId,
+                    title: learnerTitle,
+                    message: learnerMsg,
+                    type: NotificationType.PaymentDispute);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to send dispute notification to learner {UserId}", payment.UserId);
+            }
+
+            // Notify instructor (if available)
+            if (instructorId > 0)
+            {
+                try
+                {
+                    var instructor = await _userRepository.GetByIdAsync(instructorId);
+                    var instructorName = instructor.UserProfile?.FirstName ?? instructor.Email;
+
+                    var html = EmailTemplate.GetPaymentDisputeTemplate(instructorName, eventType, courseTitle, payment.Amount, payment.DisputeId);
+                    Message msg = new EmailMessage(instructor.Email, instructorTitle, html) { IsHtml = true };
+                    await _notificationService.Send(msg);
+
+                    await _userNotificationsService.CreateAndSendNotificationAsync(
+                        userId: instructorId,
+                        title: instructorTitle,
+                        message: instructorMsg,
+                        type: NotificationType.PaymentDispute);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Failed to send dispute notification to instructor {InstructorId}", instructorId);
+                }
+            }
+        }
+
+        // ── order.notification.* handler ──────────────────────────────────────
+        private async Task HandleOrderNotificationEventAsync(Payments payment, string eventType)
+        {
+            _logger.LogInformation("Processing {EventType} for Payment OrderId={OrderId}", eventType, payment.ProviderOrderId);
+
+            bool delivered = eventType.Equals("order.notification.delivered", StringComparison.OrdinalIgnoreCase);
+
+            try
+            {
+                var learner = await _userRepository.GetByIdAsync(payment.UserId);
+                var learnerName = learner.UserProfile?.FirstName ?? learner.Email;
+
+                // Email
+                var html = EmailTemplate.GetOrderNotificationTemplate(learnerName, delivered);
+                var subject = delivered ? "Order Notification Delivered" : "Order Notification Failed";
+                Message msg = new EmailMessage(learner.Email, subject, html) { IsHtml = true };
+                await _notificationService.Send(msg);
+
+                // Real-time
+                var notifTitle = delivered ? "Order Notification Delivered" : "Order Notification Issue";
+                var notifMsg = delivered
+                    ? "Your order confirmation notification was delivered successfully."
+                    : "We had trouble delivering your order confirmation. Please check your notification settings.";
+
+                await _userNotificationsService.CreateAndSendNotificationAsync(
+                    userId: payment.UserId,
+                    title: notifTitle,
+                    message: notifMsg,
+                    type: NotificationType.PaymentSuccess);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to send order notification event {EventType} to user {UserId}", eventType, payment.UserId);
             }
         }
 

@@ -6,6 +6,7 @@ namespace LMSApi.ModelLibrary.Enums
         Completed,
         Failed,
         Refunded,
-        Transferred   // Payment completed and instructor payout initiated
+        Transferred,  // Payment completed and instructor payout initiated
+        Disputed      // Payment is under dispute raised via Razorpay
     }
 }

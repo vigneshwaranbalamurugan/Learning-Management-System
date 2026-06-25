@@ -342,6 +342,61 @@ export class NotificationPanel implements OnInit, OnDestroy {
           </defs>
         </svg>
       `,
+      PaymentDispute: `
+        <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 2L3 7v5c0 5.25 3.9 10.16 9 11.36C17.1 22.16 21 17.25 21 12V7L12 2z" fill="url(#disputeShield)" stroke="#dc2626" stroke-width="1.5" stroke-linejoin="round"/>
+          <path d="M12 8v4" stroke="#dc2626" stroke-width="2" stroke-linecap="round"/>
+          <circle cx="12" cy="15" r="1" fill="#dc2626"/>
+          <defs>
+            <linearGradient id="disputeShield" x1="3" y1="2" x2="21" y2="23" gradientUnits="userSpaceOnUse">
+              <stop stop-color="#fee2e2"/>
+              <stop offset="1" stop-color="#fca5a5"/>
+            </linearGradient>
+          </defs>
+        </svg>
+      `,
+      PaymentDowntime: `
+        <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" fill="url(#downtimeWarn)" stroke="#d97706" stroke-width="1.5" stroke-linejoin="round"/>
+          <path d="M12 9v4" stroke="#b45309" stroke-width="2" stroke-linecap="round"/>
+          <circle cx="12" cy="17" r="1" fill="#b45309"/>
+          <defs>
+            <linearGradient id="downtimeWarn" x1="2" y1="3" x2="22" y2="21" gradientUnits="userSpaceOnUse">
+              <stop stop-color="#fef3c7"/>
+              <stop offset="1" stop-color="#fde68a"/>
+            </linearGradient>
+          </defs>
+        </svg>
+      `,
+      Settlement: `
+        <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="3" y="10" width="18" height="11" rx="1.5" fill="url(#settleBg)" stroke="#059669" stroke-width="1.5"/>
+          <path d="M3 10l9-7 9 7" stroke="#059669" stroke-width="1.5" stroke-linejoin="round"/>
+          <rect x="9" y="14" width="6" height="7" rx="1" fill="#10b981" stroke="#059669" stroke-width="1"/>
+          <path d="M12 14v7" stroke="#059669" stroke-width="1"/>
+          <defs>
+            <linearGradient id="settleBg" x1="3" y1="10" x2="21" y2="21" gradientUnits="userSpaceOnUse">
+              <stop stop-color="#d1fae5"/>
+              <stop offset="1" stop-color="#a7f3d0"/>
+            </linearGradient>
+          </defs>
+        </svg>
+      `,
+      ProductRoute: `
+        <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="5" cy="6" r="2.5" fill="#3b82f6" stroke="#2563eb" stroke-width="1.5"/>
+          <circle cx="19" cy="18" r="2.5" fill="url(#routeGrad)" stroke="#2563eb" stroke-width="1.5"/>
+          <path d="M5 8.5C5 13 10 11 14 13s5 6 5 6" stroke="#2563eb" stroke-width="1.5" stroke-linecap="round" stroke-dasharray="2 2"/>
+          <circle cx="19" cy="6" r="1.5" fill="#f59e0b"/>
+          <path d="M17 6h2m0-1.5v1.5" stroke="#b45309" stroke-width="1" stroke-linecap="round"/>
+          <defs>
+            <linearGradient id="routeGrad" x1="16.5" y1="15.5" x2="21.5" y2="20.5" gradientUnits="userSpaceOnUse">
+              <stop stop-color="#dbeafe"/>
+              <stop offset="1" stop-color="#93c5fd"/>
+            </linearGradient>
+          </defs>
+        </svg>
+      `,
     };
     return this.sanitizer.bypassSecurityTrustHtml(svgs[type] ?? svgs.General);
   }
@@ -355,10 +410,14 @@ export class NotificationPanel implements OnInit, OnDestroy {
       CertificateIssued: '#FF8C00',     // Secondary
       AssignmentDeadline: '#DC2626',    // Danger
       PaymentFailed: '#DC2626',         // Danger
+      PaymentDispute: '#DC2626',        // Danger — disputes are urgent
       AssignmentGraded: '#16A34A',      // Success
       PaymentSuccess: '#16A34A',        // Success
+      Settlement: '#16A34A',            // Success — money settled to platform
       QuizCreated: '#8B5CF6',           // Purple
       BatchAnnouncement: '#0284C7',     // Info
+      ProductRoute: '#0284C7',          // Info — payout route status
+      PaymentDowntime: '#D97706',       // Amber — warning
       General: '#475569',               // Slate
     };
     return colors[type] ?? '#475569';

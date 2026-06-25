@@ -15,7 +15,8 @@ namespace LMSApi.DALLibrary.Repositories
         {
             return await _context.Notifications
                 .Where(n => n.UserId == userId)
-                .OrderByDescending(n => n.CreatedAt)
+                .OrderBy(n => n.IsRead)
+                .ThenByDescending(n => n.CreatedAt)
                 .ThenByDescending(n => n.Id)
                 .Skip(skip)
                 .Take(take)

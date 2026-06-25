@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Asp.Versioning;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.AspNetCore.Http;
 
 namespace LMSApi.API.Controllers
 {
@@ -51,7 +52,7 @@ namespace LMSApi.API.Controllers
 		{
 			var result = await _authService.AuthenticateAsync(request);
 
-			var cookieOptions = new Microsoft.AspNetCore.Http.CookieOptions
+			var cookieOptions = new CookieOptions
 			{
 				HttpOnly = true,
 				//For Network
@@ -59,15 +60,15 @@ namespace LMSApi.API.Controllers
 				// SameSite = Microsoft.AspNetCore.Http.SameSiteMode.Lax,
 				//For Localhost
 				Secure=true,
-				SameSite=Microsoft.AspNetCore.Http.SameSiteMode.None
+				SameSite=SameSiteMode.None
 			};
 			Response.Cookies.Append("access_token", result.Token, cookieOptions);
 
-			var refreshCookieOptions = new Microsoft.AspNetCore.Http.CookieOptions
+			var refreshCookieOptions = new CookieOptions
 			{
 				HttpOnly = true,
 				Secure=true,
-				SameSite=Microsoft.AspNetCore.Http.SameSiteMode.None
+				SameSite=SameSiteMode.None
 			};
 			if (result.RememberMe)
 			{
@@ -103,19 +104,17 @@ namespace LMSApi.API.Controllers
 		[HttpPost("refresh-token")]
 		public async Task<ActionResult<RefreshTokenResponse>> Refresh([FromBody] RefreshTokenRequest? request)
 		{
-			var accessToken = request?.AccessToken ?? Request.Cookies["access_token"];
 			var refreshToken = request?.RefreshToken ?? Request.Cookies["refresh_token"];
 
-			if (string.IsNullOrEmpty(accessToken) || string.IsNullOrEmpty(refreshToken))
+			if (string.IsNullOrEmpty(refreshToken))
 			{
-				Console.WriteLine($"Access token or refresh token is missing. Access: {accessToken}, Refresh: {refreshToken}");
-				return Unauthorized("Access token or refresh token is missing.");
+				return Unauthorized("Refresh token is missing.");
 			}
 
-			var req = new RefreshTokenRequest { AccessToken = accessToken, RefreshToken = refreshToken };
+			var req = new RefreshTokenRequest { RefreshToken = refreshToken };
 			var result = await _authService.RefreshTokenAsync(req);
 			
-			var cookieOptions = new Microsoft.AspNetCore.Http.CookieOptions
+			var cookieOptions = new CookieOptions
 			{
 				HttpOnly = true,
 				//For Network
@@ -123,15 +122,15 @@ namespace LMSApi.API.Controllers
 				// SameSite = Microsoft.AspNetCore.Http.SameSiteMode.Lax,
 				//For Localhost
 				Secure=true,
-				SameSite=Microsoft.AspNetCore.Http.SameSiteMode.None
+				SameSite=SameSiteMode.None
 			};
 			Response.Cookies.Append("access_token", result.AccessToken, cookieOptions);
 
-			var refreshCookieOptions = new Microsoft.AspNetCore.Http.CookieOptions
+			var refreshCookieOptions = new CookieOptions
 			{
 				HttpOnly = true,
 				Secure=true,
-				SameSite=Microsoft.AspNetCore.Http.SameSiteMode.None
+				SameSite=SameSiteMode.None
 			};
 			if (result.RememberMe)
 			{
@@ -150,16 +149,16 @@ namespace LMSApi.API.Controllers
 			if (string.IsNullOrEmpty(email)) return BadRequest("Invalid user claims");
 			await _authService.RevokeTokenAsync(email);
 
-			var deleteCookieOptions = new Microsoft.AspNetCore.Http.CookieOptions
+			var deleteCookieOptions = new CookieOptions
 			{
 				HttpOnly = true,
 				//For Network
 				// Secure = false,
-				// SameSite = Microsoft.AspNetCore.Http.SameSiteMode.Lax
+				// SameSite = SameSiteMode.Lax
 
 				//For Localhost
 				Secure=true,
-				SameSite=Microsoft.AspNetCore.Http.SameSiteMode.None,
+				SameSite=SameSiteMode.None,
 			};
 			Response.Cookies.Delete("access_token", deleteCookieOptions);
 			Response.Cookies.Delete("refresh_token", deleteCookieOptions);

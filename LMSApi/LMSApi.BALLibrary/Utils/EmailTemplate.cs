@@ -174,5 +174,85 @@ namespace LMSApi.BALLibrary.Utils
             </body>
           </html>";
         }
+
+        /// <summary>
+        /// Email sent to learner and instructor when a payment dispute is raised or its status changes.
+        /// </summary>
+        public static string GetPaymentDisputeTemplate(string name, string disputeEvent, string courseTitle, decimal amount, string? disputeId)
+        {
+            var disputeRef = !string.IsNullOrEmpty(disputeId)
+                ? $"<p>Dispute Reference ID: <strong>{System.Net.WebUtility.HtmlEncode(disputeId)}</strong></p>"
+                : "";
+            return $@"<html>
+            <body>
+              <h2>Payment Dispute Update</h2>
+              <p>Hi {System.Net.WebUtility.HtmlEncode(name)},</p>
+              <p>A payment dispute event has occurred for the course <strong>{System.Net.WebUtility.HtmlEncode(courseTitle)}</strong> (Amount: &#8377;{amount}).</p>
+              <p>Event: <strong>{System.Net.WebUtility.HtmlEncode(disputeEvent)}</strong></p>
+              {disputeRef}
+              <p>If you have any questions, please contact our support team.</p>
+              <br />
+              <p>Thank you,</p>
+              <p>The LMS Team</p>
+            </body>
+          </html>";
+        }
+
+        /// <summary>
+        /// Email sent to the learner when an order notification delivery succeeds or fails.
+        /// </summary>
+        public static string GetOrderNotificationTemplate(string name, bool delivered)
+        {
+            var statusMsg = delivered
+                ? "Your order confirmation notification was delivered successfully."
+                : "We encountered an issue delivering your order confirmation notification. Please check your notification settings.";
+            return $@"<html>
+            <body>
+              <h2>Order Notification {(delivered ? "Delivered" : "Failed")}</h2>
+              <p>Hi {System.Net.WebUtility.HtmlEncode(name)},</p>
+              <p>{statusMsg}</p>
+              <br />
+              <p>Thank you,</p>
+              <p>The LMS Team</p>
+            </body>
+          </html>";
+        }
+
+        /// <summary>
+        /// Email sent to the instructor when their Route product status changes.
+        /// </summary>
+        public static string GetProductRouteTemplate(string name, string productEvent, string message)
+        {
+            return $@"<html>
+            <body>
+              <h2>Payout Product Update</h2>
+              <p>Hi {System.Net.WebUtility.HtmlEncode(name)},</p>
+              <p>Your Razorpay Route payout product status has changed.</p>
+              <p>Event: <strong>{System.Net.WebUtility.HtmlEncode(productEvent)}</strong></p>
+              <p>{System.Net.WebUtility.HtmlEncode(message)}</p>
+              <br />
+              <p>Thank you,</p>
+              <p>The LMS Team</p>
+            </body>
+          </html>";
+        }
+
+        /// <summary>
+        /// Email sent to admin when Razorpay processes a settlement to the platform bank account.
+        /// </summary>
+        public static string GetSettlementTemplate(string adminName, string settlementId, string rawSummary)
+        {
+            return $@"<html>
+            <body>
+              <h2>Settlement Processed</h2>
+              <p>Hi {System.Net.WebUtility.HtmlEncode(adminName)},</p>
+              <p>Razorpay has processed a settlement to the platform bank account.</p>
+              <p>Settlement ID: <strong>{System.Net.WebUtility.HtmlEncode(settlementId)}</strong></p>
+              <p>{System.Net.WebUtility.HtmlEncode(rawSummary)}</p>
+              <br />
+              <p>The LMS Team</p>
+            </body>
+          </html>";
+        }
     }
 }
