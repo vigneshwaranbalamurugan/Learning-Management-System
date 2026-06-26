@@ -46,6 +46,7 @@ namespace LMSApi.API.Hubs
                 {
                     LessonId = lessonId,
                     LastWatchedSecond = progress?.LastWatchedSecond ?? 0,
+                    MaxWatchedSecond = progress?.MaxWatchedSecond ?? 0,
                     WatchPercentage = progress?.WatchPercentage ?? 0m,
                     IsCompleted = progress?.IsCompleted ?? false
                 });
@@ -70,7 +71,7 @@ namespace LMSApi.API.Hubs
             try
             {
                 var progress = await _progressService.UpdateVideoProgressAsync(
-                    userId, request.LessonId, request.LastWatchedSecond);
+                    userId, request.LessonId, request.LastWatchedSecond, request.MaxWatchedSecond, request.TotalSeconds);
 
                 await Clients.Caller.SendAsync("ProgressUpdated", progress);
 

@@ -37,6 +37,8 @@ namespace LMSApi.ModelLibrary.DTOs
 
     public class UpdateQuizRequest
     {
+        public int? CourseSectionId { get; set; }
+
         [MaxLength(300, ErrorMessage = "Title must not exceed 300 characters.")]
         public string? Title { get; set; }
 

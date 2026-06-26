@@ -1,4 +1,4 @@
-<div class="flex flex-col gap-6 animate-[fadeInContent_400ms_ease]">
+<div class="flex flex-col gap-6 animate-[fadeInContent_400ms_ease] px-4 sm:px-6 max-w-7xl mx-auto w-full">
 
   <!-- ═══════════ HEADER BANNER ═══════════ -->
   <div class="relative overflow-hidden bg-slate-950 text-white rounded-2xl p-7 flex items-center justify-between shadow-xs">
@@ -11,7 +11,7 @@
         </svg>
         Back to Assignments
       </button>
-      <h2 class="text-2xl sm:text-3xl font-extrabold mb-2 tracking-tight flex items-center gap-2.5">
+      <h2 class="text-2xl sm:text-3xl font-extrabold mb-2 tracking-tight flex flex-wrap items-center gap-2.5">
         Evaluate Submissions
         <svg class="w-8 h-8 drop-shadow-md" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path d="M12 20h9" stroke="#FF8C00" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -19,7 +19,7 @@
         </svg>
       </h2>
       <p class="text-white/85 text-xs sm:text-sm max-w-[500px] leading-relaxed">
-        Review student files, text answers, and assign marks and qualitative feedback for: <strong class="text-secondary">{{ assignment()?.title }}</strong>
+        Review learner files, text answers, and assign marks and qualitative feedback for: <strong class="text-secondary">{{ assignment()?.title }}</strong>
       </p>
     </div>
     <div class="hidden lg:flex flex-col items-end relative z-10">
@@ -40,11 +40,11 @@
   @if (!isLoading()) {
     <!-- ═══════════ ASSIGNMENT DETAILS CARD ═══════════ -->
     <div class="bg-white border border-gray-200 rounded-2xl p-6 shadow-xs flex flex-col gap-4">
-      <div class="flex items-center justify-between border-b border-gray-150 pb-3">
+      <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-gray-150 pb-3">
         <h3 class="text-sm font-bold text-slate-800 uppercase tracking-wider mb-0 flex items-center gap-2">
           📖 Assignment Properties
         </h3>
-        <div class="flex gap-2">
+        <div class="flex flex-wrap gap-2 w-full sm:w-auto mt-2 sm:mt-0">
           <span class="px-2.5 py-0.5 bg-gray-100 text-gray-700 text-[10px] font-extrabold rounded-full uppercase">
             Total Marks: {{ assignment()?.totalMarks }}
           </span>
@@ -81,7 +81,7 @@
             @if (assignment()?.attachmentUrl) {
               @if (assignment()?.attachmentType === 1) {
                 <a [href]="assignment()?.attachmentUrl" target="_blank"
-                   class="inline-flex items-center gap-1.5 px-3 py-2 bg-primary-light/50 hover:bg-primary-light border border-primary/20 text-primary-hover rounded-lg font-bold transition">
+                   class="inline-flex items-center justify-center text-center gap-1.5 px-3 py-2 bg-primary-light/50 hover:bg-primary-light border border-primary/20 text-primary-hover rounded-lg font-bold transition w-full sm:w-auto">
                   <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                   </svg>
@@ -89,7 +89,7 @@
                 </a>
               } @else if (assignment()?.attachmentType === 2) {
                 <a [href]="assignment()?.attachmentUrl" target="_blank"
-                   class="inline-flex items-center gap-1.5 px-3 py-2 bg-primary-light/50 hover:bg-primary-light border border-primary/20 text-primary-hover rounded-lg font-bold transition">
+                   class="inline-flex items-center justify-center text-center gap-1.5 px-3 py-2 bg-primary-light/50 hover:bg-primary-light border border-primary/20 text-primary-hover rounded-lg font-bold transition w-full sm:w-auto">
                   <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                   </svg>
@@ -119,17 +119,17 @@
 
     <!-- ═══════════ SUBMISSIONS LIST ═══════════ -->
     <div class="bg-white border border-gray-200 rounded-2xl shadow-xs overflow-hidden">
-      <div class="px-6 py-4 border-b border-gray-150 flex items-center justify-between bg-gray-50">
-        <h3 class="text-xs font-extrabold text-slate-800 uppercase tracking-wider mb-0">Pending Student Submissions</h3>
+      <div class="px-6 py-4 border-b border-gray-150 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 bg-gray-50">
+        <h3 class="text-xs font-extrabold text-slate-800 uppercase tracking-wider mb-0">Pending Learner Submissions</h3>
         <span class="text-xs text-gray-500 font-bold">{{ submissions().length }} waiting</span>
       </div>
 
       @if (submissions().length > 0) {
-        <div class="overflow-x-auto">
-          <table class="w-full text-left border-collapse text-xs">
+        <div class="overflow-x-auto w-full">
+          <table class="w-full text-left border-collapse text-xs min-w-[900px]">
             <thead>
-              <tr class="bg-gray-100/50 text-gray-500 font-bold uppercase border-b border-gray-150 select-none">
-                <th class="px-6 py-3.5">Student</th>
+              <tr class="bg-gray-100/50 text-gray-500 font-bold uppercase border-b border-gray-150 select-none whitespace-nowrap">
+                <th class="px-6 py-3.5">Learner</th>
                 <th class="px-6 py-3.5">Attempt</th>
                 <th class="px-6 py-3.5">Submitted At</th>
                 <th class="px-6 py-3.5">Submission Details</th>
@@ -218,7 +218,7 @@
           </svg>
           <h4 class="text-sm font-bold text-slate-800 m-0 mb-1">No Pending Evaluations</h4>
           <p class="text-xs text-gray-400 max-w-xs leading-relaxed">
-            All submitted student attempts for this assignment have already been graded.
+            All submitted Learner attempts for this assignment have already been graded.
           </p>
         </div>
       }
@@ -242,32 +242,32 @@
 
         <!-- Student Summary Details -->
         <div class="bg-gray-50 border border-gray-200 rounded-xl p-4 mb-5 text-xs flex flex-col gap-2">
-          <div class="flex justify-between">
-            <span class="text-gray-400 font-semibold uppercase">Student</span>
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1 sm:gap-0">
+            <span class="text-gray-400 font-semibold uppercase">Learner</span>
             <span class="font-bold text-slate-800">{{ selectedSubmission()?.studentName }}</span>
           </div>
-          <div class="flex justify-between">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1 sm:gap-0">
             <span class="text-gray-400 font-semibold uppercase">Email</span>
-            <span class="font-bold text-slate-700">{{ selectedSubmission()?.studentEmail }}</span>
+            <span class="font-bold text-slate-700 break-all">{{ selectedSubmission()?.studentEmail }}</span>
           </div>
-          <div class="flex justify-between">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1 sm:gap-0">
             <span class="text-gray-400 font-semibold uppercase">Attempt</span>
             <span class="font-bold text-slate-700">Attempt #{{ selectedSubmission()?.attemptNumber }}</span>
           </div>
           @if (selectedSubmission()?.studentDeadline) {
-            <div class="flex justify-between">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1 sm:gap-0">
               <span class="text-gray-400 font-semibold uppercase">Deadline</span>
               <span class="font-bold text-slate-700">{{ selectedSubmission()?.studentDeadline | date:'MMM dd, yyyy - hh:mm a' }}</span>
             </div>
           }
-          <div class="flex justify-between items-center">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1 sm:gap-0">
             <span class="text-gray-400 font-semibold uppercase">Submission Status</span>
             @if (selectedSubmission()?.isLate) {
-              <span class="px-2 py-0.5 bg-red-100 text-red-700 text-[10px] font-extrabold rounded-md uppercase">
+              <span class="px-2 py-0.5 bg-red-100 text-red-700 text-[10px] font-extrabold rounded-md uppercase self-start sm:self-auto">
                 Late
               </span>
             } @else {
-              <span class="px-2 py-0.5 bg-primary-light text-primary text-[10px] font-extrabold rounded-md uppercase">
+              <span class="px-2 py-0.5 bg-primary-light text-primary text-[10px] font-extrabold rounded-md uppercase self-start sm:self-auto">
                 On Time
               </span>
             }
@@ -277,7 +277,7 @@
         <!-- Submission Content display inside modal -->
         @if (selectedSubmission()?.submissionText) {
           <div class="mb-5">
-            <span class="text-[10px] text-gray-400 font-bold uppercase tracking-wider block mb-2">Student Response Text</span>
+            <span class="text-[10px] text-gray-400 font-bold uppercase tracking-wider block mb-2">Learner Response Text</span>
             <div class="bg-slate-50 border border-gray-150 rounded-xl p-3.5 italic text-slate-700 text-xs whitespace-pre-wrap leading-relaxed">
               "{{ selectedSubmission()?.submissionText }}"
             </div>

@@ -75,3 +75,55 @@ export interface QuizResponse {
   deadlineDate?: string;
   questionCount: number;
 }
+
+export interface QuizStudentOptionResponse {
+  id: number;
+  optionText: string;
+}
+
+export interface QuizStudentQuestionResponse {
+  id: number;
+  questionText: string;
+  questionType: number;
+  mark: number;
+  sortOrder: number;
+  options: QuizStudentOptionResponse[];
+}
+
+export interface QuizStudentDetailResponse {
+  id: number;
+  courseSectionId: number;
+  title: string;
+  description?: string;
+  timeLimit: string; // TimeSpan
+  totalMarks: number;
+  passingPercentage: number;
+  maxAttempts: number;
+  order: number;
+  deadlineInDays: number;
+  deadlineDate?: string;
+  questions: QuizStudentQuestionResponse[];
+}
+
+export interface StartAttemptResponse {
+  attemptId: number;
+  quizId: number;
+  userId: number;
+  startedAt: string;
+  timeLimit: string; // TimeSpan
+}
+
+export interface GetRemainingAttemptsResponse {
+  quizId: number;
+  remainingAttempts: number;
+  maxAttempts: number;
+}
+
+export interface SubmitAnswerItem {
+  questionId: number;
+  selectedOptionId: number;
+}
+
+export interface SubmitQuizRequest {
+  answers: SubmitAnswerItem[];
+}

@@ -26,8 +26,6 @@ namespace LMSApi.ModelLibrary.DTOs
         public string? Requirements { get; set; }
         public string? LearningOutcomes { get; set; }
 
-        [Required(ErrorMessage="Estimated Duration is Required.")]
-        public TimeSpan EstimatedDuration { get; set; }
 
         public CourseLevel Level { get; set; } = CourseLevel.Beginner;
         public int LanguageId { get; set; } = 1;
@@ -57,8 +55,6 @@ namespace LMSApi.ModelLibrary.DTOs
         public bool? IsPremium { get; set; }=false;
         public string? Requirements { get; set; }
         public string? LearningOutcomes { get; set; }
-
-        public TimeSpan EstimatedDuration { get; set; }
         public CourseLevel? Level { get; set; }=CourseLevel.Beginner;
         public int? LanguageId { get; set; }
 

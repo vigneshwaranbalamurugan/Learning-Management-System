@@ -73,7 +73,7 @@ namespace LMSApi.BALLibrary.Utils
 			return result.SecureUrl?.ToString() ?? result.Url?.ToString() ?? throw new InvalidOperationException("Cloudinary upload did not return a usable URL.");
 		}
 
-		public static async Task<string> UploadCourseIntroVideoAsync(IConfiguration configuration, Stream fileStream, string fileName, string publicId)
+		public static async Task<(string Url, double DurationSeconds)> UploadCourseIntroVideoAsync(IConfiguration configuration, Stream fileStream, string fileName, string publicId)
 		{
 			var cloudinary = CreateClient(configuration);
 			var folder = configuration["Cloudinary:CourseVideoFolder"] ?? "lms/course-videos";
@@ -96,10 +96,10 @@ namespace LMSApi.BALLibrary.Utils
 			if (result.Error != null)
 				throw new InvalidOperationException(result.Error.Message);
 
-			return result.SecureUrl?.ToString() ?? result.Url?.ToString() ?? throw new InvalidOperationException("Cloudinary upload did not return a usable URL.");
+			return (result.SecureUrl?.ToString() ?? result.Url?.ToString() ?? throw new InvalidOperationException("Cloudinary upload did not return a usable URL."), result.Duration);
 		}
 
-		public static async Task<string> UploadLessonVideoAsync(IConfiguration configuration, Stream fileStream, string fileName, string publicId)
+		public static async Task<(string Url, double DurationSeconds)> UploadLessonVideoAsync(IConfiguration configuration, Stream fileStream, string fileName, string publicId)
 		{
 			var cloudinary = CreateClient(configuration);
 			var folder = configuration["Cloudinary:LessonVideoFolder"] ?? "lms/lesson-videos";
@@ -122,7 +122,7 @@ namespace LMSApi.BALLibrary.Utils
 			if (result.Error != null)
 				throw new InvalidOperationException(result.Error.Message);
 
-			return result.SecureUrl?.ToString() ?? result.Url?.ToString() ?? throw new InvalidOperationException("Cloudinary upload did not return a usable URL.");
+			return (result.SecureUrl?.ToString() ?? result.Url?.ToString() ?? throw new InvalidOperationException("Cloudinary upload did not return a usable URL."), result.Duration);
 		}
 
 		public static async Task<string> UploadLessonPdfAsync(IConfiguration configuration, Stream fileStream, string fileName, string publicId)

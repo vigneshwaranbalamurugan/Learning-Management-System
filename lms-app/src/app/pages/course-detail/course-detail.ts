@@ -93,18 +93,23 @@ export class CourseDetail implements OnInit {
       this.isInstructor.set(true);
     }
 
-    // Router state can be read via history.state (Angular router sets it there)
-    // getCurrentNavigation() is only valid during the navigation itself, not in ngOnInit
-    const historyState = history.state;
-    if (historyState?.['courseId']) {
-      this.courseId = Number(historyState['courseId']);
-    }
-
     this.route.paramMap.pipe(untilDestroyed(this.destroyRef)).subscribe(params => {
       const slug = params.get('slug');
       if (!slug) {
         this.goBack();
         return;
+      }
+
+      // Read from query params first
+      const qCourseId = this.route.snapshot.queryParamMap.get('courseId');
+      if (qCourseId) {
+        this.courseId = Number(qCourseId);
+      } else {
+        // Fallback to history state (in case of old navigation)
+        const historyState = history.state;
+        if (historyState?.['courseId']) {
+          this.courseId = Number(historyState['courseId']);
+        }
       }
 
       if (this.courseId) {
@@ -379,11 +384,11 @@ export class CourseDetail implements OnInit {
     this.currentVideoProgress.set(0);
   }
 
-  protected onTimeWatchedUpdate(time: number): void {
+  protected onTimeWatchedUpdate(event: { currentTime: number, maxTimeWatched: number }): void {
     const url = this.currentVideoUrl();
     if (url) {
-      this.videoProgressMap.set(url, time);
-      this.currentVideoProgress.set(time);
+      this.videoProgressMap.set(url, event.maxTimeWatched);
+      this.currentVideoProgress.set(event.maxTimeWatched);
     }
   }
 

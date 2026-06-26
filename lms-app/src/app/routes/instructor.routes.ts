@@ -19,7 +19,8 @@ export const instructorRoutes: Routes = [
       },
       {
         path: 'courses/new',
-        loadComponent: () => import('@pages/instructor-course-form/instructor-course-form').then(m => m.InstructorCourseForm)
+        loadComponent: () => import('@pages/instructor-course-form/instructor-course-form').then(m => m.InstructorCourseForm),
+        canDeactivate: [(component: any) => component.canDeactivate ? component.canDeactivate() : true]
       },
       {
         path: 'courses/preview/:slug',

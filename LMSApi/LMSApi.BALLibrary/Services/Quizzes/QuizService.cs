@@ -159,6 +159,8 @@ namespace LMSApi.BALLibrary.Services
 
             await _quizRepository.AddAsync(quiz);
 
+            await _courseRepository.UpdateCourseDurationAsync(course.Id);
+
             _logger.LogInformation("Quiz Created: '{Title}' for SectionId={SectionId}", request.Title, request.CourseSectionId);
 
             return _mapper.Map<QuizResponse>(quiz);
@@ -172,6 +174,17 @@ namespace LMSApi.BALLibrary.Services
 
             var section = await _sectionRepository.GetByIdAsync(quiz.CourseSectionId);
             var course = await _courseRepository.GetByIdAsync(section.CourseId);
+
+            if (request.CourseSectionId.HasValue && request.CourseSectionId.Value != quiz.CourseSectionId)
+            {
+                var newSection = await _sectionRepository.GetByIdAsync(request.CourseSectionId.Value) 
+                    ?? throw new KeyNotFoundException($"New section with id '{request.CourseSectionId.Value}' not found.");
+                if (newSection.CourseId != course.Id)
+                {
+                    throw new InvalidOperationException("Cannot move quiz to a different course.");
+                }
+                quiz.CourseSectionId = request.CourseSectionId.Value;
+            }
 
             if (request.Title != null)
             {
@@ -221,6 +234,12 @@ namespace LMSApi.BALLibrary.Services
                 if (request.DeadlineInDays.HasValue) quiz.DeadlineInDays = request.DeadlineInDays.Value;
             }
 
+            if (request.Description != null) quiz.Description = request.Description;
+            if (request.TimeLimit.HasValue) quiz.TimeLimit = request.TimeLimit.Value;
+            if (request.PassingPercentage.HasValue) quiz.PassingPercentage = request.PassingPercentage.Value;
+            if (request.MaxAttempts.HasValue) quiz.MaxAttempts = request.MaxAttempts.Value;
+            if (request.Order.HasValue) quiz.Order = request.Order.Value;
+
             if (request.Status.HasValue)
             {
                 if (course.CourseAccessType == CourseAccessType.SelfPaced)
@@ -242,6 +261,8 @@ namespace LMSApi.BALLibrary.Services
 
             await _quizRepository.UpdateAsync(quiz);
 
+            await _courseRepository.UpdateCourseDurationAsync(course.Id);
+
             _logger.LogInformation("Quiz Updated: Id={Id}", id);
 
             return _mapper.Map<QuizResponse>(quiz);
@@ -249,7 +270,14 @@ namespace LMSApi.BALLibrary.Services
 
         public async Task DeleteQuizAsync(int id)
         {
+            var quiz = await _quizRepository.GetByIdAsync(id);
+            var section = await _sectionRepository.GetByIdAsync(quiz.CourseSectionId);
+            var course = await _courseRepository.GetByIdAsync(section.CourseId);
+
             await _quizRepository.DeleteAsync(id);
+            
+            await _courseRepository.UpdateCourseDurationAsync(course.Id);
+            
             _logger.LogInformation("Quiz Deleted: Id={Id}", id);
         }
 

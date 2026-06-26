@@ -22,8 +22,7 @@ namespace LMSApi.ModelLibrary.DTOs
         [MaxLength(1000, ErrorMessage = "Description must not exceed 1000 characters.")]
         public string? Description { get; set; }
 
-        [Required(ErrorMessage = "Estimated duration is required.")]
-        public TimeSpan EstimatedDuration { get; set; }
+
 
         [Range(0, int.MaxValue, ErrorMessage = "Sort order must be zero or greater.")]
         public int SortOrder { get; set; }
@@ -37,7 +36,7 @@ namespace LMSApi.ModelLibrary.DTOs
         [MaxLength(1000, ErrorMessage = "Description must not exceed 1000 characters.")]
         public string? Description { get; set; }
 
-        public TimeSpan? EstimatedDuration { get; set; }
+
 
         [Range(0, int.MaxValue)]
         public int? SortOrder { get; set; }

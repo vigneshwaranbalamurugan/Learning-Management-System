@@ -1,8 +1,8 @@
-<div class="flex flex-col gap-6 animate-[fadeInContent_400ms_ease]">
+<div class="flex flex-col gap-6 animate-[fadeInContent_400ms_ease] px-4 sm:px-6 max-w-7xl mx-auto w-full">
 
   <!-- ═══════════ HEADER BANNER ═══════════ -->
   <div
-    class="relative overflow-hidden bg-slate-950 text-white rounded-2xl p-8 flex items-center justify-between shadow-xs"
+    class="relative overflow-hidden bg-slate-950 text-white rounded-2xl p-6 sm:p-8 flex items-center justify-between shadow-xs"
     [ngStyle]="{'background-image': 'url(/assets/images/progress_dashboard_banner.png)', 'background-size': 'cover', 'background-position': 'center'}">
     <div class="absolute inset-0 bg-gradient-to-r from-primary/90 via-slate-950/80 to-transparent"></div>
     <div class="flex flex-col relative z-10">
@@ -13,7 +13,7 @@
         </svg>
         Back to Courses
       </button>
-      <h2 class="text-2xl sm:text-3xl font-extrabold mb-2 tracking-tight flex items-center gap-2.5">
+      <h2 class="text-2xl sm:text-3xl font-extrabold mb-2 tracking-tight flex flex-wrap items-center gap-2.5">
         Course Enrollee Progress
         <svg class="w-8 h-8 drop-shadow-md" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path d="M3 3V21H21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
@@ -111,10 +111,11 @@
   <!-- ═══════════ STUDENT PROGRESS TABLE ═══════════ -->
   <div class="bg-white border border-gray-200 rounded-2xl shadow-xs overflow-hidden">
     @if (filteredStudents().length > 0) {
-    <div class="overflow-x-auto">
-      <table class="w-full text-left border-collapse text-xs">
+    <!-- Table (desktop / large tablet) -->
+    <div class="hidden lg:block overflow-x-auto w-full">
+      <table class="w-full text-left border-collapse text-xs min-w-[900px]">
         <thead>
-          <tr class="bg-gray-150/50 text-gray-500 font-bold uppercase border-b border-gray-150 select-none">
+          <tr class="bg-gray-150/50 text-gray-500 font-bold uppercase border-b border-gray-150 select-none whitespace-nowrap">
             <th class="px-6 py-3.5">Student</th>
             <th class="px-6 py-3.5">Batch / Cohort</th>
             <th class="px-6 py-3.5">Joined Date</th>
@@ -185,6 +186,64 @@
           }
         </tbody>
       </table>
+    </div>
+
+    <!-- Cards (mobile / tablet) -->
+    <div class="lg:hidden divide-y divide-gray-100">
+      @for (student of filteredStudents(); track student.enrollmentId) {
+      <div class="p-4 flex flex-col gap-3">
+        <!-- Student + Status -->
+        <div class="flex items-center justify-between gap-3">
+          <div class="flex items-center gap-3 min-w-0">
+            <div
+              class="w-9 h-9 rounded-full bg-primary-light/50 text-primary font-extrabold flex items-center justify-center text-xs select-none shrink-0">
+              {{ getInitials(student.studentName) }}
+            </div>
+            <div class="flex flex-col gap-0.5 min-w-0">
+              <span class="font-bold text-slate-900 text-sm truncate">{{ student.studentName }}</span>
+              <span class="text-gray-400 text-[10px] font-medium truncate">{{ student.studentEmail }}</span>
+            </div>
+          </div>
+          <span class="px-2.5 py-1 rounded-full font-extrabold text-[9px] uppercase tracking-wider shrink-0"
+            [class.bg-primary-light]="student.isCompleted" [class.text-primary]="student.isCompleted"
+            [class.bg-secondary-light]="!student.isCompleted" [class.text-secondary]="!student.isCompleted">
+            {{ student.isCompleted ? 'Completed' : 'In Progress' }}
+          </span>
+        </div>
+
+        <!-- Batch + Joined -->
+        <div class="grid grid-cols-2 gap-3 text-[11px]">
+          <div class="flex flex-col gap-0.5 min-w-0">
+            <span class="text-gray-400 font-bold uppercase text-[9px] tracking-wider">Batch / Cohort</span>
+            <span class="text-slate-600 font-medium truncate">{{ student.batchName || 'Self-Paced Enrollment' }}</span>
+          </div>
+          <div class="flex flex-col gap-0.5 min-w-0">
+            <span class="text-gray-400 font-bold uppercase text-[9px] tracking-wider">Joined</span>
+            <span class="text-gray-500 font-medium truncate">{{ student.enrolledAt | date:'MMM dd, yyyy' }}</span>
+          </div>
+        </div>
+
+        <!-- Progress -->
+        <div class="flex flex-col gap-1.5">
+          <div class="flex justify-between items-center text-[10px] font-bold text-slate-700">
+            <span class="text-gray-400 font-bold uppercase text-[9px] tracking-wider">Overall Progress</span>
+            <span>{{ student.progressPercentage }}%</span>
+          </div>
+          <div class="w-full bg-gray-100 rounded-full h-1.5 overflow-hidden">
+            <div class="h-full rounded-full transition-all duration-300" [style.width.%]="student.progressPercentage"
+              [class.bg-amber-500]="student.progressPercentage < 50"
+              [class.bg-blue-500]="student.progressPercentage >= 50 && student.progressPercentage < 100"
+              [class.bg-primary]="student.progressPercentage === 100"></div>
+          </div>
+        </div>
+
+        <!-- Action -->
+        <button (click)="viewStudentDetails(student)"
+          class="px-3.5 py-2 bg-primary hover:bg-primary-hover text-white rounded-lg font-bold transition cursor-pointer shadow-xs text-xs w-full">
+          View Details
+        </button>
+      </div>
+      }
     </div>
     } @else {
     <div class="flex flex-col items-center justify-center py-16 px-6 text-center">

@@ -9,6 +9,7 @@ namespace LMSApi.ModelLibrary.Models
         public bool IsCompleted { get; set; }
         public decimal VideoWatchedPercentage { get; set; }
         public int LastWatchedSecond { get; set; }
+        public int MaxWatchedSecond { get; set; }
         public double ProgressPercentage { get; set; }
         public DateTime LastAccessed { get; set; }
         public DateTime StartedAt { get; set; }

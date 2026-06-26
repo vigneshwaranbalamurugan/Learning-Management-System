@@ -10,11 +10,11 @@ export class CourseBuilderService {
   private http = inject(HttpClient);
   private readonly baseUrl = environment.apiUrl;
 
-  createSection(data: { courseId: number; title: string; description?: string; estimatedDuration: string; sortOrder?: number }): Observable<any> {
+  createSection(data: { courseId: number; title: string; description?: string; sortOrder?: number }): Observable<any> {
     return this.http.post<any>(`${this.baseUrl}/CourseSections`, data);
   }
 
-  updateSection(id: number, data: { title?: string; description?: string; estimatedDuration?: string; sortOrder?: number; status?: number }): Observable<any> {
+  updateSection(id: number, data: { title?: string; description?: string; sortOrder?: number; status?: number }): Observable<any> {
     return this.http.put<any>(`${this.baseUrl}/CourseSections/${id}`, data);
   }
 

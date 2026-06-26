@@ -1,6 +1,6 @@
 <div class="flex flex-col gap-6 animate-[fadeInContent_400ms_ease]">
   <!-- Top Navigation/Overview Area -->
-  <div class="relative overflow-hidden bg-slate-950 text-white rounded-2xl p-7 flex items-center justify-between shadow-xs">
+  <div class="relative overflow-hidden bg-slate-950 text-white rounded-2xl p-5 md:p-7 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 md:gap-0 shadow-xs">
     <!-- Static Banner Image -->
     <img src="/explore-banner.png" alt="Dashboard Banner" class="absolute inset-0 w-full h-full object-cover opacity-35 select-none pointer-events-none" />
     <div class="absolute inset-0 bg-gradient-to-r from-primary/90 via-slate-950/80 to-transparent w-full h-full"></div>
@@ -30,21 +30,21 @@
   <!-- Sub-navigation Tabs and Router Outlet -->
   <div *ngIf="!isLoading()" class="space-y-6">
     <!-- Sub-navigation Tabs -->
-    <div class="bg-white border border-gray-150 rounded-2xl p-2 shadow-xs flex flex-wrap gap-1">
+    <div class="bg-white border border-gray-150 rounded-2xl p-2 shadow-xs grid grid-cols-2 sm:flex sm:flex-wrap gap-1">
       <a 
         *ngFor="let tab of tabs"
         [routerLink]="[tab.path]"
         [ngClass]="isTabActive(tab.path) ? 'bg-[#1C1C7B] text-white' : 'text-gray-500 hover:text-slate-800 hover:bg-slate-50'"
-        class="flex items-center gap-2 px-4 py-3 rounded-xl text-xs font-bold transition duration-150 cursor-pointer no-underline decoration-none">
+        class="flex items-center justify-center sm:justify-start gap-2 px-2 sm:px-4 py-3 rounded-xl text-xs font-bold transition duration-150 cursor-pointer no-underline decoration-none">
         <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" [attr.d]="tab.icon" />
         </svg>
-        {{ tab.label }}
+        <span class="truncate">{{ tab.label }}</span>
       </a>
     </div>
 
     <!-- Active Tab Panel Content -->
-    <div class="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm min-h-[50vh]">
+    <div class="bg-white border border-gray-100 rounded-2xl p-4 sm:p-6 shadow-sm min-h-[50vh]">
       <router-outlet></router-outlet>
     </div>
   </div>

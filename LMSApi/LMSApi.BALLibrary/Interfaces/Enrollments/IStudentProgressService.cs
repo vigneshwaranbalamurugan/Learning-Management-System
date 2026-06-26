@@ -13,7 +13,7 @@ namespace LMSApi.BALLibrary.Interfaces
         /// The backend derives the watch percentage from <paramref name="lastWatchedSecond"/> and the lesson duration.
         /// Automatically marks the lesson complete when watch percentage reaches 98%.
         /// </summary>
-        Task<LessonProgressResponse> UpdateVideoProgressAsync(int userId, int lessonId, int lastWatchedSecond);
+        Task<LessonProgressResponse> UpdateVideoProgressAsync(int userId, int lessonId, int lastWatchedSecond, int maxWatchedSecond, int totalSeconds);
 
         /// <summary>
         /// Returns the student's progress record for a single lesson (used to get the resume position before playback).

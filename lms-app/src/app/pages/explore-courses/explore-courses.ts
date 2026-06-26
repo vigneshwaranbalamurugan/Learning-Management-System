@@ -422,9 +422,18 @@ export class ExploreCourses implements OnInit {
 
 
   protected navigateToCourse(course: CourseResponse): void {
-    this.router.navigate(['/learner/explore', course.slug], {
-      state: { courseId: course.id }
-    });
+  const url = this.router.serializeUrl(
+    this.router.createUrlTree(
+      ['/learner/explore', course.slug],
+      {
+        queryParams: {
+          courseId: course.id
+        }
+      }
+    )
+  );
+
+  window.open(url, '_blank');
   }
 
   protected hasActiveFilters(): boolean {

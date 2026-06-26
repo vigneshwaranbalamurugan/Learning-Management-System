@@ -219,8 +219,9 @@ namespace LMSApi.BALLibrary.Services
 
             if (videoStream != null && videoFileName != null)
             {
-                course.IntroVideoUrl = await _uploadService.UploadCourseIntroVideoAsync(
+                var uploadResult = await _uploadService.UploadCourseIntroVideoAsync(
                     videoStream, videoFileName, $"courses/{course.Id}/intro-video");
+                course.IntroVideoUrl = uploadResult.Url;
                 _logger.LogInformation("Intro video uploaded on create: CourseId={CourseId}", course.Id);
             }
             course.ThumbnailUrl ??= string.Empty;
@@ -282,7 +283,7 @@ namespace LMSApi.BALLibrary.Services
             if (request.LearningOutcomes != null) course.LearningOutcomes = request.LearningOutcomes;
             if (request.Level.HasValue) course.Level = request.Level.Value;
             if (request.LanguageId.HasValue) course.LanguageId = request.LanguageId.Value;
-            course.EstimatedDuration=request.EstimatedDuration;
+
 
             // ─── Hybrid Learning ─────────────────────────────────────────────────
             if (request.CourseAccessType.HasValue) course.CourseAccessType = request.CourseAccessType.Value;
@@ -298,8 +299,9 @@ namespace LMSApi.BALLibrary.Services
 
             if (videoStream != null && videoFileName != null)
             {
-                course.IntroVideoUrl = await _uploadService.UploadCourseIntroVideoAsync(
+                var uploadResult = await _uploadService.UploadCourseIntroVideoAsync(
                     videoStream, videoFileName, $"courses/{course.Id}/intro-video");
+                course.IntroVideoUrl = uploadResult.Url;
                 _logger.LogInformation("Intro video updated: CourseId={CourseId}", course.Id);
             }
 

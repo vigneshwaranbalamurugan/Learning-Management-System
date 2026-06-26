@@ -5,6 +5,7 @@ import { untilDestroyed } from '../../rxjs/until-destroyed';
 import { forkJoin } from 'rxjs';
 import { AnalyticsService } from '@services/analytics.service';
 import { CourseService } from '@services/course.service';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-instructor-dashboard',
@@ -17,6 +18,7 @@ export class InstructorDashboard implements OnInit {
   private courseService = inject(CourseService);
   private analyticsService = inject(AnalyticsService);
   private destroyRef = inject(DestroyRef);
+  private router=inject(Router);
 
   protected get user() {
     return this.authService.currentUser();
@@ -35,7 +37,7 @@ export class InstructorDashboard implements OnInit {
 
   protected recentEnrollments = signal<any[]>([]);
   protected showAllEnrollments = signal(false);
-  protected displayedEnrollments = computed(() => this.showAllEnrollments() ? this.recentEnrollments() : this.recentEnrollments().slice(0, 4));
+  protected displayedEnrollments = computed(() => this.showAllEnrollments() ? this.recentEnrollments() : this.recentEnrollments().slice(0, 6));
   
   protected isLoading = signal(true);
 
@@ -46,6 +48,10 @@ export class InstructorDashboard implements OnInit {
       return (parts[0][0] + parts[1][0]).toUpperCase();
     }
     return parts[0].substring(0, 2).toUpperCase();
+  }
+  
+  protected openCreateCourse(){
+    this.router.navigate(["/instructor/courses/new"]);
   }
 
   protected getFriendlyTime(dateString: string): string {

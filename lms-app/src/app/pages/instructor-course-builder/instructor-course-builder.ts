@@ -88,7 +88,7 @@ export class InstructorCourseBuilder {
   protected editSectionId: number | null = null;
   protected sectionTitle = '';
   protected sectionDescription = '';
-  protected sectionDuration = '01:00:00';
+
   protected sectionSortOrder = 0;
 
   // Lesson ADD modal state
@@ -417,7 +417,7 @@ export class InstructorCourseBuilder {
     this.editSectionId = null;
     this.sectionTitle = '';
     this.sectionDescription = '';
-    this.sectionDuration = '01:00:00';
+
     this.sectionSortOrder = (this.course?.sections?.length || 0) + 1;
     this.showSectionModal.set(true);
   }
@@ -427,7 +427,7 @@ export class InstructorCourseBuilder {
     this.editSectionId = section.id;
     this.sectionTitle = section.title;
     this.sectionDescription = section.description || '';
-    this.sectionDuration = section.estimatedDuration || '01:00:00';
+    this.sectionDescription = section.description || '';
     this.sectionSortOrder = section.sortOrder || 0;
     this.showSectionModal.set(true);
   }
@@ -447,7 +447,6 @@ export class InstructorCourseBuilder {
       courseId: this.course.id,
       title: this.sectionTitle,
       description: this.sectionDescription,
-      estimatedDuration: this.sectionDuration,
     };
     
     if (this.editSectionId) {

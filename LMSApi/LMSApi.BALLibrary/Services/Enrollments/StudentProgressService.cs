@@ -176,7 +176,9 @@ namespace LMSApi.BALLibrary.Services
                         IsCompleted = isCompleted,
                         CompletedAt = prog?.CompletedAt,
                         LastViewedAt = prog?.LastAccessed ?? DateTime.MinValue,
-                        WatchPercentage = prog?.VideoWatchedPercentage ?? 0m
+                        WatchPercentage = prog?.VideoWatchedPercentage ?? 0m,
+                        LastWatchedSecond = prog?.LastWatchedSecond ?? 0,
+                        MaxWatchedSecond = prog?.MaxWatchedSecond ?? 0
                     });
                 }
 
@@ -260,7 +262,7 @@ namespace LMSApi.BALLibrary.Services
         }
 
         /// <inheritdoc />
-        public async Task<LessonProgressResponse> UpdateVideoProgressAsync(int userId, int lessonId, int lastWatchedSecond)
+        public async Task<LessonProgressResponse> UpdateVideoProgressAsync(int userId, int lessonId, int lastWatchedSecond, int maxWatchedSecond, int totalSeconds)
         {
             var lesson = await _lessonRepository.GetByIdAsync(lessonId);
             if (lesson == null)
@@ -293,19 +295,28 @@ namespace LMSApi.BALLibrary.Services
             }
 
             progress!.LastWatchedSecond = lastWatchedSecond;
+            if (maxWatchedSecond > progress.MaxWatchedSecond)
+            {
+                progress.MaxWatchedSecond = maxWatchedSecond;
+            }
             progress.LastAccessed = DateTime.UtcNow;
 
             // Calculate watch percentage from duration stored on lesson
-            if (lesson.DurationInMinutes.HasValue && lesson.DurationInMinutes.Value.TotalSeconds > 0)
+            if (totalSeconds > 0)
             {
-                var totalSeconds = (decimal)lesson.DurationInMinutes.Value.TotalSeconds;
-                var rawPercentage = lastWatchedSecond / totalSeconds * 100m;
+                var rawPercentage = (decimal)progress.MaxWatchedSecond / (decimal)totalSeconds * 100m;
+                progress.VideoWatchedPercentage = Math.Min(Math.Round(rawPercentage, 2), 100m);
+            }
+            else if (lesson.DurationInMinutes.HasValue && lesson.DurationInMinutes.Value.TotalSeconds > 0)
+            {
+                var lessonTotalSeconds = (decimal)lesson.DurationInMinutes.Value.TotalSeconds;
+                var rawPercentage = (decimal)progress.MaxWatchedSecond / lessonTotalSeconds * 100m;
                 progress.VideoWatchedPercentage = Math.Min(Math.Round(rawPercentage, 2), 100m);
             }
             // If duration is not set we cannot calculate — keep existing percentage
 
-            // Auto-complete at 98%
-            if (progress.VideoWatchedPercentage >= 98m && !progress.IsCompleted)
+            // Auto-complete at 95%
+            if (progress.VideoWatchedPercentage >= 95m && !progress.IsCompleted)
             {
                 progress.IsCompleted = true;
                 progress.CompletedAt = DateTime.UtcNow;

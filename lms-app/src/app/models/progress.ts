@@ -3,6 +3,8 @@ export interface LessonProgressResponse {
   lessonId: number;
   isCompleted: boolean;
   lastWatchedSecond?: number;
+  maxWatchedSecond?: number;
+  watchPercentage?: number;
   completedAt?: string;
   lessonTitle?: string;
 }
@@ -32,7 +34,7 @@ export interface SectionProgressResponse {
 
 export interface CourseProgressResponse {
   courseId: number;
-  courseTitle: string;
+  courseTitle?: string;
   progressPercentage: number;
   completedLessonsCount: number;
   totalLessonsCount: number;

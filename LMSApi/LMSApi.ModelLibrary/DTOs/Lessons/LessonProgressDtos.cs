@@ -18,6 +18,12 @@ namespace LMSApi.ModelLibrary.DTOs
 
         /// <summary>Current playback position in seconds.</summary>
         public int LastWatchedSecond { get; set; }
+
+        /// <summary>Maximum watched position in seconds.</summary>
+        public int MaxWatchedSecond { get; set; }
+
+        /// <summary>Total length of the video in seconds.</summary>
+        public int TotalSeconds { get; set; }
     }
 
     public class LessonProgressResponse
@@ -32,6 +38,8 @@ namespace LMSApi.ModelLibrary.DTOs
         public decimal WatchPercentage { get; set; }
         /// <summary>Last watched position in seconds — used by the frontend to resume playback.</summary>
         public int LastWatchedSecond { get; set; }
+        /// <summary>Maximum watched position in seconds — used by the frontend to prevent scrubbing forward past this point.</summary>
+        public int MaxWatchedSecond { get; set; }
     }
 
     public class CourseProgressResponse

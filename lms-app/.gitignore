@@ -47,3 +47,5 @@ Thumbs.db
 **/environments/*.ts
 
 .npm_cache/
+
+prompt.txt

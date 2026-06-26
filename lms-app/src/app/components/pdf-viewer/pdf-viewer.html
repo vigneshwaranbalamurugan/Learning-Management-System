@@ -1,0 +1,70 @@
+<div class="flex flex-col w-full h-full bg-slate-100 rounded-lg overflow-hidden border border-slate-200">
+  
+  <!-- Toolbar -->
+  <div class="flex flex-wrap items-center justify-between p-3 bg-white border-b border-slate-200 gap-3 shrink-0">
+    <div class="flex items-center gap-2">
+      <button 
+        class="p-2 bg-slate-100 hover:bg-slate-200 rounded-md text-slate-700 transition-colors disabled:opacity-50 border-none cursor-pointer flex items-center justify-center"
+        [disabled]="pageNum() <= 1 || isLoading()"
+        (click)="prevPage()">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+      </button>
+      <span class="text-sm font-bold text-slate-700 min-w-[80px] text-center">
+        {{ numPages() > 0 ? pageNum() : 0 }} / {{ numPages() }}
+      </span>
+      <button 
+        class="p-2 bg-slate-100 hover:bg-slate-200 rounded-md text-slate-700 transition-colors disabled:opacity-50 border-none cursor-pointer flex items-center justify-center"
+        [disabled]="pageNum() >= numPages() || isLoading()"
+        (click)="nextPage()">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+      </button>
+    </div>
+
+    <div class="flex items-center gap-2">
+      <button 
+        class="p-2 bg-slate-100 hover:bg-slate-200 rounded-md text-slate-700 transition-colors disabled:opacity-50 border-none cursor-pointer flex items-center justify-center"
+        [disabled]="isLoading() || scale() <= 0.6"
+        (click)="zoomOut()"
+        title="Zoom Out">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM7 10h6"/></svg>
+      </button>
+      <span class="text-xs font-bold text-slate-500 w-[50px] text-center">{{ scale() | percent:'1.0-0' }}</span>
+      <button 
+        class="p-2 bg-slate-100 hover:bg-slate-200 rounded-md text-slate-700 transition-colors disabled:opacity-50 border-none cursor-pointer flex items-center justify-center"
+        [disabled]="isLoading() || scale() >= 3.0"
+        (click)="zoomIn()"
+        title="Zoom In">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v6M7 10h6"/></svg>
+      </button>
+      <div class="w-px h-6 bg-slate-200 mx-1"></div>
+      <button 
+        class="p-2 bg-slate-100 hover:bg-slate-200 rounded-md text-slate-700 transition-colors disabled:opacity-50 border-none cursor-pointer flex items-center justify-center"
+        (click)="toggleFullscreen()"
+        [title]="isFullscreen() ? 'Exit Fullscreen' : 'Fullscreen'">
+        @if (isFullscreen()) {
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 9V4.5M9 9H4.5M15 9V4.5M15 9h4.5M9 15v4.5M9 15H4.5M15 15v4.5M15 15h4.5"/></svg>
+        } @else {
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/></svg>
+        }
+      </button>
+    </div>
+  </div>
+
+  <!-- PDF Canvas Container -->
+  <div class="flex-1 overflow-auto relative p-4 bg-slate-200 flex justify-center custom-scrollbar items-start min-h-[500px]">
+    @if (isLoading()) {
+      <div class="absolute inset-0 z-10 bg-slate-100/80 backdrop-blur-sm flex items-center justify-center">
+        <div class="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    }
+    
+    @if (!src) {
+      <div class="flex flex-col items-center justify-center text-slate-500 h-full">
+        <svg class="w-12 h-12 mb-2 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+        <span>No PDF loaded</span>
+      </div>
+    }
+    
+    <canvas #pdfCanvas class="shadow-xl bg-white max-w-full h-auto" [class.hidden]="!numPages()"></canvas>
+  </div>
+</div>

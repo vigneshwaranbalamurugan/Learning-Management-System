@@ -24,6 +24,7 @@ export class InstructorCourseQuizzes {
 
   // Modal states
   protected showQuizModal = signal(false);
+  protected editingQuizId: number | null = null;
   protected quizTitle = '';
   protected quizDescription = '';
   protected quizTimeLimit = '00:30:00';
@@ -86,6 +87,7 @@ export class InstructorCourseQuizzes {
       this.toastService.showError('Please create a section first before adding a quiz.');
       return;
     }
+    this.editingQuizId = null;
     this.quizTitle = '';
     this.quizDescription = '';
     this.quizTimeLimit = '00:30:00';
@@ -97,6 +99,18 @@ export class InstructorCourseQuizzes {
 
   protected closeQuizModal() {
     this.showQuizModal.set(false);
+  }
+
+  protected openEditQuiz(quiz: any, sectionId: number) {
+    this.editingQuizId = quiz.id;
+    this.quizSectionId = sectionId;
+    this.quizTitle = quiz.title;
+    this.quizDescription = quiz.description || '';
+    this.quizTimeLimit = quiz.timeLimit || '00:30:00';
+    this.quizPassingPercentage = quiz.passingPercentage || 60;
+    this.quizMaxAttempts = quiz.maxAttempts || 3;
+    this.quizDeadlineInDays = quiz.deadlineInDays || 0;
+    this.showQuizModal.set(true);
   }
 
   protected saveQuiz() {
@@ -117,14 +131,25 @@ export class InstructorCourseQuizzes {
       deadlineInDays: this.quizDeadlineInDays
     };
 
-    this.quizService.createQuiz(data).subscribe({
-      next: () => {
-        this.toastService.showSuccess('Quiz created successfully.');
-        this.layout.loadCourse(this.course!.id);
-        this.closeQuizModal();
-      },
-      error: (err) => this.toastService.showApiError(err, 'Failed to create quiz.')
-    });
+    if (this.editingQuizId) {
+      this.quizService.updateQuiz(this.editingQuizId, data).subscribe({
+        next: () => {
+          this.toastService.showSuccess('Quiz updated successfully.');
+          this.layout.loadCourse(this.course!.id);
+          this.closeQuizModal();
+        },
+        error: (err) => this.toastService.showApiError(err, 'Failed to update quiz.')
+      });
+    } else {
+      this.quizService.createQuiz(data).subscribe({
+        next: () => {
+          this.toastService.showSuccess('Quiz created successfully.');
+          this.layout.loadCourse(this.course!.id);
+          this.closeQuizModal();
+        },
+        error: (err) => this.toastService.showApiError(err, 'Failed to create quiz.')
+      });
+    }
   }
 
   protected confirmDeleteQuiz(quizId: number) {

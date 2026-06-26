@@ -22,6 +22,12 @@
 
       <!-- Left: Text -->
       <div class="flex flex-col relative z-10">
+      <button (click)="onCancel()" class="flex items-center gap-1.5 text-xs text-primary-light font-semibold mb-4 hover:text-white transition cursor-pointer self-start">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+        </svg>
+        Back to Courses
+      </button>
         <div class="bg-white/15 border border-white/20 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider self-start mb-3">
           Instructor Portal
         </div>
@@ -33,15 +39,29 @@
       </div>
 
       <!-- Right: Back button -->
-      <div class="relative z-10 shrink-0">
-        <app-button (click)="onCancel()" variant="outline"
-          customClass="!text-white border-white/20 !bg-white/10 hover:!bg-white/20 !px-4 !py-2 !w-auto text-xs font-semibold flex items-center gap-1.5">
-          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-          </svg>
-          Back to Courses
-        </app-button>
-      </div>
+    <div class="hidden md:block shrink-0 relative z-10 w-48 h-38 select-none pointer-events-none">
+      <svg class="w-full h-full" viewBox="0 0 160 100" fill="none">
+        <!-- Floating platform -->
+        <ellipse cx="80" cy="85" rx="60" ry="10" fill="rgba(255, 255, 255, 0.15)" />
+        
+        <!-- Presentation Board -->
+        <rect x="45" y="25" width="70" height="45" rx="4" fill="#FFFFFF" stroke="#FF8C00" stroke-width="2" />
+        <!-- Stand for board -->
+        <path d="M72 70l-8 15h32l-8-15H72z" fill="#E2E8F0" />
+        
+        <!-- Chart lines on board representing analytics -->
+        <path d="M55 60h50M55 60l12-15 15 8 18-20" stroke="#1C1C7B" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+        <circle cx="82" cy="53" r="3" fill="#FF8C00" />
+        <circle cx="100" cy="33" r="3" fill="#34D399" />
+        
+        <!-- Floating Lightbulb (Idea) -->
+        <g class="animate-bounce" style="animation-duration: 4s;">
+          <circle cx="125" cy="25" r="8" fill="#FEF3C7" />
+          <path d="M121 28h8v2h-8v-2z" fill="#F59E0B" />
+          <path d="M125 12l1 2 2 1-2 1-1 2-1-2-2-1 2-1 1-2z" fill="#F59E0B" />
+        </g>
+      </svg>
+    </div>
     </div>
 
     <!-- ── Form Grid ──────────────────────────────────────────────────────── -->
@@ -365,26 +385,6 @@
               />
               <p class="text-[10px] text-gray-400 mt-1">Days before learner access expires. Leave empty for lifetime access.</p>
             </div>
-
-            <!-- Estimated Duration -->
-            <div>
-              <label class="text-xs font-semibold text-slate-600 mb-1.5 block">
-                Duration (hours) <span class="text-red-500">*</span>
-              </label>
-              <input
-                id="course-duration"
-                type="number"
-                min="0.5"
-                step="0.5"
-                [(ngModel)]="form.estimatedDurationHours"
-                placeholder="e.g. 8"
-                [class]="'w-full py-3 px-4 text-sm rounded-xl border outline-none transition-all duration-200 bg-white ' +
-                  (errors.estimatedDurationHours ? 'border-red-400' : 'border-gray-200 focus:border-[#1C1C7B] focus:ring-1 focus:ring-[#1C1C7B]')"
-              />
-              <div *ngIf="errors.estimatedDurationHours" class="text-xs text-red-500 mt-1">
-                {{ errors.estimatedDurationHours }}
-              </div>
-            </div>
           </div>
         </div>
 
@@ -533,3 +533,15 @@
 
   </ng-container>
 </div>
+
+<!-- Unsaved Changes Modal -->
+<app-confirm-modal 
+  [isOpen]="showUnsavedModal()" 
+  title="Unsaved Changes"
+  message="You have unsaved changes. Are you sure you want to leave this page? All your progress will be lost."
+  confirmText="Leave Page"
+  cancelText="Stay"
+  [isDanger]="true"
+  (confirm)="confirmLeave()"
+  (cancel)="cancelLeave()">
+</app-confirm-modal>

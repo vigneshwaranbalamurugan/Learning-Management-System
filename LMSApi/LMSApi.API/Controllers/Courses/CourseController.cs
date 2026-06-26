@@ -162,7 +162,7 @@ namespace LMSApi.API.Controllers
                 IsPremium         = form.IsPremium,
                 Requirements      = form.Requirements,
                 LearningOutcomes  = form.LearningOutcomes,
-                EstimatedDuration = form.EstimatedDuration,
+
                 Level             = form.Level,
                 LanguageId        = form.LanguageId,
                 // Hybrid Learning
@@ -205,7 +205,7 @@ namespace LMSApi.API.Controllers
                 IsPremium         = form.IsPremium,
                 Requirements      = form.Requirements,
                 LearningOutcomes  = form.LearningOutcomes,
-                EstimatedDuration = form.EstimatedDuration,
+
                 Level             = form.Level,
                 LanguageId        = form.LanguageId,
                 // Hybrid Learning

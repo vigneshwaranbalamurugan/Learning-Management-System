@@ -66,5 +66,25 @@ export const learnerRoutes: Routes = [
         loadComponent: () => import('@pages/assignments/assignment-detail').then(m => m.AssignmentDetailPage)
       }
     ]
+  },
+  {
+    path: 'learner/learn/:courseId',
+    loadComponent: () => import('@pages/course-learning/course-learning').then(m => m.CourseLearning),
+    canActivate: [authGuard(['Learner'])]
+  },
+  {
+    path: 'learner/learn/:courseId/lesson/:lessonId',
+    loadComponent: () => import('@pages/course-learning/course-learning').then(m => m.CourseLearning),
+    canActivate: [authGuard(['Learner'])]
+  },
+  {
+    path: 'learner/learn/:courseId/quiz/:quizId',
+    loadComponent: () => import('@pages/course-learning/course-learning').then(m => m.CourseLearning),
+    canActivate: [authGuard(['Learner'])]
+  },
+  {
+    path: 'learner/learn/:courseId/assignment/:assignmentId',
+    loadComponent: () => import('@pages/course-learning/course-learning').then(m => m.CourseLearning),
+    canActivate: [authGuard(['Learner'])]
   }
 ];

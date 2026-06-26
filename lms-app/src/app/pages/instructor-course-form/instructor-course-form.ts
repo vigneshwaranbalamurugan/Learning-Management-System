@@ -1,4 +1,4 @@
-import { Component, OnInit, signal, inject, DestroyRef } from '@angular/core';
+import { Component, OnInit, signal, inject, DestroyRef, ViewChild } from '@angular/core';
 import { marked } from 'marked';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -10,6 +10,7 @@ import { Dropdown } from '@components/dropdown/dropdown';
 import { FormInput } from '@components/form-input/form-input';
 import { Button } from '@components/button/button';
 import { Loader } from '@components/loader/loader';
+import { ConfirmModal } from '@components/confirm-modal/confirm-modal';
 import { CourseService } from '@services/course.service';
 
 interface CourseFormData {
@@ -20,7 +21,6 @@ interface CourseFormData {
   isPremium: boolean;
   requirements: string;
   learningOutcomes: string;
-  estimatedDurationHours: string;
   level: string;
   languageId: string;
   courseAccessType: string;
@@ -32,7 +32,6 @@ interface FormErrors {
   description?: string;
   categoryId?: string;
   price?: string;
-  estimatedDurationHours?: string;
   level?: string;
   languageId?: string;
   courseAccessType?: string;
@@ -42,7 +41,7 @@ interface FormErrors {
 @Component({
   selector: 'app-instructor-course-form',
   standalone: true,
-  imports: [CommonModule, FormsModule, Dropdown, FormInput, Button, Loader],
+  imports: [CommonModule, FormsModule, Dropdown, FormInput, Button, Loader, ConfirmModal],
   templateUrl: './instructor-course-form.html'
 })
 export class InstructorCourseForm implements OnInit {
@@ -64,12 +63,17 @@ export class InstructorCourseForm implements OnInit {
     isPremium: false,
     requirements: '',
     learningOutcomes: '',
-    estimatedDurationHours: '8',
     level: '',
     languageId: '',
     courseAccessType: '',
     defaultDeadlineDays: '30'
   };
+
+  private initialFormState = JSON.stringify(this.form);
+  private isSubmitted = false;
+  
+  protected showUnsavedModal = signal(false);
+  private unsavedResolve: ((val: boolean) => void) | null = null;
 
   protected errors: FormErrors = {};
 
@@ -226,12 +230,6 @@ export class InstructorCourseForm implements OnInit {
       }
     }
 
-    const hours = parseFloat(this.form.estimatedDurationHours);
-    if (isNaN(hours) || hours <= 0) {
-      this.errors.estimatedDurationHours = 'Please enter a valid duration in hours.';
-      valid = false;
-    }
-
     if (!this.form.level) {
       this.errors.level = 'Please select a level.';
       valid = false;
@@ -252,25 +250,19 @@ export class InstructorCourseForm implements OnInit {
 
   // ── Submit ────────────────────────────────────────────────────────────────
 
-  protected onSubmit(): void {
+  protected async onSubmit(): Promise<void> {
     if (!this.validate()) {
       this.toastService.showError('Please fix the errors before submitting.');
       return;
     }
 
-    const hours = parseFloat(this.form.estimatedDurationHours);
-    const totalSeconds = Math.round(hours * 3600);
-    const h = Math.floor(totalSeconds / 3600);
-    const m = Math.floor((totalSeconds % 3600) / 60);
-    const s = totalSeconds % 60;
-    const duration = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
-
+    this.isSubmitting.set(true);
     const formData = new FormData();
     formData.append('Title', this.form.title.trim());
     formData.append('Description', this.form.description.trim());
     formData.append('CategoryId', this.form.categoryId);
     formData.append('IsPremium', String(this.form.isPremium));
-    formData.append('EstimatedDuration', duration);
+
     formData.append('Level', this.form.level);
     formData.append('LanguageId', this.form.languageId);
     formData.append('CourseAccessType', this.form.courseAccessType);
@@ -294,14 +286,13 @@ export class InstructorCourseForm implements OnInit {
       formData.append('IntroVideo', this.introVideoFile);
     }
 
-    this.isSubmitting.set(true);
-
     this.courseService.createCourse(formData)
       .pipe(untilDestroyed(this.destroyRef))
       .subscribe({
         next: (course) => {
-          this.toastService.showSuccess(`Course "${course.title}" created successfully!`);
-          this.router.navigate([`/instructor/courses/${course.slug}/overview`]);
+          this.toastService.showSuccess('Course created successfully!');
+          this.isSubmitted = true;
+          this.router.navigate(['/instructor/courses', course.slug, 'builder']);
         },
         error: (err) => {
           this.toastService.showApiError(err, 'Failed to create course.');
@@ -312,6 +303,37 @@ export class InstructorCourseForm implements OnInit {
 
   protected onCancel(): void {
     this.router.navigate(['/instructor/courses']);
+  }
+
+  async canDeactivate(): Promise<boolean> {
+    if (this.isSubmitted) return true;
+
+    const hasChanges = JSON.stringify(this.form) !== this.initialFormState || 
+                       this.thumbnailFile !== null || 
+                       this.introVideoFile !== null;
+
+    if (!hasChanges) return true;
+
+    return new Promise<boolean>((resolve) => {
+      this.unsavedResolve = resolve;
+      this.showUnsavedModal.set(true);
+    });
+  }
+
+  protected confirmLeave(): void {
+    this.showUnsavedModal.set(false);
+    if (this.unsavedResolve) {
+      this.unsavedResolve(true);
+      this.unsavedResolve = null;
+    }
+  }
+
+  protected cancelLeave(): void {
+    this.showUnsavedModal.set(false);
+    if (this.unsavedResolve) {
+      this.unsavedResolve(false);
+      this.unsavedResolve = null;
+    }
   }
 
   protected get showDeadlineDays(): boolean {

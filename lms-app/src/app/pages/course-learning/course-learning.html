@@ -1,0 +1,703 @@
+<div class="h-[100dvh] w-full flex flex-col bg-[#F8FAFC] overflow-hidden font-sans text-slate-900">
+  
+  <!-- ── Top Learning Header ── -->
+  <header class="h-[64px] bg-white/90 backdrop-blur-md border-b border-slate-200 flex items-center justify-between px-3 md:px-5 shrink-0 sticky top-0 z-30 shadow-sm transition-all duration-300">
+    <div class="flex items-center gap-2 md:gap-3 flex-1 md:w-1/3 min-w-0">
+      <button (click)="toggleSidebar()" class="p-1.5 hover:bg-slate-100 rounded-lg text-slate-600 transition-colors cursor-pointer border-none bg-transparent shrink-0">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+      </button>
+      <div class="flex items-center gap-3 min-w-0">
+        @if (course()?.thumbnailUrl) {
+          <img [src]="course()?.thumbnailUrl" alt="Thumbnail" class="w-9 h-9 rounded-md object-cover shadow-sm border border-slate-100 hidden sm:block shrink-0">
+        }
+        <div class="flex flex-col min-w-0">
+          <span class="text-sm font-bold text-slate-900 truncate max-w-[150px] md:max-w-[250px]" [title]="course()?.title">{{ course()?.title }}</span>
+          <span class="text-xs font-medium text-slate-500 truncate max-w-[150px] md:max-w-[250px]">{{ activeItem()?.title }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Center Progress -->
+    <div class="hidden md:flex w-1/3 flex-col items-center justify-center">
+      <div class="flex items-center justify-between w-full max-w-[260px] mb-1.5">
+        <span class="text-[11px] font-bold text-slate-600 uppercase tracking-wider">{{ progress()?.completedLessonsCount }} of {{ progress()?.totalLessonsCount }} Completed</span>
+        <span class="text-[11px] font-black text-[#1C1C7B]">{{ (progress()?.progressPercentage || 0) | number:'1.0-0' }}%</span>
+      </div>
+      <div class="w-full max-w-[260px] h-1.5 bg-slate-100 rounded-full overflow-hidden shadow-inner">
+        <div class="h-full bg-gradient-to-r from-blue-600 to-[#1C1C7B] transition-all duration-700 ease-out rounded-full"
+             [style.width.%]="progress()?.progressPercentage || 0"></div>
+      </div>
+    </div>
+
+    <!-- Right Actions -->
+    <div class="flex-1 md:w-1/3 flex items-center justify-end gap-2 shrink-0">
+      <app-button variant="outline" customClass="!w-auto !px-2.5 !py-1.5 text-sm rounded-lg border-slate-200 hover:border-slate-300 hover:bg-slate-50 text-slate-600" (click)="toggleFullscreen()">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/></svg>
+      </app-button>
+      <app-button variant="outline" customClass="!w-auto !px-3 !py-1.5 text-sm rounded-lg text-red-600 border-red-200 hover:bg-red-50 font-semibold" (click)="showExitModal.set(true)">
+        Exit
+      </app-button>
+    </div>
+  </header>
+
+  <!-- ── Main Area ── -->
+  <div class="flex-1 flex overflow-hidden relative">
+    
+    <!-- Mobile Backdrop -->
+    @if (sidebarOpen()) {
+      <div class="fixed inset-0 bg-slate-900/50 z-20 md:hidden" (click)="toggleSidebar()"></div>
+    }
+    
+    <!-- Curriculum Sidebar -->
+    <aside class="bg-white border-r border-slate-200 flex flex-col transition-all duration-300 ease-in-out z-30 shrink-0 shadow-lg md:shadow-none absolute md:relative h-full left-0 top-0"
+           [class.w-[280px]]="sidebarOpen()"
+           [class.md:w-[300px]]="sidebarOpen()"
+           [class.w-0]="!sidebarOpen()"
+           [class.-translate-x-full]="!sidebarOpen()"
+           [class.md:translate-x-0]="true"
+           [class.translate-x-0]="sidebarOpen()"
+           [class.opacity-100]="sidebarOpen()"
+           [class.opacity-0]="!sidebarOpen()">
+      <div class="w-[280px] md:w-[300px] h-full flex flex-col">
+        <!-- Progress Summary Card -->
+        <div class="p-4 border-b border-slate-100 bg-slate-50/50">
+          <div class="bg-white rounded-xl p-4 shadow-sm border border-slate-100">
+            <h3 class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-3">Overall Progress</h3>
+            <div class="flex items-center gap-3 mb-4">
+              <div class="relative w-12 h-12 flex items-center justify-center shrink-0">
+                <svg class="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
+                  <path class="text-slate-100" stroke-width="3" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                  <path class="text-[#1C1C7B] transition-all duration-1000 ease-out" stroke-dasharray="100, 100" [attr.stroke-dashoffset]="100 - (progress()?.progressPercentage || 0)" stroke-width="3" stroke-linecap="round" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                </svg>
+                <span class="absolute text-[11px] font-bold text-slate-700">{{ (progress()?.progressPercentage || 0) | number:'1.0-0' }}%</span>
+              </div>
+              <div class="flex flex-col">
+                <span class="text-sm font-bold text-slate-900">{{ (progress()?.progressPercentage || 0) === 100 ? 'Completed!' : 'In Progress' }}</span>
+                <span class="text-[10px] text-slate-500 font-medium">{{ flatCurriculum().filter(x => x.isCompleted).length }} / {{ flatCurriculum().length }} Items done</span>
+              </div>
+            </div>
+
+            <!-- Breakdown -->
+            <div class="space-y-2.5">
+              <!-- Lessons -->
+              @if (lessonProgress().total > 0) {
+                <div>
+                  <div class="flex justify-between items-center mb-1">
+                    <span class="text-[10px] font-bold text-slate-600">Lessons</span>
+                    <span class="text-[10px] font-bold text-slate-400">{{ lessonProgress().completed }}/{{ lessonProgress().total }}</span>
+                  </div>
+                  <div class="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                    <div class="h-full bg-blue-500 rounded-full" [style.width.%]="lessonProgress().percentage"></div>
+                  </div>
+                </div>
+              }
+              
+              <!-- Quizzes -->
+              @if (quizProgress().total > 0) {
+                <div>
+                  <div class="flex justify-between items-center mb-1">
+                    <span class="text-[10px] font-bold text-slate-600">Quizzes</span>
+                    <span class="text-[10px] font-bold text-slate-400">{{ quizProgress().completed }}/{{ quizProgress().total }}</span>
+                  </div>
+                  <div class="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                    <div class="h-full bg-[#FF8C00] rounded-full" [style.width.%]="quizProgress().percentage"></div>
+                  </div>
+                </div>
+              }
+              
+              <!-- Assignments -->
+              @if (assignmentProgress().total > 0) {
+                <div>
+                  <div class="flex justify-between items-center mb-1">
+                    <span class="text-[10px] font-bold text-slate-600">Assignments</span>
+                    <span class="text-[10px] font-bold text-slate-400">{{ assignmentProgress().completed }}/{{ assignmentProgress().total }}</span>
+                  </div>
+                  <div class="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                    <div class="h-full bg-purple-500 rounded-full" [style.width.%]="assignmentProgress().percentage"></div>
+                  </div>
+                </div>
+              }
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Search & Controls -->
+        <div class="px-4 py-3 flex flex-col gap-2 border-b border-slate-100">
+          <app-form-input 
+            type="text" 
+            placeholder="Search curriculum..." 
+            [value]="searchQuery()" 
+            (valueChange)="searchQuery.set($event)">
+          </app-form-input>
+          <div class="flex justify-between items-center px-1">
+            <span class="text-[11px] font-bold text-slate-800 uppercase tracking-wider">Curriculum</span>
+            <button (click)="collapseAllSections()" class="text-[11px] font-bold text-blue-600 hover:text-blue-800 transition-colors border-none bg-transparent cursor-pointer">
+              Collapse All
+            </button>
+          </div>
+        </div>
+
+        <!-- Curriculum Accordion -->
+        <div class="flex-1 overflow-y-auto p-2 space-y-2 custom-scrollbar bg-slate-50/30">
+          @if (isLoading()) {
+            <div class="flex justify-center py-6"><app-loader></app-loader></div>
+          } @else {
+            @for (section of filteredSections; track section.id) {
+              <div class="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm transition-all hover:shadow-md">
+                <!-- Section Header -->
+                <button class="w-full bg-white p-3 flex items-center justify-between transition-colors hover:bg-slate-50 border-none cursor-pointer"
+                        (click)="toggleSection(section.id)">
+                  <div class="flex flex-col text-left pr-3">
+                    <span class="font-bold text-slate-900 text-xs leading-tight">{{ section.title }}</span>
+                    <span class="text-[10px] text-slate-500 mt-0.5 font-medium">{{ getItemsForSection(section.id).length }} Items</span>
+                  </div>
+                  <div class="w-5 h-5 rounded-md bg-slate-100 flex items-center justify-center shrink-0 text-slate-500 transition-transform duration-200"
+                       [class.rotate-180]="expandedSections().has(section.id)">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                  </div>
+                </button>
+                
+                <!-- Items -->
+                <div class="overflow-hidden transition-all duration-300 ease-in-out"
+                     [class.max-h-0]="!expandedSections().has(section.id)"
+                     [class.max-h-[2000px]]="expandedSections().has(section.id)">
+                  <div class="flex flex-col py-1.5 px-1.5 bg-slate-50/50 border-t border-slate-100 gap-0.5">
+                    @for (item of getItemsForSection(section.id); track item.id + item.type) {
+                      <button 
+                        class="flex items-start gap-2 p-2.5 w-full text-left rounded-lg transition-all duration-200 hover:bg-white hover:shadow-sm border border-transparent group relative bg-transparent cursor-pointer"
+                        [class.bg-white]="activeItem()?.id === item.id && activeItem()?.type === item.type"
+                        [class.!border-blue-200]="activeItem()?.id === item.id && activeItem()?.type === item.type"
+                        [class.shadow-sm]="activeItem()?.id === item.id && activeItem()?.type === item.type"
+                        [class.opacity-50]="item.isLocked"
+                        [class.cursor-not-allowed]="item.isLocked"
+                        (click)="navigateToItem(flatCurriculum().indexOf(item))">
+                        
+                        <!-- Status Icon -->
+                        <div class="mt-0.5 shrink-0 z-10 relative bg-white rounded-full">
+                          @if (item.isLocked) {
+                            <div class="w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center text-slate-400">
+                              <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd"/></svg>
+                            </div>
+                          } @else if (item.isCompleted) {
+                            <div class="w-5 h-5 rounded-full bg-green-500 flex items-center justify-center text-white shadow-sm">
+                              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+                            </div>
+                          } @else if (activeItem()?.id === item.id && activeItem()?.type === item.type) {
+                            <div class="w-5 h-5 rounded-full bg-blue-600 flex items-center justify-center text-white shadow-sm shadow-blue-200">
+                              <div class="w-1.5 h-1.5 bg-white rounded-full animate-pulse"></div>
+                            </div>
+                          } @else {
+                            <div class="w-5 h-5 rounded-full border-2 border-slate-300 group-hover:border-blue-400 transition-colors"></div>
+                          }
+                        </div>
+  
+                        <!-- Content -->
+                        <div class="flex flex-col flex-1 min-w-0">
+                          <span class="text-xs font-bold text-slate-700 group-hover:text-blue-700 transition-colors line-clamp-2"
+                                [class.text-blue-700]="activeItem()?.id === item.id && activeItem()?.type === item.type">
+                            {{ item.title }}
+                          </span>
+                          <div class="flex items-center gap-1.5 mt-1 text-[10px] text-slate-500 font-semibold">
+                            <span class="flex items-center gap-1">
+                              @if (item.type === 'lesson') {
+                                @if (item.lessonType === 0) {
+                                  <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg> Video
+                                } @else if (item.lessonType === 1) {
+                                  <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg> PDF
+                                } @else if (item.lessonType === 2) {
+                                  <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"/></svg> Article
+                                } @else {
+                                  <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg> Link
+                                }
+                              } @else if (item.type === 'quiz') {
+                                <svg class="w-3 h-3 text-[#FF8C00]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg> Quiz
+                              } @else if (item.type === 'assignment') {
+                                <svg class="w-3 h-3 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg> Assignment
+                              }
+                            </span>
+                            @if (item.duration) {
+                              <span class="w-1 h-1 rounded-full bg-slate-300"></span>
+                              <span>{{ item.duration }}</span>
+                            }
+                          </div>
+                        </div>
+                      </button>
+                    }
+                  </div>
+                </div>
+              </div>
+            }
+          }
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Workspace -->
+    <main class="flex-1 flex flex-col h-full bg-white relative overflow-hidden">
+      
+      @if (isLoading()) {
+        <div class="absolute inset-0 flex items-center justify-center bg-white z-10">
+          <app-loader></app-loader>
+        </div>
+      }
+      
+      <!-- Content Viewport -->
+      <div class="flex-1 overflow-y-auto relative w-full h-full custom-scrollbar bg-white" id="content-viewport">
+        @if (activeItem()) {
+          <div class="w-full flex flex-col min-h-full">
+              
+            <!-- LESSON -->
+            @if (activeItem()!.type === 'lesson') {
+              @if (activeItem()!.lessonType === 0) {
+                <!-- Video Player -->
+                <div class="w-full bg-black aspect-video relative group shrink-0">
+                  <app-video-player 
+                    [src]="activeItem()!.item.contentUrl" 
+                    [initialTime]="videoResumeSecond()"
+                    [maxAllowedTime]="videoMaxWatchedSecond()"
+                    [autoplay]="false"
+                    [preventForward]="true"
+                    (timeWatchedUpdate)="onVideoTimeUpdate($event)">
+                  </app-video-player>
+                </div>
+
+                <!-- Lesson Info Box -->
+                <div class="p-6 md:p-10 border-b border-slate-200" [class.flex-1]="!activeItem()?.item?.resources?.length">
+                  <div class="flex flex-wrap items-center gap-2 mb-3">
+                    <span class="px-2.5 py-1 bg-blue-50 text-blue-700 text-[11px] font-bold uppercase tracking-wider rounded-md">Video Lesson</span>
+                    @if (activeItem()?.duration) {
+                      <span class="px-2.5 py-1 bg-slate-50 text-slate-600 text-[11px] font-bold uppercase tracking-wider rounded-md flex items-center gap-1 border border-slate-100">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        {{ activeItem()?.duration }}
+                      </span>
+                    }
+                  </div>
+                  <h1 class="text-2xl md:text-3xl font-bold text-slate-900 mb-6 leading-tight">{{ activeItem()!.title }}</h1>
+                  
+                  @if (parsedVideoDescriptionHtml()) {
+                    <div class="prose prose-slate prose-base max-w-none text-slate-600" [innerHTML]="parsedVideoDescriptionHtml()"></div>
+                  }
+                </div>
+              } @else if (activeItem()!.lessonType === 1) {
+                <!-- PDF Viewer -->
+                <div class="p-6 md:p-10 border-b border-slate-200 flex flex-col" [class.flex-1]="!activeItem()?.item?.resources?.length">
+                  <div class="flex items-center justify-between mb-4 shrink-0">
+                    <h1 class="text-2xl font-bold text-slate-900">{{ activeItem()!.title }}</h1>
+                  </div>
+                  <div class="flex-1 w-full min-h-[600px] md:min-h-[800px]">
+                    <app-pdf-viewer [src]="absolutePdfUrl()"></app-pdf-viewer>
+                  </div>
+                </div>
+              } @else if (activeItem()!.lessonType === 2) {
+                <!-- Article Reader -->
+                <div class="p-6 md:p-12 border-b border-slate-200" [class.flex-1]="!activeItem()?.item?.resources?.length">
+                  <h1 class="text-3xl md:text-4xl font-bold text-slate-900 mb-8">{{ activeItem()!.title }}</h1>
+                  <div class="prose prose-lg prose-slate prose-blue max-w-none prose-headings:font-bold prose-a:text-blue-600" [innerHTML]="parsedArticleHtml()"></div>
+                </div>
+              } @else if (activeItem()!.lessonType === 3) {
+                <!-- External Link -->
+                <div class="p-10 md:p-20 text-center border-b border-slate-200 flex flex-col justify-center" [class.flex-1]="!activeItem()?.item?.resources?.length">
+                  <div class="w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <svg class="w-10 h-10 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                  </div>
+                  <h3 class="text-3xl font-bold text-slate-900 mb-4">External Resource</h3>
+                  <p class="text-lg text-slate-500 mb-8 max-w-lg mx-auto">This lesson contains external content that must be opened in a new tab.</p>
+                  <a [href]="activeItem()!.item.contentUrl" target="_blank" class="block w-full max-w-sm mx-auto no-underline">
+                    <app-button variant="primary" customClass="w-full py-4 text-lg rounded-xl shadow-sm">
+                      Open Resource in New Tab
+                    </app-button>
+                  </a>
+                </div>
+              }
+
+              <!-- Resources Section (if any) -->
+              @if (activeItem()?.item?.resources?.length > 0) {
+                <div class="p-6 md:p-10 border-b border-slate-200 bg-slate-50/50 flex-1">
+                  <h3 class="text-base font-bold text-slate-900 mb-4 flex items-center gap-2">
+                    <svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/></svg>
+                    Downloadable Resources
+                  </h3>
+                  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+                    @for (res of activeItem()!.item.resources; track res.id) {
+                      <a [href]="res.resourceUrl" target="_blank" download
+                         class="flex items-center gap-3 p-3 rounded-lg border border-slate-200 hover:border-blue-300 hover:bg-white bg-white transition-colors group no-underline shadow-sm">
+                        <div class="w-10 h-10 rounded-md bg-slate-50 flex items-center justify-center text-slate-500 group-hover:bg-blue-50 group-hover:text-blue-600 transition-colors shrink-0">
+                          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                        </div>
+                        <div class="flex flex-col min-w-0">
+                          <span class="font-bold text-slate-800 text-xs truncate group-hover:text-blue-800">{{ res.resourceTitle }}</span>
+                          <span class="text-[10px] font-semibold text-slate-500 truncate">{{ res.resourceType === 0 ? 'Document' : (res.resourceType === 1 ? 'Video' : 'Link') }}</span>
+                        </div>
+                      </a>
+                    }
+                  </div>
+                </div>
+              }
+            }
+
+            <!-- QUIZ -->
+            @if (activeItem()!.type === 'quiz') {
+              <div class="p-6 md:p-10 flex-1 flex flex-col">
+                @if (!quizAttemptId() && !quizResult()) {
+                  <div class="relative max-w-4xl">
+                    <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
+                      <span class="px-3 py-1 bg-[#FF8C00]/10 text-[#FF8C00] rounded-lg text-xs font-bold uppercase tracking-wider flex items-center gap-1.5">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        Course Quiz
+                      </span>
+                      <span class="px-3 py-1 bg-slate-100 text-slate-600 rounded-lg text-xs font-bold border border-slate-200">
+                        {{ remainingAttempts()?.remainingAttempts || 0 }} attempts left
+                      </span>
+                    </div>
+                    
+                    <h1 class="text-3xl font-bold text-slate-900 mb-4 leading-tight">{{ activeItem()!.title }}</h1>
+                    <p class="text-slate-600 text-base mb-8 max-w-2xl leading-relaxed">{{ activeItem()?.item?.description || 'Test your knowledge on this module.' }}</p>
+                    
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
+                      <div class="bg-slate-50 p-4 rounded-xl border border-slate-100 flex flex-col items-center justify-center text-center">
+                        <span class="text-2xl font-bold text-slate-900 mb-1">{{ activeItem()?.item?.questionCount || quizDetail()?.questions?.length || 0 }}</span>
+                        <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Questions</span>
+                      </div>
+                      <div class="bg-slate-50 p-4 rounded-xl border border-slate-100 flex flex-col items-center justify-center text-center">
+                        <span class="text-2xl font-bold text-green-600 mb-1">{{ activeItem()?.item?.passingPercentage || quizDetail()?.passingPercentage }}%</span>
+                        <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">To Pass</span>
+                      </div>
+                      <div class="bg-slate-50 p-4 rounded-xl border border-slate-100 flex flex-col items-center justify-center text-center">
+                        <span class="text-2xl font-bold text-slate-900 mb-1">{{ (activeItem()?.item?.timeLimit || quizDetail()?.timeLimit)?.substring(0,5) || '00:00' }}</span>
+                        <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Time Limit</span>
+                      </div>
+                      <div class="bg-slate-50 p-4 rounded-xl border border-slate-100 flex flex-col items-center justify-center text-center">
+                        <span class="text-2xl font-bold text-slate-900 mb-1">{{ activeItem()?.item?.totalMarks || quizDetail()?.totalMarks }}</span>
+                        <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Total Marks</span>
+                      </div>
+                    </div>
+                    
+                    <div class="flex flex-col sm:flex-row items-center gap-4 pt-6 border-t border-slate-100">
+                      <app-button 
+                        variant="primary" 
+                        customClass="px-8 py-3 text-base shadow-sm rounded-lg w-full sm:w-auto" 
+                        [disabled]="(remainingAttempts()?.remainingAttempts || 0) <= 0"
+                        (click)="startQuiz()">
+                        {{ (remainingAttempts()?.remainingAttempts || 0) > 0 ? 'Start Quiz Now' : 'No Attempts Remaining' }}
+                      </app-button>
+                      <p class="text-xs text-slate-500 font-medium">Once you start, the timer cannot be paused.</p>
+                    </div>
+                  </div>
+                }
+
+                @if (quizAttemptId() && !quizResult()) {
+                  <div class="max-w-4xl mx-auto">
+                    <div class="flex items-center justify-between bg-slate-50 p-3 rounded-lg border border-slate-200 mb-6 sticky top-0 z-10 shadow-sm">
+                      <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-md bg-blue-100 flex items-center justify-center text-blue-700 font-bold text-sm">
+                          Q
+                        </div>
+                        <div>
+                          <div class="font-bold text-sm text-slate-900">{{ selectedAnswers().size }} / {{ quizDetail()?.questions?.length }}</div>
+                          <div class="text-[9px] text-slate-500 font-bold tracking-widest uppercase">Answered</div>
+                        </div>
+                      </div>
+                      <div class="flex items-center gap-2 bg-white px-4 py-2 rounded-md border border-slate-200 shadow-sm" [class.bg-red-50]="quizTimeLeft() < 60" [class.border-red-200]="quizTimeLeft() < 60">
+                        <svg class="w-4 h-4 text-slate-400" [class.text-red-500]="quizTimeLeft() < 60" [class.animate-pulse]="quizTimeLeft() < 60" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        <span class="font-mono font-bold text-sm text-slate-700" [class.text-red-600]="quizTimeLeft() < 60">{{ formatTime(quizTimeLeft()) }}</span>
+                      </div>
+                    </div>
+
+                    <div class="space-y-4 mb-8">
+                      @for (q of quizDetail()?.questions; track q.id; let i = $index) {
+                        <div class="bg-slate-50/50 rounded-xl p-6 border border-slate-100">
+                          <div class="flex justify-between items-start mb-4 gap-4">
+                            <h3 class="text-base font-bold text-slate-900 leading-snug"><span class="text-slate-400 mr-2">{{ i + 1 }}.</span> {{ q.questionText }}</h3>
+                            <span class="px-2 py-1 bg-white border border-slate-200 text-slate-600 rounded-md text-xs font-bold whitespace-nowrap">{{ q.mark }} pts</span>
+                          </div>
+                          
+                          <div class="space-y-2">
+                            @for (opt of q.options; track opt.id) {
+                              <label class="flex items-center p-3 rounded-lg border transition-all cursor-pointer group bg-white"
+                                     [class.border-blue-500]="selectedAnswers().get(q.id) === opt.id"
+                                     [class.bg-blue-50/30]="selectedAnswers().get(q.id) === opt.id"
+                                     [class.border-slate-200]="selectedAnswers().get(q.id) !== opt.id"
+                                     [class.hover:border-slate-300]="selectedAnswers().get(q.id) !== opt.id">
+                                <input type="radio" 
+                                       [name]="'question_'+q.id" 
+                                       [value]="opt.id"
+                                       [checked]="selectedAnswers().get(q.id) === opt.id"
+                                       (change)="selectQuizOption(q.id, opt.id)"
+                                       class="w-4 h-4 text-blue-600 focus:ring-blue-600 border-slate-300 cursor-pointer">
+                                <span class="ml-3 text-sm text-slate-700 font-medium group-hover:text-slate-900" [class.text-blue-900]="selectedAnswers().get(q.id) === opt.id">{{ opt.optionText }}</span>
+                              </label>
+                            }
+                          </div>
+                        </div>
+                      }
+                    </div>
+
+                    <div class="flex justify-end border-t border-slate-100 pt-6">
+                      <app-button 
+                        variant="primary" 
+                        customClass="px-8 py-3 text-base rounded-lg shadow-sm" 
+                        [loading]="isSubmittingQuiz()"
+                        (click)="submitQuiz()">
+                        Submit Final Answers
+                      </app-button>
+                    </div>
+                  </div>
+                }
+
+                @if (quizResult()) {
+                  <div class="text-center max-w-2xl mx-auto py-4">
+                    <div class="w-16 h-16 rounded-full mx-auto flex items-center justify-center mb-4 shadow-sm border-[3px] border-white ring-4"
+                         [class.bg-green-500]="quizResult()!.isPassed"
+                         [class.ring-green-100]="quizResult()!.isPassed"
+                         [class.text-white]="quizResult()!.isPassed"
+                         [class.bg-red-500]="!quizResult()!.isPassed"
+                         [class.ring-red-100]="!quizResult()!.isPassed"
+                         [class.text-white]="!quizResult()!.isPassed">
+                      @if (quizResult()!.isPassed) {
+                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+                      } @else {
+                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12"/></svg>
+                      }
+                    </div>
+                    
+                    <h2 class="text-2xl font-bold text-slate-900 mb-2">
+                      {{ quizResult()!.isPassed ? 'Congratulations! You Passed!' : 'You did not pass this time.' }}
+                    </h2>
+                    <p class="text-slate-500 mb-8 text-sm">Score required to pass: {{ quizResult()!.passingPercentage }}%</p>
+                    
+                    <div class="flex items-center justify-center gap-6 bg-slate-50 p-6 rounded-xl border border-slate-100 mb-8 max-w-sm mx-auto">
+                      <div class="flex flex-col">
+                        <span class="text-3xl font-black text-slate-900">{{ quizResult()!.obtainedScore }}<span class="text-lg text-slate-400">/{{ quizResult()!.totalScore }}</span></span>
+                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Your Score</span>
+                      </div>
+                      <div class="w-px h-12 bg-slate-200"></div>
+                      <div class="flex flex-col text-left">
+                        <span class="text-3xl font-black" [class.text-green-600]="quizResult()!.isPassed" [class.text-red-600]="!quizResult()!.isPassed">
+                          {{ (quizResult()!.obtainedScore / quizResult()!.totalScore) * 100 | number:'1.0-0' }}%
+                        </span>
+                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Percentage</span>
+                      </div>
+                    </div>
+                    
+                    @if (!quizResult()!.isPassed && (remainingAttempts()?.remainingAttempts || 0) > 0) {
+                      <app-button variant="primary" (click)="startQuiz()" customClass="px-6 py-2.5 text-sm rounded-lg shadow-sm">
+                        Try Again ({{ remainingAttempts()?.remainingAttempts }} left)
+                      </app-button>
+                    }
+                  </div>
+                }
+              </div>
+            }
+
+            <!-- ASSIGNMENT -->
+            @if (activeItem()!.type === 'assignment') {
+              <div class="flex-1 flex flex-col">
+                <div class="p-6 md:p-10 border-b border-slate-200 bg-white" [class.flex-1]="(assignmentStatus()?.remainingAttempts || 0) <= 0 && assignmentStatus()?.isPassed && mySubmissions().length === 0">
+                <div class="flex flex-col md:flex-row md:justify-between md:items-start gap-4 mb-6">
+                  <div>
+                    <div class="flex items-center gap-2 mb-2">
+                      <span class="px-2.5 py-1 bg-purple-100 text-purple-700 text-[10px] font-bold uppercase tracking-wider rounded-md">Assignment</span>
+                      @if (assignmentDetail()?.isCompulsory) {
+                        <span class="px-2.5 py-1 bg-red-100 text-red-700 text-[10px] font-bold uppercase tracking-wider rounded-md">Compulsory</span>
+                      }
+                    </div>
+                    <h1 class="text-2xl font-bold text-slate-900">{{ assignmentDetail()?.title }}</h1>
+                  </div>
+                  <div class="bg-slate-50 px-4 py-2 rounded-lg border border-slate-100 min-w-[120px] text-center shrink-0">
+                    <div class="text-xl font-black text-[#1C1C7B] mb-0.5">{{ assignmentDetail()?.totalMarks }} <span class="text-xs text-slate-400 font-bold">pts</span></div>
+                    <div class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Passing: {{ assignmentDetail()?.passingMarks }}</div>
+                  </div>
+                </div>
+                
+                <div class="prose prose-slate prose-base max-w-none mb-8 text-slate-600">
+                  @if (assignmentDetail()?.description) {
+                    <p>{{ assignmentDetail()?.description }}</p>
+                  }
+                  @if (assignmentDetail()?.instructions) {
+                    <div class="mt-4 bg-blue-50/50 p-4 rounded-lg border border-blue-100">
+                      <h4 class="text-blue-900 font-bold text-sm mb-2 mt-0">Instructions</h4>
+                      <p class="text-blue-800 m-0 text-sm whitespace-pre-wrap">{{ assignmentDetail()?.instructions }}</p>
+                    </div>
+                  }
+                </div>
+                
+                <div class="grid grid-cols-2 gap-4 border-t border-slate-100 pt-6">
+                  <div>
+                    <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Due Date</span>
+                    <span class="block text-slate-900 font-bold text-sm">{{ assignmentDetail()?.deadlineDate ? (assignmentDetail()?.deadlineDate | date:'mediumDate') : 'No strict deadline' }}</span>
+                  </div>
+                  <div>
+                    <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Max Submissions</span>
+                    <span class="block text-slate-900 font-bold text-sm">{{ assignmentDetail()?.maxSubmissions }} <span class="text-slate-500 text-xs font-medium">({{ assignmentStatus()?.remainingAttempts || 0 }} left)</span></span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Submission Area -->
+              @if ((assignmentStatus()?.remainingAttempts || 0) > 0 && !assignmentStatus()?.isPassed) {
+                <div class="p-6 md:p-10 border-b border-slate-200 bg-slate-50/30" [class.flex-1]="mySubmissions().length === 0">
+                  <h3 class="text-xl font-bold text-slate-900 mb-6">Submit Your Work</h3>
+                  
+                  <form [formGroup]="assignmentForm" (ngSubmit)="submitAssignment()">
+                    <div class="space-y-4 max-w-3xl">
+                      <div class="flex flex-col gap-1.5">
+                        <label class="text-xs font-bold text-slate-700">Submission Notes / Text</label>
+                        <textarea 
+                          formControlName="submissionText"
+                          placeholder="Add any comments for the instructor..."
+                          class="w-full border border-slate-200 rounded-lg p-3 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all resize-y min-h-[100px] text-sm shadow-sm"
+                        ></textarea>
+                      </div>
+
+                      @if (assignmentDetail()?.attachmentType === 0) {
+                        <div class="flex flex-col gap-1.5">
+                          <label class="text-xs font-bold text-slate-700">Attach File</label>
+                          <input type="file" (change)="onAssignmentFileSelected($event)" class="w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-xs file:font-bold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer border border-slate-200 rounded-lg p-1.5 bg-white transition-colors shadow-sm">
+                        </div>
+                      } @else if (assignmentDetail()?.attachmentType === 1 || assignmentDetail()?.attachmentType === 2) {
+                        <app-form-input 
+                          label="Submission URL Link" 
+                          type="url"
+                          formControlName="attachmentUrl"
+                          placeholder="https://github.com/..." >
+                        </app-form-input>
+                      }
+
+                      <div class="flex justify-end pt-4">
+                        <app-button variant="primary" type="submit" [loading]="isSubmittingAssignment()" customClass="px-6 py-2.5 text-sm rounded-lg shadow-sm">
+                          Submit Assignment
+                        </app-button>
+                      </div>
+                    </div>
+                  </form>
+                </div>
+              }
+
+              <!-- Previous Submissions -->
+              @if (mySubmissions().length > 0) {
+                <div class="p-6 md:p-10 border-b border-slate-200 bg-slate-50/50 flex-1">
+                  <h3 class="text-lg font-bold text-slate-900 mb-4">Submission History</h3>
+                  <div class="space-y-3 max-w-3xl">
+                    @for (sub of mySubmissions(); track sub.id) {
+                      <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col sm:flex-row justify-between sm:items-center gap-3">
+                        <div>
+                          <div class="font-bold text-slate-900 text-sm mb-0.5">Attempt {{ sub.attemptNumber }}</div>
+                          <div class="text-xs text-slate-500">{{ sub.submittedAt | date:'medium' }}</div>
+                        </div>
+                        <div class="text-left sm:text-right">
+                          <div class="inline-flex items-center px-2.5 py-1 rounded-md text-[10px] font-bold tracking-wider uppercase"
+                               [class.bg-green-100]="sub.status === 'Graded' && sub.isPassed"
+                               [class.text-green-800]="sub.status === 'Graded' && sub.isPassed"
+                               [class.bg-red-100]="sub.status === 'Graded' && !sub.isPassed"
+                               [class.text-red-800]="sub.status === 'Graded' && !sub.isPassed"
+                               [class.bg-yellow-100]="sub.status === 'Submitted'"
+                               [class.text-yellow-800]="sub.status === 'Submitted'">
+                            {{ sub.status }}
+                          </div>
+                          @if (sub.status === 'Graded') {
+                            <div class="text-sm font-bold text-slate-900 mt-1">Score: <span class="text-blue-600">{{ sub.marksAwarded }}</span></div>
+                          }
+                        </div>
+                      </div>
+                    }
+                  </div>
+                </div>
+              }
+              </div>
+            }
+          </div>
+        } @else {
+          <!-- Empty State -->
+          <div class="w-full h-full flex flex-col items-center justify-center p-8 text-center bg-[#F8FAFC]">
+            <div class="w-24 h-24 bg-white rounded-2xl flex items-center justify-center shadow-sm border border-slate-200 mb-6 rotate-3">
+              <svg class="w-12 h-12 text-blue-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+            </div>
+            <h2 class="text-2xl font-bold text-slate-900 mb-3">Ready to Learn?</h2>
+            <p class="text-sm text-slate-500 max-w-sm mx-auto leading-relaxed">Choose a lesson, quiz, or assignment from the curriculum sidebar on the left to begin your journey.</p>
+          </div>
+        }
+      </div>
+
+      <!-- Sticky Navigation Footer -->
+      @if (activeItem()) {
+        <div class="flex flex-wrap md:flex-nowrap items-center justify-between px-4 py-3 bg-white border-t border-slate-200 shrink-0 z-20 gap-3 md:gap-0 shadow-[0_-4px_10px_-4px_rgba(0,0,0,0.05)]">
+          
+          <!-- Mark Complete / Status Center (Mobile Top, Desktop Center) -->
+          <div class="w-full md:w-1/3 flex justify-center order-1 md:order-2">
+            @if (activeItem()?.type === 'lesson' && activeItem()?.lessonType !== 0) {
+              @if (activeItem()?.isCompleted) {
+                <div class="flex items-center justify-center gap-2 px-4 py-2 bg-green-50 text-green-700 rounded-md border border-green-200 shadow-sm w-full md:w-auto">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                  <span class="text-md font-bold">Completed</span>
+                </div>
+              } @else {
+                <app-button 
+                  variant="success" 
+                  customClass="px-4 py-2 text-md rounded-md shadow-sm w-full md:w-auto" 
+                  [loading]="isMarkingComplete()"
+                  (click)="markLessonComplete()">
+                  Mark as Complete
+                </app-button>
+              }
+            }
+          </div>
+
+          <!-- Prev Card -->
+          <div class="w-[48%] md:w-1/3 flex justify-start order-2 md:order-1">
+            @if (prevItemCard) {
+              <button class="flex items-center justify-center md:justify-start gap-2 md:gap-3 px-3 md:px-4 py-2 md:py-2.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 hover:border-blue-300 transition-all cursor-pointer text-left group w-full md:w-[240px]" (click)="goToPrev()">
+                <svg class="w-4 h-4 shrink-0 text-slate-400 group-hover:text-blue-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+                <div class="flex flex-col flex-1 min-w-0 hidden md:flex">
+                  <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider leading-tight">Previous</span>
+                  <span class="text-sm font-bold text-slate-900 truncate leading-tight group-hover:text-blue-700 transition-colors">{{ prevItemCard.title }}</span>
+                </div>
+                <span class="md:hidden text-xs font-bold text-slate-700">Previous</span>
+              </button>
+            }
+          </div>
+
+          <!-- Next Card -->
+          <div class="w-[48%] md:w-1/3 flex justify-end order-3 md:order-3">
+            @if (nextItemCard) {
+              <button class="flex items-center justify-center md:justify-end gap-2 md:gap-3 px-3 md:px-4 py-2 md:py-2.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 hover:border-blue-300 transition-all cursor-pointer text-right group w-full md:w-[240px] disabled:opacity-50 disabled:hover:border-slate-200 disabled:cursor-not-allowed"
+                      [disabled]="nextItemCard.isLocked"
+                      (click)="goToNext()">
+                <div class="flex flex-col flex-1 min-w-0 text-right hidden md:flex">
+                  <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider leading-tight">Next Up</span>
+                  <span class="text-sm font-bold text-slate-900 truncate leading-tight group-hover:text-blue-700 transition-colors">{{ nextItemCard.title }}</span>
+                </div>
+                <span class="md:hidden text-xs font-bold text-slate-700">Next</span>
+                <div class="shrink-0">
+                  @if (nextItemCard.isLocked) {
+                    <svg class="w-4 h-4 text-slate-300" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd"/></svg>
+                  } @else {
+                    <svg class="w-4 h-4 text-slate-400 group-hover:text-blue-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                  }
+                </div>
+              </button>
+            }
+          </div>
+        </div>
+      }
+    </main>
+  </div>
+</div>
+
+<!-- Modals & Overlays -->
+<app-confirm-modal
+  [isOpen]="showExitModal()"
+  title="Exit Course?"
+  message="Are you sure you want to leave the learning environment? Your progress has been saved automatically."
+  confirmText="Leave Course"
+  cancelText="Cancel"
+  (confirm)="exitCourse()"
+  (cancel)="showExitModal.set(false)">
+</app-confirm-modal>
+
+<app-confetti 
+  [isActive]="showConfetti()" 
+  [title]="confettiTitle()"
+  [message]="confettiMessage()"
+  (close)="onConfettiClose()">
+</app-confetti>

@@ -405,7 +405,7 @@
                   <div class="flex items-center justify-between">
                     <div class="flex items-center gap-2">
                       <div class="w-7 h-7 rounded-full bg-primary-light/50 text-primary flex items-center justify-center text-[10px] font-black shrink-0">
-                        {{ review.userName?.charAt(0)?.toUpperCase() || 'S' }}
+                        {{ review.userName ? review.userName[0].toUpperCase() : 'S' }}
                       </div>
                       <span class="text-xs font-bold text-gray-800">{{ maskEmail(review.userName) || 'Student' }}</span>
                     </div>
@@ -662,7 +662,8 @@
         @if (previewType() === 'video') {
           <app-video-player [src]="previewUrl()" 
                             [preventForward]="false" 
-                            [initialMaxTime]="currentVideoProgress()"
+                            [initialTime]="currentVideoProgress()"
+                            [maxAllowedTime]="currentVideoProgress()"
                             [autoplay]="false"
                             (timeWatchedUpdate)="onTimeWatchedUpdate($event)">
           </app-video-player>

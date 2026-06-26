@@ -24,7 +24,7 @@
        [class.opacity-0]="!showControls() && isPlaying()"
        [class.pointer-events-none]="!showControls() && isPlaying()"
        (click)="togglePlay(videoPlayer)">
-    <button class="w-16 h-16 rounded-full bg-white/20 backdrop-blur-md border border-white/30 flex items-center justify-center hover:scale-105 transition-transform duration-200 shadow-lg text-white">
+    <button class="w-16 h-16 rounded-full bg-white/20 backdrop-blur-md hover:cursor-pointer  border-white/30 flex items-center justify-center hover:scale-105 transition-transform duration-200 shadow-lg text-white">
       @if (isPlaying()) {
         <svg class="w-8 h-8" fill="currentColor" viewBox="0 0 24 24">
           <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
@@ -44,9 +44,9 @@
        [class.pointer-events-none]="!showControls() && isPlaying()">
     
     <!-- Progress Bar -->
-    <div class="relative w-full h-1.5 bg-white/30 rounded-full cursor-pointer group/progress"
+    <div class="relative w-full h-1.5 bg-white/30 rounded-full cursor-pointer group/progress select-none"
          #progressBar
-         (click)="$event.stopPropagation(); onProgressBarClick($event, videoPlayer, progressBar)">
+         (mousedown)="$event.stopPropagation(); onScrubStart($event, videoPlayer, progressBar)">
       <!-- Played area -->
       <div class="absolute top-0 left-0 h-full bg-[#1C1C7B] rounded-full transition-all duration-75"
            [style.width.%]="(currentTime() / (duration() || 1)) * 100"></div>

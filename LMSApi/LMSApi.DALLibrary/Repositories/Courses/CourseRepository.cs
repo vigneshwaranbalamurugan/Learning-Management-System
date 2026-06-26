@@ -334,5 +334,39 @@ namespace LMSApi.DALLibrary.Repositories
                 .OrderBy(l => l.Name)
                 .ToListAsync();
         }
+
+        public async Task UpdateCourseDurationAsync(int courseId)
+        {
+            var course = await _context.Courses
+                .Include(c => c.Sections)
+                    .ThenInclude(s => s.Lessons)
+                .Include(c => c.Sections)
+                    .ThenInclude(s => s.Quizzes)
+                .FirstOrDefaultAsync(c => c.Id == courseId);
+
+            if (course == null) return;
+
+            var totalCourseDuration = TimeSpan.Zero;
+            foreach (var section in course.Sections)
+            {
+                var sectionDuration = TimeSpan.Zero;
+                if (section.Lessons != null)
+                {
+                    var lessonsDurationTicks = section.Lessons.Sum(l => l.DurationInMinutes?.Ticks ?? 0);
+                    sectionDuration += TimeSpan.FromTicks(lessonsDurationTicks);
+                }
+                if (section.Quizzes != null)
+                {
+                    var quizzesDurationTicks = section.Quizzes.Sum(q => q.TimeLimit.Ticks);
+                    sectionDuration += TimeSpan.FromTicks(quizzesDurationTicks);
+                }
+                
+                section.EstimatedDuration = sectionDuration;
+                totalCourseDuration += sectionDuration;
+            }
+
+            course.EstimatedDuration = totalCourseDuration;
+            await _context.SaveChangesAsync();
+        }
     }
 }

@@ -117,7 +117,7 @@ namespace LMSApi.BALLibrary.Services
                 section.Title = request.Title;
             }
             if (request.Description != null) section.Description = request.Description;
-            if (request.EstimatedDuration.HasValue) section.EstimatedDuration = request.EstimatedDuration.Value;
+
             if (request.SortOrder.HasValue) section.SortOrder = request.SortOrder.Value;
             if (request.Status.HasValue) 
             {

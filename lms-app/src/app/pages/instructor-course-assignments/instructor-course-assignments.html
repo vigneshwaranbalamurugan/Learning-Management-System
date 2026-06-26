@@ -1,13 +1,13 @@
 <div class="space-y-6" *ngIf="course">
-  <div class="flex items-center justify-between border-b border-gray-100 pb-4">
+  <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-gray-100 pb-4">
     <div>
       <h3 class="text-base font-bold text-slate-900">Assignments Manager</h3>
-      <p class="text-xs text-gray-500 mt-0.5">Define student projects, specify total marks, and evaluate submissions.</p>
+      <p class="text-xs text-gray-500 mt-0.5">Define learner projects, specify total marks, and evaluate submissions.</p>
     </div>
     <app-button 
       (click)="openAddAssignment()" 
       variant="primary"
-      customClass="!px-4 !py-2 !w-auto text-xs font-semibold shadow-sm transition">
+      customClass="!px-4 !py-2 w-full sm:!w-auto text-xs font-semibold shadow-sm transition">
       + Create Assignment
     </app-button>
   </div>
@@ -34,7 +34,7 @@
           </div>
 
           <div class="flex items-center justify-between mt-5 pt-3 border-t border-gray-50">
-            <div class="flex gap-2">
+            <div class="flex flex-wrap gap-2">
               <app-button 
                 (click)="editAssignment(assignment.id)" 
                 variant="outline"

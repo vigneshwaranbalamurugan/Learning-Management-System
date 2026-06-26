@@ -156,7 +156,7 @@ export class Login implements OnInit {
         },
         error: (err: any) => {
           this.isSubmitting.set(false);
-          this.toastService.showApiError(err, 'Login failed. Invalid email or password.');
+          this.toastService.showApiError(err?.error?.message, 'Login failed. Invalid email or password.');
         }
       });
     }

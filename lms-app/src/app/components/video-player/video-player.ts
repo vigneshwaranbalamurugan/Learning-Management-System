@@ -11,9 +11,10 @@ import { SafeResourceUrl } from '@angular/platform-browser';
 export class VideoPlayer implements OnInit {
   @Input() src: SafeResourceUrl | string | null = null;
   @Input() preventForward: boolean = false;
-  @Input() initialMaxTime: number = 0;
+  @Input() initialTime: number = 0;
+  @Input() maxAllowedTime: number = 0;
   @Input() autoplay: boolean = true;
-  @Output() timeWatchedUpdate = new EventEmitter<number>();
+  @Output() timeWatchedUpdate = new EventEmitter<{ currentTime: number, maxTimeWatched: number, duration: number }>();
 
   @ViewChild('videoPlayer') videoElement!: ElementRef<HTMLVideoElement>;
 
@@ -27,9 +28,12 @@ export class VideoPlayer implements OnInit {
   protected showControls   = signal(true);
   private maxTimeWatched   = 0;
   private controlsTimeout: any;
+  private isScrubbing = false;
+  private currentProgressBar: HTMLElement | null = null;
+  private currentVideo: HTMLVideoElement | null = null;
 
   ngOnInit(): void {
-    this.maxTimeWatched = this.initialMaxTime;
+    this.maxTimeWatched = this.maxAllowedTime;
   }
 
   @HostListener('document:keydown', ['$event'])
@@ -111,6 +115,11 @@ export class VideoPlayer implements OnInit {
 
   protected onLoadedMetadata(video: HTMLVideoElement): void {
     this.duration.set(video.duration || 0);
+    // Start from the specific initial time
+    if (this.initialTime > 0) {
+      video.currentTime = this.initialTime;
+      this.currentTime.set(this.initialTime);
+    }
   }
 
   protected onVideoEnded(video: HTMLVideoElement): void {
@@ -142,9 +151,31 @@ export class VideoPlayer implements OnInit {
     }
   }
 
-  protected onProgressBarClick(event: MouseEvent, video: HTMLVideoElement, progressBar: HTMLElement): void {
+  @HostListener('document:mousemove', ['$event'])
+  protected onDocumentMouseMove(event: MouseEvent): void {
+    if (this.isScrubbing && this.currentProgressBar && this.currentVideo) {
+      this.handleScrub(event, this.currentVideo, this.currentProgressBar);
+    }
+  }
+
+  @HostListener('document:mouseup')
+  protected onDocumentMouseUp(): void {
+    this.isScrubbing = false;
+  }
+
+  protected onScrubStart(event: MouseEvent, video: HTMLVideoElement, progressBar: HTMLElement): void {
+    this.isScrubbing = true;
+    this.currentVideo = video;
+    this.currentProgressBar = progressBar;
+    this.handleScrub(event, video, progressBar);
+  }
+
+  private handleScrub(event: MouseEvent, video: HTMLVideoElement, progressBar: HTMLElement): void {
     const rect = progressBar.getBoundingClientRect();
-    const clickX = event.clientX - rect.left;
+    let clickX = event.clientX - rect.left;
+    if (clickX < 0) clickX = 0;
+    if (clickX > rect.width) clickX = rect.width;
+
     const width = rect.width;
     let targetTime = (clickX / width) * video.duration;
 
@@ -171,7 +202,7 @@ export class VideoPlayer implements OnInit {
     this.currentTime.set(video.currentTime);
     if (video.currentTime > this.maxTimeWatched) {
       this.maxTimeWatched = video.currentTime;
-      this.timeWatchedUpdate.emit(this.maxTimeWatched);
     }
+    this.timeWatchedUpdate.emit({ currentTime: video.currentTime, maxTimeWatched: this.maxTimeWatched, duration: video.duration });
   }
 }

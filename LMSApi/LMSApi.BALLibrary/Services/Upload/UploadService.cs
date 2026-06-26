@@ -142,7 +142,7 @@ namespace LMSApi.BALLibrary.Services.Upload
 			       && (string.IsNullOrWhiteSpace(contentType) || AllowedVideoContentTypes.Contains(contentType));
 		}
 
-		public Task<string> UploadCourseIntroVideoAsync(Stream fileStream, string fileName, string publicId)
+		public Task<(string Url, double DurationSeconds)> UploadCourseIntroVideoAsync(Stream fileStream, string fileName, string publicId)
 		{
 			if (fileStream == null) throw new ArgumentNullException(nameof(fileStream));
 			if (string.IsNullOrWhiteSpace(fileName)) throw new ArgumentException("File name cannot be null or empty.", nameof(fileName));
@@ -163,7 +163,7 @@ namespace LMSApi.BALLibrary.Services.Upload
 			       && (string.IsNullOrWhiteSpace(contentType) || AllowedPdfContentTypes.Contains(contentType));
 		}
 
-		public Task<string> UploadLessonVideoAsync(Stream fileStream, string fileName, string publicId)
+		public Task<(string Url, double DurationSeconds)> UploadLessonVideoAsync(Stream fileStream, string fileName, string publicId)
 		{
 			if (fileStream == null) throw new ArgumentNullException(nameof(fileStream));
 			if (string.IsNullOrWhiteSpace(fileName)) throw new ArgumentException("File name cannot be null or empty.", nameof(fileName));

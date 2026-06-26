@@ -45,7 +45,7 @@ export class InstructorCourseOverview implements OnInit {
   protected levelStr = '';
   protected isPremium = false;
   protected priceStr = '0';
-  protected estimatedDuration = '';
+
   protected thumbnailFile: File | null = null;
   protected thumbnailPreview: string | null = null;
   protected description = '';
@@ -95,7 +95,7 @@ export class InstructorCourseOverview implements OnInit {
       this.levelStr = course.level?.toString() || '';
       this.isPremium = course.isPremium || false;
       this.priceStr = course.price?.toString() || '0';
-      this.estimatedDuration = course.estimatedDuration || '';
+
       this.thumbnailFile = null;
       this.thumbnailPreview = course.thumbnailUrl || null;
       
@@ -155,7 +155,7 @@ export class InstructorCourseOverview implements OnInit {
     formData.append('LearningOutcomes', this.learningOutcomes);
     formData.append('Price', this.priceStr);
     formData.append('IsPremium', (this.isPremium ? 'true' : 'false'));
-    formData.append('EstimatedDuration', this.estimatedDuration || '00:00:00');
+
     if (this.languageIdStr) formData.append('LanguageId', this.languageIdStr);
     if (this.levelStr) formData.append('Level', this.levelStr);
     if (this.thumbnailFile) formData.append('Thumbnail', this.thumbnailFile);

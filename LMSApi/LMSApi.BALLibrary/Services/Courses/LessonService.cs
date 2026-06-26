@@ -152,8 +152,10 @@ namespace LMSApi.BALLibrary.Services
             {
                 if (lesson.Type == LessonType.Video)
                 {
-                    lesson.ContentUrl = await _uploadService.UploadLessonVideoAsync(
+                    var uploadResult = await _uploadService.UploadLessonVideoAsync(
                         fileStream, fileName, $"lessons/{lesson.Id}/video");
+                    lesson.ContentUrl = uploadResult.Url;
+                    lesson.DurationInMinutes = TimeSpan.FromSeconds(uploadResult.DurationSeconds);
                     needsUpdate = true;
                     _logger.LogInformation("Lesson video uploaded on create: LessonId={LessonId}", lesson.Id);
                 }
@@ -172,6 +174,8 @@ namespace LMSApi.BALLibrary.Services
             }
 
             _logger.LogInformation("Lesson Created: '{Title}' for SectionId={SectionId}", request.Title, request.CourseSectionId);
+
+            await _courseRepository.UpdateCourseDurationAsync(course.Id);
 
             return _mapper.Map<LessonResponse>(lesson);
         }
@@ -245,8 +249,10 @@ namespace LMSApi.BALLibrary.Services
             {
                 if (lesson.Type == LessonType.Video)
                 {
-                    lesson.ContentUrl = await _uploadService.UploadLessonVideoAsync(
+                    var uploadResult = await _uploadService.UploadLessonVideoAsync(
                         fileStream, fileName, $"lessons/{lesson.Id}/video");
+                    lesson.ContentUrl = uploadResult.Url;
+                    lesson.DurationInMinutes = TimeSpan.FromSeconds(uploadResult.DurationSeconds);
                     _logger.LogInformation("Lesson video uploaded on update: LessonId={LessonId}", lesson.Id);
                 }
                 else if (lesson.Type == LessonType.Pdf)
@@ -258,6 +264,8 @@ namespace LMSApi.BALLibrary.Services
             }
 
             await _lessonRepository.UpdateAsync(lesson);
+
+            await _courseRepository.UpdateCourseDurationAsync(course.Id);
 
             _logger.LogInformation("Lesson Updated: Id={Id}", id);
 
@@ -271,6 +279,8 @@ namespace LMSApi.BALLibrary.Services
             var section = await _sectionRepository.GetByIdAsync(lesson.CourseSectionId);
             var course = await _courseRepository.GetByIdAsync(section.CourseId);
             await _lessonRepository.DeleteAsync(id);
+
+            await _courseRepository.UpdateCourseDurationAsync(course.Id);
 
             _logger.LogInformation("Lesson Deleted: Id={Id}", id);
         }
