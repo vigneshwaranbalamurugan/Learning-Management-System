@@ -12,6 +12,7 @@ import { Loader } from '@components/loader/loader';
 import { CourseBuilderService } from '@services/course-builder.service';
 import { AssignmentService } from '@services/assignment.service';
 import { QuizService } from '@services/quiz.service';
+import { AuthService } from '@services/auth.service';
 
 @Component({
   selector: 'app-instructor-course-builder',
@@ -22,6 +23,11 @@ import { QuizService } from '@services/quiz.service';
 export class InstructorCourseBuilder {
   protected layout = inject(InstructorCourseLayout);
   private toastService = inject(ToastService);
+  private authService = inject(AuthService);
+
+  protected get routePrefix(): string {
+    return this.authService.userRole()?.toLowerCase() || 'instructor';
+  }
   private quizService = inject(QuizService);
   private assignmentService = inject(AssignmentService);
   private courseBuilderService = inject(CourseBuilderService);
@@ -481,18 +487,18 @@ export class InstructorCourseBuilder {
 
   protected openAddLesson(sectionId: number) {
     if (!this.course) return;
-    this.router.navigate(['/instructor/courses', this.course.slug, 'sections', sectionId, 'lessons', 'new']);
+    this.router.navigate([`/${this.routePrefix}/courses`, this.course.slug, 'sections', sectionId, 'lessons', 'new']);
   }
 
   protected openLessonDetail(lesson: any) {
     if (!this.course) return;
-    this.router.navigate(['/instructor/courses', this.course.slug, 'lessons', lesson.id, 'detail']);
+    this.router.navigate([`/${this.routePrefix}/courses`, this.course.slug, 'lessons', lesson.id, 'detail']);
   }
 
   protected openEditLesson(lesson: any, event?: Event) {
     event?.stopPropagation();
     if (!this.course) return;
-    this.router.navigate(['/instructor/courses', this.course.slug, 'lessons', lesson.id, 'edit']);
+    this.router.navigate([`/${this.routePrefix}/courses`, this.course.slug, 'lessons', lesson.id, 'edit']);
   }
 
   // ── Lesson DELETE ─────────────────────────────────────────────────────────
@@ -574,7 +580,7 @@ export class InstructorCourseBuilder {
   protected openEditQuiz(quizId: number, event?: Event) {
     event?.stopPropagation();
     if (!this.course) return;
-    this.router.navigate(['/instructor/courses', this.course.slug, 'quizzes', quizId, 'questions']);
+    this.router.navigate([`/${this.routePrefix}/courses`, this.course.slug, 'quizzes', quizId, 'questions']);
   }
 
   protected confirmDeleteQuiz(quizId: number, event?: Event) {
@@ -587,7 +593,7 @@ export class InstructorCourseBuilder {
   protected openEditAssignment(assignmentId: number, event?: Event) {
     event?.stopPropagation();
     if (!this.course) return;
-    this.router.navigate(['/instructor/courses', this.course.slug, 'assignments', assignmentId, 'edit']);
+    this.router.navigate([`/${this.routePrefix}/courses`, this.course.slug, 'assignments', assignmentId, 'edit']);
   }
 
   protected confirmDeleteAssignment(assignmentId: number, event?: Event) {
@@ -599,12 +605,12 @@ export class InstructorCourseBuilder {
 
   protected openAddResource(lessonId: number) {
     if (!this.course) return;
-    this.router.navigate(['/instructor/courses', this.course.slug, 'lessons', lessonId, 'resources', 'new']);
+    this.router.navigate([`/${this.routePrefix}/courses`, this.course.slug, 'lessons', lessonId, 'resources', 'new']);
   }
 
   protected openEditResource(resource: any) {
     if (!this.course) return;
-    this.router.navigate(['/instructor/courses', this.course.slug, 'resources', resource.id, 'edit']);
+    this.router.navigate([`/${this.routePrefix}/courses`, this.course.slug, 'resources', resource.id, 'edit']);
   }
 
   // ── Quiz Navigation ─────────────────────────────────────────────────────────

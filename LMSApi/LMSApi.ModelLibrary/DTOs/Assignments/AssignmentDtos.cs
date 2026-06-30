@@ -200,4 +200,13 @@ namespace LMSApi.ModelLibrary.DTOs
         public string? LatestStatus { get; set; }
         public DateTime? Deadline { get; set; }
     }
+
+    public class PagedAssignmentSubmissionResponse
+    {
+        public IEnumerable<AssignmentSubmissionResponse> Submissions { get; set; } = new List<AssignmentSubmissionResponse>();
+        public int TotalCount { get; set; }
+        public int PageNumber { get; set; }
+        public int PageSize { get; set; }
+        public int TotalPages { get; set; }
+    }
 }

@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, effect } from '@angular/core';
+import { Component, inject, OnInit, effect,signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
@@ -9,11 +9,12 @@ import { FormInput } from '@components/form-input/form-input';
 import { Dropdown } from '@components/dropdown/dropdown';
 import { marked } from 'marked';
 import { CourseService } from '@services/course.service';
+import { ConfirmModal } from '@components/confirm-modal/confirm-modal';
 
 @Component({
   selector: 'app-instructor-course-overview',
   standalone: true,
-  imports: [CommonModule, FormsModule, Button, FormInput, Dropdown],
+  imports: [CommonModule, FormsModule, Button, FormInput, Dropdown,ConfirmModal],
   templateUrl: './instructor-course-overview.html'
 })
 export class InstructorCourseOverview implements OnInit {
@@ -52,6 +53,11 @@ export class InstructorCourseOverview implements OnInit {
   protected requirements = '';
   protected learningOutcomes = '';
 
+  private initialFormState:string | null=null;
+  private isSubmitted=false;
+  protected showUnsavedModal=signal(false);
+  private pendingNavigationResolve?: (value: boolean) => void;
+
   // Parsed Markdown
   protected parsedDescription: SafeHtml = '';
   protected parsedRequirements: SafeHtml = '';
@@ -66,6 +72,21 @@ export class InstructorCourseOverview implements OnInit {
     });
   }
 
+  private captureInitialState(): void {
+  this.initialFormState = JSON.stringify({
+    title: this.title,
+    categoryIdStr: this.categoryIdStr,
+    languageIdStr: this.languageIdStr,
+    levelStr: this.levelStr,
+    isPremium: this.isPremium,
+    priceStr: this.priceStr,
+    description: this.description,
+    requirements: this.requirements,
+    learningOutcomes: this.learningOutcomes,
+    thumbnailPreview: this.thumbnailPreview
+  });
+}
+
   ngOnInit() {
     this.courseService.getFiltersMetadata().subscribe({
       next: (data) => {
@@ -73,6 +94,8 @@ export class InstructorCourseOverview implements OnInit {
         this.languages = data.languages || [];
         this.categoryOptions = this.categories.map(c => ({ label: c.name, value: c.id.toString() }));
         this.languageOptions = this.languages.map(l => ({ label: l.name, value: l.id.toString() }));
+
+        this.captureInitialState();
       },
       error: (err) => console.error('Failed to load metadata', err)
     });
@@ -82,27 +105,51 @@ export class InstructorCourseOverview implements OnInit {
     return this.layout.course();
   }
 
-  protected toggleEditMode() {
-    const course = this.course;
-    if (!this.isEditMode && course) {
-      this.title = course.title || '';
-      this.description = course.description || '';
-      this.requirements = course.requirements || '';
-      this.learningOutcomes = course.learningOutcomes || '';
-      
-      this.categoryIdStr = course.categoryId?.toString() || '';
-      this.languageIdStr = course.languageId?.toString() || '';
-      this.levelStr = course.level?.toString() || '';
-      this.isPremium = course.isPremium || false;
-      this.priceStr = course.price?.toString() || '0';
+private hasUnsavedChanges(): boolean {
+  const currentState = JSON.stringify({
+    title: this.title,
+    categoryIdStr: this.categoryIdStr,
+    languageIdStr: this.languageIdStr,
+    levelStr: this.levelStr,
+    isPremium: this.isPremium,
+    priceStr: this.priceStr,
+    description: this.description,
+    requirements: this.requirements,
+    learningOutcomes: this.learningOutcomes,
+    thumbnailPreview: this.thumbnailPreview
+  });
+  console.log(currentState);
+  console.log(this.initialFormState);
+  return currentState !== this.initialFormState;
+}
 
-      this.thumbnailFile = null;
-      this.thumbnailPreview = course.thumbnailUrl || null;
-      
-      this.updateMarkdownPreview();
-    }
-    this.isEditMode = !this.isEditMode;
+protected toggleEditMode() {
+  const course = this.course;
+
+  if (!this.isEditMode && course) {
+    this.title = course.title || '';
+    this.description = course.description || '';
+    this.requirements = course.requirements || '';
+    this.learningOutcomes = course.learningOutcomes || '';
+
+    this.categoryIdStr = course.categoryId?.toString() || '';
+    this.languageIdStr = course.languageId?.toString() || '';
+    this.levelStr = course.level?.toString() || '';
+    this.isPremium = course.isPremium || false;
+    this.priceStr = course.price?.toString() || '0';
+
+    this.thumbnailFile = null;
+    this.thumbnailPreview = course.thumbnailUrl || null;
+
+    this.updateMarkdownPreview();
+
+    this.captureInitialState();
+  } else {
+    this.isSubmitted = false;
   }
+
+  this.isEditMode = !this.isEditMode;
+}
 
   protected cancelEdit() {
     this.isEditMode = false;
@@ -166,6 +213,7 @@ export class InstructorCourseOverview implements OnInit {
         this.layout.loadCourse(this.course!.id);
         this.isEditMode = false;
         this.isSaving = false;
+        this.isSubmitted=true;
       },
       error: (err) => {
         this.toastService.showApiError(err, 'Failed to update course overview.');
@@ -189,4 +237,32 @@ export class InstructorCourseOverview implements OnInit {
     if (lvl === '3' || lvl === 'advanced') return 'bg-rose-50 text-rose-700';
     return 'bg-gray-100 text-gray-600';
   }
+
+  async canDeactivate(): Promise<boolean> {
+  if (!this.isEditMode || this.isSubmitted) {
+    return Promise.resolve(true);
+  }
+
+  if (!this.hasUnsavedChanges()) {
+    return Promise.resolve(true);
+  }
+
+  this.showUnsavedModal.set(true);
+
+  return new Promise<boolean>((resolve) => {
+    this.pendingNavigationResolve = resolve;
+  });
+}
+
+protected confirmLeave(): void {
+  this.showUnsavedModal.set(false);
+  this.pendingNavigationResolve?.(true);
+  this.pendingNavigationResolve = undefined;
+}
+
+protected cancelLeave(): void {
+  this.showUnsavedModal.set(false);
+  this.pendingNavigationResolve?.(false);
+  this.pendingNavigationResolve = undefined;
+}
 }

@@ -1,15 +1,15 @@
 import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router, RouterModule } from '@angular/router';
+import { Router, ActivatedRoute, RouterModule } from '@angular/router';
 import { InstructorCourseLayout } from '../instructor-course-layout/instructor-course-layout';
+import { AuthService } from '@services/auth.service';
 import { ToastService } from '@services/toast.service';
 import { ConfirmModal } from '@components/confirm-modal/confirm-modal';
 import { FormInput } from '@components/form-input/form-input';
 import { Dropdown } from '@components/dropdown/dropdown';
 import { Button } from '@components/button/button';
 import { QuizService } from '@services/quiz.service';
-
 @Component({
   selector: 'app-instructor-course-quizzes',
   standalone: true,
@@ -19,6 +19,11 @@ import { QuizService } from '@services/quiz.service';
 export class InstructorCourseQuizzes {
   protected layout = inject(InstructorCourseLayout);
   private toastService = inject(ToastService);
+  private authService = inject(AuthService);
+
+  protected get routePrefix(): string {
+    return this.authService.userRole()?.toLowerCase() || 'instructor';
+  }
   private quizService = inject(QuizService);
   private router = inject(Router);
 
@@ -179,6 +184,6 @@ export class InstructorCourseQuizzes {
 
   protected editQuiz(quizId: number) {
     if (!this.course) return;
-    this.router.navigate(['/instructor/courses', this.course.slug, 'quizzes', quizId, 'questions']);
+    this.router.navigate([`/${this.routePrefix}/courses`, this.course.slug, 'quizzes', quizId, 'questions']);
   }
 }

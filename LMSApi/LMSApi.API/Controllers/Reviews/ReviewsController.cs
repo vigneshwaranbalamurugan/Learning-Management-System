@@ -53,5 +53,21 @@ namespace LMSApi.API.Controllers
             await _reviewService.DeleteReviewAsync(userId, id);
             return NoContent();
         }
+
+        [Authorize(Roles = "Admin")]
+        [HttpGet("admin/all")]
+        public async Task<ActionResult<PagedReviewResponse>> GetAllAdmin([FromQuery] int page = 1, [FromQuery] int pageSize = 20, [FromQuery] string? search = null)
+        {
+            var result = await _reviewService.GetAllReviewsPagedAsync(page, pageSize, search);
+            return Ok(result);
+        }
+
+        [Authorize(Roles = "Admin")]
+        [HttpDelete("admin/{id}")]
+        public async Task<IActionResult> DeleteReviewByAdmin(int id)
+        {
+            await _reviewService.DeleteReviewByAdminAsync(id);
+            return NoContent();
+        }
     }
 }

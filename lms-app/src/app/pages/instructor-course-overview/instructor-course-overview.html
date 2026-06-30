@@ -194,3 +194,15 @@
     </div>
   </div>
 </div>
+
+<!-- Unsaved Changes Modal -->
+<app-confirm-modal 
+  [isOpen]="showUnsavedModal()" 
+  title="Unsaved Changes"
+  message="You have unsaved changes. Are you sure you want to leave this page? All your progress will be lost."
+  confirmText="Leave Page"
+  cancelText="Stay"
+  [isDanger]="true"
+  (confirm)="confirmLeave()"
+  (cancel)="cancelLeave()">
+</app-confirm-modal>

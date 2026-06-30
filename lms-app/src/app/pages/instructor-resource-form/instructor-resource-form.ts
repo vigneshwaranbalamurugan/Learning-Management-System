@@ -2,6 +2,7 @@ import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, ActivatedRoute, RouterModule } from '@angular/router';
+import { AuthService } from '@services/auth.service';
 import { ToastService } from '@services/toast.service';
 import { LessonResourcesService } from '@services/lesson-resources.service';
 import { FormInput } from '@components/form-input/form-input';
@@ -23,6 +24,11 @@ export class InstructorResourceForm implements OnInit {
   private courseBuilderService = inject(CourseBuilderService);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
+  private authService = inject(AuthService);
+
+  protected get routePrefix(): string {
+    return this.authService.userRole()?.toLowerCase() || 'instructor';
+  }
   protected layout = inject(InstructorCourseLayout);
 
   protected courseSlug = '';
@@ -262,7 +268,7 @@ export class InstructorResourceForm implements OnInit {
       this.resourcesService.deleteResource(this.resourceId).subscribe({
         next: () => {
           this.toastService.showSuccess('Resource deleted successfully.');
-          this.router.navigate(['/instructor/courses', this.courseSlug, 'builder']);
+          this.router.navigate([`/${this.routePrefix}/courses`, this.courseSlug, 'builder']);
         },
         error: (err) => {
           this.toastService.showApiError(err, 'Failed to delete resource.');
@@ -347,6 +353,6 @@ export class InstructorResourceForm implements OnInit {
   }
 
   protected navigateBack() {
-    this.router.navigate(['/instructor/courses', this.courseSlug, 'builder']);
+    this.router.navigate([`/${this.routePrefix}/courses`, this.courseSlug, 'builder']);
   }
 }

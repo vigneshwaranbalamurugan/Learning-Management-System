@@ -50,7 +50,8 @@ namespace LMSApi.API.Controllers
         public async Task<ActionResult<IEnumerable<StudentProgressSummaryDto>>> GetStudentsProgress(int courseId)
         {
             var instructorId = User.GetUserId();
-            var result = await _progressService.GetStudentsProgressForCourseAsync(instructorId, courseId);
+            var isAdmin = User.IsInRole("Admin");
+            var result = await _progressService.GetStudentsProgressForCourseAsync(instructorId, courseId, isAdmin);
             return Ok(result);
         }
 
@@ -60,7 +61,8 @@ namespace LMSApi.API.Controllers
         public async Task<ActionResult<CourseProgressResponse>> GetStudentDetailedProgress(int courseId, int studentId)
         {
             var instructorId = User.GetUserId();
-            var result = await _progressService.GetStudentDetailedProgressForInstructorAsync(instructorId, studentId, courseId);
+            var isAdmin = User.IsInRole("Admin");
+            var result = await _progressService.GetStudentDetailedProgressForInstructorAsync(instructorId, studentId, courseId, isAdmin);
             return Ok(result);
         }
     }

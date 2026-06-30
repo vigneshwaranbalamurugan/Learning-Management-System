@@ -1,0 +1,488 @@
+<div class="min-h-screen w-full max-w-full bg-[#F8FAFC] pb-10 overflow-x-hidden">
+  
+  <!-- PAGE HEADER -->
+  <header class="bg-white sticky top-0 z-20 border-b border-slate-200 px-4 sm:px-6 py-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-sm">
+    <div>
+      <h1 class="text-xl sm:text-2xl font-bold text-[#1C1C7B]">Course Management</h1>
+      <p class="text-sm text-slate-500 mt-1">Manage, review, approve, archive, and monitor all platform courses.</p>
+    </div>
+    <div class="flex items-center gap-3 w-full md:w-auto">
+      <app-button variant="outline" class="flex-1 md:flex-none" icon="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" (click)="ngOnInit()">
+        Refresh Data
+      </app-button>
+      <app-button variant="primary" class="flex-1 md:flex-none" icon="M12 4v16m8-8H4" (click)="navigateToCreate()">
+        Create Course
+      </app-button>
+    </div>
+  </header>
+
+  <div class="mt-8 px-4 sm:px-6">
+    
+    <!-- OVERVIEW STATISTICS -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8">
+      
+      <!-- Total Courses -->
+      <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow relative overflow-hidden group">
+        <div class="absolute -right-6 -top-6 w-24 h-24 bg-[#1C1C7B]/5 rounded-full group-hover:scale-110 transition-transform duration-500"></div>
+        <div class="flex items-start justify-between">
+          <div>
+            <p class="text-sm font-medium text-slate-500 mb-1">Total Courses</p>
+            <h3 class="text-3xl font-bold text-slate-800">{{ summaryStats()?.totalCourses || 0 }}</h3>
+          </div>
+          <div class="p-3 bg-blue-50 text-[#1C1C7B] rounded-xl">
+            <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+            </svg>
+          </div>
+        </div>
+        <div class="mt-4 flex items-center text-sm">
+          <span class="text-green-600 font-medium flex items-center">
+            <svg class="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>
+            +12%
+          </span>
+          <span class="text-slate-400 ml-2">from last month</span>
+        </div>
+      </div>
+
+      <!-- Published Courses -->
+      <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow relative overflow-hidden group">
+        <div class="absolute -right-6 -top-6 w-24 h-24 bg-green-50 rounded-full group-hover:scale-110 transition-transform duration-500"></div>
+        <div class="flex items-start justify-between">
+          <div>
+            <p class="text-sm font-medium text-slate-500 mb-1">Published</p>
+            <h3 class="text-3xl font-bold text-slate-800">{{ summaryStats()?.publishedCourses || 0 }}</h3>
+          </div>
+          <div class="p-3 bg-green-50 text-green-600 rounded-xl">
+            <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+        </div>
+        <div class="mt-4 flex items-center text-sm">
+          <span class="text-green-600 font-medium flex items-center">
+            <svg class="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>
+            +5%
+          </span>
+          <span class="text-slate-400 ml-2">from last month</span>
+        </div>
+      </div>
+
+      <!-- Pending Approval -->
+      <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow relative overflow-hidden group">
+        <div class="absolute -right-6 -top-6 w-24 h-24 bg-[#FF8C00]/10 rounded-full group-hover:scale-110 transition-transform duration-500"></div>
+        <div class="flex items-start justify-between">
+          <div>
+            <p class="text-sm font-medium text-slate-500 mb-1">Pending Approval</p>
+            <h3 class="text-3xl font-bold text-slate-800">{{ summaryStats()?.pendingApproval || 0 }}</h3>
+          </div>
+          <div class="p-3 bg-orange-50 text-[#FF8C00] rounded-xl">
+            <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+        </div>
+        <div class="mt-4 flex items-center text-sm text-slate-500">
+          Requires admin review
+        </div>
+      </div>
+
+      <!-- Archived Courses -->
+      <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow relative overflow-hidden group">
+        <div class="absolute -right-6 -top-6 w-24 h-24 bg-slate-100 rounded-full group-hover:scale-110 transition-transform duration-500"></div>
+        <div class="flex items-start justify-between">
+          <div>
+            <p class="text-sm font-medium text-slate-500 mb-1">Archived</p>
+            <h3 class="text-3xl font-bold text-slate-800">{{ summaryStats()?.archivedCourses || 0 }}</h3>
+          </div>
+          <div class="p-3 bg-slate-50 text-slate-500 rounded-xl">
+            <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
+            </svg>
+          </div>
+        </div>
+        <div class="mt-4 flex items-center text-sm text-slate-500">
+          Hidden from catalog
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ADVANCED FILTER BAR -->
+    <div class="bg-white p-4 rounded-t-2xl shadow-sm border-b border-slate-100 flex flex-col xl:flex-row items-start xl:items-center gap-4 justify-between sticky top-[129px] sm:top-[89px] z-10">
+      
+      <!-- Tabs -->
+      <div class="flex bg-slate-100 p-1 rounded-lg w-full xl:w-auto overflow-x-auto">
+        <button 
+          (click)="onTabChange('all')"
+          [class.bg-white]="activeTab() === 'all'"
+          [class.shadow-sm]="activeTab() === 'all'"
+          [class.text-[#1C1C7B]]="activeTab() === 'all'"
+          class="px-4 py-2 rounded-md text-sm font-medium text-slate-600 transition-colors whitespace-nowrap flex-shrink-0">
+          All Courses
+        </button>
+        <button 
+          (click)="onTabChange('pending')"
+          [class.bg-white]="activeTab() === 'pending'"
+          [class.shadow-sm]="activeTab() === 'pending'"
+          [class.text-[#FF8C00]]="activeTab() === 'pending'"
+          class="px-4 py-2 rounded-md text-sm font-medium text-slate-600 transition-colors flex items-center gap-2 whitespace-nowrap flex-shrink-0">
+          Pending
+          <span *ngIf="summaryStats()?.pendingApproval" class="bg-[#FF8C00] text-white text-xs px-2 py-0.5 rounded-full">
+            {{ summaryStats()?.pendingApproval }}
+          </span>
+        </button>
+      </div>
+
+      <!-- Filters -->
+      <div class="flex flex-col md:flex-row items-stretch md:items-center gap-3 w-full xl:w-auto">
+        
+        <!-- Search -->
+        <div class="relative w-full md:w-64">
+          <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <svg class="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+          </div>
+          <input 
+            type="text" 
+            [value]="searchQuery()" 
+            (input)="onSearch($event)"
+            class="block w-full pl-10 pr-3 py-2 border border-slate-200 rounded-lg text-sm placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-[#1C1C7B] focus:border-[#1C1C7B]" 
+            placeholder="Search courses...">
+        </div>
+
+        <!-- Category Dropdown -->
+        <app-dropdown
+          [options]="categoryOptions()"
+          [value]="filterCategory()"
+          (valueChange)="onFilterCategoryChange($event)"
+          placeholder="Category">
+        </app-dropdown>
+
+        <!-- Status Dropdown -->
+        <app-dropdown
+          *ngIf="activeTab() === 'all'"
+          [options]="statusOptions"
+          [value]="filterStatus()"
+          (valueChange)="onFilterStatusChange($event)"
+          placeholder="Status">
+        </app-dropdown>
+
+      </div>
+    </div>
+
+    <!-- PREMIUM DATA GRID -->
+    <div class="bg-white rounded-b-2xl shadow-sm border border-slate-100 overflow-hidden relative">
+      
+      <!-- Loading Overlay -->
+      <div *ngIf="isLoading()" class="absolute inset-0 bg-white/70 backdrop-blur-sm z-10 flex items-center justify-center">
+        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-[#1C1C7B]"></div>
+      </div>
+
+      <!-- Table -->
+      <div class="overflow-x-auto w-full max-w-full min-h-[400px] -webkit-overflow-scrolling-touch">
+        <table class="w-full min-w-[860px] text-left text-sm text-slate-600 border-collapse whitespace-nowrap">
+          <thead class="bg-slate-50 text-slate-500 uppercase text-xs font-semibold border-b border-slate-200">
+            <tr>
+              <th class="px-6 py-4 w-12 text-center">
+                <input type="checkbox" 
+                  class="rounded border-slate-300 text-[#1C1C7B] focus:ring-[#1C1C7B] w-4 h-4"
+                  [checked]="isAllSelected()"
+                  (change)="toggleSelectAll($event)">
+              </th>
+              <th class="px-6 py-4">Course</th>
+              <th class="px-6 py-4">Instructor</th>
+              <th class="px-6 py-4">Performance</th>
+              <th class="px-6 py-4">Status</th>
+              <th class="px-6 py-4 text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100">
+            
+            <!-- Empty State -->
+            <tr *ngIf="!isLoading() && courses().length === 0">
+              <td colspan="6" class="px-6 py-16 text-center">
+                <div class="flex flex-col items-center justify-center">
+                  <div class="w-24 h-24 bg-slate-100 rounded-full flex items-center justify-center mb-4">
+                    <svg class="w-12 h-12 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                    </svg>
+                  </div>
+                  <h3 class="text-lg font-semibold text-slate-800 mb-1">No Courses Found</h3>
+                  <p class="text-sm text-slate-500 max-w-sm mb-6">There are no courses matching your current filters. Adjust your search or create a new course.</p>
+                  <app-button variant="primary" icon="M12 4v16m8-8H4" (click)="navigateToCreate()">Create Course</app-button>
+                </div>
+              </td>
+            </tr>
+
+            <!-- Data Rows -->
+            <tr *ngFor="let course of courses(); let isLast = last; let i = index; let count = count" 
+                class="hover:bg-slate-50 transition-colors cursor-pointer group"
+                (click)="openDrawer(course)"
+                [class.bg-blue-50]="isSelected(course.id)">
+              
+              <!-- Checkbox -->
+              <td class="px-6 py-4 text-center" (click)="$event.stopPropagation()">
+                <input type="checkbox" 
+                  class="rounded border-slate-300 text-[#1C1C7B] focus:ring-[#1C1C7B] w-4 h-4 cursor-pointer"
+                  [checked]="isSelected(course.id)"
+                  (change)="toggleSelection(course.id, $event)">
+              </td>
+
+              <!-- Course Info -->
+              <td class="px-6 py-4">
+                <div class="flex items-center gap-4">
+                  <img [src]="course.thumbnailUrl || '/assets/placeholder-course.jpg'" 
+                       class="w-16 h-12 object-cover rounded-lg border border-slate-200 shadow-sm" 
+                       alt="Course Thumbnail">
+                  <div>
+                    <p class="font-medium text-slate-900 group-hover:text-[#1C1C7B] transition-colors truncate max-w-[160px] sm:max-w-[200px]" [title]="course.title">
+                      {{ course.title }}
+                    </p>
+                    <div class="flex items-center text-xs text-slate-500 mt-1 gap-2">
+                      <span class="flex items-center gap-1">
+                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
+                        {{ course.categoryName }}
+                      </span>
+                      <span>•</span>
+                      <span>{{ course.lessonsCount }} Lessons</span>
+                    </div>
+                  </div>
+                </div>
+              </td>
+
+              <!-- Instructor Info -->
+              <td class="px-6 py-4">
+                <div class="flex items-center gap-3">
+                  <img [src]="course.instructorAvatarUrl || '/assets/default-avatar.png'" 
+                       class="w-8 h-8 rounded-full border border-slate-200" 
+                       alt="Instructor">
+                  <div>
+                    <p class="text-sm font-medium text-slate-900">{{ course.instructorName || 'Unknown' }}</p>
+                    <p class="text-xs text-slate-500">{{ course.instructorEmail }}</p>
+                  </div>
+                </div>
+              </td>
+
+              <!-- Performance -->
+              <td class="px-6 py-4">
+                <div class="space-y-1.5 text-xs">
+                  <div class="flex items-center justify-between">
+                    <span class="text-slate-500">Students:</span>
+                    <span class="font-medium text-slate-700">{{ course.enrolledCount | number }}</span>
+                  </div>
+                  <div class="flex items-center justify-between">
+                    <span class="text-slate-500">Completion:</span>
+                    <span class="font-medium text-[#FF8C00]">{{ course.completionRate | number:'1.0-0' }}%</span>
+                  </div>
+                  <div class="flex items-center justify-between">
+                    <span class="text-slate-500">Rating:</span>
+                    <div class="flex items-center text-yellow-400 gap-1">
+                      <svg class="w-3 h-3 fill-current" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>
+                      <span class="text-slate-700 font-medium">{{ course.averageRating | number:'1.1-1' }}</span>
+                    </div>
+                  </div>
+                </div>
+              </td>
+
+              <!-- Status -->
+              <td class="px-6 py-4">
+                <span [class]="getStatusClasses(course.status)" class="px-2.5 py-1 rounded-full text-xs font-medium inline-flex items-center gap-1.5">
+                  <span class="w-1.5 h-1.5 rounded-full bg-current"></span>
+                  {{ getStatusLabel(course.status) }}
+                </span>
+              </td>
+
+              <!-- Actions -->
+              <td class="px-6 py-4 text-right">
+                <div class="relative" (click)="$event.stopPropagation()">
+                  <!-- Dropdown Menu trigger using simple HTML or integrated dropdown -->
+                  <button class="p-2 text-slate-400 hover:text-[#1C1C7B] hover:bg-slate-100 rounded-lg transition-colors group relative peer">
+                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
+                    </svg>
+                  </button>
+                  <!-- Quick actions popup on hover for simplicity (or use your full custom dropdown) -->
+                  <div class="hidden peer-hover:block hover:block absolute right-0 w-48 bg-white border border-slate-200 rounded-xl shadow-lg z-[100] py-1 text-sm overflow-hidden"
+                       [ngClass]="{'bottom-full': (isLast || i === count - 2) && count > 2, 'top-full': !((isLast || i === count - 2) && count > 2)}">
+                    <button class="w-full text-left px-4 py-2 hover:bg-slate-50 text-slate-700 flex items-center gap-2" (click)="openDrawer(course)">
+                      <svg class="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                      View Details
+                    </button>
+                    <button class="w-full text-left px-4 py-2 hover:bg-slate-50 text-slate-700 flex items-center gap-2" (click)="navigateToEdit(course.slug, $event)">
+                      <svg class="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                      Edit Course
+                    </button>
+                    <button *ngIf="course.status === 3" class="w-full text-left px-4 py-2 hover:bg-green-50 text-green-700 flex items-center gap-2 border-t border-slate-100" (click)="approveCourse(course.id, $event)">
+                      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
+                      Approve Course
+                    </button>
+                    <button *ngIf="course.status !== 4" class="w-full text-left px-4 py-2 hover:bg-slate-50 text-slate-700 flex items-center gap-2" (click)="archiveCourse(course.id, $event)">
+                      <svg class="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" /></svg>
+                      Archive Course
+                    </button>
+                  </div>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Pagination -->
+      <div class="px-4 md:px-6 py-4 border-t border-slate-200 bg-slate-50 flex flex-col md:flex-row items-center justify-between gap-4 overflow-x-auto w-full">
+        <div class="text-sm text-slate-500 whitespace-nowrap text-center md:text-left">
+          Showing <span class="font-medium text-slate-900">{{ (pageNumber() - 1) * pageSize() + 1 }}</span> to 
+          <span class="font-medium text-slate-900">{{ mathMin(pageNumber() * pageSize(), totalCount()) }}</span> of 
+          <span class="font-medium text-slate-900">{{ totalCount() }}</span> courses
+        </div>
+        <app-pagination 
+          [pageNumber]="pageNumber()" 
+          [pageSize]="pageSize()"
+          [totalCount]="totalCount()"
+          [totalPages]="totalPages()" 
+          (pageChange)="onPageChange($event)">
+        </app-pagination>
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- FLOATING BULK ACTIONS TOOLBAR -->
+  <div *ngIf="selectedCourseIds().size > 0" 
+       class="fixed bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 w-[94%] sm:w-[90%] md:w-max max-w-3xl bg-[#1C1C7B] text-white px-4 md:px-6 py-3 rounded-2xl md:rounded-full shadow-xl flex flex-wrap justify-center md:justify-between items-center gap-3 md:gap-6 z-[60] animate-slide-up border border-[#1C1C7B]/20">
+    <div class="flex items-center gap-2 shrink-0">
+      <span class="bg-white/20 px-2 py-0.5 rounded-md text-sm font-semibold">{{ selectedCourseIds().size }}</span>
+      <span class="text-sm font-medium whitespace-nowrap">courses selected</span>
+    </div>
+    <div class="hidden md:block w-px h-6 bg-white/20 shrink-0"></div>
+    <div class="flex items-center flex-wrap justify-center gap-2">
+      <button class="text-sm font-medium px-3 py-1.5 hover:bg-white/10 rounded-lg transition-colors flex items-center gap-2" (click)="bulkApprove()">
+        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
+        Approve
+      </button>
+      <button class="text-sm font-medium px-3 py-1.5 hover:bg-white/10 rounded-lg transition-colors flex items-center gap-2 text-slate-300">
+        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" /></svg>
+        Archive
+      </button>
+      <button class="text-sm font-medium px-3 py-1.5 hover:bg-red-500/20 text-red-300 rounded-lg transition-colors flex items-center gap-2 ml-2">
+        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+        Delete
+      </button>
+    </div>
+    <button class="ml-4 p-1.5 hover:bg-white/10 rounded-full transition-colors" (click)="clearSelection()" title="Clear selection">
+      <svg class="w-5 h-5 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+    </button>
+  </div>
+
+  <!-- SLIDE-OVER DRAWER -->
+  <div *ngIf="isDrawerOpen()" class="fixed inset-0 z-50 overflow-hidden">
+    <!-- Backdrop -->
+    <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity" (click)="closeDrawer()"></div>
+    
+    <!-- Panel -->
+    <div class="absolute inset-y-0 right-0 max-w-md w-full bg-white shadow-2xl transform transition-transform duration-300 ease-in-out border-l border-slate-200 flex flex-col"
+         [class.translate-x-full]="!isDrawerOpen()"
+         [class.translate-x-0]="isDrawerOpen()">
+      
+      <!-- Drawer Header -->
+      <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+        <h2 class="text-lg font-bold text-[#1C1C7B]">Course Details</h2>
+        <button class="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors" (click)="closeDrawer()">
+          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+        </button>
+      </div>
+
+      <!-- Drawer Content -->
+      <div class="flex-1 overflow-y-auto p-6" *ngIf="drawerCourse() as course">
+        
+        <!-- Thumbnail -->
+        <div class="rounded-xl overflow-hidden mb-6 border border-slate-200 shadow-sm relative aspect-video">
+          <img [src]="course.thumbnailUrl || '/assets/placeholder-course.jpg'" class="w-full h-full object-cover" alt="Course Thumbnail">
+          <div class="absolute top-3 right-3">
+            <span [class]="getStatusClasses(course.status)" class="px-3 py-1 rounded-full text-xs font-bold shadow-sm backdrop-blur-md bg-white/90">
+              {{ getStatusLabel(course.status) }}
+            </span>
+          </div>
+        </div>
+
+        <!-- Info -->
+        <h3 class="text-xl font-bold text-slate-900 mb-2">{{ course.title }}</h3>
+        <p class="text-sm text-slate-500 mb-6">{{ course.description || 'No description provided.' }}</p>
+
+        <!-- Stats Grid -->
+        <div class="grid grid-cols-2 gap-4 mb-8">
+          <div class="bg-slate-50 p-4 rounded-xl border border-slate-100">
+            <p class="text-xs text-slate-500 font-medium mb-1 uppercase tracking-wider">Enrollments</p>
+            <p class="text-lg font-bold text-slate-900">{{ course.enrolledCount | number }}</p>
+          </div>
+          <div class="bg-orange-50 p-4 rounded-xl border border-orange-100">
+            <p class="text-xs text-orange-600/80 font-medium mb-1 uppercase tracking-wider">Completion Rate</p>
+            <p class="text-lg font-bold text-[#FF8C00]">{{ course.completionRate | number:'1.0-0' }}%</p>
+          </div>
+          <div class="bg-slate-50 p-4 rounded-xl border border-slate-100">
+            <p class="text-xs text-slate-500 font-medium mb-1 uppercase tracking-wider">Category</p>
+            <p class="text-sm font-semibold text-slate-900 truncate">{{ course.categoryName }}</p>
+          </div>
+          <div class="bg-slate-50 p-4 rounded-xl border border-slate-100">
+            <p class="text-xs text-slate-500 font-medium mb-1 uppercase tracking-wider">Lessons</p>
+            <p class="text-sm font-semibold text-slate-900">{{ course.lessonsCount }}</p>
+          </div>
+        </div>
+
+        <!-- Instructor Section -->
+        <div class="mb-8">
+          <h4 class="text-sm font-bold text-slate-900 mb-4 uppercase tracking-wider flex items-center gap-2">
+            <svg class="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+            Instructor
+          </h4>
+          <div class="flex items-center gap-4 bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+            <img [src]="course.instructorAvatarUrl || '/assets/default-avatar.png'" class="w-12 h-12 rounded-full shadow-sm" alt="Instructor">
+            <div>
+              <p class="font-semibold text-[#1C1C7B]">{{ course.instructorName || 'Unknown' }}</p>
+              <p class="text-sm text-slate-500">{{ course.instructorEmail }}</p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Drawer Footer -->
+      <div class="px-6 py-4 border-t border-slate-100 bg-slate-50 flex flex-col sm:flex-row gap-3" *ngIf="drawerCourse() as course">
+        <app-button 
+          *ngIf="course.status === 3" 
+          variant="primary" 
+          class="flex-1"
+          (click)="approveCourse(course.id)">
+          Approve Course
+        </app-button>
+        <app-button 
+          variant="primary" 
+          class="flex-1"
+          (click)="previewCourse(course)">
+          Preview
+        </app-button>
+        <app-button 
+          variant="outline" 
+          class="flex-1 text-slate-600 hover:text-[#1C1C7B]"
+          (click)="closeDrawer()">
+          Close
+        </app-button>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<!-- Styles for animations -->
+<style>
+  @keyframes slideUp {
+    from { transform: translate(-50%, 100%); opacity: 0; }
+    to { transform: translate(-50%, 0); opacity: 1; }
+  }
+  .animate-slide-up {
+    animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+</style>

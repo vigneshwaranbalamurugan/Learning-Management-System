@@ -5,6 +5,7 @@ namespace LMSApi.BALLibrary.Interfaces
     public interface ICourseService
     {
         Task<IEnumerable<CourseResponse>> GetAllCoursesAsync();
+        Task<PagedCourseResponse> GetAllCoursesPagedAsync(CourseSearchQuery query);
         Task<PagedCourseResponse> GetPublishedCoursesPagedAsync(
             CourseSearchQuery query, int? currentUserId = null);
         Task<CourseDetailsResponse> GetCourseByIdAsync(int id, int? currentUserId = null, bool isAdmin = false);
@@ -22,10 +23,12 @@ namespace LMSApi.BALLibrary.Interfaces
         Task<CourseResponse> PublishCourseAsync(int id, PublishCourseRequest request);
         Task<CourseResponse> ArchiveCourseAsync(int id, ArchiveCourseRequest request);
         Task<IEnumerable<CourseResponse>> GetPendingCoursesAsync();
+        Task<PagedCourseResponse> GetPendingCoursesPagedAsync(CourseSearchQuery query);
         Task<CourseResponse> ReviewCourseAsync(int id, ReviewCourseRequest request);
         Task<IEnumerable<CourseResponse>> GetCoursesByInstructorAsync(int instructorId);
         Task<PagedCourseResponse> GetCoursesByInstructorPagedAsync(int instructorId, CourseSearchQuery query);
         Task<IEnumerable<CourseResponse>> GetCoursesByCategoryAsync(int categoryId);
+        Task<CourseSummaryStatsResponse> GetCourseSummaryStatsAsync();
         Task<FiltersMetadataResponse> GetFiltersMetadataAsync();
         Task<IEnumerable<CategoryResponse>> GetAllCategoriesAsync();
     }

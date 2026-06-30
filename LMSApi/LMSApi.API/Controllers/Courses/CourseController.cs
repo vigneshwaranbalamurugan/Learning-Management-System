@@ -254,13 +254,31 @@ namespace LMSApi.API.Controllers
             return Ok(result);
         }
 
-        /// <summary>Get all courses pending approval. Admin only.</summary>
+        /// <summary>Get all courses pending approval with pagination. Admin only.</summary>
         [Authorize(Roles = "Admin")]
         [HttpGet("pending")]
         [EnableRateLimiting("AdminApis")]
-        public async Task<ActionResult<IEnumerable<CourseResponse>>> GetPending()
+        public async Task<ActionResult<PagedCourseResponse>> GetPending([FromQuery] CourseSearchQuery query)
         {
-            var result = await _courseService.GetPendingCoursesAsync();
+            var result = await _courseService.GetPendingCoursesPagedAsync(query);
+            return Ok(result);
+        }
+
+        /// <summary>Get all courses with pagination. Admin only.</summary>
+        [Authorize(Roles = "Admin")]
+        [HttpGet("all")]
+        [EnableRateLimiting("AdminApis")]
+        public async Task<ActionResult<PagedCourseResponse>> GetAllAdmin([FromQuery] CourseSearchQuery query)
+        {
+            var result = await _courseService.GetAllCoursesPagedAsync(query);
+            return Ok(result);
+        }
+
+        [HttpGet("summary")]
+        [Authorize(Roles = "Admin")]
+        public async Task<ActionResult<CourseSummaryStatsResponse>> GetSummaryStats()
+        {
+            var result = await _courseService.GetCourseSummaryStatsAsync();
             return Ok(result);
         }
 

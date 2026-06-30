@@ -15,7 +15,7 @@ namespace LMSApi.ModelLibrary.DTOs
         public string Title { get; set; }
 
         [Required(ErrorMessage ="Description is required.")]
-        [MaxLength(2000, ErrorMessage = "Description must not exceed 2000 characters.")]
+        [MaxLength(500, ErrorMessage = "Description must not exceed 500 characters.")]
         public string Description { get; set; }
 
         [Range(0, double.MaxValue, ErrorMessage = "Price must be zero or greater.")]
@@ -23,7 +23,9 @@ namespace LMSApi.ModelLibrary.DTOs
 
         public bool IsPremium { get; set; } = false;
 
+        [MaxLength(1000, ErrorMessage = "Requirements must not exceed 1000 characters.")]
         public string? Requirements { get; set; }
+        [MaxLength(1000, ErrorMessage = "Learning outcomes must not exceed 1000 characters.")]
         public string? LearningOutcomes { get; set; }
 
 
@@ -46,14 +48,16 @@ namespace LMSApi.ModelLibrary.DTOs
         public string Title { get; set; }
         [Required(ErrorMessage = "Category ID is required.")]
         public int? CategoryId { get; set; }
-        [MaxLength(2000, ErrorMessage = "Description must not exceed 2000 characters.")]
+        [MaxLength(500, ErrorMessage = "Description must not exceed 500 characters.")]
         public string Description { get; set; }
 
         [Range(0, double.MaxValue, ErrorMessage = "Price must be zero or greater.")]
         public decimal? Price { get; set; }
 
         public bool? IsPremium { get; set; }=false;
+        [MaxLength(1000, ErrorMessage = "Requirements must not exceed 1000 characters.")]   
         public string? Requirements { get; set; }
+        [MaxLength(1000, ErrorMessage = "Learning outcomes must not exceed 1000 characters.")]
         public string? LearningOutcomes { get; set; }
         public CourseLevel? Level { get; set; }=CourseLevel.Beginner;
         public int? LanguageId { get; set; }
@@ -112,8 +116,10 @@ namespace LMSApi.ModelLibrary.DTOs
 
         public string InstructorName { get; set; } = string.Empty;
         public string InstructorEmail { get; set; } = string.Empty;
+        public string? InstructorAvatarUrl { get; set; }
         public int LessonsCount { get; set; }
         public int EnrolledCount { get; set; }
+        public double CompletionRate { get; set; }
         public TimeSpan EstimatedDuration { get; set; }
         public bool HasCertificate { get; set; } = true;
     }
@@ -131,6 +137,14 @@ namespace LMSApi.ModelLibrary.DTOs
         public IEnumerable<BatchSummaryResponse> AvailableBatches { get; set; } = [];
 
         public bool IsWishlisted { get; set; }
+    }
+
+    public class CourseSummaryStatsResponse
+    {
+        public int TotalCourses { get; set; }
+        public int PublishedCourses { get; set; }
+        public int PendingApproval { get; set; }
+        public int ArchivedCourses { get; set; }
     }
 
     public class PagedCourseResponse

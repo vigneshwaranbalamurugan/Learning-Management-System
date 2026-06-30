@@ -33,7 +33,7 @@
         <svg class="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/>
         </svg>
-        @if (isInstructor()) {
+        @if (isInstructor() || isAdmin()) {
           Back to Courses
         } @else {
           Back to Explore
@@ -248,9 +248,9 @@
                     <!-- Lessons -->
                     @for (lesson of section.lessons; track lesson.id) {
                       <div class="flex items-center gap-3 px-12 py-2.5"
-                           [class.cursor-pointer]="lesson.isPreview"
-                           [class.hover:bg-slate-50]="lesson.isPreview"
-                           (click)="lesson.isPreview ? openPreview(lesson.contentUrl, lesson.content, lesson.title, lesson.type) : null">
+                           [class.cursor-pointer]="lesson.isPreview || isEnrolled()"
+                           [class.hover:bg-slate-50]="lesson.isPreview || isEnrolled()"
+                           (click)="(lesson.isPreview || isEnrolled()) ? openPreview(lesson.contentUrl, lesson.content, lesson.title, lesson.type) : null">
                         @switch (getLessonTypeName(lesson.type).toLowerCase()) {
                           @case ('video') {
                             <div class="w-6 h-6 rounded-md bg-rose-50 flex items-center justify-center shrink-0"><svg class="w-3.5 h-3.5 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg></div>
@@ -492,7 +492,7 @@
             }
 
             <!-- CTA button -->
-            @if (isInstructor()) {
+            @if (isInstructor() || isAdmin()) {
               <button (click)="navigateToCourses()"
                 class="w-full py-3 rounded-xl text-sm font-extrabold cursor-pointer transition
                        bg-slate-100 text-slate-700 hover:bg-slate-200 shadow-sm flex items-center justify-center gap-2">
@@ -539,6 +539,8 @@
             <p class="text-[10px] text-gray-400 text-center">
               @if (isInstructor()) {
                 Previewing as Instructor
+              } @else if (isAdmin()) {
+                Previewing as Admin
               } @else if (course()!.isPremium) {
                 Secure payment · Lifetime access
               } @else {

@@ -1,0 +1,102 @@
+<div class="min-h-screen bg-[#F8FAFC] pb-10">
+  <!-- PAGE HEADER -->
+  <header class="bg-white sticky top-0 z-20 border-b border-slate-200 px-6 py-4 flex items-center justify-between shadow-sm">
+    <div>
+      <h1 class="text-2xl font-bold text-[#1C1C7B]">Assignment Valuations</h1>
+      <p class="text-sm text-slate-500 mt-1">Monitor and review all student assignment submissions across the platform.</p>
+    </div>
+    <div class="flex items-center gap-3">
+      <div class="w-48">
+        <app-dropdown
+          placeholder="Filter by Status"
+          [value]="filterStatus()"
+          [options]="statusOptions"
+          (valueChange)="onFilterChange($event)">
+        </app-dropdown>
+      </div>
+    </div>
+  </header>
+
+  <div class="max-w-7xl mx-auto px-6 mt-8">
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden relative">
+      <!-- Loading Overlay -->
+      <div *ngIf="isLoading()" class="absolute inset-0 bg-white/70 backdrop-blur-sm z-10 flex flex-col items-center justify-center">
+        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-[#1C1C7B] mb-2"></div>
+        <p class="text-sm text-slate-500 font-medium">Loading submissions...</p>
+      </div>
+
+      <!-- Table -->
+      <div class="overflow-x-auto min-h-[400px]">
+        <table class="w-full text-left text-sm text-slate-600 border-collapse">
+          <thead class="bg-slate-50 text-slate-500 uppercase text-xs font-semibold border-b border-slate-200">
+            <tr>
+              <th class="px-6 py-4">Assignment / Course</th>
+              <th class="px-6 py-4">Student</th>
+              <th class="px-6 py-4">Status</th>
+              <th class="px-6 py-4">Score</th>
+              <th class="px-6 py-4">Submitted At</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100">
+            <!-- Empty State -->
+            <tr *ngIf="!isLoading() && submissions().length === 0">
+              <td colspan="5" class="px-6 py-16 text-center">
+                <div class="flex flex-col items-center justify-center">
+                  <div class="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mb-4">
+                    <svg class="w-10 h-10 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                    </svg>
+                  </div>
+                  <h3 class="text-lg font-semibold text-slate-800 mb-1">No Submissions Found</h3>
+                  <p class="text-sm text-slate-500 max-w-sm">There are no assignment submissions matching your current filters.</p>
+                </div>
+              </td>
+            </tr>
+
+            <!-- Data Rows -->
+            <tr *ngFor="let sub of submissions()" class="hover:bg-slate-50 transition-colors">
+              <td class="px-6 py-4">
+                <div class="font-medium text-slate-900 mb-1">Assignment #{{ sub.assignmentId }}</div>
+              </td>
+              <td class="px-6 py-4">
+                <div class="font-medium text-slate-900">{{ sub.studentName }}</div>
+                <div class="text-xs text-slate-500">{{ sub.studentEmail }}</div>
+              </td>
+              <td class="px-6 py-4">
+                <span [class]="getStatusClass(sub.status)" class="px-2.5 py-1 rounded-full text-xs font-medium inline-flex items-center gap-1.5">
+                  <span class="w-1.5 h-1.5 rounded-full bg-current"></span>
+                  {{ sub.status }}
+                </span>
+              </td>
+              <td class="px-6 py-4">
+                <span *ngIf="sub.marksAwarded !== null && sub.marksAwarded !== undefined" class="font-semibold text-slate-900">
+                  {{ sub.marksAwarded }}
+                </span>
+                <span *ngIf="sub.marksAwarded === null || sub.marksAwarded === undefined" class="text-slate-400 italic text-xs">Not graded</span>
+              </td>
+              <td class="px-6 py-4 text-sm text-slate-500">
+                {{ sub.submittedAt | date:'medium' }}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Pagination -->
+      <div class="px-6 py-4 border-t border-slate-200 bg-slate-50 flex items-center justify-between">
+        <div class="text-sm text-slate-500">
+          Showing <span class="font-medium text-slate-900">{{ (pageNumber() - 1) * pageSize() + 1 }}</span> to 
+          <span class="font-medium text-slate-900">{{ (pageNumber() * pageSize()) > totalCount() ? totalCount() : (pageNumber() * pageSize()) }}</span> of 
+          <span class="font-medium text-slate-900">{{ totalCount() }}</span> submissions
+        </div>
+        <app-pagination 
+          [pageNumber]="pageNumber()" 
+          [pageSize]="pageSize()"
+          [totalCount]="totalCount()"
+          [totalPages]="totalPages()"
+          (pageChange)="onPageChange($event)">
+        </app-pagination>
+      </div>
+    </div>
+  </div>
+</div>

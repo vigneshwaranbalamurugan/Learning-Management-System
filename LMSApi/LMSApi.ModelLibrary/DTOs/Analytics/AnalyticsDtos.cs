@@ -1,5 +1,25 @@
 namespace LMSApi.ModelLibrary.DTOs
 {
+    public class MonthlyRevenueDto
+    {
+        public string Month { get; set; } = string.Empty;
+        public decimal Revenue { get; set; }
+    }
+
+    public class MonthlyTrendDto
+    {
+        public string Month { get; set; } = string.Empty;
+        public int Count { get; set; }
+    }
+
+    public class RecentActivityDto
+    {
+        public string ActivityType { get; set; } = string.Empty;
+        public string Description { get; set; } = string.Empty;
+        public DateTime Timestamp { get; set; }
+        public string UserName { get; set; } = string.Empty;
+    }
+
     public class AdminAnalyticsResponse
     {
         public int TotalUsers { get; set; }
@@ -9,6 +29,11 @@ namespace LMSApi.ModelLibrary.DTOs
         public int ActiveCourses { get; set; }
         public int TotalEnrollments { get; set; }
         public decimal TotalRevenue { get; set; }
+        public int TotalCertificatesIssued { get; set; }
+        public System.Collections.Generic.List<MonthlyRevenueDto> MonthlyRevenue { get; set; } = new();
+        public System.Collections.Generic.List<MonthlyTrendDto> UserGrowth { get; set; } = new();
+        public System.Collections.Generic.List<MonthlyTrendDto> EnrollmentTrend { get; set; } = new();
+        public System.Collections.Generic.List<RecentActivityDto> RecentActivities { get; set; } = new();
     }
 
     public class RecentEnrollmentDto

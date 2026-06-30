@@ -183,6 +183,8 @@ namespace LMSApi.BALLibrary.Services
             var publicId = $"template_{Guid.NewGuid()}";
             var bgUrl = await _uploadService.UploadCertificateTemplateBackgroundAsync(backgroundStream, backgroundFileName, publicId);
 
+            await _certificateRepository.DeactivateAllTemplatesAsync();
+
             var template = new CertificateTemplates
             {
                 Name = request.Name,
@@ -212,7 +214,14 @@ namespace LMSApi.BALLibrary.Services
             if (request.Name != null) template.Name = request.Name;
             if (request.Description != null) template.Description = request.Description;
 
-            if (request.IsActive.HasValue) template.IsActive = request.IsActive.Value;
+            if (request.IsActive.HasValue)
+            {
+                if (request.IsActive.Value)
+                {
+                    await _certificateRepository.DeactivateAllTemplatesAsync();
+                }
+                template.IsActive = request.IsActive.Value;
+            }
 
             await _certificateRepository.UpdateTemplateAsync(template);
             return _mapper.Map<CertificateTemplateResponse>(template);

@@ -97,7 +97,18 @@ namespace LMSApi.BALLibrary.Services
             if (review == null || review.UserId != userId)
                 throw new KeyNotFoundException("Review not found or unauthorized.");
 
-            await _reviewRepository.DeleteAsync(reviewId);
+            review.IsDeleted = true;
+            await _reviewRepository.UpdateAsync(review);
+        }
+
+        public async Task DeleteReviewByAdminAsync(int reviewId)
+        {
+            var review = await _reviewRepository.GetByIdAsync(reviewId);
+            if (review == null)
+                throw new KeyNotFoundException("Review not found.");
+
+            review.IsDeleted = true;
+            await _reviewRepository.UpdateAsync(review);
         }
 
         public async Task<IEnumerable<ReviewResponse>> GetCourseReviewsAsync(int courseId)
@@ -114,6 +125,32 @@ namespace LMSApi.BALLibrary.Services
                 CreatedAt = r.CreatedAt,
                 UpdatedAt = r.UpdatedAt
             });
+        }
+
+        public async Task<PagedReviewResponse> GetAllReviewsPagedAsync(int pageNumber, int pageSize, string? search)
+        {
+            var (reviews, totalCount) = await _reviewRepository.GetAllReviewsPagedAsync(pageNumber, pageSize, search);
+
+            var totalPages = (int)Math.Ceiling((double)totalCount / pageSize);
+
+            return new PagedReviewResponse
+            {
+                Reviews = reviews.Select(r => new ReviewResponse
+                {
+                    Id = r.Id,
+                    CourseId = r.CourseId,
+                    UserId = r.UserId,
+                    UserName = r.User?.Email ?? "",
+                    Rating = r.Rating,
+                    ReviewText = r.Review,
+                    CreatedAt = r.CreatedAt,
+                    UpdatedAt = r.UpdatedAt
+                }).ToList(),
+                TotalCount = totalCount,
+                PageNumber = pageNumber,
+                PageSize = pageSize,
+                TotalPages = totalPages
+            };
         }
     }
 }

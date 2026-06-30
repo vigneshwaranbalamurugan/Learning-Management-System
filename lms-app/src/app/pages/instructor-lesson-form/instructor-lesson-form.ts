@@ -2,6 +2,7 @@ import { Component, inject, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, ActivatedRoute, RouterModule } from '@angular/router';
+import { AuthService } from '@services/auth.service';
 import { ToastService } from '@services/toast.service';
 import { FormInput } from '@components/form-input/form-input';
 import { Dropdown } from '@components/dropdown/dropdown';
@@ -20,6 +21,11 @@ import { CourseBuilderService } from '@services/course-builder.service';
 })
 export class InstructorLessonForm implements OnInit {
   private toastService = inject(ToastService);
+  private authService = inject(AuthService);
+
+  protected get routePrefix(): string {
+    return this.authService.userRole()?.toLowerCase() || 'instructor';
+  }
   private courseBuilderService = inject(CourseBuilderService);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
@@ -333,7 +339,7 @@ export class InstructorLessonForm implements OnInit {
 
   protected previewLesson() {
     if (this.isEditMode && this.lessonId) {
-      this.router.navigate(['/instructor/courses', this.courseSlug, 'lessons', this.lessonId, 'detail']);
+      this.router.navigate([`/${this.routePrefix}/courses`, this.courseSlug, 'lessons', this.lessonId, 'detail']);
     } else {
       this.toastService.showSuccess('Please save the lesson first to preview.');
     }
@@ -353,7 +359,7 @@ export class InstructorLessonForm implements OnInit {
       this.courseBuilderService.deleteLesson(this.lessonId).subscribe({
         next: () => {
           this.toastService.showSuccess('Lesson deleted successfully.');
-          this.router.navigate(['/instructor/courses', this.courseSlug, 'builder']);
+          this.router.navigate([`/${this.routePrefix}/courses`, this.courseSlug, 'builder']);
         },
         error: (err) => {
           this.toastService.showApiError(err, 'Failed to delete lesson.');
@@ -411,7 +417,7 @@ export class InstructorLessonForm implements OnInit {
           if (this.layout.courseId()) {
             this.layout.loadCourse(this.layout.courseId()!);
           }
-          this.router.navigate(['/instructor/courses', this.courseSlug, 'lessons', this.lessonId, 'detail']);
+          this.router.navigate([`/${this.routePrefix}/courses`, this.courseSlug, 'lessons', this.lessonId, 'detail']);
         },
         error: (err) => {
           this.toastService.showApiError(err, 'Failed to update lesson.');
@@ -427,7 +433,7 @@ export class InstructorLessonForm implements OnInit {
           if (this.layout.courseId()) {
             this.layout.loadCourse(this.layout.courseId()!);
           }
-          this.router.navigate(['/instructor/courses', this.courseSlug, 'builder']);
+          this.router.navigate([`/${this.routePrefix}/courses`, this.courseSlug, 'builder']);
         },
         error: (err) => {
           this.toastService.showApiError(err, 'Failed to create lesson.');
@@ -439,9 +445,9 @@ export class InstructorLessonForm implements OnInit {
 
   protected navigateBack() {
     if (this.isEditMode && this.lessonId) {
-      this.router.navigate(['/instructor/courses', this.courseSlug, 'lessons', this.lessonId, 'detail']);
+      this.router.navigate([`/${this.routePrefix}/courses`, this.courseSlug, 'lessons', this.lessonId, 'detail']);
     } else {
-      this.router.navigate(['/instructor/courses', this.courseSlug, 'builder']);
+      this.router.navigate([`/${this.routePrefix}/courses`, this.courseSlug, 'builder']);
     }
   }
 }

@@ -262,12 +262,10 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.UseRateLimiter();
 
-// app.UseHangfireDashboard("/hangfire", new DashboardOptions
-// {
-//     Authorization = new[] { new HangfireAuthorizationFilter() }
-// });
-
-app.UseHangfireDashboard("/hangfire");
+app.UseHangfireDashboard("/hangfire", new DashboardOptions
+{
+    Authorization = new[] { new HangfireAuthorizationFilter() }
+});
 
 app.MapHub<NotificationHub>("/hubs/notification").RequireRateLimiting("SignalRHubConnectNotification");
 app.MapHub<VideoProgressHub>("/hubs/video-progress").RequireRateLimiting("SignalRHubConnectVideoProgress");

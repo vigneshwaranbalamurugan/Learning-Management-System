@@ -12,9 +12,14 @@ namespace LMSApi.DALLibrary.Interfaces
         Task<(IEnumerable<Courses> Courses, int TotalCount)> GetPublishedCoursesPagedAsync(
             LMSApi.ModelLibrary.DTOs.CourseSearchQuery query);
         Task<IEnumerable<Courses>> GetPendingCoursesAsync();
+        Task<(IEnumerable<Courses> Courses, int TotalCount)> GetPendingCoursesPagedAsync(
+            LMSApi.ModelLibrary.DTOs.CourseSearchQuery query);
+        Task<(IEnumerable<Courses> Courses, int TotalCount)> GetAllCoursesPagedAsync(
+            LMSApi.ModelLibrary.DTOs.CourseSearchQuery query);
         Task<Courses?> GetCourseWithDetailsAsync(int id);
         Task<Courses?> GetCourseBySlugWithDetailsAsync(string slug);
         Task<LMSApi.ModelLibrary.DTOs.CourseRatingStatsDto> GetCourseRatingStatsAsync(int courseId);
+        Task<LMSApi.ModelLibrary.DTOs.CourseSummaryStatsResponse> GetCourseSummaryStatsAsync();
         Task<IEnumerable<CourseLanguages>> GetAllLanguagesAsync();
         Task<IEnumerable<LMSApi.ModelLibrary.DTOs.InstructorMetadataDto>> GetActiveInstructorsAsync();
         Task<IEnumerable<LMSApi.ModelLibrary.DTOs.LanguageMetadataDto>> GetActiveLanguagesAsync();

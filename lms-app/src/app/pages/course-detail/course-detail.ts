@@ -43,6 +43,7 @@ export class CourseDetail implements OnInit {
   protected isEnrolled        = signal(false);
   protected enrollmentProgress = signal(0);
   protected isInstructor      = signal(false);
+  protected isAdmin           = signal(false);
   protected reviews           = signal<ReviewResponse[]>([]);
 
   // ── Preview Modal State ──────────────────────────────────────────────────
@@ -91,6 +92,8 @@ export class CourseDetail implements OnInit {
   ngOnInit(): void {
     if (this.authService.userRole() === 'Instructor') {
       this.isInstructor.set(true);
+    } else if (this.authService.userRole() === 'Admin') {
+      this.isAdmin.set(true);
     }
 
     this.route.paramMap.pipe(untilDestroyed(this.destroyRef)).subscribe(params => {
@@ -142,11 +145,15 @@ export class CourseDetail implements OnInit {
             return next;
           });
         }
-
+        
         // Find enrollment for this course
         const found = enrollments.find(e => e.courseId === courseId);
-        if (found) {
+        // Unlocks content for enrolled students, instructors, and admins
+        if (found || this.isInstructor() || this.isAdmin()) {
           this.isEnrolled.set(true);
+        }
+
+        if (found) {
           this.enrollmentProgress.set(found.progressPercentage ?? 0);
           this.enrollment.set(found);
         }
@@ -323,13 +330,19 @@ export class CourseDetail implements OnInit {
     if (this.isInstructor()) {
       // If there's history we could use location.back(), but just redirect to instructor dashboard
       this.router.navigate(['/instructor/courses']);
+    } else if (this.isAdmin()) {
+      this.router.navigate(['/admin/courses']);
     } else {
       this.router.navigate(['/learner/explore']);
     }
   }
 
   protected navigateToCourses(): void {
-    this.router.navigate(['/learner/courses']);
+    if (this.isAdmin()) {
+      this.router.navigate(['/admin/courses']);
+    } else {
+      this.router.navigate(['/learner/courses']);
+    }
   }
 
   // ── Helpers ───────────────────────────────────────────────────────────────

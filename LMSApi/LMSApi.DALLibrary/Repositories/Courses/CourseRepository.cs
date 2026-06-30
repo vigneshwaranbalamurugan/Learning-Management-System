@@ -253,6 +253,74 @@ namespace LMSApi.DALLibrary.Repositories
                 .ToListAsync();
         }
 
+        public async Task<(IEnumerable<Courses> Courses, int TotalCount)> GetPendingCoursesPagedAsync(
+            LMSApi.ModelLibrary.DTOs.CourseSearchQuery query)
+        {
+            var queryable = _context.Courses
+                .Include(c => c.Category)
+                .Include(c => c.Language)
+                .Include(c => c.Instructor)
+                    .ThenInclude(i => i.UserProfile)
+                .Include(c => c.Enrollments)
+                .Include(c => c.Sections)
+                    .ThenInclude(s => s.Lessons)
+                .Where(c => c.Status == CourseStatus.PendingApproval)
+                .AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(query.Search))
+            {
+                var s = query.Search.Trim().ToLower();
+                queryable = queryable.Where(c => c.Title.ToLower().Contains(s) || 
+                                                (c.Description != null && c.Description.ToLower().Contains(s)));
+            }
+
+            var totalCount = await queryable.CountAsync();
+            queryable = queryable.OrderByDescending(c => c.CreatedAt);
+
+            var courses = await queryable
+                .Skip((query.PageNumber - 1) * query.PageSize)
+                .Take(query.PageSize)
+                .ToListAsync();
+
+            return (courses, totalCount);
+        }
+
+        public async Task<(IEnumerable<Courses> Courses, int TotalCount)> GetAllCoursesPagedAsync(
+            LMSApi.ModelLibrary.DTOs.CourseSearchQuery query)
+        {
+            var queryable = _context.Courses
+                .Include(c => c.Category)
+                .Include(c => c.Language)
+                .Include(c => c.Instructor)
+                    .ThenInclude(i => i.UserProfile)
+                .Include(c => c.Enrollments)
+                .Include(c => c.Sections)
+                    .ThenInclude(s => s.Lessons)
+                .AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(query.Search))
+            {
+                var s = query.Search.Trim().ToLower();
+                queryable = queryable.Where(c => c.Title.ToLower().Contains(s) || 
+                                                (c.Description != null && c.Description.ToLower().Contains(s)));
+            }
+            if (!string.IsNullOrWhiteSpace(query.Statuses))
+            {
+                var statusVals = query.Statuses.Split(',').Select(s => (CourseStatus)int.Parse(s)).ToList();
+                queryable = queryable.Where(c => statusVals.Contains(c.Status));
+            }
+
+            var totalCount = await queryable.CountAsync();
+            queryable = queryable.OrderByDescending(c => c.CreatedAt);
+
+            var courses = await queryable
+                .Skip((query.PageNumber - 1) * query.PageSize)
+                .Take(query.PageSize)
+                .ToListAsync();
+
+            return (courses, totalCount);
+        }
+
         public async Task<Courses?> GetCourseWithDetailsAsync(int id)
         {
             return await _context.Courses
@@ -367,6 +435,17 @@ namespace LMSApi.DALLibrary.Repositories
 
             course.EstimatedDuration = totalCourseDuration;
             await _context.SaveChangesAsync();
+        }
+        public async Task<LMSApi.ModelLibrary.DTOs.CourseSummaryStatsResponse> GetCourseSummaryStatsAsync()
+        {
+            var courses = await _context.Courses.ToListAsync();
+            return new LMSApi.ModelLibrary.DTOs.CourseSummaryStatsResponse
+            {
+                TotalCourses = courses.Count,
+                PublishedCourses = courses.Count(c => c.Status == CourseStatus.Published),
+                PendingApproval = courses.Count(c => c.Status == CourseStatus.PendingApproval),
+                ArchivedCourses = courses.Count(c => c.Status == CourseStatus.Archived)
+            };
         }
     }
 }

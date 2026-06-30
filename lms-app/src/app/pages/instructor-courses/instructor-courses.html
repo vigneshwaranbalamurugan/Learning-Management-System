@@ -358,7 +358,7 @@
               Duplicate
             </button> -->
 
-            <button (click)="togglePublishStatus(course)"
+            <button (click)="ConfirmTogglePublishStatus(course,!canUnpublish(course))"
               class="w-full text-left px-4 py-2 text-xs font-semibold text-gray-700 hover:bg-slate-50 hover:cursor-pointer flex items-center gap-2">
               <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -457,6 +457,17 @@
     [message]="isArchivingAction ? 'Are you sure you want to archive this course? This will hide it from active student listings.' : 'Are you sure you want to unarchive this course? This will restore it back to draft status.'"
     [confirmText]="isArchivingAction ? 'Archive' : 'Unarchive'" cancelText="Cancel" [isDanger]="isArchivingAction"
     (confirm)="archiveCourse()" (cancel)="closeArchiveModal()">
+  </app-confirm-modal>
+
+  <app-confirm-modal
+  [isOpen]="showPublishModal"
+  [title]="isPublishing?'Publish Course':'Unpublish Course'"
+  [message]="isPublishing?'Are you sure you want to publish this course?':'Are you sure you want to unpublish this course?'"
+  [confirmText]="isPublishing?'Publish':'Unpublish'"
+  [cancelText]="'Cancel'"
+  [isDanger]="!isPublishing"
+  (confirm)="togglePublishStatus(courseToPublish)"
+  (cancel)="closePublishModal()">
   </app-confirm-modal>
 
 </div>

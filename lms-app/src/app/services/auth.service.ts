@@ -83,6 +83,8 @@ export class AuthService {
       this.router.navigate(['/login']);
     } else if (role.toLowerCase() === 'instructor') {
       this.router.navigate(['/instructor/dashboard']);
+    } else if (role.toLowerCase() === 'admin') {
+      this.router.navigate(['/admin/dashboard']);
     } else {
       this.router.navigate(['/learner/dashboard']);
     }

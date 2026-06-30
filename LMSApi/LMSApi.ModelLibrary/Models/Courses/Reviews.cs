@@ -9,6 +9,7 @@ namespace LMSApi.ModelLibrary.Models
         public string Review { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
+        public bool IsDeleted { get; set; } = false;
 
         // Navigation properties
         public Courses Course { get; set; }

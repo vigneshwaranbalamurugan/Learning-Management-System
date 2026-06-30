@@ -1,0 +1,12 @@
+1. Admin Panel(Dashboard,Revenue,Users,Courses,Instructors,Students,Platform settings,Certificates,Reports)    
+2. Instructor
+Review Page
+Pagination and Filters
+Bulk operations
+Validations
+
+
+
+Corm job for log move to another tabkle
+idempotencys
+network erros and custom error pages

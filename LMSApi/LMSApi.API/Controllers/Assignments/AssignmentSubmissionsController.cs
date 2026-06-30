@@ -114,5 +114,17 @@ namespace LMSApi.API.Controllers
             var result = await _assignmentSubmissionService.GetStudentAssignmentStatusAsync(assignmentId, studentId);
             return Ok(result);
         }
+
+        /// <summary>Get all submissions paginated globally (Admin only).</summary>
+        [Authorize(Roles = "Admin")]
+        [HttpGet("admin/all")]
+        public async Task<ActionResult<PagedAssignmentSubmissionResponse>> GetAllAdmin(
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 20,
+            [FromQuery] string? status = null)
+        {
+            var result = await _assignmentSubmissionService.GetAllSubmissionsPagedAsync(page, pageSize, status);
+            return Ok(result);
+        }
     }
 }

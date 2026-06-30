@@ -24,13 +24,19 @@ namespace LMSApi.DALLibrary.Contexts.Configurations
                 .HasMaxLength(350);
 
             builder.Property(c => c.Description)
-                .HasMaxLength(2000);
+                .HasMaxLength(500);
 
             builder.Property(c => c.Price)
                 .HasColumnType("decimal(18,2)");
 
             builder.Property(c => c.ThumbnailUrl)
                 .HasMaxLength(1000);
+            
+            builder.Property(c=>c.Requirements)
+                .HasMaxLength(2000);
+            
+            builder.Property(c=>c.LearningOutcomes)
+                .HasMaxLength(2000);
 
             builder.Property(c => c.IntroVideoUrl)
                 .HasMaxLength(1000);

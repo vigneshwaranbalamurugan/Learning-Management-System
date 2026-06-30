@@ -36,4 +36,13 @@ namespace LMSApi.ModelLibrary.DTOs
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
     }
+
+    public class PagedReviewResponse
+    {
+        public IEnumerable<ReviewResponse> Reviews { get; set; } = new List<ReviewResponse>();
+        public int TotalCount { get; set; }
+        public int PageNumber { get; set; }
+        public int PageSize { get; set; }
+        public int TotalPages { get; set; }
+    }
 }

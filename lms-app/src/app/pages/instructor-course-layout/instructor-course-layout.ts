@@ -6,6 +6,7 @@ import { untilDestroyed } from '../../rxjs/until-destroyed';
 import { Loader } from '@components/loader/loader';
 import { ToastService } from '@services/toast.service';
 import { CourseService } from '@services/course.service';
+import { AuthService } from '@services/auth.service';
 
 @Component({
   selector: 'app-instructor-course-layout',
@@ -19,6 +20,11 @@ export class InstructorCourseLayout implements OnInit {
   private courseService = inject(CourseService);
   private destroyRef = inject(DestroyRef);
   private toastService = inject(ToastService);
+  private authService = inject(AuthService);
+
+  protected get routePrefix(): string {
+    return this.authService.userRole()?.toLowerCase() || 'instructor';
+  }
 
   public courseId = signal<number | null>(null);
   public slug = signal<string | null>(null);
@@ -121,6 +127,6 @@ export class InstructorCourseLayout implements OnInit {
   }
 
   protected navigateBack(): void {
-    this.router.navigate(['/instructor/courses']);
+    this.router.navigate([`/${this.routePrefix}/courses`]);
   }
 }

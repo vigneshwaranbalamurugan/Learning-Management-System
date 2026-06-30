@@ -20,7 +20,7 @@
         <nav class="flex" aria-label="Breadcrumb">
           <ol class="inline-flex items-center space-x-1 md:space-x-2 text-xs font-semibold text-text-muted">
             <li class="inline-flex items-center">
-              <a routerLink="/instructor/courses" class="hover:text-primary transition">Courses</a>
+              <a [routerLink]="['/' + routePrefix + '/courses']" class="hover:text-primary transition">Courses</a>
             </li>
             <li>
               <div class="flex items-center">
@@ -28,7 +28,7 @@
                   viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
                 </svg>
-                <a [routerLink]="['/instructor/courses', courseSlug, 'builder']"
+                <a [routerLink]="['/' + routePrefix + '/courses', courseSlug, 'builder']"
                   class="hover:text-primary transition truncate max-w-[120px] sm:max-w-[180px]">
                   {{ layout.course()?.title || 'Course' }}
                 </a>

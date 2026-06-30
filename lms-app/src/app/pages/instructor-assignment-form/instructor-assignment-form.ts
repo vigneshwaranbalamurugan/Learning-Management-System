@@ -2,6 +2,7 @@ import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, ActivatedRoute, RouterModule } from '@angular/router';
+import { AuthService } from '@services/auth.service';
 import { InstructorCourseLayout } from '../instructor-course-layout/instructor-course-layout';
 import { ToastService } from '@services/toast.service';
 import { FormInput } from '@components/form-input/form-input';
@@ -20,6 +21,11 @@ import { AssignmentService } from '@services/assignment.service';
 export class InstructorAssignmentForm implements OnInit {
   protected layout = inject(InstructorCourseLayout);
   private toastService = inject(ToastService);
+  private authService = inject(AuthService);
+
+  protected get routePrefix(): string {
+    return this.authService.userRole()?.toLowerCase() || 'instructor';
+  }
   private assignmentService = inject(AssignmentService);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
@@ -223,7 +229,7 @@ export class InstructorAssignmentForm implements OnInit {
 
   protected navigateBack() {
     if (this.course) {
-      this.router.navigate(['/instructor/courses', this.course.slug, 'assignments']);
+      this.router.navigate([`/${this.routePrefix}/courses`, this.course.slug, 'assignments']);
     }
   }
 }

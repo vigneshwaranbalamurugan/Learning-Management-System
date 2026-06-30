@@ -14,3 +14,27 @@ export interface CertificateResponse {
   courseDurationHours: number;
   categoryName: string;
 }
+
+export interface CertificateTemplateResponse {
+  id: number;
+  name: string;
+  description?: string;
+  templateBackgroundUrl: string;
+  aspectRatioWidth: number;
+  aspectRatioHeight: number;
+  isActive: boolean;
+  createdAt: string;
+}
+
+export interface CreateCertificateTemplateRequest {
+  name: string;
+  description?: string;
+  aspectRatioWidth: number;
+  aspectRatioHeight: number;
+}
+
+export interface UpdateCertificateTemplateRequest {
+  name?: string;
+  description?: string;
+  isActive?: boolean;
+}

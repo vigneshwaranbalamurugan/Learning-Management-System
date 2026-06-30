@@ -1,0 +1,145 @@
+<div class="flex flex-col gap-6 animate-[fadeInContent_400ms_ease]">
+  <div class="flex flex-col gap-2">
+    <h2 class="text-2xl font-bold text-gray-900 m-0">System Logs</h2>
+    <p class="text-sm text-gray-500 m-0">View activity and audit logs for the platform.</p>
+  </div>
+
+  <!-- Tabs -->
+  <div class="flex gap-4 border-b border-gray-200">
+    <button (click)="switchTab('activity')"
+            [class]="activeTab() === 'activity' ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-gray-700'"
+            class="px-4 py-3 border-b-2 font-medium text-sm transition bg-transparent cursor-pointer">
+      Activity Logs
+    </button>
+    <button (click)="switchTab('audit')"
+            [class]="activeTab() === 'audit' ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-gray-700'"
+            class="px-4 py-3 border-b-2 font-medium text-sm transition bg-transparent cursor-pointer">
+      Audit Logs
+    </button>
+  </div>
+
+  <!-- Advanced Filters -->
+  <div class="bg-white border border-gray-200 rounded-xl p-4 flex flex-col md:flex-row gap-4 items-end shadow-xs">
+    <div class="flex-1 w-full md:w-auto">
+      <app-form-input
+        label="User ID"
+        type="text"
+        [value]="filterUserId()"
+        (valueChange)="filterUserId.set($event); onFilterChange()"
+        placeholder="Filter by user ID...">
+      </app-form-input>
+    </div>
+
+    <!-- Activity Type Filter -->
+    <div class="flex-1 w-full md:w-auto" *ngIf="activeTab() === 'activity'">
+      <app-dropdown
+        label="Activity Type"
+        [options]="activityTypeOptions"
+        [value]="filterActivityType()"
+        (valueChange)="filterActivityType.set($event); onFilterChange()">
+      </app-dropdown>
+    </div>
+
+    <!-- Audit Action Filter -->
+    <div class="flex-1 w-full md:w-auto" *ngIf="activeTab() === 'audit'">
+      <app-dropdown
+        label="Action"
+        [options]="actionOptions"
+        [value]="filterAction()"
+        (valueChange)="filterAction.set($event); onFilterChange()">
+      </app-dropdown>
+    </div>
+
+    <!-- Table Name Filter -->
+    <div class="flex-1 w-full md:w-auto" *ngIf="activeTab() === 'audit'">
+      <app-dropdown
+        label="Table Name"
+        [options]="tableNameOptions"
+        [value]="filterTableName()"
+        (valueChange)="filterTableName.set($event); onFilterChange()">
+      </app-dropdown>
+    </div>
+
+    <div class="flex gap-2 w-full md:w-auto">
+      <button class="px-6 py-2 bg-[#F8FAFC] text-slate-700 border border-slate-200 rounded-lg hover:bg-slate-100 transition-colors font-medium h-10 w-full md:w-auto"
+              (click)="clearFilters()">
+        Clear Filters
+      </button>
+    </div>
+  </div>
+
+  <!-- Table Section -->
+  <div class="bg-white border border-gray-200 rounded-xl shadow-xs overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="w-full text-left border-collapse">
+        <thead>
+          <tr class="bg-gray-50 border-b border-gray-200">
+            <th class="py-3 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wider">Timestamp</th>
+            <th class="py-3 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wider">User / ID</th>
+            <th *ngIf="activeTab() === 'audit'" class="py-3 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wider">Table</th>
+            <th class="py-3 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wider">Action</th>
+            <th class="py-3 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wider">Details</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+          <tr *ngIf="isLoading()">
+            <td [colSpan]="activeTab() === 'audit' ? 5 : 4" class="p-8 text-center">
+              <div class="flex justify-center"><div class="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin"></div></div>
+            </td>
+          </tr>
+          <tr *ngIf="!isLoading() && logs().length === 0">
+            <td [colSpan]="activeTab() === 'audit' ? 5 : 4" class="p-8 text-center text-sm text-gray-500">
+              No logs found.
+            </td>
+          </tr>
+          <ng-container *ngIf="!isLoading()">
+            <tr *ngFor="let log of logs()" class="hover:bg-gray-50 transition">
+              <td class="py-3 px-4 whitespace-nowrap text-sm text-gray-600">
+                {{ log.timestamp | date:'medium' }}
+              </td>
+              <td class="py-3 px-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                {{ log.userId || log.userEmail || 'System' }}
+              </td>
+              <td *ngIf="activeTab() === 'audit'" class="py-3 px-4 whitespace-nowrap text-sm font-medium text-blue-600">
+                {{ log.tableName }}
+              </td>
+              <td class="py-3 px-4 whitespace-nowrap text-sm">
+                <span class="px-2 py-1 bg-slate-100 text-slate-700 rounded text-xs font-bold">{{ log.action || log.activityType }}</span>
+              </td>
+              <td class="py-3 px-4 text-sm text-gray-500 max-w-md truncate">
+                <ng-container *ngIf="activeTab() === 'activity'">
+                  {{ log.details || log.description || '-' }}
+                </ng-container>
+                <ng-container *ngIf="activeTab() === 'audit'">
+                  <div class="flex flex-col gap-1 text-xs whitespace-normal break-words">
+                    <div *ngIf="log.oldValues"><span class="font-semibold text-gray-700">Old:</span> {{ log.oldValues }}</div>
+                    <div *ngIf="log.newValues"><span class="font-semibold text-gray-700">New:</span> {{ log.newValues }}</div>
+                    <span *ngIf="!log.oldValues && !log.newValues">-</span>
+                  </div>
+                </ng-container>
+              </td>
+            </tr>
+          </ng-container>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Pagination -->
+  <div class="px-6 py-4 border border-slate-200 rounded-xl bg-white shadow-xs flex items-center justify-between mt-[-1rem]">
+    <div class="text-sm text-slate-500">
+      Showing <span class="font-medium text-slate-900">{{ (pageNumber() - 1) * pageSize() + 1 }}</span> to 
+      <span class="font-medium text-slate-900">{{ (pageNumber() * pageSize()) > totalCount() ? totalCount() : (pageNumber() * pageSize()) }}</span> of 
+      <span class="font-medium text-slate-900">{{ totalCount() }}</span> logs
+    </div>
+    <app-pagination
+      *ngIf="!isLoading() && totalPages() > 1"
+      [pageNumber]="pageNumber()"
+      [totalPages]="totalPages()"
+      [totalCount]="totalCount()"
+      [pageSize]="pageSize()"
+      (pageChange)="onPageChange($event)">
+    </app-pagination>
+  </div>
+
+</div>

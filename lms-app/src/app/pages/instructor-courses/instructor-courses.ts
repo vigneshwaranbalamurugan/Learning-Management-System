@@ -38,7 +38,10 @@ export class InstructorCourses implements OnInit {
   
   // Confirmation Modal state
   protected showArchiveModal = false;
+  protected showPublishModal=false;
   protected courseToArchive: number | null = null;
+  protected courseToPublish:CourseResponse|null=null;
+  protected isPublishing=false;
   
   // Filtering States
   protected searchQuery = signal('');
@@ -312,7 +315,9 @@ export class InstructorCourses implements OnInit {
     this.toastService.showSuccess('Course duplicated successfully (Mocked).');
   }
 
-  protected togglePublishStatus(course: CourseResponse): void {
+  protected togglePublishStatus(course: CourseResponse|null): void {
+    if(course==null)
+      return
     const shouldUnpublish = this.canUnpublish(course);
     const nextPublishState = !shouldUnpublish;
     
@@ -326,8 +331,10 @@ export class InstructorCourses implements OnInit {
           // Update local signals
           this.courses.update(list => list.map(c => c.id === course.id ? { ...c, status: updatedCourse.status } : c));
           this.allCoursesForStats.update(list => list.map(c => c.id === course.id ? { ...c, status: updatedCourse.status } : c));
+          this.showPublishModal=false;
         },
         error: (err) => {
+          this.showPublishModal=false;
           this.toastService.showApiError(err, 'Failed to update course publish status.');
         }
       });
@@ -339,6 +346,12 @@ export class InstructorCourses implements OnInit {
     this.courseToArchive = courseId;
     this.isArchivingAction = archive;
     this.showArchiveModal = true;
+  }
+
+  protected ConfirmTogglePublishStatus(course:CourseResponse,shouldUnpublish:boolean):void{
+    this.courseToPublish=course;
+    this.isPublishing=shouldUnpublish;
+    this.showPublishModal=true;
   }
 
   protected archiveCourse(): void {
@@ -362,6 +375,11 @@ export class InstructorCourses implements OnInit {
   protected closeArchiveModal(): void {
     this.showArchiveModal = false;
     this.courseToArchive = null;
+  }
+
+  protected closePublishModal():void{
+    this.showPublishModal=false;
+    this.courseToPublish=null;
   }
 
   protected removeFilter(filterName: string): void {

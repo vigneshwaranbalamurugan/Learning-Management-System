@@ -93,5 +93,15 @@ namespace LMSApi.DALLibrary.Repositories
             _context.CertificateTemplates.Update(template);
             await _context.SaveChangesAsync();
         }
+
+        public async Task DeactivateAllTemplatesAsync()
+        {
+            var activeTemplates = await _context.CertificateTemplates.Where(t => t.IsActive).ToListAsync();
+            foreach (var t in activeTemplates)
+            {
+                t.IsActive = false;
+            }
+            await _context.SaveChangesAsync();
+        }
     }
 }

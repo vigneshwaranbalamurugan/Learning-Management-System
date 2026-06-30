@@ -33,10 +33,8 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
             }),
             catchError((refreshErr) => {
               isRefreshing = false;
-              // Clear session state — the auth.guard will handle redirecting to /login
-              // if the user tries to access a protected route.
-              // We do NOT force-redirect here to avoid breaking public page navigation.
-              authService.clearSession();
+              // Clear session state and call revoke on the backend
+              authService.logout().subscribe({ error: () => {} });
               toastService.showApiError(error, 'Session expired. Please login again.');
               // Only redirect if the user was on a protected route (has a currentUser)
               // At this point currentUser is null (just cleared), so we check the route.

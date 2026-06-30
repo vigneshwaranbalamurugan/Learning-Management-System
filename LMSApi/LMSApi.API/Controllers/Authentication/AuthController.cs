@@ -56,21 +56,21 @@ namespace LMSApi.API.Controllers
 			{
 				HttpOnly = true,
 				// For Network
-				Secure = false,
-				SameSite = SameSiteMode.Lax,
+				// Secure = false,
+				// SameSite = SameSiteMode.Lax,
 				//For Localhost
-				// Secure=true,
-				// SameSite=SameSiteMode.None
+				Secure=true,
+				SameSite=SameSiteMode.None
 			};
 			Response.Cookies.Append("access_token", result.Token, cookieOptions);
 
 			var refreshCookieOptions = new CookieOptions
 			{
 				HttpOnly = true,
-				// Secure=true,
-				// SameSite=SameSiteMode.None
-				Secure = false,
-				SameSite = SameSiteMode.Lax
+				Secure=true,
+				SameSite=SameSiteMode.None
+				// Secure = false,
+				// SameSite = SameSiteMode.Lax
 			};
 			if (result.RememberMe)
 			{
@@ -120,11 +120,11 @@ namespace LMSApi.API.Controllers
 			{
 				HttpOnly = true,
 				//For Network
-				Secure = false,
-				SameSite = SameSiteMode.Lax,
+				// Secure = false,
+				// SameSite = SameSiteMode.Lax,
 				//For Localhost
-				// Secure=true,
-				// SameSite=SameSiteMode.None
+				Secure=true,
+				SameSite=SameSiteMode.None
 			};
 			Response.Cookies.Append("access_token", result.AccessToken, cookieOptions);
 
@@ -132,11 +132,11 @@ namespace LMSApi.API.Controllers
 			{
 				HttpOnly = true,
 				//For Network
-				Secure = false,
-				SameSite = SameSiteMode.Lax,
+				// Secure = false,
+				// SameSite = SameSiteMode.Lax,
 				//For Localhost
-				// Secure=true,
-				// SameSite=SameSiteMode.None
+				Secure=true,
+				SameSite=SameSiteMode.None
 			};
 			if (result.RememberMe)
 			{
@@ -159,12 +159,12 @@ namespace LMSApi.API.Controllers
 			{
 				HttpOnly = true,
 				//For Network
-				Secure = false,
-				SameSite = SameSiteMode.Lax
+				// Secure = false,
+				// SameSite = SameSiteMode.Lax
 
 				//For Localhost
-				// Secure=true,
-				// SameSite=SameSiteMode.None,
+				Secure=true,
+				SameSite=SameSiteMode.None,
 			};
 			Response.Cookies.Delete("access_token", deleteCookieOptions);
 			Response.Cookies.Delete("refresh_token", deleteCookieOptions);

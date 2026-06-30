@@ -25,8 +25,10 @@ export interface CourseResponse {
   // Enriched fields from backend
   instructorName: string;
   instructorEmail: string;
+  instructorAvatarUrl?: string;
   lessonsCount: number;
   enrolledCount: number;
+  completionRate: number;
   estimatedDuration: string; // TimeSpan serialized as "HH:MM:SS"
   hasCertificate: boolean;
 }
@@ -43,6 +45,13 @@ export interface PagedCourseResponse {
   pageSize: number;
   totalCount: number;
   totalPages: number;
+}
+
+export interface CourseSummaryStatsResponse {
+  totalCourses: number;
+  publishedCourses: number;
+  pendingApproval: number;
+  archivedCourses: number;
 }
 
 export interface InstructorMetadata {

@@ -1,6 +1,7 @@
 import { Component, inject, OnInit, OnDestroy, signal, HostListener } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
 import { Router, ActivatedRoute, RouterModule } from '@angular/router';
+import { AuthService } from '@services/auth.service';
 import { ToastService } from '@services/toast.service';
 import { Button } from '@components/button/button';
 import { Loader } from '@components/loader/loader';
@@ -23,6 +24,11 @@ export class InstructorLessonDetail implements OnInit, OnDestroy {
   private resourcesService = inject(LessonResourcesService);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
+  private authService = inject(AuthService);
+
+  protected get routePrefix(): string {
+    return this.authService.userRole()?.toLowerCase() || 'instructor';
+  }
   private sanitizer = inject(DomSanitizer);
   protected layout = inject(InstructorCourseLayout);
 
@@ -148,7 +154,7 @@ export class InstructorLessonDetail implements OnInit, OnDestroy {
 
   protected navigateToLesson(id: number) {
     if (!this.courseSlug) return;
-    this.router.navigate(['/instructor/courses', this.courseSlug, 'lessons', id, 'detail']);
+    this.router.navigate([`/${this.routePrefix}/courses`, this.courseSlug, 'lessons', id, 'detail']);
   }
 
   protected previewLesson() {
@@ -175,11 +181,11 @@ export class InstructorLessonDetail implements OnInit, OnDestroy {
 
 
   protected navigateBack() {
-    this.router.navigate(['/instructor/courses', this.courseSlug, 'builder']);
+    this.router.navigate([`/${this.routePrefix}/courses`, this.courseSlug, 'builder']);
   }
 
   protected navigateToEdit() {
-    this.router.navigate(['/instructor/courses', this.courseSlug, 'lessons', this.lessonId, 'edit']);
+    this.router.navigate([`/${this.routePrefix}/courses`, this.courseSlug, 'lessons', this.lessonId, 'edit']);
   }
 
   protected confirmDelete() {
@@ -206,12 +212,12 @@ export class InstructorLessonDetail implements OnInit, OnDestroy {
 
   protected openAddResource() {
     if (!this.courseSlug || !this.lessonId) return;
-    this.router.navigate(['/instructor/courses', this.courseSlug, 'lessons', this.lessonId, 'resources', 'new']);
+    this.router.navigate([`/${this.routePrefix}/courses`, this.courseSlug, 'lessons', this.lessonId, 'resources', 'new']);
   }
 
   protected openEditResource(resource: any) {
     if (!this.courseSlug) return;
-    this.router.navigate(['/instructor/courses', this.courseSlug, 'resources', resource.id, 'edit']);
+    this.router.navigate([`/${this.routePrefix}/courses`, this.courseSlug, 'resources', resource.id, 'edit']);
   }
 
   protected deleteResource(id: number) {

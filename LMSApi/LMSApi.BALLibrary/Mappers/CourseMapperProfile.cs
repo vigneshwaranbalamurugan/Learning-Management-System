@@ -21,6 +21,7 @@ namespace LMSApi.BALLibrary.Mappers
                 .ForMember(dest => dest.LanguageName, opt => opt.MapFrom(src => src.Language != null ? src.Language.Name : string.Empty))
                 .ForMember(dest => dest.InstructorName, opt => opt.MapFrom(src => src.Instructor != null && src.Instructor.UserProfile != null ? $"{src.Instructor.UserProfile.FirstName} {src.Instructor.UserProfile.LastName}".Trim() : string.Empty))
                 .ForMember(dest => dest.InstructorEmail, opt => opt.MapFrom(src => src.Instructor != null ? src.Instructor.Email : string.Empty))
+                .ForMember(dest => dest.InstructorAvatarUrl, opt => opt.MapFrom(src => src.Instructor != null && src.Instructor.UserProfile != null ? src.Instructor.UserProfile.ProfilePictureUrl : string.Empty))
                 .ForMember(dest => dest.LessonsCount, opt => opt.MapFrom(src => src.Sections != null ? src.Sections.SelectMany(s => s.Lessons).Count() : 0))
                 .ForMember(dest => dest.HasCertificate, opt => opt.MapFrom(src => true));
 
@@ -30,6 +31,7 @@ namespace LMSApi.BALLibrary.Mappers
                 .ForMember(dest => dest.LanguageName, opt => opt.MapFrom(src => src.Language != null ? src.Language.Name : string.Empty))
                 .ForMember(dest => dest.InstructorName, opt => opt.MapFrom(src => src.Instructor != null && src.Instructor.UserProfile != null ? $"{src.Instructor.UserProfile.FirstName} {src.Instructor.UserProfile.LastName}".Trim() : string.Empty))
                 .ForMember(dest => dest.InstructorEmail, opt => opt.MapFrom(src => src.Instructor != null ? src.Instructor.Email : string.Empty))
+                .ForMember(dest => dest.InstructorAvatarUrl, opt => opt.MapFrom(src => src.Instructor != null && src.Instructor.UserProfile != null ? src.Instructor.UserProfile.ProfilePictureUrl : string.Empty))
                 .ForMember(dest => dest.LessonsCount, opt => opt.MapFrom(src => src.Sections != null ? src.Sections.SelectMany(s => s.Lessons).Count() : 0))
                 .ForMember(dest => dest.HasCertificate, opt => opt.MapFrom(src => true))
                 .ForMember(dest => dest.Sections, opt => opt.MapFrom(src => src.Sections))

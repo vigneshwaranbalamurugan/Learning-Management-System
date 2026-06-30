@@ -54,6 +54,27 @@ namespace LMSApi.BALLibrary.Services
             return responses;
         }
 
+        public async Task<PagedCourseResponse> GetAllCoursesPagedAsync(CourseSearchQuery query)
+        {
+            var (courses, totalCount) = await _courseRepository.GetAllCoursesPagedAsync(query);
+
+            var courseList = _mapper.Map<IEnumerable<CourseResponse>>(courses).ToList();
+            
+            PopulateEnrollmentStatsList(courseList, courses);
+            await PopulateRatingStatsListAsync(courseList);
+
+            var totalPages = (int)System.Math.Ceiling((double)totalCount / query.PageSize);
+
+            return new PagedCourseResponse
+            {
+                Courses = courseList,
+                TotalCount = totalCount,
+                PageNumber = query.PageNumber,
+                PageSize = query.PageSize,
+                TotalPages = totalPages
+            };
+        }
+
         public async Task<PagedCourseResponse> GetPublishedCoursesPagedAsync(
             CourseSearchQuery query, int? currentUserId = null)
         {
@@ -76,16 +97,7 @@ namespace LMSApi.BALLibrary.Services
 
             var courseList = _mapper.Map<IEnumerable<CourseResponse>>(courses).ToList();
             
-            // Map EnrolledCount and populate rating statistics
-            foreach (var response in courseList)
-            {
-                var original = courses.FirstOrDefault(c => c.Id == response.Id);
-                if (original != null)
-                {
-                    response.EnrolledCount = original.Enrollments?.Count ?? 0;
-                }
-            }
-            
+            PopulateEnrollmentStatsList(courseList, courses);
             await PopulateRatingStatsListAsync(courseList);
 
             var totalPages = (int)System.Math.Ceiling((double)totalCount / query.PageSize);
@@ -537,6 +549,27 @@ namespace LMSApi.BALLibrary.Services
             return responses;
         }
 
+        public async Task<PagedCourseResponse> GetPendingCoursesPagedAsync(CourseSearchQuery query)
+        {
+            var (courses, totalCount) = await _courseRepository.GetPendingCoursesPagedAsync(query);
+
+            var courseList = _mapper.Map<IEnumerable<CourseResponse>>(courses).ToList();
+            PopulateEnrollmentStatsList(courseList, courses);
+            await PopulateRatingStatsListAsync(courseList);
+
+            var totalPages = (int)System.Math.Ceiling((double)totalCount / query.PageSize);
+
+            return new PagedCourseResponse
+            {
+                Courses = courseList,
+                TotalCount = totalCount,
+                PageNumber = query.PageNumber,
+                PageSize = query.PageSize,
+                TotalPages = totalPages
+            };
+        }
+
+
 
 
         public async Task<IEnumerable<CourseResponse>> GetCoursesByInstructorAsync(int instructorId)
@@ -599,6 +632,11 @@ namespace LMSApi.BALLibrary.Services
             return responses;
         }
 
+        public async Task<CourseSummaryStatsResponse> GetCourseSummaryStatsAsync()
+        {
+            return await _courseRepository.GetCourseSummaryStatsAsync();
+        }
+
         public async Task<IEnumerable<CategoryResponse>> GetAllCategoriesAsync()
         {
             var categories = await _categoryRepository.GetAllAsync();
@@ -620,6 +658,21 @@ namespace LMSApi.BALLibrary.Services
         }
 
         // ─── Helpers ──────────────────────────────────────────────────────────
+
+        private void PopulateEnrollmentStatsList(IEnumerable<CourseResponse> courseList, IEnumerable<Courses> originalCourses)
+        {
+            foreach (var response in courseList)
+            {
+                var original = originalCourses.FirstOrDefault(c => c.Id == response.Id);
+                if (original != null)
+                {
+                    response.EnrolledCount = original.Enrollments?.Count ?? 0;
+                    response.CompletionRate = original.Enrollments != null && original.Enrollments.Count > 0 
+                        ? (double)original.Enrollments.Count(e => e.IsCompleted) / original.Enrollments.Count * 100 
+                        : 0;
+                }
+            }
+        }
 
         private async Task PopulateRatingStatsAsync(CourseResponse response)
         {

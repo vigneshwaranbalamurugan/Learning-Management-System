@@ -14,5 +14,6 @@ namespace LMSApi.DALLibrary.Interfaces
         Task UpdateCertificateAsync(Certificates certificate);
         Task AddTemplateAsync(CertificateTemplates template);
         Task UpdateTemplateAsync(CertificateTemplates template);
+        Task DeactivateAllTemplatesAsync();
     }
 }

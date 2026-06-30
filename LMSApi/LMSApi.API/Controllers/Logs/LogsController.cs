@@ -22,26 +22,30 @@ namespace LMSApi.API.Controllers
         }
 
         [HttpGet("activity")]
-        public async Task<ActionResult<IEnumerable<ActivityLogResponse>>> GetActivityLogs(
-            [FromQuery] int? userId,
+        public async Task<ActionResult> GetActivityLogs(
+            [FromQuery] string? userQuery,
             [FromQuery] string? activityType,
             [FromQuery] int page = 1,
             [FromQuery] int pageSize = 20)
         {
-            var logs = await _adminLogService.GetActivityLogsAsync(userId, activityType, page, pageSize);
-            return Ok(logs);
+            var logs = await _adminLogService.GetActivityLogsAsync(userQuery, activityType, page, pageSize);
+            var totalCount = await _adminLogService.GetActivityLogsCountAsync(userQuery, activityType);
+            var totalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
+            return Ok(new { logs, totalCount, totalPages });
         }
 
         [HttpGet("audit")]
-        public async Task<ActionResult<IEnumerable<AuditLogResponse>>> GetAuditLogs(
-            [FromQuery] int? userId,
+        public async Task<ActionResult> GetAuditLogs(
+            [FromQuery] string? userQuery,
             [FromQuery] string? tableName,
             [FromQuery] string? action,
             [FromQuery] int page = 1,
             [FromQuery] int pageSize = 20)
         {
-            var logs = await _adminLogService.GetAuditLogsAsync(userId, tableName, action, page, pageSize);
-            return Ok(logs);
+            var logs = await _adminLogService.GetAuditLogsAsync(userQuery, tableName, action, page, pageSize);
+            var totalCount = await _adminLogService.GetAuditLogsCountAsync(userQuery, tableName, action);
+            var totalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
+            return Ok(new { logs, totalCount, totalPages });
         }
     }
 }

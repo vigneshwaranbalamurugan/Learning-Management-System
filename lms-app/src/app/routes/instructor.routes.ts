@@ -33,7 +33,8 @@ export const instructorRoutes: Routes = [
           { path: '', redirectTo: 'overview', pathMatch: 'full' },
           {
             path: 'overview',
-            loadComponent: () => import('@pages/instructor-course-overview/instructor-course-overview').then(m => m.InstructorCourseOverview)
+            loadComponent: () => import('@pages/instructor-course-overview/instructor-course-overview').then(m => m.InstructorCourseOverview),
+            canDeactivate: [(component: any) => component.canDeactivate ? component.canDeactivate() : true]
           },
           {
             path: 'builder',

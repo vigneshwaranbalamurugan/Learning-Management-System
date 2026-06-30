@@ -3,6 +3,7 @@ import { marked } from 'marked';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { AuthService } from '@services/auth.service';
 import { ToastService } from '@services/toast.service';
 import { CategoryResponse } from '@models/course';
 import { untilDestroyed } from '../../rxjs/until-destroyed';
@@ -48,7 +49,12 @@ export class InstructorCourseForm implements OnInit {
   private courseService = inject(CourseService);
   private toastService = inject(ToastService);
   private router = inject(Router);
+  private authService = inject(AuthService);
   private destroyRef = inject(DestroyRef);
+
+  protected get routePrefix(): string {
+    return this.authService.userRole()?.toLowerCase() || 'instructor';
+  }
 
   protected isMetaLoading = signal(true);
   protected isSubmitting = signal(false);
@@ -215,6 +221,9 @@ export class InstructorCourseForm implements OnInit {
     if (!this.form.description.trim()) {
       this.errors.description = 'Description is required.';
       valid = false;
+    }else if(this.form.description.trim().length>500){
+        this.errors.description='Description must not exeed 500 charactera.';
+        valid=false;
     }
 
     if (!this.form.categoryId) {
@@ -292,7 +301,7 @@ export class InstructorCourseForm implements OnInit {
         next: (course) => {
           this.toastService.showSuccess('Course created successfully!');
           this.isSubmitted = true;
-          this.router.navigate(['/instructor/courses', course.slug, 'builder']);
+          this.router.navigate([`/${this.routePrefix}/courses`, course.slug, 'builder']);
         },
         error: (err) => {
           this.toastService.showApiError(err, 'Failed to create course.');
@@ -302,7 +311,7 @@ export class InstructorCourseForm implements OnInit {
   }
 
   protected onCancel(): void {
-    this.router.navigate(['/instructor/courses']);
+    this.router.navigate([`/${this.routePrefix}/courses`]);
   }
 
   async canDeactivate(): Promise<boolean> {

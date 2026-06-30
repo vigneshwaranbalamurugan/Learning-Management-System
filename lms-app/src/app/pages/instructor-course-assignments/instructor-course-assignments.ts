@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { InstructorCourseLayout } from '../instructor-course-layout/instructor-course-layout';
 import { ToastService } from '@services/toast.service';
+import { AuthService } from '@services/auth.service';
 import { ConfirmModal } from '@components/confirm-modal/confirm-modal';
 import { Button } from '@components/button/button';
 import { AssignmentService } from '@services/assignment.service';
@@ -16,6 +17,11 @@ import { AssignmentService } from '@services/assignment.service';
 export class InstructorCourseAssignments {
   protected layout = inject(InstructorCourseLayout);
   private toastService = inject(ToastService);
+  private authService = inject(AuthService);
+
+  protected get routePrefix(): string {
+    return this.authService.userRole()?.toLowerCase() || 'instructor';
+  }
   private assignmentService = inject(AssignmentService);
   private router = inject(Router);
 
@@ -28,7 +34,7 @@ export class InstructorCourseAssignments {
 
   protected openAddAssignment() {
     if (this.course?.sections && this.course.sections.length > 0) {
-      this.router.navigate(['/instructor/courses', this.course.slug, 'assignments', 'new']);
+      this.router.navigate([`/${this.routePrefix}/courses`, this.course.slug, 'assignments', 'new']);
     } else {
       this.toastService.showError('Please create a section first before adding an assignment.');
     }
@@ -61,6 +67,6 @@ export class InstructorCourseAssignments {
 
   protected editAssignment(assignmentId: number) {
     if (!this.course) return;
-    this.router.navigate(['/instructor/courses', this.course.slug, 'assignments', assignmentId, 'edit']);
+    this.router.navigate([`/${this.routePrefix}/courses`, this.course.slug, 'assignments', assignmentId, 'edit']);
   }
 }

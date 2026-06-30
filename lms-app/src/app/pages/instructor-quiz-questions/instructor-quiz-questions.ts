@@ -2,6 +2,7 @@ import { Component, inject, NgZone, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, ActivatedRoute, RouterModule } from '@angular/router';
+import { AuthService } from '@services/auth.service';
 import { ToastService } from '@services/toast.service';
 import { ConfirmModal } from '@components/confirm-modal/confirm-modal';
 import { FormInput } from '@components/form-input/form-input';
@@ -37,6 +38,11 @@ export class InstructorQuizQuestions implements OnInit {
   private quizService = inject(QuizService);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
+  private authService = inject(AuthService);
+
+  protected get routePrefix(): string {
+    return this.authService.userRole()?.toLowerCase() || 'instructor';
+  }
   private ngZone = inject(NgZone);
 
   protected courseSlug = '';
@@ -100,7 +106,7 @@ export class InstructorQuizQuestions implements OnInit {
 
   protected navigateBack() {
     if (this.courseSlug) {
-      this.router.navigate(['/instructor/courses', this.courseSlug, 'quizzes']);
+      this.router.navigate([`/${this.routePrefix}/courses`, this.courseSlug, 'quizzes']);
     }
   }
 

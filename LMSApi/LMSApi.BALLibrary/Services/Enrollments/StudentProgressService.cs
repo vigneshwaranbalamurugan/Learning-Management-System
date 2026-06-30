@@ -393,12 +393,12 @@ namespace LMSApi.BALLibrary.Services
             }
         }
 
-        public async Task<IEnumerable<StudentProgressSummaryDto>> GetStudentsProgressForCourseAsync(int instructorId, int courseId)
+        public async Task<IEnumerable<StudentProgressSummaryDto>> GetStudentsProgressForCourseAsync(int instructorId, int courseId, bool isAdmin = false)
         {
             var course = await _courseRepository.GetByIdAsync(courseId)
                 ?? throw new KeyNotFoundException($"Course with id '{courseId}' not found.");
 
-            if (course.InstructorId != instructorId)
+            if (!isAdmin && course.InstructorId != instructorId)
             {
                 throw new UnauthorizedAccessException("You do not have permission to view progress details for this course.");
             }
@@ -427,12 +427,12 @@ namespace LMSApi.BALLibrary.Services
             });
         }
 
-        public async Task<CourseProgressResponse> GetStudentDetailedProgressForInstructorAsync(int instructorId, int studentId, int courseId)
+        public async Task<CourseProgressResponse> GetStudentDetailedProgressForInstructorAsync(int instructorId, int studentId, int courseId, bool isAdmin = false)
         {
             var course = await _courseRepository.GetByIdAsync(courseId)
                 ?? throw new KeyNotFoundException($"Course with id '{courseId}' not found.");
 
-            if (course.InstructorId != instructorId)
+            if (!isAdmin && course.InstructorId != instructorId)
             {
                 throw new UnauthorizedAccessException("You do not have permission to view progress details for this course.");
             }

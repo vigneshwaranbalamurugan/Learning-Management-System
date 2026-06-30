@@ -19,3 +19,11 @@ export interface UpdateReviewRequest {
   rating?: number;
   reviewText?: string;
 }
+
+export interface PagedReviewResponse {
+  reviews: ReviewResponse[];
+  totalCount: number;
+  pageNumber: number;
+  pageSize: number;
+  totalPages: number;
+}

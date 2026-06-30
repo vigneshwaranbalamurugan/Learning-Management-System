@@ -101,5 +101,29 @@ namespace LMSApi.DALLibrary.Repositories
                 .Where(s => s.StudentId == studentId && assignmentIds.Contains(s.AssignmentId))
                 .ToListAsync();
         }
+
+        public async Task<(IEnumerable<AssignmentSubmissions> Submissions, int TotalCount)> GetAllSubmissionsPagedAsync(int pageNumber, int pageSize, string? status)
+        {
+            var queryable = _context.AssignmentSubmissions
+                .Include(s => s.Student)
+                    .ThenInclude(u => u.UserProfile)
+                .Include(s => s.Assignment)
+                .AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(status) && Enum.TryParse<SubmissionStatus>(status, true, out var parsedStatus))
+            {
+                queryable = queryable.Where(s => s.Status == parsedStatus);
+            }
+
+            var totalCount = await queryable.CountAsync();
+            
+            var submissions = await queryable
+                .OrderByDescending(s => s.SubmittedAt)
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            return (submissions, totalCount);
+        }
     }
 }

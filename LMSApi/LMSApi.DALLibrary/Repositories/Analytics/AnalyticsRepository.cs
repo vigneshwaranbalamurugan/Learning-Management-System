@@ -30,6 +30,103 @@ namespace LMSApi.DALLibrary.Repositories
                 .Where(p => p.Status == PaymentStatus.Completed || p.Status == PaymentStatus.Transferred)
                 .SumAsync(p => p.Amount);
 
+            var totalCertificatesIssued = await _context.Certificates.CountAsync();
+
+            var sixMonthsAgo = DateTime.UtcNow.AddMonths(-6);
+
+            // 1. Monthly Revenue
+            var monthlyRevenueData = await _context.Payments
+                .Where(p => (p.Status == PaymentStatus.Completed || p.Status == PaymentStatus.Transferred) && p.PaidAt != null && p.PaidAt >= sixMonthsAgo)
+                .GroupBy(p => new { Year = p.PaidAt.Value.Year, Month = p.PaidAt.Value.Month })
+                .Select(g => new
+                {
+                    g.Key.Year,
+                    g.Key.Month,
+                    Revenue = g.Sum(p => p.Amount)
+                })
+                .ToListAsync();
+
+            var monthlyRevenueList = new System.Collections.Generic.List<MonthlyRevenueDto>();
+            for (int i = 5; i >= 0; i--)
+            {
+                var targetDate = DateTime.UtcNow.AddMonths(-i);
+                var monthData = monthlyRevenueData.FirstOrDefault(m => m.Year == targetDate.Year && m.Month == targetDate.Month);
+                monthlyRevenueList.Add(new MonthlyRevenueDto
+                {
+                    Month = targetDate.ToString("MMM"),
+                    Revenue = monthData?.Revenue ?? 0
+                });
+            }
+
+            // 2. User Growth Trend
+            var userGrowthData = await _context.Users
+                .Where(u => u.CreatedAt >= sixMonthsAgo)
+                .GroupBy(u => new { Year = u.CreatedAt.Year, Month = u.CreatedAt.Month })
+                .Select(g => new
+                {
+                    g.Key.Year,
+                    g.Key.Month,
+                    Count = g.Count()
+                })
+                .ToListAsync();
+
+            var userGrowthList = new System.Collections.Generic.List<MonthlyTrendDto>();
+            for (int i = 5; i >= 0; i--)
+            {
+                var targetDate = DateTime.UtcNow.AddMonths(-i);
+                var trendData = userGrowthData.FirstOrDefault(m => m.Year == targetDate.Year && m.Month == targetDate.Month);
+                userGrowthList.Add(new MonthlyTrendDto
+                {
+                    Month = targetDate.ToString("MMM"),
+                    Count = trendData?.Count ?? 0
+                });
+            }
+
+            // 3. Course Enrollment Trend
+            var enrollmentTrendData = await _context.Enrollments
+                .Where(e => e.EnrolledAt >= sixMonthsAgo && (e.EnrollmentStatus == EnrollmentStatus.Active || e.EnrollmentStatus == EnrollmentStatus.Completed))
+                .GroupBy(e => new { Year = e.EnrolledAt.Year, Month = e.EnrolledAt.Month })
+                .Select(g => new
+                {
+                    g.Key.Year,
+                    g.Key.Month,
+                    Count = g.Count()
+                })
+                .ToListAsync();
+
+            var enrollmentTrendList = new System.Collections.Generic.List<MonthlyTrendDto>();
+            for (int i = 5; i >= 0; i--)
+            {
+                var targetDate = DateTime.UtcNow.AddMonths(-i);
+                var trendData = enrollmentTrendData.FirstOrDefault(m => m.Year == targetDate.Year && m.Month == targetDate.Month);
+                enrollmentTrendList.Add(new MonthlyTrendDto
+                {
+                    Month = targetDate.ToString("MMM"),
+                    Count = trendData?.Count ?? 0
+                });
+            }
+
+            // 4. Recent Activities
+            var targetTypes = new System.Collections.Generic.List<ActivityType> {
+                ActivityType.UserRegister,
+                ActivityType.CourseCreated,
+                ActivityType.CoursePublished,
+                ActivityType.CertificateIssued
+            };
+
+            var recentActivities = await _context.ActivityLogs
+                .Where(al => targetTypes.Contains(al.ActivityType))
+                .OrderByDescending(al => al.Timestamp)
+                .Take(20)
+                .Select(al => new RecentActivityDto
+                {
+                    ActivityType = al.ActivityType.ToString(),
+                    Description = al.Description,
+                    Timestamp = al.Timestamp,
+                    UserName = al.User.UserProfile != null ? (al.User.UserProfile.FirstName + " " + al.User.UserProfile.LastName) : al.User.Email
+                })
+                .ToListAsync();
+
             return new AdminAnalyticsResponse
             {
                 TotalUsers = totalUsers,
@@ -38,7 +135,12 @@ namespace LMSApi.DALLibrary.Repositories
                 TotalCourses = totalCourses,
                 ActiveCourses = activeCourses,
                 TotalEnrollments = totalEnrollments,
-                TotalRevenue = totalRevenue
+                TotalRevenue = totalRevenue,
+                TotalCertificatesIssued = totalCertificatesIssued,
+                MonthlyRevenue = monthlyRevenueList,
+                UserGrowth = userGrowthList,
+                EnrollmentTrend = enrollmentTrendList,
+                RecentActivities = recentActivities
             };
         }
 

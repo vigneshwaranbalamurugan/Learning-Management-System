@@ -26,14 +26,14 @@
           <nav class="flex mb-0.5" aria-label="Breadcrumb">
             <ol class="inline-flex items-center space-x-1 md:space-x-1.5 text-[11px] font-medium text-slate-500">
               <li class="inline-flex items-center">
-                <a routerLink="/instructor/courses" class="hover:text-[#1C1C7B] transition-colors">Courses</a>
+                <a [routerLink]="['/' + routePrefix + '/courses']" class="hover:text-[#1C1C7B] transition-colors">Courses</a>
               </li>
               <li>
                 <div class="flex items-center">
                   <svg class="w-2.5 h-2.5 text-slate-300 mx-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
                   </svg>
-                  <a [routerLink]="['/instructor/courses', courseSlug, 'builder']"
+                  <a [routerLink]="['/' + routePrefix + '/courses', courseSlug, 'builder']"
                     class="hover:text-[#1C1C7B] transition-colors max-w-[120px] truncate">
                     {{ layout.course()?.title || 'Course' }}
                   </a>
