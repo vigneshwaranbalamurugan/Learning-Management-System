@@ -192,12 +192,14 @@ export class CourseDetail implements OnInit {
     this.isEnrolling.set(true);
     this.enrollmentService.enrollFreeCourse(c.id).pipe(untilDestroyed(this.destroyRef)).subscribe({
       next: () => {
+        sessionStorage.removeItem(`idem_key_${c.id}`);
         this.isEnrolled.set(true);
         this.isEnrolling.set(false);
         this.showConfetti.set(true);
         this.loadCourse(c.id);
       },
       error: (err) => {
+        sessionStorage.removeItem(`idem_key_${c.id}`);
         this.toastService.showApiError(err, 'Enrollment failed.');
         this.isEnrolling.set(false);
       }
@@ -249,6 +251,7 @@ export class CourseDetail implements OnInit {
             },
             modal: {
               ondismiss: () => {
+                sessionStorage.removeItem(`idem_key_${course.id}`);
                 this.isEnrolling.set(false);
                 this.toastService.showWarning('Payment cancelled.');
               }
@@ -266,6 +269,7 @@ export class CourseDetail implements OnInit {
           rzp.open();
         },
         error: (err) => {
+          sessionStorage.removeItem(`idem_key_${course.id}`);
           this.toastService.showApiError(err, 'Failed to initiate payment.');
           this.isEnrolling.set(false);
           this.isInitializingPayment.set(false);
@@ -286,6 +290,7 @@ export class CourseDetail implements OnInit {
       .pipe(untilDestroyed(this.destroyRef))
       .subscribe({
         next: () => {
+          sessionStorage.removeItem(`idem_key_${courseId}`);
           this.isEnrolled.set(true);
           this.isEnrolling.set(false);
           this.isVerifyingPayment.set(false);
@@ -293,6 +298,7 @@ export class CourseDetail implements OnInit {
           this.loadCourse(courseId);
         },
         error: (err) => {
+          sessionStorage.removeItem(`idem_key_${courseId}`);
           this.toastService.showApiError(err, 'Payment verification failed.');
           this.isEnrolling.set(false);
           this.isVerifyingPayment.set(false);

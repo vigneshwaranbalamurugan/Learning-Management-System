@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.AspNetCore.Http.Timeouts;
 
 namespace LMSApi.API.Controllers
 {
@@ -33,6 +34,7 @@ namespace LMSApi.API.Controllers
         /// <summary>Get all published courses with pagination and filters.</summary>
         [HttpGet]
         [EnableRateLimiting("PublicCourseListing")]
+        [RequestTimeout("Quick")]
         public async Task<ActionResult<PagedCourseResponse>> GetAll([FromQuery] CourseSearchQuery query)
         {
             int? userId = null;
@@ -54,6 +56,7 @@ namespace LMSApi.API.Controllers
         /// <summary>Get categories, languages, and active instructors metadata for catalog filtering.</summary>
         [HttpGet("filters-metadata")]
         [EnableRateLimiting("PublicCourseListing")]
+        [RequestTimeout("Quick")]
         public async Task<ActionResult<FiltersMetadataResponse>> GetFiltersMetadata()
         {
             var result = await _courseService.GetFiltersMetadataAsync();
@@ -63,6 +66,7 @@ namespace LMSApi.API.Controllers
         /// <summary>Get a course with full details (sections + lessons).</summary>
         [HttpGet("{id:int}")]
         [EnableRateLimiting("PublicCourseListing")]
+        [RequestTimeout("Quick")]
         public async Task<ActionResult<CourseDetailsResponse>> GetById(int id)
         {
             int? userId = null;
@@ -85,6 +89,7 @@ namespace LMSApi.API.Controllers
         /// <summary>Get a course with full details (sections + lessons) by slug.</summary>
         [HttpGet("slug/{slug}")]
         [EnableRateLimiting("PublicCourseListing")]
+        [RequestTimeout("Quick")]
         public async Task<ActionResult<CourseDetailsResponse>> GetBySlug(string slug)
         {
             int? userId = null;
@@ -107,6 +112,7 @@ namespace LMSApi.API.Controllers
         /// <summary>Get course details by slug for instructor workspace (enforces ownership).</summary>
         [Authorize(Roles = "Instructor,Admin")]
         [HttpGet("instructor/slug/{slug}")]
+        [RequestTimeout("Quick")]
         public async Task<ActionResult<CourseDetailsResponse>> GetInstructorCourseBySlug(string slug)
         {
             var userId = User.GetUserId();
@@ -122,6 +128,7 @@ namespace LMSApi.API.Controllers
         /// <summary>Get all courses in a specific category.</summary>
         [HttpGet("category/{categoryId:int}")]
         [EnableRateLimiting("PublicCourseListing")]
+        [RequestTimeout("Quick")]
         public async Task<ActionResult<IEnumerable<CourseResponse>>> GetByCategory(int categoryId)
         {
             var result = await _courseService.GetCoursesByCategoryAsync(categoryId);
@@ -131,6 +138,7 @@ namespace LMSApi.API.Controllers
 
         [Authorize(Roles = "Instructor,Admin")]
         [HttpGet("my-courses")]
+        [RequestTimeout("Quick")]
         public async Task<ActionResult<PagedCourseResponse>> GetMyCourses([FromQuery] CourseSearchQuery query)
         {
             var instructorId = User.GetUserId();

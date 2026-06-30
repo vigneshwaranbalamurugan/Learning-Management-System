@@ -1,31 +1,48 @@
 <div class="flex flex-col gap-6 w-full animate-[fadeIn_0.3s_ease-out]">
-  <div class="text-center md:text-left">
-    <h1 class="text-2xl sm:text-3xl font-extrabold text-text-primary tracking-tight">
-      Forgot Password?
-    </h1>
-    <p class="text-sm text-text-muted mt-1.5">
-      Enter your email to receive password reset instructions.
-    </p>
-  </div>
-
-  <form (submit)="onSubmit($event)" class="flex flex-col gap-1 w-full">
-    <app-form-input
-      id="forgot-email"
-      label="Email Address"
-      type="email"
-      placeholder="name@example.com"
-      icon="email"
-      [value]="email"
-      [error]="emailError"
-      (valueChange)="onEmailChange($event)"
-    ></app-form-input>
-
-    <div class="mt-4">
-      <app-button type="submit" variant="primary" [loading]="isSubmitting">
-        Send Reset Link
-      </app-button>
+  
+  <ng-container *ngIf="!isSuccess()">
+    <div class="text-center md:text-left">
+      <h1 class="text-2xl sm:text-3xl font-extrabold text-text-primary tracking-tight">
+        Forgot Password?
+      </h1>
+      <p class="text-sm text-text-muted mt-1.5">
+        Enter your email to receive password reset instructions.
+      </p>
     </div>
-  </form>
+
+    <form (submit)="onSubmit($event)" class="flex flex-col gap-1 w-full">
+      <app-form-input
+        id="forgot-email"
+        label="Email Address"
+        type="email"
+        placeholder="name@example.com"
+        icon="email"
+        [value]="email"
+        [error]="emailError"
+        (valueChange)="onEmailChange($event)"
+      ></app-form-input>
+
+      <div class="mt-4">
+        <app-button type="submit" variant="primary" [loading]="isSubmitting()">
+          Send Reset Link
+        </app-button>
+      </div>
+    </form>
+  </ng-container>
+
+  <ng-container *ngIf="isSuccess()">
+    <div class="text-center flex flex-col items-center py-6">
+      <div class="w-16 h-16 bg-green-50 rounded-full flex items-center justify-center mb-6">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-8 h-8 text-green-500">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
+        </svg>
+      </div>
+      <h2 class="text-2xl font-bold text-text-primary mb-2">Check your inbox</h2>
+      <p class="text-text-muted text-sm max-w-sm mx-auto leading-relaxed">
+        We've sent a password reset link to <span class="font-semibold text-text-primary">{{email}}</span>.
+      </p>
+    </div>
+  </ng-container>
 
   <p class="text-sm text-center md:text-left text-text-muted mt-2">
     <button type="button" (click)="backToLogin.emit()" class="font-semibold text-secondary hover:text-secondary-hover transition-colors cursor-pointer bg-transparent border-none focus:outline-none flex items-center gap-1 mx-auto md:mx-0">

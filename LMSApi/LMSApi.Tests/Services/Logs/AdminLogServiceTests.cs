@@ -153,7 +153,7 @@ namespace LMSApi.Tests.Services
             await DbContext.SaveChangesAsync();
 
             // Filter by UserLogin
-            var filterResult = (await _adminLogService.GetActivityLogsAsync(_testUser.Id, "UserLogin", 1, 10)).ToList();
+            var filterResult = (await _adminLogService.GetActivityLogsAsync(_testUser.Email, "UserLogin", 1, 10)).ToList();
             Assert.That(filterResult.Count, Is.EqualTo(2));
             Assert.That(filterResult[0].Description, Is.EqualTo("Login 2")); // Ordered desc by default
             Assert.That(filterResult[1].Description, Is.EqualTo("Login 1"));
@@ -171,7 +171,7 @@ namespace LMSApi.Tests.Services
             await DbContext.SaveChangesAsync();
 
             // Filter by Table
-            var filterResult = (await _adminLogService.GetAuditLogsAsync(_testUser.Id, "Courses", null, 1, 10)).ToList();
+            var filterResult = (await _adminLogService.GetAuditLogsAsync(_testUser.Email, "Courses", null, 1, 10)).ToList();
             Assert.That(filterResult.Count, Is.EqualTo(2));
             Assert.That(filterResult[0].TableName, Is.EqualTo("Courses"));
             Assert.That(filterResult[0].Action, Is.EqualTo("Update"));

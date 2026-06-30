@@ -17,18 +17,21 @@ namespace LMSApi.BALLibrary.Services
         private readonly ITokenService _tokenService;
         private readonly IConfiguration _configuration;
         private readonly ILogger<AuthService>? _logger;
+        private readonly ITokenRevocationService _tokenRevocationService;
 
         public AuthService(
             IUserRepository userRepository, 
             INotificationService notificationService, 
             ITokenService tokenService, 
             IConfiguration configuration,
+            ITokenRevocationService tokenRevocationService,
             ILogger<AuthService>? logger = null)
         {
             _userRepository = userRepository;
             _notificationService = notificationService;
             _tokenService = tokenService;
             _configuration = configuration;
+            _tokenRevocationService = tokenRevocationService;
             _logger = logger;
             PasswordHashing.Initialize(configuration);
         }
@@ -315,7 +318,7 @@ namespace LMSApi.BALLibrary.Services
             };
         }
 
-        public async Task RevokeTokenAsync(string email)
+        public async Task RevokeTokenAsync(string email, string? accessTokenJti, TimeSpan? accessTokenRemainingTtl)
         {
             if (string.IsNullOrWhiteSpace(email)) throw new ArgumentException("Email is required", nameof(email));
 
@@ -325,6 +328,11 @@ namespace LMSApi.BALLibrary.Services
                 user.RefreshToken = null;
                 user.RefreshTokenExpiryTime = null;
                 await _userRepository.UpdateAsync(user);
+            }
+
+            if (!string.IsNullOrEmpty(accessTokenJti) && accessTokenRemainingTtl.HasValue && accessTokenRemainingTtl.Value > TimeSpan.Zero)
+            {
+                await _tokenRevocationService.BlockAccessTokenAsync(accessTokenJti, accessTokenRemainingTtl.Value);
             }
         }
     }

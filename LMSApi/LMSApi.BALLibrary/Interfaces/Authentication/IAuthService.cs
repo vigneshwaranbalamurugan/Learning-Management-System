@@ -11,6 +11,6 @@ namespace LMSApi.BALLibrary.Interfaces
         Task<ForgotPasswordResponse> ForgotPasswordAsync(ForgotPasswordRequest request);
         Task<ResetPasswordResponse> ResetPasswordAsync(ResetPasswordRequest request);
         Task<RefreshTokenResponse> RefreshTokenAsync(RefreshTokenRequest request);
-        Task RevokeTokenAsync(string email);
+        Task RevokeTokenAsync(string email, string? accessTokenJti, TimeSpan? accessTokenRemainingTtl);
     }
 }

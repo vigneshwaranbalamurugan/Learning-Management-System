@@ -6,7 +6,7 @@ import { FormInput } from '@components/form-input/form-input';
 import { Register } from './register/register';
 import { Forgot } from './forgot/forgot';
 import { Resend } from './resend/resend';
-import { RegisterModel, ForgotPasswordModel, ResendVerificationModel, LoginModel } from '@models/auth';
+import { RegisterModel, LoginModel } from '@models/auth';
 import { Navbar } from '@components/navbar/navbar';
 import { Footer } from '@components/footer/footer';
 import { ToastService } from '@services/toast.service';
@@ -171,21 +171,5 @@ export class Login implements OnInit {
     }, 1500);
   }
 
-  protected handleForgot(data: ForgotPasswordModel): void {
-    this.isSubmitting.set(true);
-    setTimeout(() => {
-      this.isSubmitting.set(false);
-      this.toastService.showInfo('Password reset link sent');
-      this.changeScreen('login');
-    }, 1500);
-  }
 
-  protected handleResend(data: ResendVerificationModel): void {
-    this.isSubmitting.set(true);
-    setTimeout(() => {
-      this.isSubmitting.set(false);
-      this.toastService.showWarning('Please verify your email');
-      this.changeScreen('login');
-    }, 1500);
-  }
 }

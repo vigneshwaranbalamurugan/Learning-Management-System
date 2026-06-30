@@ -5,6 +5,7 @@ using LMSApi.ModelLibrary.DTOs;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.AspNetCore.Http.Timeouts;
 
 namespace LMSApi.API.Controllers
 {
@@ -41,6 +42,7 @@ namespace LMSApi.API.Controllers
         [Authorize]
         [HttpPost("{id:int}/submit")]
         [EnableRateLimiting("QuizSubmit")]
+        [RequestTimeout("Normal")]
         public async Task<ActionResult<QuizAttemptResponse>> SubmitQuiz(int id, [FromBody] SubmitQuizRequest request)
         {
             var userId = User.GetUserId();

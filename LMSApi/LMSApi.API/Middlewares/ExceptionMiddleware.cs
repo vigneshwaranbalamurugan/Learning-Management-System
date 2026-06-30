@@ -74,6 +74,13 @@ namespace LMSApi.API.Middlewares
                 // Response is already abandoned; nothing to write.
             }
 
+            // ── Server-initiated timeout (NOT a client disconnect) ──────────
+            catch (OperationCanceledException) when (!context.RequestAborted.IsCancellationRequested)
+            {
+                _logger.LogWarning("Request timed out. Path={Path}", context.Request.Path);
+                await WriteErrorAsync(context, HttpStatusCode.GatewayTimeout, "The request timed out. Please try again.");
+            }
+
             // ── Database / infrastructure errors (5xx) ──────────────────────
             catch (DbUpdateConcurrencyException ex)
             {

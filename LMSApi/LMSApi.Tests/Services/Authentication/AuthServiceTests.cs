@@ -21,6 +21,7 @@ namespace LMSApi.Tests.Services
         private Mock<ITokenService> _mockTokenService = null!;
         private Mock<IConfiguration> _mockConfiguration = null!;
         private Mock<ILogger<AuthService>> _mockLogger = null!;
+        private Mock<ITokenRevocationService> _mockTokenRevocationService = null!;
         private IAuthService _authService = null!;
 
         [SetUp]
@@ -32,6 +33,7 @@ namespace LMSApi.Tests.Services
             _mockTokenService = new Mock<ITokenService>();
             _mockConfiguration = new Mock<IConfiguration>();
             _mockLogger = new Mock<ILogger<AuthService>>();
+            _mockTokenRevocationService = new Mock<ITokenRevocationService>();
 
             _mockConfiguration.Setup(c => c["App:BaseUrl"]).Returns("https://test.com");
             _mockConfiguration.Setup(c => c["App:BasePath"]).Returns("/api");
@@ -43,6 +45,7 @@ namespace LMSApi.Tests.Services
                 _mockNotificationService.Object,
                 _mockTokenService.Object,
                 _mockConfiguration.Object,
+                _mockTokenRevocationService.Object,
                 _mockLogger.Object
             );
         }
@@ -813,7 +816,7 @@ namespace LMSApi.Tests.Services
             await DbContext.SaveChangesAsync();
 
             // Act
-            await _authService.RevokeTokenAsync("revoke_test@example.com");
+            await _authService.RevokeTokenAsync("revoke_test@example.com", "mock_jti", TimeSpan.FromMinutes(10));
 
             // Assert
             DbContext.ChangeTracker.Clear();

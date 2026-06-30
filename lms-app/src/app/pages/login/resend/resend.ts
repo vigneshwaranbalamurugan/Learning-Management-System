@@ -1,8 +1,9 @@
-import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { Component, Output, EventEmitter, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Button } from '@components/button/button';
 import { FormInput } from '@components/form-input/form-input';
-import { ResendVerificationModel } from '@models/auth';
+import { AuthService } from '@services/auth.service';
+import { ToastService } from '@services/toast.service';
 
 @Component({
   selector: 'app-resend',
@@ -11,9 +12,13 @@ import { ResendVerificationModel } from '@models/auth';
   templateUrl: './resend.html',
 })
 export class Resend {
-  @Input() isSubmitting = false;
   @Output() backToLogin = new EventEmitter<void>();
-  @Output() resendSubmit = new EventEmitter<ResendVerificationModel>();
+
+  private authService = inject(AuthService);
+  private toastService = inject(ToastService);
+
+  isSubmitting = signal(false);
+  isSuccess = signal(false);
 
   protected email = '';
   protected emailError = '';
@@ -47,6 +52,16 @@ export class Resend {
       return;
     }
 
-    this.resendSubmit.emit({ email: this.email });
+    this.isSubmitting.set(true);
+    this.authService.resendVerification(this.email).subscribe({
+      next: () => {
+        this.isSubmitting.set(false);
+        this.isSuccess.set(true);
+      },
+      error: (err) => {
+        this.isSubmitting.set(false);
+        this.toastService.showApiError(err?.error?.message, 'Failed to resend verification email.');
+      }
+    });
   }
 }

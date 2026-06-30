@@ -17,3 +17,10 @@ export interface ForgotPasswordModel {
 export interface ResendVerificationModel {
   email: string;
 }
+
+export interface ResetPasswordModel {
+  email: string;
+  token: string;
+  newPassword: string;
+  confirmPassword?: string;
+}

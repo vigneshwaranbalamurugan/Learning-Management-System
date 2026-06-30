@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using LMSApi.API.Filters;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.AspNetCore.Http.Timeouts;
 
 namespace LMSApi.API.Controllers
 {
@@ -23,8 +24,9 @@ namespace LMSApi.API.Controllers
         }
         
         [HttpPost("courses/{courseId:int}/enroll/free")]
-        [Idempotency]
+        [Idempotency(Required = true, TtlMinutes = 30)]
         [EnableRateLimiting("EnrollCourse")]
+        [RequestTimeout("Normal")]
         public async Task<ActionResult<EnrollmentResponse>> EnrollFree(
             int courseId,
             [FromBody] EnrollRequest request)
@@ -35,8 +37,9 @@ namespace LMSApi.API.Controllers
         }
 
         [HttpPost("courses/{courseId:int}/enroll/premium")]
-        [Idempotency]
+        [Idempotency(Required = true, TtlMinutes = 30)]
         [EnableRateLimiting("PaymentInitialization")]
+        [RequestTimeout("Normal")]
         public async Task<ActionResult<object>> EnrollPremium(
             int courseId,
             [FromBody] EnrollRequest request)
@@ -48,8 +51,9 @@ namespace LMSApi.API.Controllers
         }
 
         [HttpPost("courses/{courseId:int}/enroll/verify")]
-        [Idempotency]
+        [Idempotency(Required = true, TtlMinutes = 30)]
         [EnableRateLimiting("EnrollCourse")]
+        [RequestTimeout("Normal")]
         public async Task<ActionResult<EnrollmentResponse>> VerifyPayment(
             int courseId,
             [FromBody] VerifyPaymentRequest request)
@@ -65,6 +69,7 @@ namespace LMSApi.API.Controllers
 
         /// <summary>Get all enrollments for the authenticated student.</summary>
         [HttpGet("enrollments/my")]
+        [RequestTimeout("Quick")]
         public async Task<ActionResult<IEnumerable<EnrollmentResponse>>> GetMyEnrollments()
         {
             var userId = User.GetUserId();

@@ -4,7 +4,7 @@ import { Observable, of } from 'rxjs';
 import { catchError, tap, finalize, shareReplay } from 'rxjs/operators';
 import { Router } from '@angular/router';
 import { environment } from '@environments/environment';
-import { LoginModel } from '@models/auth';
+import { LoginModel, ResetPasswordModel } from '@models/auth';
 import { ProfileService, UserProfile } from './profile.service';
 
 @Injectable({
@@ -32,6 +32,22 @@ export class AuthService {
       email: credentials.email,
       password: credentials.password,
       rememberMe: rememberMe
+    });
+  }
+
+  forgotPassword(email: string): Observable<any> {
+    return this.http.post<any>(`${this.baseUrl}/auth/forgot-password`, { email });
+  }
+
+  resendVerification(email: string): Observable<any> {
+    return this.http.post<any>(`${this.baseUrl}/auth/resend`, { email });
+  }
+
+  resetPassword(data: ResetPasswordModel): Observable<any> {
+    return this.http.post<any>(`${this.baseUrl}/auth/reset-password`, {
+      email: data.email,
+      token: data.token,
+      newPassword: data.newPassword
     });
   }
 

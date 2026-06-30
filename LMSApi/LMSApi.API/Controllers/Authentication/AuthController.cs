@@ -5,12 +5,14 @@ using Microsoft.AspNetCore.Mvc;
 using Asp.Versioning;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.Timeouts;
 
 namespace LMSApi.API.Controllers
 {
 	[ApiController]
 	[ApiVersion("1.0")]
 	[Route("api/v{version:apiVersion}/[controller]")]
+	[RequestTimeout("Quick")]
 	public class AuthController : ControllerBase
 	{
 		private readonly IAuthService _authService;
@@ -153,7 +155,22 @@ namespace LMSApi.API.Controllers
 		{
 			var email = User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value;
 			if (string.IsNullOrEmpty(email)) return BadRequest("Invalid user claims");
-			await _authService.RevokeTokenAsync(email);
+			
+			string? jti = User.FindFirst(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Jti)?.Value;
+			var expClaim = User.FindFirst(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Exp)?.Value;
+			TimeSpan? ttl = null;
+			
+			if (long.TryParse(expClaim, out var expUnix))
+			{
+			    var expDate = DateTimeOffset.FromUnixTimeSeconds(expUnix).UtcDateTime;
+			    var remaining = expDate - DateTime.UtcNow;
+			    if (remaining > TimeSpan.Zero)
+			    {
+			        ttl = remaining;
+			    }
+			}
+
+			await _authService.RevokeTokenAsync(email, jti, ttl);
 
 			var deleteCookieOptions = new CookieOptions
 			{

@@ -130,6 +130,7 @@ builder.Services.AddScoped<INotificationHandler, SmsNotificationHandler>();
 builder.Services.AddScoped<IEmailJob, EmailJob>();
 builder.Services.AddScoped<ICertificateEmailJob, CertificateEmailJob>();
 builder.Services.AddSingleton<ITokenService, TokenService>();
+builder.Services.AddSingleton<ITokenRevocationService, TokenRevocationService>();
 builder.Services.AddScoped<IAssignmentService, AssignmentService>();
 
 // Course module services
@@ -177,6 +178,17 @@ builder.Services.AddScoped<IAdminLogService, AdminLogService>();
 builder.Services.AddScoped<ICurrentUserProvider, CurrentUserProvider>();
 builder.Services.AddScoped<IWebhookEventService, WebhookEventService>();
 #endregion
+
+builder.Services.AddStackExchangeRedisCache(options =>
+{
+    options.Configuration = builder.Configuration["Redis:ConnectionString"];
+    options.InstanceName = builder.Configuration["Redis:InstanceName"];
+});
+
+// Register raw IConnectionMultiplexer for direct Redis access
+builder.Services.AddSingleton<StackExchange.Redis.IConnectionMultiplexer>(sp => 
+    StackExchange.Redis.ConnectionMultiplexer.Connect(builder.Configuration["Redis:ConnectionString"]!)
+);
 
 builder.Services.AddAutoMapper(typeof(ApplicationAssemblyReference).Assembly);
 
@@ -229,6 +241,13 @@ builder.Services.AddCors(options =>
     });
 });
 
+builder.Services.AddRequestTimeouts(options =>
+{
+    options.AddPolicy("Quick",  TimeSpan.FromSeconds(10));
+    options.AddPolicy("Normal", TimeSpan.FromSeconds(15));
+    options.AddPolicy("Heavy",  TimeSpan.FromSeconds(20));
+});
+
 var app = builder.Build();
 
 // app.Use(async (context, next) =>
@@ -258,7 +277,10 @@ if (app.Environment.IsDevelopment())
 
 app.UseCors("AllowFrontend");
 
+app.UseRequestTimeouts();
+
 app.UseAuthentication();
+app.UseMiddleware<TokenRevocationMiddleware>();
 app.UseAuthorization();
 app.UseRateLimiter();
 
@@ -277,6 +299,39 @@ recurringJobManager.AddOrUpdate<IDeadlineNotificationJob>(
     job => job.ExecuteAsync(),
     Cron.Daily
 );
+
+    Log.Information("Checking database and Redis connections...");
+    using (var scope = app.Services.CreateScope())
+    {
+        // 1. Check Database connection
+        var dbContext = scope.ServiceProvider.GetRequiredService<LMSDbContext>();
+        var dbConnected = await dbContext.Database.CanConnectAsync();
+        if (!dbConnected)
+        {
+            Log.Fatal("Could not connect to the database. Stopping server startup.");
+            throw new Exception("Database connection failed.");
+        }
+        Log.Information("Database connection successful.");
+
+        // 2. Check Redis connection
+        var redisConnectionString = builder.Configuration["Redis:ConnectionString"];
+        if (!string.IsNullOrEmpty(redisConnectionString))
+        {
+            try
+            {
+                // Set short timeout for quick fail during startup
+                var redisConfig = StackExchange.Redis.ConfigurationOptions.Parse(redisConnectionString);
+                redisConfig.ConnectTimeout = 3000; 
+                using var redis = await StackExchange.Redis.ConnectionMultiplexer.ConnectAsync(redisConfig);
+                Log.Information("Redis connection successful.");
+            }
+            catch (Exception ex)
+            {
+                Log.Fatal(ex, "Could not connect to Redis. Stopping server startup.");
+                throw new Exception("Redis connection failed.", ex);
+            }
+        }
+    }
 
     app.Run();
 }

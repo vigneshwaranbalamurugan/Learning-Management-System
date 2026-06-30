@@ -1,9 +1,10 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
-using Microsoft.Extensions.Caching.Distributed;
+using StackExchange.Redis;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace LMSApi.API.Filters
 {
@@ -11,55 +12,95 @@ namespace LMSApi.API.Filters
     public class IdempotencyAttribute : Attribute, IAsyncActionFilter
     {
         private const string IdempotencyHeader = "Idempotency-Key";
+        private const string ProcessingState = "__processing__";
+
+        public bool Required { get; set; } = false;
+        public int TtlMinutes { get; set; } = 24 * 60;
+
+        private static readonly JsonSerializerOptions _jsonOptions = new()
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+        };
 
         public async Task OnActionExecutionAsync(ActionExecutingContext context, ActionExecutionDelegate next)
         {
             if (!context.HttpContext.Request.Headers.TryGetValue(IdempotencyHeader, out var headerValue))
             {
+                if (Required)
+                {
+                    context.Result = new BadRequestObjectResult(new { Message = "Idempotency-Key header is required." });
+                    return;
+                }
+
                 // No idempotency key provided, skip
                 await next();
                 return;
             }
 
             var idempotencyKey = headerValue.ToString();
-            var cache = context.HttpContext.RequestServices.GetRequiredService<IDistributedCache>();
+            var multiplexer = context.HttpContext.RequestServices.GetRequiredService<IConnectionMultiplexer>();
+            var db = multiplexer.GetDatabase();
 
             // Generate a unique cache key for this user + path + idempotency key
             var userId = context.HttpContext.User.Identity?.IsAuthenticated == true ? context.HttpContext.User.Identity.Name : "anonymous";
             var requestPath = context.HttpContext.Request.Path.ToString();
-            var cacheKey = $"Idempotency_{HashKey($"{userId}:{requestPath}:{idempotencyKey}")}";
+            var cacheKey = $"lms:idempotency:{HashKey($"{userId}:{requestPath}:{idempotencyKey}")}";
 
-            var cachedResponse = await cache.GetStringAsync(cacheKey);
-            if (!string.IsNullOrEmpty(cachedResponse))
+            var expiry = TimeSpan.FromMinutes(TtlMinutes);
+
+            // Attempt to acquire the lock using SET NX EX
+            bool acquired = await db.StringSetAsync(cacheKey, ProcessingState, expiry, When.NotExists);
+
+            if (!acquired)
             {
-                var cachedResult = JsonSerializer.Deserialize<CachedResult>(cachedResponse);
-                if (cachedResult != null)
+                // Key already exists. Check what's inside.
+                var cachedValue = await db.StringGetAsync(cacheKey);
+                if (cachedValue == ProcessingState)
                 {
-                    var result = new ObjectResult(cachedResult.Value)
-                    {
-                        StatusCode = cachedResult.StatusCode
-                    };
-                    context.Result = result;
+                    // Another request is currently processing this idempotency key
+                    context.Result = new ConflictObjectResult(new { Message = "A request with this Idempotency-Key is currently being processed." });
                     return;
+                }
+
+                if (!cachedValue.IsNullOrEmpty)
+                {
+                    var cachedResult = JsonSerializer.Deserialize<CachedResult>(cachedValue.ToString(), _jsonOptions);
+                    if (cachedResult != null)
+                    {
+                        context.Result = new ObjectResult(cachedResult.Value)
+                        {
+                            StatusCode = cachedResult.StatusCode
+                        };
+                        return;
+                    }
                 }
             }
 
-            var executedContext = await next();
-
-            if (executedContext.Exception == null && executedContext.Result is ObjectResult objectResult)
+            try
             {
-                var resultToCache = new CachedResult
-                {
-                    StatusCode = objectResult.StatusCode ?? 200,
-                    Value = objectResult.Value
-                };
+                var executedContext = await next();
 
-                var cacheOptions = new DistributedCacheEntryOptions
+                if (executedContext.Exception == null && executedContext.Result is ObjectResult objectResult)
                 {
-                    AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(24)
-                };
+                    var resultToCache = new CachedResult
+                    {
+                        StatusCode = objectResult.StatusCode ?? 200,
+                        Value = objectResult.Value
+                    };
 
-                await cache.SetStringAsync(cacheKey, JsonSerializer.Serialize(resultToCache), cacheOptions);
+                    await db.StringSetAsync(cacheKey, JsonSerializer.Serialize(resultToCache, _jsonOptions), expiry);
+                }
+                else if (executedContext.Exception != null || (executedContext.Result is StatusCodeResult statusCodeResult && statusCodeResult.StatusCode >= 400))
+                {
+                    // If the action didn't return a successful result, clear the key to allow retries.
+                    await db.KeyDeleteAsync(cacheKey);
+                }
+            }
+            catch
+            {
+                // On any unhandled exception, clear the key to allow retries.
+                await db.KeyDeleteAsync(cacheKey);
+                throw;
             }
         }
 

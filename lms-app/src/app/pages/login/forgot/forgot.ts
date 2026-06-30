@@ -1,8 +1,9 @@
-import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { Component, Output, EventEmitter, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Button } from '@components/button/button';
 import { FormInput } from '@components/form-input/form-input';
-import { ForgotPasswordModel } from '@models/auth';
+import { AuthService } from '@services/auth.service';
+import { ToastService } from '@services/toast.service';
 
 @Component({
   selector: 'app-forgot',
@@ -11,9 +12,13 @@ import { ForgotPasswordModel } from '@models/auth';
   templateUrl: './forgot.html',
 })
 export class Forgot {
-  @Input() isSubmitting = false;
   @Output() backToLogin = new EventEmitter<void>();
-  @Output() forgotSubmit = new EventEmitter<ForgotPasswordModel>();
+
+  private authService = inject(AuthService);
+  private toastService = inject(ToastService);
+
+  isSubmitting = signal(false);
+  isSuccess = signal(false);
 
   protected email = '';
   protected emailError = '';
@@ -47,6 +52,16 @@ export class Forgot {
       return;
     }
 
-    this.forgotSubmit.emit({ email: this.email });
+    this.isSubmitting.set(true);
+    this.authService.forgotPassword(this.email).subscribe({
+      next: () => {
+        this.isSubmitting.set(false);
+        this.isSuccess.set(true);
+      },
+      error: (err) => {
+        this.isSubmitting.set(false);
+        this.toastService.showApiError(err?.error?.message, 'Failed to send reset link.');
+      }
+    });
   }
 }
