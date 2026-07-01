@@ -91,10 +91,10 @@
       <div class="flex items-center gap-3">
         <!-- Lesson Icon -->
         <div class="flex-shrink-0 p-2.5 bg-white border border-blue-150 rounded-xl shadow-sm text-2xl">
-          <span *ngIf="type === 'Video'">🎥</span>
-          <span *ngIf="type === 'Pdf'">📘</span>
-          <span *ngIf="type === 'Article'">📝</span>
-          <span *ngIf="type === 'ExternalLink'">🔗</span>
+          <span *ngIf="type === LT_VIDEO">🎥</span>
+          <span *ngIf="type === LT_PDF">📘</span>
+          <span *ngIf="type === LT_ARTICLE">📝</span>
+          <span *ngIf="type === LT_EXTERNAL">🔗</span>
         </div>
 
         <!-- Description Info -->
@@ -103,13 +103,13 @@
             <!-- Status Badge (Only for Cohort Courses) -->
             <span *ngIf="!isSelfPaced"
               class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold"
-              [ngClass]="status === 'Published' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 'bg-amber-50 text-amber-700 border border-amber-100'">
+              [ngClass]="status === PS_PUBLISHED ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 'bg-amber-50 text-amber-700 border border-amber-100'">
               {{ status }}
             </span>
             <!-- Lesson Type Badge -->
             <span
               class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-blue-50 text-[#1C1C7B] border border-blue-100">
-              {{ type === 'Pdf' ? 'PDF Lesson' : type === 'Video' ? 'Video Lecture' : type === 'Article' ? 'Article' :
+              {{ type === LT_PDF ? 'PDF Lesson' : type === LT_VIDEO ? 'Video Lecture' : type === LT_ARTICLE ? 'Article' :
               'External URL' }}
             </span>
             <!-- Duration Badge -->
@@ -251,7 +251,7 @@
           </div>
 
           <!-- Video / PDF: Drag & Drop Zone -->
-          <div *ngIf="type === 'Video' || type === 'Pdf'" class="space-y-3">
+          <div *ngIf="type === LT_VIDEO || type === LT_PDF" class="space-y-3">
 
             <div (dragover)="onDragOver($event)" (dragleave)="onDragLeave($event)" (drop)="onDrop($event)"
               class="relative border-2 border-dashed rounded-xl p-6 text-center transition-all duration-300 cursor-pointer flex flex-col items-center justify-center space-y-2"
@@ -272,7 +272,7 @@
                 <p class="text-xs font-bold text-slate-800">Drag & Drop file here, or <span
                     class="text-[#1C1C7B] underline">browse files</span></p>
                 <p class="text-[10px] text-slate-500 mt-0.5">
-                  Supports {{ type === 'Pdf' ? 'PDF (up to ' + maxPdfSizeMB + 'MB)' : 'video (up to ' + maxVideoSizeMB +
+                  Supports {{ type === LT_PDF ? 'PDF (up to ' + maxPdfSizeMB + 'MB)' : 'video (up to ' + maxVideoSizeMB +
                   'MB)' }}
                 </p>
               </div>
@@ -296,7 +296,7 @@
               class="flex items-center justify-between p-3 bg-emerald-50 border border-emerald-150 rounded-lg">
               <div class="flex items-center gap-2">
                 <div class="p-2 bg-white border border-emerald-150 text-emerald-700 rounded-lg shadow-sm text-lg">
-                  {{ type === 'Pdf' ? '📄' : '🎥' }}
+                  {{ type === LT_PDF ? '📄' : '🎥' }}
                 </div>
                 <div>
                   <h4 class="text-xs font-bold text-slate-850 truncate max-w-[200px] sm:max-w-[320px]">{{
@@ -317,7 +317,7 @@
               class="flex items-center justify-between p-3 bg-slate-50 border border-slate-200 rounded-lg">
               <div class="flex items-center gap-2">
                 <div class="p-2 bg-white border border-slate-150 text-slate-650 rounded-lg shadow-sm text-lg">
-                  {{ type === 'Pdf' ? '📄' : '🎥' }}
+                  {{ type === LT_PDF ? '📄' : '🎥' }}
                 </div>
                 <div>
                   <h4 class="text-xs font-bold text-slate-800">Current Saved Resource</h4>
@@ -333,7 +333,7 @@
           </div>
 
           <!-- Markdown / Article: Split Screen Editor -->
-          <div *ngIf="type === 'Article'" class="space-y-3">
+          <div *ngIf="type === LT_ARTICLE" class="space-y-3">
             <div
               class="grid grid-cols-1 xl:grid-cols-2 gap-3 border border-slate-200 rounded-lg overflow-hidden shadow-inner">
               <!-- Editor (Left Panel) -->
@@ -365,7 +365,7 @@
           </div>
 
           <!-- External Link URL -->
-          <div *ngIf="type === 'ExternalLink'" class="space-y-2">
+          <div *ngIf="type === LT_EXTERNAL" class="space-y-2">
             <app-form-input label="External Link URL *" [value]="contentUrl" (valueChange)="contentUrl = $event"
               placeholder="https://example.com/reference-doc" />
           </div>
@@ -464,3 +464,14 @@
 
   </div>
 </div>
+<!-- Unsaved Changes Modal -->
+<app-confirm-modal 
+  [isOpen]="showUnsavedModal()" 
+  title="Unsaved Changes"
+  message="You have unsaved changes. Are you sure you want to leave this page? All your progress will be lost."
+  confirmText="Leave Page"
+  cancelText="Stay"
+  [isDanger]="true"
+  (confirm)="confirmLeave()"
+  (cancel)="cancelLeave()">
+</app-confirm-modal>

@@ -76,7 +76,7 @@
                   Q{{ i + 1 }}
                 </span>
                 <span class="px-2 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase bg-indigo-50 text-indigo-700">
-                  {{ question.questionType == 0 ? 'Multiple Choice' : 'True/False' }}
+                  {{ question.questionType == QuizQuestionType.MultipleChoice ? 'Multiple Choice' : 'True/False' }}
                 </span>
                 <span class="px-2 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase bg-emerald-50 text-emerald-700">
                   Order: {{ question.sortOrder }}
@@ -196,13 +196,13 @@
               <input type="radio" [name]="'correctOption'" [value]="true" [checked]="option.isCorrect" (change)="currentQuestion.options.forEach(o => o.isCorrect = false); option.isCorrect = true" class="w-4 h-4 text-green-500 border-gray-300 focus:ring-green-500 cursor-pointer" title="Mark as Correct Answer" />
             </div>
             <div class="flex-1 mt-3">
-              <app-form-input *ngIf="currentQuestion.questionType == 0"
+              <app-form-input *ngIf="currentQuestion.questionType == QuizQuestionType.MultipleChoice"
                 type="text"
                 placeholder="Option text..."
                 [value]="option.optionText"
                 (valueChange)="option.optionText = $event">
               </app-form-input>
-              <div *ngIf="currentQuestion.questionType == 1" class="px-3 py-2 text-sm font-bold text-slate-700 bg-white border border-gray-200 rounded-lg">{{ option.optionText }}</div>
+              <div *ngIf="currentQuestion.questionType == QuizQuestionType.TrueFalse" class="px-3 py-2 text-sm font-bold text-slate-700 bg-white border border-gray-200 rounded-lg">{{ option.optionText }}</div>
             </div>
           </div>
         </div>
@@ -240,4 +240,16 @@
   [isDanger]="true"
   (confirm)="deleteQuestion()"
   (cancel)="closeDeleteModal()">
+</app-confirm-modal>
+
+<!-- Unsaved Changes Modal -->
+<app-confirm-modal 
+  [isOpen]="showUnsavedModal()" 
+  title="Unsaved Changes"
+  message="You have an unsaved question open. Are you sure you want to leave this page? Your changes to this question will be lost."
+  confirmText="Leave Page"
+  cancelText="Stay"
+  [isDanger]="true"
+  (confirm)="confirmLeave()"
+  (cancel)="cancelLeave()">
 </app-confirm-modal>

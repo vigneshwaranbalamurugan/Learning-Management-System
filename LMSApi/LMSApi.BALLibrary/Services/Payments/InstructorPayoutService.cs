@@ -165,7 +165,21 @@ namespace LMSApi.BALLibrary.Services
             var account = await _accountRepo.GetActiveByInstructorIdAsync(instructorId);
             if (account == null)
             {
-                throw new InvalidOperationException($"Instructor {instructorId} has no payout account registered.");
+                _logger.LogWarning(
+                    "Instructor {InstructorId} has no linked payout account. Creating PendingManualReview payout for PaymentId={PaymentId}.",
+                    instructorId, payment.Id);
+
+                var pendingPayout = new InstructorPayout
+                {
+                    PaymentId             = payment.Id,
+                    InstructorId          = instructorId,
+                    InstructorPayoutAccountId = null,
+                    Amount                = payment.InstructorAmount,
+                    Status                = PayoutStatus.PendingManualReview,
+                    Notes                 = $"No linked payout account found for instructor {instructorId}. Manual transfer required."
+                };
+                await _payoutRepo.AddAsync(pendingPayout);
+                return pendingPayout;
             }
 
             if (string.IsNullOrEmpty(payment.ProviderPaymentId))

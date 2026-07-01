@@ -11,11 +11,15 @@ import { Button } from '@components/button/button';
 import { Loader } from '@components/loader/loader';
 import { InstructorCourseLayout } from '../instructor-course-layout/instructor-course-layout';
 import { CourseBuilderService } from '@services/course-builder.service';
+import { ConfirmModal } from '@components/confirm-modal/confirm-modal';
+import { CourseAccessType } from '../../enums/course-access-type.enum';
+import { PublishStatus } from '../../enums/publish-status.enum';
+import { ResourceType } from '../../enums/resource-type.enum';
 
 @Component({
   selector: 'app-instructor-resource-form',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, FormInput, Dropdown, Button, Loader],
+  imports: [CommonModule, FormsModule, RouterModule, FormInput, Dropdown, Button, Loader, ConfirmModal],
   templateUrl: './instructor-resource-form.html'
 })
 export class InstructorResourceForm implements OnInit {
@@ -41,10 +45,10 @@ export class InstructorResourceForm implements OnInit {
   // Form State
   protected title = '';
   protected description = '';
-  protected type = 'Pdf'; // As requested by user, only Pdf or ExternalLink
+  protected type = 'Pdf';
   protected contentUrl = '';
   protected selectedFile: File | null = null;
-  protected status = 'Draft';
+  protected status: string = String(PublishStatus.Draft);
 
   // File Upload State
   protected isDragOver = false;
@@ -55,9 +59,9 @@ export class InstructorResourceForm implements OnInit {
   // Original State to detect changes
   private originalTitle = '';
   private originalDescription = '';
-  private originalType = 'Pdf';
+  private originalType: string = 'Pdf';
   private originalContentUrl = '';
-  protected originalStatus = 'Draft';
+  protected originalStatus: string = String(PublishStatus.Draft);
   protected originalLessonIdStr: string = '';
 
   protected resourceTypeOptions = [
@@ -66,15 +70,18 @@ export class InstructorResourceForm implements OnInit {
   ];
 
   protected statusOptions = [
-    { value: 'Draft', label: 'Draft' },
-    { value: 'Published', label: 'Published' }
+    { value: String(PublishStatus.Draft), label: 'Draft' },
+    { value: String(PublishStatus.Published), label: 'Published' }
   ];
+
+  protected readonly PublishStatus = PublishStatus;
+  protected readonly ResourceType = ResourceType;
 
   protected get isSelfPaced(): boolean {
     const course = this.layout.course();
     if (!course) return false;
     const accessType = String(course.courseAccessType).trim().toLowerCase();
-    return accessType === '1' || accessType === 'selfpaced';
+    return accessType === String(CourseAccessType.SelfPaced) || accessType === 'selfpaced';
   }
 
   protected get isDirty(): boolean {
@@ -87,6 +94,34 @@ export class InstructorResourceForm implements OnInit {
       this.lessonIdStr !== this.originalLessonIdStr ||
       this.selectedFile !== null
     );
+  }
+
+  protected showUnsavedModal = signal(false);
+  private unsavedResolve: ((val: boolean) => void) | null = null;
+
+  async canDeactivate(): Promise<boolean> {
+    if (!this.isDirty || this.isSaving()) return true;
+
+    return new Promise<boolean>((resolve) => {
+      this.unsavedResolve = resolve;
+      this.showUnsavedModal.set(true);
+    });
+  }
+
+  protected confirmLeave(): void {
+    this.showUnsavedModal.set(false);
+    if (this.unsavedResolve) {
+      this.unsavedResolve(true);
+      this.unsavedResolve = null;
+    }
+  }
+
+  protected cancelLeave(): void {
+    this.showUnsavedModal.set(false);
+    if (this.unsavedResolve) {
+      this.unsavedResolve(false);
+      this.unsavedResolve = null;
+    }
   }
 
   ngOnInit() {
@@ -132,7 +167,7 @@ export class InstructorResourceForm implements OnInit {
         this.description = resource.description ?? '';
         this.type = this.resolveTypeString(resource.resourceType);
         this.contentUrl = resource.resourceUrl ?? '';
-        this.status = resource.status === 2 || resource.status === 'Published' ? 'Published' : 'Draft';
+        this.status = (resource.status === PublishStatus.Published || resource.status === 'Published') ? String(PublishStatus.Published) : String(PublishStatus.Draft);
         this.lessonIdStr = resource.lessonId?.toString() || '';
         
         this.isLoading.set(false);
@@ -158,8 +193,8 @@ export class InstructorResourceForm implements OnInit {
   }
 
   private resolveTypeString(type: string | number): string {
-    if (type === 0 || type === '0' || type === 'Pdf') return 'Pdf';
-    if (type === 1 || type === '1' || type === 'ExternalLink') return 'ExternalLink';
+    if (type === ResourceType.Pdf || type === String(ResourceType.Pdf) || type === 'Pdf') return 'Pdf';
+    if (type === ResourceType.ExternalLink || type === String(ResourceType.ExternalLink) || type === 'ExternalLink') return 'ExternalLink';
     return 'Pdf';
   }
 
@@ -244,7 +279,7 @@ export class InstructorResourceForm implements OnInit {
     this.description = this.originalDescription;
     this.type = this.originalType;
     this.contentUrl = this.originalContentUrl;
-    this.status = this.originalStatus;
+    this.status = String(this.originalStatus);
     this.lessonIdStr = this.originalLessonIdStr;
     this.selectedFile = null;
     this.isUploaded.set(false);
@@ -253,12 +288,12 @@ export class InstructorResourceForm implements OnInit {
   }
 
   protected saveDraft() {
-    this.status = 'Draft';
+    this.status = String(PublishStatus.Draft);
     this.saveResource();
   }
 
   protected saveChanges() {
-    this.status = 'Published';
+    this.status = String(PublishStatus.Published);
     this.saveResource();
   }
 
@@ -283,8 +318,8 @@ export class InstructorResourceForm implements OnInit {
       return;
     }
 
-    let typeVal = 0; // Default to Pdf
-    if (this.type === 'ExternalLink') typeVal = 1;
+    let typeVal: number = ResourceType.Pdf; // Default to Pdf
+    if (this.type === 'ExternalLink') typeVal = ResourceType.ExternalLink;
 
     if (!this.isEditMode && this.type === 'Pdf' && !this.selectedFile) {
         this.toastService.showError(`File upload is required for PDF resource.`);
@@ -304,7 +339,7 @@ export class InstructorResourceForm implements OnInit {
         resourceTitle: this.title,
         resourceUrl: this.type === 'ExternalLink' ? this.contentUrl : undefined,
         description: this.description,
-        status: !this.isSelfPaced ? (this.status === 'Published' ? 2 : 1) : undefined,
+        status: !this.isSelfPaced ? (this.status === String(PublishStatus.Published) ? PublishStatus.Published : PublishStatus.Draft) : undefined,
         file: this.type === 'Pdf' && this.selectedFile ? this.selectedFile : undefined
       };
 
@@ -330,7 +365,7 @@ export class InstructorResourceForm implements OnInit {
         resourceTitle: this.title,
         resourceUrl: this.type === 'ExternalLink' ? this.contentUrl : undefined,
         description: this.description,
-        status: !this.isSelfPaced ? (this.status === 'Published' ? 2 : 1) : 1, // Default draft
+        status: !this.isSelfPaced ? (this.status === String(PublishStatus.Published) ? PublishStatus.Published : PublishStatus.Draft) : PublishStatus.Draft, // Default draft
         file: this.type === 'Pdf' && this.selectedFile ? this.selectedFile : undefined
       };
 

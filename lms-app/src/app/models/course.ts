@@ -1,5 +1,11 @@
 import { QuizResponse } from './quiz';
 import { AssignmentResponse } from './assignment';
+import { CourseAccessType } from '../enums/course-access-type.enum';
+import { CourseStatus } from '../enums/course-status.enum';
+import { LessonType } from '../enums/lesson-types.enum';
+import { PublishStatus } from '../enums/publish-status.enum';
+import { ResourceType } from '../enums/resource-type.enum';
+import { CourseLevel } from '../enums/course-level.enum';
 
 export interface CourseResponse {
   id: number;
@@ -12,14 +18,14 @@ export interface CourseResponse {
   price?: number;
   isPremium: boolean;
   thumbnailUrl?: string;
-  level: number | string;
+  level: CourseLevel | string;
   languageId: number;
   languageName: string;
-  status: number | string;
+  status: CourseStatus | string;
   publishedAt?: string;
   createdAt: string;
   updatedAt: string;
-  courseAccessType: number | string;
+  courseAccessType: CourseAccessType | string;
   averageRating: number;
   totalReviews: number;
   // Enriched fields from backend
@@ -89,11 +95,11 @@ export interface CourseSearchQuery {
 export interface ResourceResponse {
   id: number;
   lessonId: number;
-  resourceType: number | string;
+  resourceType: ResourceType | string;
   resourceTitle: string;
   resourceUrl: string;
   description?: string;
-  status: number | string;
+  status: PublishStatus | string;
   sortOrder: number;
   uploadedAt: string;
 }
@@ -103,11 +109,11 @@ export interface LessonSummary {
   courseSectionId: number;
   title: string;
   description?: string;
-  type: number | string;           // LessonType enum: Video, Article, Pdf, ExternalLink, Quiz
+  type: LessonType | string;           // LessonType enum: Video, Article, Pdf, ExternalLink, Quiz
   durationInMinutes?: string;      // TimeSpan serialized as "HH:MM:SS"
   sortOrder: number;
   isPreview: boolean;
-  status: number | string;         // PublishStatus enum
+  status: PublishStatus | string;         // PublishStatus enum
   contentUrl?: string;             // available for preview lessons
   content?: string;                // available for article lessons
   resources?: ResourceResponse[];
@@ -115,20 +121,20 @@ export interface LessonSummary {
 
 export interface CreateResourceRequest {
   lessonId: number;
-  resourceType: number | string;
+  resourceType: ResourceType | string;
   resourceTitle: string;
   resourceUrl?: string;
   description?: string;
-  status: number | string;
+  status: PublishStatus | string;
   file?: File;
 }
 
 export interface UpdateResourceRequest {
-  resourceType?: number | string;
+  resourceType?: ResourceType | string;
   resourceTitle?: string;
   resourceUrl?: string;
   description?: string;
-  status?: number | string;
+  status?: PublishStatus | string;
   file?: File;
 }
 
@@ -143,7 +149,7 @@ export interface CourseSectionDetail {
   description?: string;
   estimatedDuration: string;       // TimeSpan serialized as "HH:MM:SS"
   sortOrder: number;
-  status: number | string;         // PublishStatus enum
+  status: PublishStatus | string;         // PublishStatus enum
   lessons?: LessonSummary[];       // Optional: populated if backend maps lessons in sections
   quizzes?: QuizResponse[];
   assignments?: AssignmentResponse[];

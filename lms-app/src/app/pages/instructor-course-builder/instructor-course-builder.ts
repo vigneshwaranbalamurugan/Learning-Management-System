@@ -13,6 +13,8 @@ import { CourseBuilderService } from '@services/course-builder.service';
 import { AssignmentService } from '@services/assignment.service';
 import { QuizService } from '@services/quiz.service';
 import { AuthService } from '@services/auth.service';
+import { LessonType } from '../../enums/lesson-types.enum';
+import { PublishStatus } from '../../enums/publish-status.enum';
 
 @Component({
   selector: 'app-instructor-course-builder',
@@ -36,6 +38,8 @@ export class InstructorCourseBuilder {
 
   // Section expand/collapse state
   protected expandedSections = signal<Record<number, boolean>>({});
+
+  protected readonly PublishStatus = PublishStatus;
 
   protected toggleSection(sectionId: number, event: Event) {
     const target = event.target as HTMLElement;
@@ -158,18 +162,18 @@ export class InstructorCourseBuilder {
   }
 
   protected lessonTypeLabel(type: string | number): string {
-    if (type === 'Video' || type === 0 || type === '0') return 'Video';
-    if (type === 'Article' || type === 2 || type === '2') return 'Article';
-    if (type === 'Pdf' || type === 1 || type === '1') return 'PDF';
-    if (type === 'ExternalLink' || type === 3 || type === '3') return 'External Link';
+    if (type === 'Video' || type === LessonType.Video || type === String(LessonType.Video)) return 'Video';
+    if (type === 'Article' || type === LessonType.Article || type === String(LessonType.Article)) return 'Article';
+    if (type === 'Pdf' || type === LessonType.Pdf || type === String(LessonType.Pdf)) return 'PDF';
+    if (type === 'ExternalLink' || type === LessonType.ExternalLink || type === String(LessonType.ExternalLink)) return 'External Link';
     return String(type);
   }
 
   protected resolveTypeString(type: string | number): string {
-    if (type === 0 || type === '0' || type === 'Video') return 'Video';
-    if (type === 1 || type === '1' || type === 'Pdf') return 'Pdf';
-    if (type === 2 || type === '2' || type === 'Article') return 'Article';
-    if (type === 3 || type === '3' || type === 'ExternalLink') return 'ExternalLink';
+    if (type === LessonType.Video || type === String(LessonType.Video) || type === 'Video') return 'Video';
+    if (type === LessonType.Pdf || type === String(LessonType.Pdf) || type === 'Pdf') return 'Pdf';
+    if (type === LessonType.Article || type === String(LessonType.Article) || type === 'Article') return 'Article';
+    if (type === LessonType.ExternalLink || type === String(LessonType.ExternalLink) || type === 'ExternalLink') return 'ExternalLink';
     return 'Video';
   }
 

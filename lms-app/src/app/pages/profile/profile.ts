@@ -4,11 +4,12 @@ import { FormsModule } from '@angular/forms';
 import { ProfileService, UserProfile } from '@services/profile.service';
 import { ToastService } from '@services/toast.service';
 import { AuthService } from '@services/auth.service';
+import { ConfirmModal } from '@components/confirm-modal/confirm-modal';
 
 @Component({
   selector: 'app-profile-page',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, ConfirmModal],
   templateUrl: './profile.html'
 })
 export class Profile implements OnInit {
@@ -26,6 +27,45 @@ export class Profile implements OnInit {
   protected bio = '';
   protected dateOfBirth = '';
   protected location = '';
+
+  protected showUnsavedModal = signal(false);
+  private unsavedResolve: ((val: boolean) => void) | null = null;
+
+  protected get isDirty(): boolean {
+    const currentProfile = this.profile();
+    if (!currentProfile) return false;
+    
+    return this.firstName !== (currentProfile.firstName || '') ||
+           this.lastName !== (currentProfile.lastName || '') ||
+           this.bio !== (currentProfile.bio || '') ||
+           this.dateOfBirth !== (currentProfile.dateOfBirth ? currentProfile.dateOfBirth.split('T')[0] : '') ||
+           this.location !== (currentProfile.location || '');
+  }
+
+  async canDeactivate(): Promise<boolean> {
+    if (!this.isDirty || this.isSaving()) return true;
+
+    return new Promise<boolean>((resolve) => {
+      this.unsavedResolve = resolve;
+      this.showUnsavedModal.set(true);
+    });
+  }
+
+  protected confirmLeave(): void {
+    this.showUnsavedModal.set(false);
+    if (this.unsavedResolve) {
+      this.unsavedResolve(true);
+      this.unsavedResolve = null;
+    }
+  }
+
+  protected cancelLeave(): void {
+    this.showUnsavedModal.set(false);
+    if (this.unsavedResolve) {
+      this.unsavedResolve(false);
+      this.unsavedResolve = null;
+    }
+  }
 
   protected firstNameError = '';
   protected lastNameError = '';

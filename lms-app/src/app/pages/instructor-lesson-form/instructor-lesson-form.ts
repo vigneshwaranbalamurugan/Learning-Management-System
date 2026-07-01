@@ -12,11 +12,15 @@ import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { marked } from 'marked';
 import { InstructorCourseLayout } from '../instructor-course-layout/instructor-course-layout';
 import { CourseBuilderService } from '@services/course-builder.service';
+import { ConfirmModal } from '@components/confirm-modal/confirm-modal';
+import { CourseAccessType } from '../../enums/course-access-type.enum';
+import { PublishStatus } from '../../enums/publish-status.enum';
+import { LessonType } from '../../enums/lesson-types.enum';
 
 @Component({
   selector: 'app-instructor-lesson-form',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, FormInput, Dropdown, Button, Loader],
+  imports: [CommonModule, FormsModule, RouterModule, FormInput, Dropdown, Button, Loader, ConfirmModal],
   templateUrl: './instructor-lesson-form.html'
 })
 export class InstructorLessonForm implements OnInit {
@@ -42,13 +46,13 @@ export class InstructorLessonForm implements OnInit {
   // Form State
   protected title = '';
   protected description = '';
-  protected type = 'Video';
+  protected type: string = String(LessonType.Video);
   protected duration = 10;
   protected content = '';
   protected contentUrl = '';
   protected selectedFile: File | null = null;
   protected isPreview = false;
-  protected status = 'Draft';
+  protected status = String(PublishStatus.Draft);
   protected sortOrder = 0;
 
   // File Upload State
@@ -61,12 +65,12 @@ export class InstructorLessonForm implements OnInit {
   // Original State to detect changes
   private originalTitle = '';
   private originalDescription = '';
-  private originalType = 'Video';
+  private originalType = String(LessonType.Video);
   private originalDuration = 10;
   private originalContent = '';
   private originalContentUrl = '';
   protected originalIsPreview = false;
-  protected originalStatus = 'Draft';
+  protected originalStatus: string = String(PublishStatus.Draft);
   protected originalSortOrder = 0;
   protected originalSectionIdStr: string = '';
 
@@ -78,16 +82,27 @@ export class InstructorLessonForm implements OnInit {
   protected updatedAt: string | null = null;
 
   protected lessonTypeOptions = [
-    { value: 'Video', label: 'Video Lecture' },
-    { value: 'Article', label: 'Article / Markdown' },
-    { value: 'Pdf', label: 'PDF Document' },
-    { value: 'ExternalLink', label: 'External Link' }
+    { value: String(LessonType.Video), label: 'Video Lecture' },
+    { value: String(LessonType.Article), label: 'Article / Markdown' },
+    { value: String(LessonType.Pdf), label: 'PDF Document' },
+    { value: String(LessonType.ExternalLink), label: 'External Link' }
   ];
 
   protected statusOptions = [
-    { value: 'Draft', label: 'Draft' },
-    { value: 'Published', label: 'Published' }
+    { value: String(PublishStatus.Draft), label: 'Draft' },
+    { value: String(PublishStatus.Published), label: 'Published' }
   ];
+
+  protected readonly PublishStatus = PublishStatus;
+  protected readonly LessonType = LessonType;
+
+  // String constants for template comparisons (Angular templates can't call global String())
+  protected readonly LT_VIDEO = String(LessonType.Video);
+  protected readonly LT_PDF = String(LessonType.Pdf);
+  protected readonly LT_ARTICLE = String(LessonType.Article);
+  protected readonly LT_EXTERNAL = String(LessonType.ExternalLink);
+  protected readonly PS_DRAFT = String(PublishStatus.Draft);
+  protected readonly PS_PUBLISHED = String(PublishStatus.Published);
 
   protected get durationStr(): string { return String(this.duration); }
   protected set durationStr(val: string) { this.duration = Number(val); }
@@ -99,7 +114,7 @@ export class InstructorLessonForm implements OnInit {
     const course = this.layout.course();
     if (!course) return false;
     const accessType = String(course.courseAccessType).trim().toLowerCase();
-    return accessType === '1' || accessType === 'selfpaced';
+    return accessType === String(CourseAccessType.SelfPaced) || accessType === 'selfpaced';
   }
 
   protected get sectionOptions(): { label: string, value: any }[] {
@@ -125,6 +140,34 @@ export class InstructorLessonForm implements OnInit {
       this.sectionIdStr !== this.originalSectionIdStr ||
       this.selectedFile !== null
     );
+  }
+
+  protected showUnsavedModal = signal(false);
+  private unsavedResolve: ((val: boolean) => void) | null = null;
+
+  async canDeactivate(): Promise<boolean> {
+    if (!this.isDirty || this.isSaving()) return true;
+
+    return new Promise<boolean>((resolve) => {
+      this.unsavedResolve = resolve;
+      this.showUnsavedModal.set(true);
+    });
+  }
+
+  protected confirmLeave(): void {
+    this.showUnsavedModal.set(false);
+    if (this.unsavedResolve) {
+      this.unsavedResolve(true);
+      this.unsavedResolve = null;
+    }
+  }
+
+  protected cancelLeave(): void {
+    this.showUnsavedModal.set(false);
+    if (this.unsavedResolve) {
+      this.unsavedResolve(false);
+      this.unsavedResolve = null;
+    }
   }
 
   ngOnInit() {
@@ -174,7 +217,7 @@ export class InstructorLessonForm implements OnInit {
         this.content = lesson.content ?? '';
         this.contentUrl = lesson.contentUrl ?? '';
         this.isPreview = lesson.isPreview ?? false;
-        this.status = lesson.status === 2 || lesson.status === 'Published' ? 'Published' : 'Draft';
+        this.status = (lesson.status === PublishStatus.Published || lesson.status === 'Published') ? String(PublishStatus.Published) : String(PublishStatus.Draft);
         this.sortOrder = lesson.sortOrder ?? 0;
         this.sectionIdStr = lesson.courseSectionId?.toString() || '';
         
@@ -209,11 +252,11 @@ export class InstructorLessonForm implements OnInit {
   }
 
   private resolveTypeString(type: string | number): string {
-    if (type === 0 || type === '0' || type === 'Video') return 'Video';
-    if (type === 1 || type === '1' || type === 'Pdf') return 'Pdf';
-    if (type === 2 || type === '2' || type === 'Article') return 'Article';
-    if (type === 3 || type === '3' || type === 'ExternalLink') return 'ExternalLink';
-    return 'Video';
+    if (type === LessonType.Video || type === String(LessonType.Video) || type === 'Video') return String(LessonType.Video);
+    if (type === LessonType.Pdf || type === String(LessonType.Pdf) || type === 'Pdf') return String(LessonType.Pdf);
+    if (type === LessonType.Article || type === String(LessonType.Article) || type === 'Article') return String(LessonType.Article);
+    if (type === LessonType.ExternalLink || type === String(LessonType.ExternalLink) || type === 'ExternalLink') return String(LessonType.ExternalLink);
+    return String(LessonType.Video);
   }
 
   protected onFileSelected(event: any) {
@@ -247,7 +290,7 @@ export class InstructorLessonForm implements OnInit {
 
   private handleFile(file: File) {
     // Basic file type validation based on lesson type
-    if (this.type === 'Video') {
+    if (this.type === this.LT_VIDEO) {
       if (!file.type.startsWith('video/')) {
         this.toastService.showError('Please upload a valid video file.');
         return;
@@ -257,7 +300,7 @@ export class InstructorLessonForm implements OnInit {
         return;
       }
     }
-    if (this.type === 'Pdf') {
+    if (this.type === this.LT_PDF) {
       if (file.type !== 'application/pdf') {
         this.toastService.showError('Please upload a valid PDF document.');
         return;
@@ -381,16 +424,16 @@ export class InstructorLessonForm implements OnInit {
     formData.append('Title', this.title);
     formData.append('Description', this.description);
     
-    let typeVal = 0;
-    if (this.type === 'Pdf') typeVal = 1;
-    else if (this.type === 'Article') typeVal = 2;
-    else if (this.type === 'ExternalLink') typeVal = 3;
+    let typeVal: number = LessonType.Video;
+    if (this.type === this.LT_PDF) typeVal = LessonType.Pdf;
+    else if (this.type === this.LT_ARTICLE) typeVal = LessonType.Article;
+    else if (this.type === this.LT_EXTERNAL) typeVal = LessonType.ExternalLink;
     
     formData.append('Type', typeVal.toString());
     formData.append('DurationInMinutes', this.duration.toString());
     formData.append('IsPreview', this.isPreview.toString());
     if (!this.isSelfPaced) {
-      formData.append('Status', (this.status === 'Published' ? 2 : 1).toString());
+      formData.append('Status', (this.status === String(PublishStatus.Published) ? PublishStatus.Published : PublishStatus.Draft).toString());
     }
     
     if (this.sectionIdStr === this.originalSectionIdStr) {
@@ -398,11 +441,11 @@ export class InstructorLessonForm implements OnInit {
     }
 
     if (this.selectedFile) formData.append('File', this.selectedFile);
-    if (this.type === 'Article') formData.append('Content', this.content);
-    if (this.type === 'ExternalLink') formData.append('ContentUrl', this.contentUrl);
+    if (this.type === this.LT_ARTICLE) formData.append('Content', this.content);
+    if (this.type === this.LT_EXTERNAL) formData.append('ContentUrl', this.contentUrl);
 
-    if (!this.isEditMode && (this.type === 'Video' || this.type === 'Pdf') && !this.selectedFile) {
-        this.toastService.showError(`File upload is required for ${this.type} lesson.`);
+    if (!this.isEditMode && (this.type === this.LT_VIDEO || this.type === this.LT_PDF) && !this.selectedFile) {
+        this.toastService.showError(`File upload is required for this lesson.`);
         return;
     }
 

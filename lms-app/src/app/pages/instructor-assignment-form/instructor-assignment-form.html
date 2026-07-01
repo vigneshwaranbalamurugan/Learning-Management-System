@@ -103,7 +103,7 @@
           </div>
 
           <!-- Attachment Details -->
-          <div *ngIf="attachmentType == 1" class="p-4 bg-indigo-50/50 rounded-xl border border-indigo-100/50">
+          <div *ngIf="attachmentType == AssignmentAttachmentType.File" class="p-4 bg-indigo-50/50 rounded-xl border border-indigo-100/50">
             <div class="flex justify-between items-center mb-2">
               <label class="text-sm font-bold text-slate-700 block">Upload Reference File</label>
               <span class="text-[10px] font-bold text-indigo-700 bg-white px-2 py-0.5 rounded-md border border-indigo-100 uppercase tracking-wider">Max Size: {{ maxFileSizeMB }}MB</span>
@@ -112,7 +112,7 @@
             <p *ngIf="currentAttachmentPath" class="text-xs text-gray-500 mt-2">Current file attached.</p>
           </div>
           
-          <div *ngIf="attachmentType == 2" class="p-4 bg-indigo-50/50 rounded-xl border border-indigo-100/50">
+          <div *ngIf="attachmentType == AssignmentAttachmentType.Link" class="p-4 bg-indigo-50/50 rounded-xl border border-indigo-100/50">
             <app-form-input
               label="Attachment URL"
               [value]="attachmentUrl"
@@ -151,3 +151,15 @@
     <p class="text-sm font-semibold text-gray-500 mt-4">Loading assignment details...</p>
   </div>
 </ng-template>
+
+<!-- Unsaved Changes Modal -->
+<app-confirm-modal 
+  [isOpen]="showUnsavedModal()" 
+  title="Unsaved Changes"
+  message="You have unsaved changes. Are you sure you want to leave this page? All your progress will be lost."
+  confirmText="Leave Page"
+  cancelText="Stay"
+  [isDanger]="true"
+  (confirm)="confirmLeave()"
+  (cancel)="cancelLeave()">
+</app-confirm-modal>

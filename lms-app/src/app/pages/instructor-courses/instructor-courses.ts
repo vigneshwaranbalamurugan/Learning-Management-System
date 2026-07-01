@@ -4,6 +4,9 @@ import { FormsModule } from '@angular/forms';
 import { RouterModule, Router } from '@angular/router';
 import { ToastService } from '@services/toast.service';
 import { CourseResponse, CategoryResponse } from '@models/course';
+import { CourseLevel } from '../../enums/course-level.enum';
+import { PublishStatus } from '../../enums/publish-status.enum';
+import { CourseStatus } from '../../enums/course-status.enum';
 import { untilDestroyed } from '../../rxjs/until-destroyed';
 import { Dropdown } from '@components/dropdown/dropdown';
 import { FormInput } from '@components/form-input/form-input';
@@ -88,13 +91,13 @@ export class InstructorCourses implements OnInit {
   protected publishedCourses = computed(() => {
     return this.allCoursesForStats().filter(c => {
       const status = String(c.status).toLowerCase();
-      return status === '2' || status === 'published';
+      return status === String(PublishStatus.Published) || status === 'published';
     }).length;
   });
   protected draftCourses = computed(() => {
     return this.allCoursesForStats().filter(c => {
       const status = String(c.status).toLowerCase();
-      return status === '1' || status === 'draft';
+      return status === String(PublishStatus.Draft) || status === 'draft';
     }).length;
   });
   protected totalLearners = computed(() => {
@@ -163,17 +166,17 @@ export class InstructorCourses implements OnInit {
     // Status mapping:
     let statuses: string | undefined = undefined;
     const statusVal = this.selectedStatus();
-    if (statusVal === 'draft') statuses = '1';
-    else if (statusVal === 'published') statuses = '2';
-    else if (statusVal === 'archived') statuses = '3';
-    else if (statusVal === 'pending') statuses = '4';
+    if (statusVal === 'draft') statuses = String(PublishStatus.Draft);
+    else if (statusVal === 'published') statuses = String(PublishStatus.Published);
+    else if (statusVal === 'archived') statuses = String(CourseStatus.Archived);
+    else if (statusVal === 'pending') statuses = String(CourseStatus.PendingApproval);
 
     // Difficulty level mapping:
     let levels: string | undefined = undefined;
     const diff = this.selectedDifficulty();
-    if (diff === 'beginner') levels = '1';
-    else if (diff === 'intermediate') levels = '2';
-    else if (diff === 'advanced') levels = '3';
+    if (diff === 'beginner') levels = String(CourseLevel.Beginner);
+    else if (diff === 'intermediate') levels = String(CourseLevel.Intermediate);
+    else if (diff === 'advanced') levels = String(CourseLevel.Advanced);
 
     const categoryIds = this.selectedCategory() !== 'all' ? this.selectedCategory() : undefined;
 
@@ -220,11 +223,11 @@ export class InstructorCourses implements OnInit {
   protected getStatusString(status: number | string): string {
     const statusNum = typeof status === 'string' ? parseInt(status, 10) : status;
     switch (statusNum) {
-      case 1: return 'Draft';
-      case 2: return 'Published';
-      case 3: return 'Archived';
-      case 4: return 'Pending';
-      case 5: return 'Rejected';
+      case PublishStatus.Draft: return 'Draft';
+      case PublishStatus.Published: return 'Published';
+      case CourseStatus.Archived: return 'Archived';
+      case CourseStatus.PendingApproval: return 'Pending';
+      case CourseStatus.Rejected: return 'Rejected';
       default: return String(status);
     }
   }
@@ -240,28 +243,28 @@ export class InstructorCourses implements OnInit {
 
   protected getLevelName(level: number | string): string {
     const lvl = String(level).trim().toLowerCase();
-    if (lvl === '1' || lvl === 'beginner') return 'Beginner';
-    if (lvl === '2' || lvl === 'intermediate') return 'Intermediate';
-    if (lvl === '3' || lvl === 'advanced') return 'Advanced';
+    if (lvl === String(CourseLevel.Beginner) || lvl === 'beginner') return 'Beginner';
+    if (lvl === String(CourseLevel.Intermediate) || lvl === 'intermediate') return 'Intermediate';
+    if (lvl === String(CourseLevel.Advanced) || lvl === 'advanced') return 'Advanced';
     return 'All Levels';
   }
 
   protected getLevelBadgeClass(level: number | string): string {
     const lvl = String(level).trim().toLowerCase();
-    if (lvl === '1' || lvl === 'beginner') return 'bg-slate-100 text-slate-700';
-    if (lvl === '2' || lvl === 'intermediate') return 'bg-indigo-50 text-indigo-700';
-    if (lvl === '3' || lvl === 'advanced') return 'bg-rose-50 text-rose-700';
+    if (lvl === String(CourseLevel.Beginner) || lvl === 'beginner') return 'bg-slate-100 text-slate-700';
+    if (lvl === String(CourseLevel.Intermediate) || lvl === 'intermediate') return 'bg-indigo-50 text-indigo-700';
+    if (lvl === String(CourseLevel.Advanced) || lvl === 'advanced') return 'bg-rose-50 text-rose-700';
     return 'bg-gray-100 text-gray-600';
   }
 
   protected isCoursePublished(course: CourseResponse): boolean {
     const status = String(course.status).toLowerCase();
-    return status === '2' || status === 'published';
+    return status === String(PublishStatus.Published) || status === 'published';
   }
 
   protected isCoursePendingApproval(course: CourseResponse): boolean {
     const status = String(course.status).toLowerCase();
-    return status === '4' || status === 'pending' || status === 'pending approval';
+    return status === String(CourseStatus.PendingApproval) || status === 'pending' || status === 'pending approval';
   }
 
   protected canUnpublish(course: CourseResponse): boolean {
@@ -270,7 +273,7 @@ export class InstructorCourses implements OnInit {
 
   protected isCourseArchived(course: CourseResponse): boolean {
     const status = String(course.status).toLowerCase();
-    return status === '3' || status === 'archived';
+    return status === String(CourseStatus.Archived) || status === 'archived';
   }
 
   protected getCategoryName(categoryId: number): string {

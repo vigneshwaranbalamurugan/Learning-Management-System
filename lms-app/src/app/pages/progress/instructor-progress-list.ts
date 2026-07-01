@@ -5,6 +5,7 @@ import { ToastService } from '@services/toast.service';
 import { untilDestroyed } from '../../rxjs/until-destroyed';
 import { Loader } from '@components/loader/loader';
 import { CourseService } from '@services/course.service';
+import { PublishStatus } from '../../enums/publish-status.enum';
 
 @Component({
   selector: 'app-instructor-progress-list',
@@ -27,7 +28,7 @@ export class InstructorProgressList implements OnInit {
 
   private loadCourses(): void {
     this.isLoading.set(true);
-    this.courseService.getMyCourses({ statuses: '2' })
+    this.courseService.getMyCourses({ statuses: String(PublishStatus.Published) })
       .pipe(untilDestroyed(this.destroyRef))
       .subscribe({
         next: (data) => {

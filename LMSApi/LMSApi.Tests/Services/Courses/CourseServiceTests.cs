@@ -289,6 +289,7 @@ namespace LMSApi.Tests.Services
             var (user, cat) = await CreateUserAndCategory();
             var course = BuildCourse(user.Id, cat.Id, "to-publish", CourseStatus.Draft, CourseAccessType.SelfPaced);
             var section = new CourseSection { Title = "S1", Description = "Desc", SectionId = 1, Status = PublishStatus.Draft };
+            section.Lessons.Add(new Lessons { Title = "L1", Type = LessonType.Video });
             course.Sections.Add(section);
             DbContext.Courses.Add(course);
             await DbContext.SaveChangesAsync();
@@ -298,6 +299,63 @@ namespace LMSApi.Tests.Services
             Assert.That(result.Status, Is.EqualTo(CourseStatus.PendingApproval));
             var dbSection = await DbContext.CourseSections.FindAsync(section.Id);
             Assert.That(dbSection!.Status, Is.EqualTo(PublishStatus.Draft));
+        }
+
+        [Test]
+        public async Task PublishCourseAsync_NoSections_ThrowsInvalidOperationException()
+        {
+            var (user, cat) = await CreateUserAndCategory();
+            var course = BuildCourse(user.Id, cat.Id, "no-sections", CourseStatus.Draft);
+            DbContext.Courses.Add(course);
+            await DbContext.SaveChangesAsync();
+
+            Assert.ThrowsAsync<InvalidOperationException>(() =>
+                _courseService.PublishCourseAsync(course.Id, new PublishCourseRequest { Publish = true }));
+        }
+
+        [Test]
+        public async Task PublishCourseAsync_SectionWithNoLessons_ThrowsInvalidOperationException()
+        {
+            var (user, cat) = await CreateUserAndCategory();
+            var course = BuildCourse(user.Id, cat.Id, "no-lessons", CourseStatus.Draft);
+            course.Sections.Add(new CourseSection { Title = "S1", Description = "Desc", SectionId = 1 });
+            DbContext.Courses.Add(course);
+            await DbContext.SaveChangesAsync();
+
+            Assert.ThrowsAsync<InvalidOperationException>(() =>
+                _courseService.PublishCourseAsync(course.Id, new PublishCourseRequest { Publish = true }));
+        }
+
+        [Test]
+        public async Task PublishCourseAsync_QuizWithNoQuestions_ThrowsInvalidOperationException()
+        {
+            var (user, cat) = await CreateUserAndCategory();
+            var course = BuildCourse(user.Id, cat.Id, "no-questions", CourseStatus.Draft);
+            var section = new CourseSection { Title = "S1", Description = "Desc", SectionId = 1 };
+            section.Lessons.Add(new Lessons { Title = "L1", Type = LessonType.Video });
+            section.Quizzes.Add(new Quzzes { Title = "Q1" });
+            course.Sections.Add(section);
+            DbContext.Courses.Add(course);
+            await DbContext.SaveChangesAsync();
+
+            Assert.ThrowsAsync<InvalidOperationException>(() =>
+                _courseService.PublishCourseAsync(course.Id, new PublishCourseRequest { Publish = true }));
+        }
+
+        [Test]
+        public async Task PublishCourseAsync_AssignmentWithZeroMarks_ThrowsInvalidOperationException()
+        {
+            var (user, cat) = await CreateUserAndCategory();
+            var course = BuildCourse(user.Id, cat.Id, "zero-marks", CourseStatus.Draft);
+            var section = new CourseSection { Title = "S1", Description = "Desc", SectionId = 1 };
+            section.Lessons.Add(new Lessons { Title = "L1", Type = LessonType.Video });
+            section.Assignments.Add(new Assignments { Title = "A1", TotalMarks = 0 });
+            course.Sections.Add(section);
+            DbContext.Courses.Add(course);
+            await DbContext.SaveChangesAsync();
+
+            Assert.ThrowsAsync<InvalidOperationException>(() =>
+                _courseService.PublishCourseAsync(course.Id, new PublishCourseRequest { Publish = true }));
         }
 
         [Test]

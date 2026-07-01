@@ -68,7 +68,7 @@ namespace LMSApi.Tests.Services
             DbContext.Users.Add(user);
             await DbContext.SaveChangesAsync();
 
-            _mockTokenService.Setup(x => x.GenerateToken(It.IsAny<int>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>()))
+            _mockTokenService.Setup(x => x.GenerateToken(It.IsAny<int>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int?>()))
                 .Returns(("mock_token", DateTime.UtcNow.AddHours(1)));
 
             var request = new LoginRequest { Email = "test@example.com", Password = "Password123!" };
@@ -97,7 +97,7 @@ namespace LMSApi.Tests.Services
             DbContext.Users.Add(user);
             await DbContext.SaveChangesAsync();
 
-            _mockTokenService.Setup(x => x.GenerateToken(It.IsAny<int>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>()))
+            _mockTokenService.Setup(x => x.GenerateToken(It.IsAny<int>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int?>()))
                 .Returns(("mock_token", DateTime.UtcNow.AddHours(1)));
 
             var request = new LoginRequest { Email = "logtest@example.com", Password = "Password123!" };
@@ -723,7 +723,7 @@ namespace LMSApi.Tests.Services
             DbContext.Users.Add(user);
             await DbContext.SaveChangesAsync();
 
-            _mockTokenService.Setup(x => x.GenerateToken(It.IsAny<int>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>()))
+            _mockTokenService.Setup(x => x.GenerateToken(It.IsAny<int>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int?>()))
                 .Returns(("new_access_token", DateTime.UtcNow.AddHours(1)));
             _mockTokenService.Setup(x => x.GenerateRefreshToken()).Returns("new_refresh_token");
 

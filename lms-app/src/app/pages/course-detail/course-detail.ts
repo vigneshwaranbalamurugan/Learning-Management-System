@@ -4,6 +4,8 @@ import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { ToastService } from '@services/toast.service';
 import { CourseDetailResponse } from '@models/course';
 import { EnrollmentResponse } from '@models/enrollment';
+import { CourseLevel } from '../../enums/course-level.enum';
+import { LessonType } from '../../enums/lesson-types.enum';
 import { AuthService } from '@services/auth.service';
 import { untilDestroyed } from '../../rxjs/until-destroyed';
 import { forkJoin } from 'rxjs';
@@ -413,18 +415,18 @@ export class CourseDetail implements OnInit {
 
   protected getLevelName(level: number | string): string {
     switch (Number(level)) {
-      case 1: return 'Beginner';
-      case 2: return 'Intermediate';
-      case 3: return 'Advanced';
+      case CourseLevel.Beginner: return 'Beginner';
+      case CourseLevel.Intermediate: return 'Intermediate';
+      case CourseLevel.Advanced: return 'Advanced';
       default: return 'All Levels';
     }
   }
 
   protected getLevelColor(level: number | string): string {
     switch (Number(level)) {
-      case 1: return 'emerald';
-      case 2: return 'amber';
-      case 3: return 'red';
+      case CourseLevel.Beginner: return 'emerald';
+      case CourseLevel.Intermediate: return 'amber';
+      case CourseLevel.Advanced: return 'red';
       default: return 'gray';
     }
   }
@@ -443,12 +445,13 @@ export class CourseDetail implements OnInit {
 
   protected getLessonTypeName(type: number | string): string {
     switch (String(type).toLowerCase()) {
-      case '0': case 'video':        return 'Video';
-      case '1': case 'pdf':          return 'PDF';
-      case '2': case 'article':      return 'Article';
-      case '3': case 'externallink': return 'Link';
+      case String(LessonType.Video): case 'video':        return 'Video';
+      case String(LessonType.Pdf): case 'pdf':          return 'PDF';
+      case String(LessonType.Article): case 'article':      return 'Article';
+      case String(LessonType.ExternalLink): case 'externallink': return 'Link';
       case '4': case 'quiz':         return 'Quiz';
-      default:                       return 'Lesson';
+      case '5': case 'assignment':   return 'Assignment';
+      default: return 'Unknown';
     }
   }
 

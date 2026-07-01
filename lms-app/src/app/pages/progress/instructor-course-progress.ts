@@ -8,6 +8,8 @@ import { untilDestroyed } from '../../rxjs/until-destroyed';
 import { Loader } from '@components/loader/loader';
 import { CourseService } from '@services/course.service';
 import { ProgressService } from '@services/progress.service';
+import { PublishStatus } from '../../enums/publish-status.enum';
+import { CourseStatus } from '../../enums/course-status.enum';
 
 @Component({
   selector: 'app-instructor-course-progress',
@@ -83,7 +85,7 @@ export class InstructorCourseProgress implements OnInit {
       .pipe(untilDestroyed(this.destroyRef))
       .subscribe({
         next: (course) => {
-          if (course.status !== 2 && course.status !== 'Published') {
+          if (course.status !== CourseStatus.Published && course.status !== 'Published') {
             this.toastService.showError('Cannot view progress for an unpublished course.');
             this.router.navigate(['/instructor/progress']);
             return;

@@ -244,7 +244,8 @@ namespace LMSApi.Tests.Services
             await _reviewService.DeleteReviewAsync(_student.Id, review.Id);
 
             var dbReview = DbContext.Reviews.Find(review.Id);
-            Assert.That(dbReview, Is.Null);
+            Assert.That(dbReview, Is.Not.Null);
+            Assert.That(dbReview!.IsDeleted, Is.True);
         }
 
         [Test]

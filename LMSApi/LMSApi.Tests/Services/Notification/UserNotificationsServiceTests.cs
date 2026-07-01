@@ -130,10 +130,10 @@ namespace LMSApi.Tests.Services
 
             // Assert
             Assert.That(results.Count, Is.EqualTo(2));
-            Assert.That(results[0].Title, Is.EqualTo("T2"));
-            Assert.That(results[1].Title, Is.EqualTo("T1"));
-            Assert.That(results[1].Type, Is.EqualTo("General"));
-            Assert.That(results[0].Type, Is.EqualTo("QuizResult"));
+            Assert.That(results[0].Title, Is.EqualTo("T1"));
+            Assert.That(results[1].Title, Is.EqualTo("T2"));
+            Assert.That(results[0].Type, Is.EqualTo("General"));
+            Assert.That(results[1].Type, Is.EqualTo("QuizResult"));
         }
 
         [Test]

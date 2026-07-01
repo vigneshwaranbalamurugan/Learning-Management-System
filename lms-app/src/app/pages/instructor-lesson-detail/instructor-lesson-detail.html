@@ -146,11 +146,11 @@
 
           <div class="flex flex-wrap items-center gap-1.5 pt-1">
             <!-- Status Chip -->
-            <span [ngClass]="lesson.status === 2 || lesson.status === 'Published' 
+            <span [ngClass]="lesson.status === PublishStatus.Published || lesson.status === 'Published' 
               ? 'bg-success-light text-success border-success/30' 
               : 'bg-bg-surface text-text-muted border-border-default'"
               class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold border gap-1">
-              <svg *ngIf="lesson.status === 2 || lesson.status === 'Published'" class="w-3 h-3" fill="none"
+              <svg *ngIf="lesson.status === PublishStatus.Published || lesson.status === 'Published'" class="w-3 h-3" fill="none"
                 stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
               </svg>
@@ -159,7 +159,7 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                   d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
               </svg>
-              {{ lesson.status === 2 || lesson.status === 'Published' ? 'Published' : 'Draft' }}
+              {{ lesson.status === PublishStatus.Published || lesson.status === 'Published' ? 'Published' : 'Draft' }}
             </span>
             <!-- Free Preview Chip -->
             <span *ngIf="lesson.isPreview"
@@ -375,9 +375,9 @@
               </div>
 
               <div class="flex items-center gap-2 shrink-0 ml-4">
-                <span *ngIf="resource.status === 'Published' || resource.status === 2"
+                <span *ngIf="resource.status === 'Published' || resource.status === PublishStatus.Published"
                   class="text-[10px] font-bold text-emerald-600 bg-emerald-50 border border-emerald-100 px-2 py-0.5 rounded-full">Published</span>
-                <span *ngIf="resource.status !== 'Published' && resource.status !== 2"
+                <span *ngIf="resource.status !== 'Published' && resource.status !== PublishStatus.Published"
                   class="text-[10px] font-bold text-slate-500 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-full">Draft</span>
 
                 <button (click)="openEditResource(resource)"

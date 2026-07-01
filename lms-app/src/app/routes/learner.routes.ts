@@ -43,7 +43,8 @@ export const learnerRoutes: Routes = [
       },
       {
         path: 'profile',
-        loadComponent: () => import('@pages/profile/profile').then(m => m.Profile)
+        loadComponent: () => import('@pages/profile/profile').then(m => m.Profile),
+        canDeactivate: [(component: any) => component.canDeactivate ? component.canDeactivate() : true]
       },
       {
         path: 'reviews',

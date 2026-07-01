@@ -3,6 +3,8 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
 import { CourseResponse, CategoryResponse, InstructorMetadata, LanguageMetadata, FiltersMetadataResponse } from '@models/course';
+import { CourseLevel } from '../../enums/course-level.enum';
+import { CourseAccessType } from '../../enums/course-access-type.enum';
 import { ToastService } from '@services/toast.service';
 import { untilDestroyed } from '../../rxjs/until-destroyed';
 import { PaginationComponent } from '../../components/pagination/pagination.component';
@@ -121,16 +123,16 @@ export class ExploreCourses implements OnInit {
     });
 
     this.selectedAccessTypes().forEach(at =>
-      chips.push({ label: at === 1 ? 'Self Paced' : 'Batch Course', removeKey: 'accessType', removeValue: String(at) }));
+      chips.push({ label: at === CourseAccessType.SelfPaced ? 'Self Paced' : 'Batch Course', removeKey: 'accessType', removeValue: String(at) }));
 
     return chips;
   });
 
   // ── Static filter options ─────────────────────────────────────────────────
   readonly LEVELS = [
-    { value: 1, label: 'Beginner' },
-    { value: 2, label: 'Intermediate' },
-    { value: 3, label: 'Advanced' }
+    { value: CourseLevel.Beginner, label: 'Beginner' },
+    { value: CourseLevel.Intermediate, label: 'Intermediate' },
+    { value: CourseLevel.Advanced, label: 'Advanced' }
   ];
 
   readonly DURATIONS = [
@@ -148,8 +150,8 @@ export class ExploreCourses implements OnInit {
   ];
 
   readonly ACCESS_TYPES = [
-    { value: 1, label: 'Self Paced' },
-    { value: 2, label: 'Batch Course' }
+    { value: CourseAccessType.SelfPaced, label: 'Self Paced' },
+    { value: CourseAccessType.CohortPaced, label: 'Batch Course' }
   ];
 
   readonly SORT_OPTIONS = [
@@ -367,18 +369,18 @@ export class ExploreCourses implements OnInit {
   // ── Helpers ───────────────────────────────────────────────────────────────
   protected getLevelName(level: number | string): string {
     switch (Number(level)) {
-      case 1: return 'Beginner';
-      case 2: return 'Intermediate';
-      case 3: return 'Advanced';
+      case CourseLevel.Beginner: return 'Beginner';
+      case CourseLevel.Intermediate: return 'Intermediate';
+      case CourseLevel.Advanced: return 'Advanced';
       default: return 'All Levels';
     }
   }
 
   protected getLevelColor(level: number | string): string {
     switch (Number(level)) {
-      case 1: return 'bg-emerald-50 text-emerald-700';
-      case 2: return 'bg-amber-50 text-amber-700';
-      case 3: return 'bg-red-50 text-red-700';
+      case CourseLevel.Beginner: return 'bg-emerald-50 text-emerald-700';
+      case CourseLevel.Intermediate: return 'bg-amber-50 text-amber-700';
+      case CourseLevel.Advanced: return 'bg-red-50 text-red-700';
       default: return 'bg-gray-100 text-gray-600';
     }
   }

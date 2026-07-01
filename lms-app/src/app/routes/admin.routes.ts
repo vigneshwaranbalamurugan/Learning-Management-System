@@ -22,6 +22,10 @@ export const adminRoutes: Routes = [
         loadComponent: () => import('@pages/admin/courses/courses').then(m => m.AdminCoursesComponent)
       },
       {
+        path: 'settings',
+        loadComponent: () => import('@pages/admin/settings/settings').then(m => m.AdminSettings)
+      },
+      {
         path: 'courses/new',
         loadComponent: () => import('@pages/instructor-course-form/instructor-course-form').then(m => m.InstructorCourseForm),
         canDeactivate: [(component: any) => component.canDeactivate ? component.canDeactivate() : true]
@@ -50,19 +54,23 @@ export const adminRoutes: Routes = [
           },
           {
             path: 'assignments/new',
-            loadComponent: () => import('@pages/instructor-assignment-form/instructor-assignment-form').then(m => m.InstructorAssignmentForm)
+            loadComponent: () => import('@pages/instructor-assignment-form/instructor-assignment-form').then(m => m.InstructorAssignmentForm),
+            canDeactivate: [(component: any) => component.canDeactivate ? component.canDeactivate() : true]
           },
           {
             path: 'assignments/:assignmentId/edit',
-            loadComponent: () => import('@pages/instructor-assignment-form/instructor-assignment-form').then(m => m.InstructorAssignmentForm)
+            loadComponent: () => import('@pages/instructor-assignment-form/instructor-assignment-form').then(m => m.InstructorAssignmentForm),
+            canDeactivate: [(component: any) => component.canDeactivate ? component.canDeactivate() : true]
           },
           {
             path: 'sections/:sectionId/lessons/new',
-            loadComponent: () => import('@pages/instructor-lesson-form/instructor-lesson-form').then(m => m.InstructorLessonForm)
+            loadComponent: () => import('@pages/instructor-lesson-form/instructor-lesson-form').then(m => m.InstructorLessonForm),
+            canDeactivate: [(component: any) => component.canDeactivate ? component.canDeactivate() : true]
           },
           {
             path: 'lessons/:lessonId/edit',
-            loadComponent: () => import('@pages/instructor-lesson-form/instructor-lesson-form').then(m => m.InstructorLessonForm)
+            loadComponent: () => import('@pages/instructor-lesson-form/instructor-lesson-form').then(m => m.InstructorLessonForm),
+            canDeactivate: [(component: any) => component.canDeactivate ? component.canDeactivate() : true]
           },
           {
             path: 'lessons/:lessonId/detail',
@@ -70,15 +78,18 @@ export const adminRoutes: Routes = [
           },
           {
             path: 'lessons/:lessonId/resources/new',
-            loadComponent: () => import('@pages/instructor-resource-form/instructor-resource-form').then(m => m.InstructorResourceForm)
+            loadComponent: () => import('@pages/instructor-resource-form/instructor-resource-form').then(m => m.InstructorResourceForm),
+            canDeactivate: [(component: any) => component.canDeactivate ? component.canDeactivate() : true]
           },
           {
             path: 'resources/:resourceId/edit',
-            loadComponent: () => import('@pages/instructor-resource-form/instructor-resource-form').then(m => m.InstructorResourceForm)
+            loadComponent: () => import('@pages/instructor-resource-form/instructor-resource-form').then(m => m.InstructorResourceForm),
+            canDeactivate: [(component: any) => component.canDeactivate ? component.canDeactivate() : true]
           },
           {
             path: 'quizzes/:quizId/questions',
-            loadComponent: () => import('@pages/instructor-quiz-questions/instructor-quiz-questions').then(m => m.InstructorQuizQuestions)
+            loadComponent: () => import('@pages/instructor-quiz-questions/instructor-quiz-questions').then(m => m.InstructorQuizQuestions),
+            canDeactivate: [(component: any) => component.canDeactivate ? component.canDeactivate() : true]
           },
           {
             path: 'analytics',

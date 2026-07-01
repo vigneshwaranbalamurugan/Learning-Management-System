@@ -6,6 +6,7 @@ import { PaginationComponent } from '../../../components/pagination/pagination.c
 import { ToastService } from '../../../services/toast.service';
 import { untilDestroyed } from '../../../rxjs/until-destroyed';
 import { CourseResponse, CourseSummaryStatsResponse, CategoryResponse, InstructorMetadata } from '../../../models/course';
+import { CourseStatus } from '../../../enums/course-status.enum';
 import { RouterModule, Router } from '@angular/router';
 import { Dropdown } from '../../../components/dropdown/dropdown';
 import { Button } from '../../../components/button/button';
@@ -57,10 +58,10 @@ export class AdminCoursesComponent implements OnInit {
   // Dropdown options
   protected statusOptions = [
     { value: '', label: 'All Statuses' },
-    { value: '1', label: 'Draft' },
-    { value: '2', label: 'Published' },
-    { value: '3', label: 'Pending Approval' },
-    { value: '4', label: 'Archived' }
+    { value: String(CourseStatus.Draft), label: 'Draft' },
+    { value: String(CourseStatus.Published), label: 'Published' },
+    { value: String(CourseStatus.PendingApproval), label: 'Pending Approval' },
+    { value: String(CourseStatus.Archived), label: 'Archived' }
   ];
   
   protected categoryOptions = signal<{value: string, label: string}[]>([{ value: '', label: 'All Categories' }]);
@@ -279,9 +280,9 @@ export class AdminCoursesComponent implements OnInit {
   protected getStatusClasses(status: number | string): string {
     const s = typeof status === 'string' ? parseInt(status, 10) : status;
     switch (s) {
-      case 2: return 'bg-green-100 text-green-700 border border-green-200'; // Published
-      case 3: return 'bg-orange-100 text-orange-700 border border-orange-200'; // Pending
-      case 4: return 'bg-slate-100 text-slate-600 border border-slate-200'; // Archived
+      case CourseStatus.Published: return 'bg-green-100 text-green-700 border border-green-200'; // Published
+      case CourseStatus.PendingApproval: return 'bg-orange-100 text-orange-700 border border-orange-200'; // Pending
+      case CourseStatus.Archived: return 'bg-slate-100 text-slate-600 border border-slate-200'; // Archived
       default: return 'bg-blue-100 text-blue-700 border border-blue-200'; // Draft
     }
   }
@@ -289,9 +290,9 @@ export class AdminCoursesComponent implements OnInit {
   protected getStatusLabel(status: number | string): string {
     const s = typeof status === 'string' ? parseInt(status, 10) : status;
     switch (s) {
-      case 2: return 'Published';
-      case 3: return 'Pending Review';
-      case 4: return 'Archived';
+      case CourseStatus.Published: return 'Published';
+      case CourseStatus.PendingApproval: return 'Pending Review';
+      case CourseStatus.Archived: return 'Archived';
       default: return 'Draft';
     }
   }

@@ -50,19 +50,23 @@ export const instructorRoutes: Routes = [
           },
           {
             path: 'assignments/new',
-            loadComponent: () => import('@pages/instructor-assignment-form/instructor-assignment-form').then(m => m.InstructorAssignmentForm)
+            loadComponent: () => import('@pages/instructor-assignment-form/instructor-assignment-form').then(m => m.InstructorAssignmentForm),
+            canDeactivate: [(component: any) => component.canDeactivate ? component.canDeactivate() : true]
           },
           {
             path: 'assignments/:assignmentId/edit',
-            loadComponent: () => import('@pages/instructor-assignment-form/instructor-assignment-form').then(m => m.InstructorAssignmentForm)
+            loadComponent: () => import('@pages/instructor-assignment-form/instructor-assignment-form').then(m => m.InstructorAssignmentForm),
+            canDeactivate: [(component: any) => component.canDeactivate ? component.canDeactivate() : true]
           },
           {
             path: 'sections/:sectionId/lessons/new',
-            loadComponent: () => import('@pages/instructor-lesson-form/instructor-lesson-form').then(m => m.InstructorLessonForm)
+            loadComponent: () => import('@pages/instructor-lesson-form/instructor-lesson-form').then(m => m.InstructorLessonForm),
+            canDeactivate: [(component: any) => component.canDeactivate ? component.canDeactivate() : true]
           },
           {
             path: 'lessons/:lessonId/edit',
-            loadComponent: () => import('@pages/instructor-lesson-form/instructor-lesson-form').then(m => m.InstructorLessonForm)
+            loadComponent: () => import('@pages/instructor-lesson-form/instructor-lesson-form').then(m => m.InstructorLessonForm),
+            canDeactivate: [(component: any) => component.canDeactivate ? component.canDeactivate() : true]
           },
           {
             path: 'lessons/:lessonId/detail',
@@ -70,15 +74,18 @@ export const instructorRoutes: Routes = [
           },
           {
             path: 'lessons/:lessonId/resources/new',
-            loadComponent: () => import('@pages/instructor-resource-form/instructor-resource-form').then(m => m.InstructorResourceForm)
+            loadComponent: () => import('@pages/instructor-resource-form/instructor-resource-form').then(m => m.InstructorResourceForm),
+            canDeactivate: [(component: any) => component.canDeactivate ? component.canDeactivate() : true]
           },
           {
             path: 'resources/:resourceId/edit',
-            loadComponent: () => import('@pages/instructor-resource-form/instructor-resource-form').then(m => m.InstructorResourceForm)
+            loadComponent: () => import('@pages/instructor-resource-form/instructor-resource-form').then(m => m.InstructorResourceForm),
+            canDeactivate: [(component: any) => component.canDeactivate ? component.canDeactivate() : true]
           },
           {
             path: 'quizzes/:quizId/questions',
-            loadComponent: () => import('@pages/instructor-quiz-questions/instructor-quiz-questions').then(m => m.InstructorQuizQuestions)
+            loadComponent: () => import('@pages/instructor-quiz-questions/instructor-quiz-questions').then(m => m.InstructorQuizQuestions),
+            canDeactivate: [(component: any) => component.canDeactivate ? component.canDeactivate() : true]
           },
           {
             path: 'analytics',
@@ -96,7 +103,8 @@ export const instructorRoutes: Routes = [
       },
       {
         path: 'assignments/:assignmentId/evaluate',
-        loadComponent: () => import('@pages/instructor-evaluate/instructor-evaluate').then(m => m.InstructorEvaluate)
+        loadComponent: () => import('@pages/instructor-evaluate/instructor-evaluate').then(m => m.InstructorEvaluate),
+        canDeactivate: [(component: any) => component.canDeactivate ? component.canDeactivate() : true]
       },
       {
         path: 'assignments/:assignmentId/graded',
@@ -112,7 +120,8 @@ export const instructorRoutes: Routes = [
       },
       {
         path: 'profile',
-        loadComponent: () => import('@pages/profile/profile').then(m => m.Profile)
+        loadComponent: () => import('@pages/profile/profile').then(m => m.Profile),
+        canDeactivate: [(component: any) => component.canDeactivate ? component.canDeactivate() : true]
       },
       {
         path: 'revenue',

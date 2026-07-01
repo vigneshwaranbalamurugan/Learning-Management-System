@@ -8,11 +8,13 @@ import { untilDestroyed } from '../../rxjs/until-destroyed';
 import { Loader } from '@components/loader/loader';
 import { AssignmentSubmissionResponse, AssignmentResponse } from '@models/assignment';
 import { AssignmentService } from '@services/assignment.service';
+import { ConfirmModal } from '@components/confirm-modal/confirm-modal';
+import { AssignmentAttachmentType } from '../../enums/assignment-attachment-type.enum';
 
 @Component({
   selector: 'app-instructor-evaluate',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, Loader],
+  imports: [CommonModule, FormsModule, RouterModule, Loader, ConfirmModal],
   templateUrl: './instructor-evaluate.html'
 })
 export class InstructorEvaluate implements OnInit {
@@ -34,6 +36,41 @@ export class InstructorEvaluate implements OnInit {
   protected selectedSubmission = signal<AssignmentSubmissionResponse | null>(null);
   protected marksAwarded = 0;
   protected feedback = '';
+
+  protected showUnsavedModal = signal(false);
+  private unsavedResolve: ((val: boolean) => void) | null = null;
+  protected readonly AssignmentAttachmentType = AssignmentAttachmentType;
+
+  protected get isDirty(): boolean {
+    const submission = this.selectedSubmission();
+    if (!submission) return false;
+    return this.marksAwarded !== (submission.marksAwarded ?? 0) || this.feedback !== (submission.feedback ?? '');
+  }
+
+  async canDeactivate(): Promise<boolean> {
+    if (!this.isDirty || this.isSubmitting()) return true;
+
+    return new Promise<boolean>((resolve) => {
+      this.unsavedResolve = resolve;
+      this.showUnsavedModal.set(true);
+    });
+  }
+
+  protected confirmLeave(): void {
+    this.showUnsavedModal.set(false);
+    if (this.unsavedResolve) {
+      this.unsavedResolve(true);
+      this.unsavedResolve = null;
+    }
+  }
+
+  protected cancelLeave(): void {
+    this.showUnsavedModal.set(false);
+    if (this.unsavedResolve) {
+      this.unsavedResolve(false);
+      this.unsavedResolve = null;
+    }
+  }
 
   ngOnInit(): void {
     this.route.paramMap

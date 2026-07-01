@@ -1,3 +1,5 @@
+import { AssignmentAttachmentType } from '../enums/assignment-attachment-type.enum';
+
 export interface AssignmentResponse {
   id: number;
   courseSectionId: number;
@@ -7,7 +9,7 @@ export interface AssignmentResponse {
   isCompulsory: boolean;
   totalMarks: number;
   passingMarks: number;
-  attachmentType: number; // 0 = None, 1 = File, 2 = Link
+  attachmentType: AssignmentAttachmentType | number; // AssignmentAttachmentType
   attachmentUrl?: string;
   deadlineInDays: number;
   deadlineDate?: string;
@@ -22,7 +24,7 @@ export interface AssignmentSubmissionResponse {
   assignmentId: number;
   studentId: number;
   submissionText?: string;
-  attachmentType?: number; // 0 = File, 1 = Link
+  attachmentType?: AssignmentAttachmentType | number; // AssignmentAttachmentType
   submittedAssignmentUrl?: string;
   marksAwarded?: number;
   feedback?: string;

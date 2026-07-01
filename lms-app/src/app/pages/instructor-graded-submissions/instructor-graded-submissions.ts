@@ -8,6 +8,7 @@ import { ToastService } from '@services/toast.service';
 import { AssignmentSubmissionResponse, AssignmentResponse } from '@models/assignment';
 import { Loader } from '@components/loader/loader';
 import { finalize } from 'rxjs';
+import { AssignmentAttachmentType } from '../../enums/assignment-attachment-type.enum';
 
 @Component({
   selector: 'app-instructor-graded-submissions',
@@ -33,6 +34,8 @@ export class InstructorGradedSubmissions implements OnInit {
   protected marksAwarded = signal<number | null>(null);
   protected feedback = signal<string>('');
   protected isSubmitting = signal<boolean>(false);
+
+  protected readonly AssignmentAttachmentType = AssignmentAttachmentType;
 
   ngOnInit(): void {
     const idParam = this.route.snapshot.paramMap.get('assignmentId');

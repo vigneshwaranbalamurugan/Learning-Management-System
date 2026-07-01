@@ -10,11 +10,13 @@ import { Dropdown } from '@components/dropdown/dropdown';
 import { Button } from '@components/button/button';
 import { Loader } from '@components/loader/loader';
 import { AssignmentService } from '@services/assignment.service';
+import { ConfirmModal } from '@components/confirm-modal/confirm-modal';
+import { AssignmentAttachmentType } from '../../enums/assignment-attachment-type.enum';
 
 @Component({
   selector: 'app-instructor-assignment-form',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, FormInput, Dropdown, Button, Loader],
+  imports: [CommonModule, FormsModule, RouterModule, FormInput, Dropdown, Button, Loader, ConfirmModal],
   templateUrl: './instructor-assignment-form.html',
   styleUrl: './instructor-assignment-form.css'
 })
@@ -43,7 +45,7 @@ export class InstructorAssignmentForm implements OnInit {
   protected isCompulsory = true;
   protected totalMarks = 100;
   protected passingMarks = 50;
-  protected attachmentType = 0; // 0 = None, 1 = File, 2 = Link
+  protected attachmentType = AssignmentAttachmentType.None;
   protected attachmentUrl = '';
   protected currentAttachmentPath = ''; // Holds existing filename/url when editing
   protected selectedFile: File | null = null;
@@ -51,6 +53,70 @@ export class InstructorAssignmentForm implements OnInit {
   protected maxSubmissions = 1;
   protected isLateSubmissionAllowed = false;
   protected maxFileSizeMB: number = 10; // default fallback
+
+  private initialFormState = '';
+  protected showUnsavedModal = signal(false);
+  private unsavedResolve: ((val: boolean) => void) | null = null;
+
+  private captureInitialState() {
+    this.initialFormState = JSON.stringify({
+      sectionId: this.sectionId,
+      title: this.title,
+      description: this.description,
+      instructions: this.instructions,
+      isCompulsory: this.isCompulsory,
+      totalMarks: this.totalMarks,
+      passingMarks: this.passingMarks,
+      attachmentType: this.attachmentType,
+      attachmentUrl: this.attachmentUrl,
+      deadlineInDays: this.deadlineInDays,
+      maxSubmissions: this.maxSubmissions,
+      isLateSubmissionAllowed: this.isLateSubmissionAllowed
+    });
+  }
+
+  protected get isDirty(): boolean {
+    const currentState = JSON.stringify({
+      sectionId: this.sectionId,
+      title: this.title,
+      description: this.description,
+      instructions: this.instructions,
+      isCompulsory: this.isCompulsory,
+      totalMarks: this.totalMarks,
+      passingMarks: this.passingMarks,
+      attachmentType: this.attachmentType,
+      attachmentUrl: this.attachmentUrl,
+      deadlineInDays: this.deadlineInDays,
+      maxSubmissions: this.maxSubmissions,
+      isLateSubmissionAllowed: this.isLateSubmissionAllowed
+    });
+    return currentState !== this.initialFormState || this.selectedFile !== null;
+  }
+
+  async canDeactivate(): Promise<boolean> {
+    if (!this.isDirty || this.isSaving()) return true;
+
+    return new Promise<boolean>((resolve) => {
+      this.unsavedResolve = resolve;
+      this.showUnsavedModal.set(true);
+    });
+  }
+
+  protected confirmLeave(): void {
+    this.showUnsavedModal.set(false);
+    if (this.unsavedResolve) {
+      this.unsavedResolve(true);
+      this.unsavedResolve = null;
+    }
+  }
+
+  protected cancelLeave(): void {
+    this.showUnsavedModal.set(false);
+    if (this.unsavedResolve) {
+      this.unsavedResolve(false);
+      this.unsavedResolve = null;
+    }
+  }
 
   protected get sectionIdStr(): string {
     return this.sectionId ? String(this.sectionId) : '';
@@ -67,6 +133,8 @@ export class InstructorAssignmentForm implements OnInit {
   protected setAttachmentTypeStr(val: string) {
     this.attachmentType = Number(val);
   }
+
+  protected readonly AssignmentAttachmentType = AssignmentAttachmentType;
 
   protected get totalMarksStr(): string {
     return String(this.totalMarks);
@@ -108,9 +176,9 @@ export class InstructorAssignmentForm implements OnInit {
   }
 
   protected attachmentTypeOptions = [
-    { value: '0', label: 'None' },
-    { value: '1', label: 'File Upload 📁' },
-    { value: '2', label: 'External URL Link 🔗' }
+    { value: String(AssignmentAttachmentType.None), label: 'None' },
+    { value: String(AssignmentAttachmentType.File), label: 'File Upload 📁' },
+    { value: String(AssignmentAttachmentType.Link), label: 'External URL Link 🔗' }
   ];
 
   protected get course() {
@@ -130,6 +198,7 @@ export class InstructorAssignmentForm implements OnInit {
         if (currentCourse && currentCourse.sections && currentCourse.sections.length > 0) {
           this.sectionId = currentCourse.sections[0].id;
         }
+        this.captureInitialState();
         this.isLoading.set(false);
       }
     });
@@ -154,12 +223,13 @@ export class InstructorAssignmentForm implements OnInit {
         this.isCompulsory = assignment.isCompulsory;
         this.totalMarks = assignment.totalMarks;
         this.passingMarks = assignment.passingMarks;
-        this.attachmentType = assignment.attachmentType;
+        this.attachmentType = assignment.attachmentType as AssignmentAttachmentType;
         this.attachmentUrl = assignment.attachmentUrl || '';
         this.currentAttachmentPath = assignment.attachmentPath || '';
         this.deadlineInDays = assignment.deadlineInDays;
         this.maxSubmissions = assignment.maxSubmissions;
         this.isLateSubmissionAllowed = assignment.isLateSubmissionAllowed;
+        this.captureInitialState();
         this.isLoading.set(false);
       },
       error: (err) => {
@@ -200,11 +270,11 @@ export class InstructorAssignmentForm implements OnInit {
     formData.append('MaxSubmissions', this.maxSubmissions.toString());
     formData.append('IsLateSubmissionAllowed', this.isLateSubmissionAllowed.toString());
 
-    if (this.attachmentType === 1) {
+    if (this.attachmentType === AssignmentAttachmentType.File) {
       if (this.selectedFile) {
         formData.append('AttachmentFile', this.selectedFile);
       }
-    } else if (this.attachmentType === 2) {
+    } else if (this.attachmentType === AssignmentAttachmentType.Link) {
       formData.append('AttachmentUrl', this.attachmentUrl);
     }
 

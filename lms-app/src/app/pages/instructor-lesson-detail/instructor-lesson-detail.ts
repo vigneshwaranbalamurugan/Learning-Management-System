@@ -11,6 +11,8 @@ import { marked } from 'marked';
 import { InstructorCourseLayout } from '../instructor-course-layout/instructor-course-layout';
 import { LessonResourcesService } from '@services/lesson-resources.service';
 import { CourseBuilderService } from '@services/course-builder.service';
+import { LessonType } from '../../enums/lesson-types.enum';
+import { PublishStatus } from '../../enums/publish-status.enum';
 
 @Component({
   selector: 'app-instructor-lesson-detail',
@@ -51,6 +53,9 @@ export class InstructorLessonDetail implements OnInit, OnDestroy {
   // Fullscreen / Theater Mode State
   protected isTheaterMode = false;
   protected isNativeFullscreen = false;
+
+  protected readonly LessonType = LessonType;
+  protected readonly PublishStatus = PublishStatus;
 
   ngOnInit() {
     this.route.parent?.paramMap.subscribe(parentParams => {
@@ -163,18 +168,18 @@ export class InstructorLessonDetail implements OnInit, OnDestroy {
 
   protected lessonTypeLabel(type: any): string {
     const normalized = this.normalizeType(type);
-    if (normalized === 'Video') return 'Video';
-    if (normalized === 'Article') return 'Article';
-    if (normalized === 'Pdf') return 'PDF';
-    if (normalized === 'ExternalLink') return 'External Link';
+    if (normalized === 'Video' || type === LessonType.Video || type === String(LessonType.Video)) return 'Video';
+    if (normalized === 'Article' || type === LessonType.Article || type === String(LessonType.Article)) return 'Article';
+    if (normalized === 'Pdf' || type === LessonType.Pdf || type === String(LessonType.Pdf)) return 'PDF';
+    if (normalized === 'ExternalLink' || type === LessonType.ExternalLink || type === String(LessonType.ExternalLink)) return 'External Link';
     return String(type);
   }
 
   protected normalizeType(type: any): string {
-    if (type === 0 || type === '0' || type === 'Video') return 'Video';
-    if (type === 1 || type === '1' || type === 'Pdf' || type === 'PDF') return 'Pdf';
-    if (type === 2 || type === '2' || type === 'Article') return 'Article';
-    if (type === 3 || type === '3' || type === 'ExternalLink') return 'ExternalLink';
+    if (type === LessonType.Video || type === String(LessonType.Video) || type === 'Video') return 'Video';
+    if (type === LessonType.Pdf || type === String(LessonType.Pdf) || type === 'Pdf' || type === 'PDF') return 'Pdf';
+    if (type === LessonType.Article || type === String(LessonType.Article) || type === 'Article') return 'Article';
+    if (type === LessonType.ExternalLink || type === String(LessonType.ExternalLink) || type === 'ExternalLink') return 'ExternalLink';
     return String(type);
   }
 

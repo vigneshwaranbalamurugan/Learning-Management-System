@@ -14,7 +14,7 @@ namespace LMSApi.ModelLibrary.Models
         public int PaymentId { get; set; }
 
         public int InstructorId { get; set; }
-        public int InstructorPayoutAccountId { get; set; }
+        public int? InstructorPayoutAccountId { get; set; }
 
         /// <summary>INR amount transferred to instructor (course price minus platform fee).</summary>
         public decimal Amount { get; set; }

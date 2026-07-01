@@ -9,6 +9,7 @@ import { FormInput } from '@components/form-input/form-input';
 import { Dropdown } from '@components/dropdown/dropdown';
 import { Loader } from '@components/loader/loader';
 import { QuizService } from '@services/quiz.service';
+import { QuizQuestionType } from '../../enums/quiz-question-type.enum';
 
 interface QuizOption {
   id?: number;
@@ -55,10 +56,44 @@ export class InstructorQuizQuestions implements OnInit {
   protected isLoading = signal(true);
   protected currentQuestion: QuizQuestion = this.getEmptyQuestion();
 
+  protected showUnsavedModal = signal(false);
+  private unsavedResolve: ((val: boolean) => void) | null = null;
+
+  protected get isDirty(): boolean {
+    return this.showQuestionModal;
+  }
+
+  async canDeactivate(): Promise<boolean> {
+    if (!this.isDirty || this.isSaving()) return true;
+
+    return new Promise<boolean>((resolve) => {
+      this.unsavedResolve = resolve;
+      this.showUnsavedModal.set(true);
+    });
+  }
+
+  protected confirmLeave(): void {
+    this.showUnsavedModal.set(false);
+    if (this.unsavedResolve) {
+      this.unsavedResolve(true);
+      this.unsavedResolve = null;
+    }
+  }
+
+  protected cancelLeave(): void {
+    this.showUnsavedModal.set(false);
+    if (this.unsavedResolve) {
+      this.unsavedResolve(false);
+      this.unsavedResolve = null;
+    }
+  }
+
   protected questionTypeOptions = [
-    { value: '0', label: 'Multiple Choice' },
-    { value: '1', label: 'True/False' }
+    { value: String(QuizQuestionType.MultipleChoice), label: 'Multiple Choice' },
+    { value: String(QuizQuestionType.TrueFalse), label: 'True/False' }
   ];
+
+  protected readonly QuizQuestionType = QuizQuestionType;
 
   // Confirmation Modal state
   protected showDeleteModal = false;
@@ -113,7 +148,7 @@ export class InstructorQuizQuestions implements OnInit {
   private getEmptyQuestion(): QuizQuestion {
     return {
       questionText: '',
-      questionType: 0, // 0 = MultipleChoice
+      questionType: QuizQuestionType.MultipleChoice,
       mark: 1,
       explanation: '',
       sortOrder: 1,
@@ -155,7 +190,7 @@ export class InstructorQuizQuestions implements OnInit {
   }
 
   protected addOption() {
-    if (this.currentQuestion.questionType == 0) {
+    if (this.currentQuestion.questionType == QuizQuestionType.MultipleChoice) {
       if (this.currentQuestion.options.length < 4) {
         this.currentQuestion.options.push({ optionText: '', isCorrect: false });
       } else {
@@ -167,7 +202,7 @@ export class InstructorQuizQuestions implements OnInit {
   }
 
   protected removeOption(index: number) {
-    if (this.currentQuestion.questionType == 0) {
+    if (this.currentQuestion.questionType == QuizQuestionType.MultipleChoice) {
       this.toastService.showError('A multiple choice question must have exactly 4 options.');
       return;
     }
@@ -180,7 +215,7 @@ export class InstructorQuizQuestions implements OnInit {
   }
 
   protected onQuestionTypeChange() {
-    if (this.currentQuestion.questionType == 1) { // True/False
+    if (this.currentQuestion.questionType == QuizQuestionType.TrueFalse) {
       this.currentQuestion.options = [
         { optionText: 'True', isCorrect: true },
         { optionText: 'False', isCorrect: false }

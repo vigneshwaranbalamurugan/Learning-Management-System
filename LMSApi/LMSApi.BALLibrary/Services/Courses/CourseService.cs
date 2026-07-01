@@ -375,6 +375,35 @@ namespace LMSApi.BALLibrary.Services
                     throw new InvalidOperationException(
                         $"CohortBased course '{id}' cannot be published without at least one batch. Create a batch first.");
 
+                // Validation: Must have at least one section
+                if (!course.Sections.Any())
+                    throw new InvalidOperationException(
+                        "Course must have at least one section before submitting for review.");
+
+                // Validation: Each section must have at least one lesson, and valid quizzes/assignments
+                foreach (var section in course.Sections)
+                {
+                    if (!section.Lessons.Any())
+                        throw new InvalidOperationException(
+                            $"Section '{section.Title}' has no lessons. Each section must have at least one lesson.");
+
+                    // Validation: Any quiz in the section must have at least one question
+                    foreach (var quiz in section.Quizzes)
+                    {
+                        if (!quiz.Questions.Any())
+                            throw new InvalidOperationException(
+                                $"Quiz '{quiz.Title}' in section '{section.Title}' has no questions. Add at least one question or remove the quiz.");
+                    }
+
+                    // Validation: Any assignment must have valid total marks
+                    foreach (var assignment in section.Assignments)
+                    {
+                        if (assignment.TotalMarks <= 0)
+                            throw new InvalidOperationException(
+                                $"Assignment '{assignment.Title}' in section '{section.Title}' has invalid marks (must be > 0).");
+                    }
+                }
+
                 course.Status = CourseStatus.PendingApproval;
 
                 await _courseRepository.UpdateAsync(course);

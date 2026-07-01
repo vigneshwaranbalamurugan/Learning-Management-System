@@ -1,8 +1,7 @@
-export enum CourseStatus
-{
-        Draft=1,
-        Published=2,
-        Archived=3,
-        PendingApproval=4,
-        Rejected=5
+export enum CourseStatus {
+  Draft = 0,
+  Published = 1,
+  Archived = 2,
+  PendingApproval = 3,
+  Rejected = 4
 }

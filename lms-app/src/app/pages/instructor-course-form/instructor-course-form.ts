@@ -13,6 +13,8 @@ import { Button } from '@components/button/button';
 import { Loader } from '@components/loader/loader';
 import { ConfirmModal } from '@components/confirm-modal/confirm-modal';
 import { CourseService } from '@services/course.service';
+import { CourseLevel } from '../../enums/course-level.enum';
+import { CourseAccessType } from '../../enums/course-access-type.enum';
 
 interface CourseFormData {
   title: string;
@@ -91,14 +93,14 @@ export class InstructorCourseForm implements OnInit {
 
   // Dropdown options
   protected levelOptions = [
-    { value: '1', label: 'Beginner' },
-    { value: '2', label: 'Intermediate' },
-    { value: '3', label: 'Advanced' }
+    { value: String(CourseLevel.Beginner), label: 'Beginner' },
+    { value: String(CourseLevel.Intermediate), label: 'Intermediate' },
+    { value: String(CourseLevel.Advanced), label: 'Advanced' }
   ];
 
   protected accessTypeOptions = [
-    { value: '1', label: 'Self Paced' },
-    { value: '2', label: 'Cohort Based' }
+    { value: String(CourseAccessType.SelfPaced), label: 'Self Paced' },
+    { value: String(CourseAccessType.CohortPaced), label: 'Cohort Based' }
   ];
 
   protected languageOptions = signal<{ value: string; label: string }[]>([]);
@@ -285,7 +287,7 @@ export class InstructorCourseForm implements OnInit {
     if (this.form.learningOutcomes.trim()) {
       formData.append('LearningOutcomes', this.form.learningOutcomes.trim());
     }
-    if (this.form.courseAccessType === '1' && this.form.defaultDeadlineDays) {
+    if (this.form.courseAccessType === String(CourseAccessType.SelfPaced) && this.form.defaultDeadlineDays) {
       formData.append('DefaultDeadlineDays', this.form.defaultDeadlineDays);
     }
     if (this.thumbnailFile) {
@@ -346,6 +348,6 @@ export class InstructorCourseForm implements OnInit {
   }
 
   protected get showDeadlineDays(): boolean {
-    return this.form.courseAccessType === '1';
+    return this.form.courseAccessType === String(CourseAccessType.SelfPaced);
   }
 }

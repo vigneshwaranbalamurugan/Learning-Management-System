@@ -296,8 +296,26 @@ namespace LMSApi.BALLibrary.Services
                     _logger.LogError(ex, "Failed to send enrollment/payment success realtime notification for User {UserId}", userId);
                 }
 
-                // ── Initiate instructor payout ───
-                if (payment.InstructorAmount > 0)
+                // ── Re-calculate platform fee from DB at capture time ─────────────
+                var (freshPlatformFee, freshInstructorAmount, freshConfig) =
+                    await _feeService.CalculateSplitAsync(payment.Amount, FeeCategory.CourseFee);
+
+                payment.PlatformFeeAmount = freshPlatformFee;
+                payment.InstructorAmount  = freshInstructorAmount;
+                if (freshConfig != null)
+                {
+                    payment.PlatformFeeConfigId = freshConfig.Id;
+                    payment.FeeTypeSnapshot     = freshConfig.FeeType;
+                    payment.FeeValueSnapshot    = freshConfig.Value;
+                }
+                await _paymentRepository.UpdateAsync(payment);
+
+                _logger.LogInformation(
+                    "Capture-time split: PaymentId={Id}, Total={T}, PlatformFee={F}, InstructorAmount={I}",
+                    payment.Id, payment.Amount, freshPlatformFee, freshInstructorAmount);
+
+                // ── Route the instructor amount (after fee deduction) ─────────────
+                if (freshInstructorAmount > 0)
                 {
                     try
                     {
@@ -405,7 +423,26 @@ namespace LMSApi.BALLibrary.Services
                         _logger.LogError(ex, "Failed to send enrollment/payment success realtime notification for User {UserId}", payment.UserId);
                     }
 
-                    if (payment.InstructorAmount > 0)
+                    // ── Re-calculate platform fee from DB at capture time ─────────────
+                    var (freshPlatformFeeW, freshInstructorAmountW, freshConfigW) =
+                        await _feeService.CalculateSplitAsync(payment.Amount, FeeCategory.CourseFee);
+
+                    payment.PlatformFeeAmount = freshPlatformFeeW;
+                    payment.InstructorAmount  = freshInstructorAmountW;
+                    if (freshConfigW != null)
+                    {
+                        payment.PlatformFeeConfigId = freshConfigW.Id;
+                        payment.FeeTypeSnapshot     = freshConfigW.FeeType;
+                        payment.FeeValueSnapshot    = freshConfigW.Value;
+                    }
+                    await _paymentRepository.UpdateAsync(payment);
+
+                    _logger.LogInformation(
+                        "Webhook capture-time split: PaymentId={Id}, Total={T}, PlatformFee={F}, InstructorAmount={I}",
+                        payment.Id, payment.Amount, freshPlatformFeeW, freshInstructorAmountW);
+
+                    // ── Route the instructor amount (after fee deduction) ─────────────
+                    if (freshInstructorAmountW > 0)
                     {
                         try
                         {

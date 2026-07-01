@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ToastService } from '@services/toast.service';
 import { EnrollmentResponse } from '@models/enrollment';
+import { CourseLevel } from '../../enums/course-level.enum';
 import { untilDestroyed } from '../../rxjs/until-destroyed';
 import { Router, RouterModule } from '@angular/router';
 
@@ -83,17 +84,17 @@ export class MyCourses implements OnInit {
 
   protected getLevelName(level: number | string): string {
     const lvl = String(level).trim().toLowerCase();
-    if (lvl === '1' || lvl === 'beginner') return 'Beginner';
-    if (lvl === '2' || lvl === 'intermediate') return 'Intermediate';
-    if (lvl === '3' || lvl === 'advanced') return 'Advanced';
+    if (lvl === String(CourseLevel.Beginner) || lvl === 'beginner') return 'Beginner';
+    if (lvl === String(CourseLevel.Intermediate) || lvl === 'intermediate') return 'Intermediate';
+    if (lvl === String(CourseLevel.Advanced) || lvl === 'advanced') return 'Advanced';
     return 'All Levels';
   }
 
   protected getLevelColor(level: number | string): string {
     const lvl = String(level).trim().toLowerCase();
-    if (lvl === '1' || lvl === 'beginner') return 'bg-emerald-50 text-emerald-700';
-    if (lvl === '2' || lvl === 'intermediate') return 'bg-amber-50 text-amber-700';
-    if (lvl === '3' || lvl === 'advanced') return 'bg-red-50 text-red-700';
+    if (lvl === String(CourseLevel.Beginner) || lvl === 'beginner') return 'bg-emerald-50 text-emerald-700';
+    if (lvl === String(CourseLevel.Intermediate) || lvl === 'intermediate') return 'bg-amber-50 text-amber-700';
+    if (lvl === String(CourseLevel.Advanced) || lvl === 'advanced') return 'bg-red-50 text-red-700';
     return 'bg-gray-100 text-gray-600';
   }
 

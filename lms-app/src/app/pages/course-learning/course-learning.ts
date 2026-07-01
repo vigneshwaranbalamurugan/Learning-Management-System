@@ -15,6 +15,8 @@ import { CourseDetailResponse, LessonSummary } from '@models/course';
 import { CourseProgressResponse, LessonProgressResponse, QuizProgressResponse, AssignmentProgressResponse } from '@models/progress';
 import { QuizStudentDetailResponse, QuizAttemptResponse, GetRemainingAttemptsResponse } from '@models/quiz';
 import { AssignmentResponse, AssignmentStatusResponse, AssignmentSubmissionResponse } from '@models/assignment';
+import { LessonType } from '../../enums/lesson-types.enum';
+import { AssignmentAttachmentType } from '../../enums/assignment-attachment-type.enum';
 
 import { Button } from '@components/button/button';
 import { Loader } from '@components/loader/loader';
@@ -151,6 +153,9 @@ export class CourseLearning implements OnInit, OnDestroy {
   selectedAssignmentFile: File | null = null;
 
   isFullScreen = signal(false);
+
+  protected readonly LessonType = LessonType;
+  protected readonly AssignmentAttachmentType = AssignmentAttachmentType;
 
   constructor() {
     this.assignmentForm = this.fb.group({
@@ -345,7 +350,7 @@ export class CourseLearning implements OnInit, OnDestroy {
     if (item.type === 'lesson') {
       const lesson = item.item as LessonSummary;
 
-      if (lesson.type === 0) { // Video
+      if (lesson.type === LessonType.Video || lesson.type === String(LessonType.Video)) { // Video
         const prog = this.progress()?.sections.flatMap(s => s.lessons).find(l => l.lessonId === lesson.id);
         if (prog) {
           this.videoResumeSecond.set(prog.lastWatchedSecond || 0);
@@ -365,7 +370,7 @@ export class CourseLearning implements OnInit, OnDestroy {
         this.parsedVideoDescriptionHtml.set(await marked(lesson.description));
       }
 
-      if (lesson.type === 1 && lesson.contentUrl) { // PDF
+      if ((lesson.type === LessonType.Pdf || lesson.type === String(LessonType.Pdf)) && lesson.contentUrl) { // PDF
         const rawUrl = lesson.contentUrl;
         // Resolve relative URLs to absolute using the API server base
         const apiBase = environment.apiUrl.replace('/api/v1', '');
@@ -373,9 +378,9 @@ export class CourseLearning implements OnInit, OnDestroy {
           ? rawUrl
           : `${apiBase}${rawUrl.startsWith('/') ? '' : '/'}${rawUrl}`;
         this.absolutePdfUrl.set(absoluteUrl);
-      } else if (lesson.type === 2 && lesson.content) { // Article
+      } else if ((lesson.type === LessonType.Article || lesson.type === String(LessonType.Article)) && lesson.content) { // Article
         this.parsedArticleHtml.set(await marked(lesson.content));
-      } else if (lesson.type === 3 && lesson.contentUrl) { // ExternalLink
+      } else if ((lesson.type === LessonType.ExternalLink || lesson.type === String(LessonType.ExternalLink)) && lesson.contentUrl) { // ExternalLink
         this.sanitizedLinkUrl.set(this.sanitizer.bypassSecurityTrustResourceUrl(lesson.contentUrl));
       }
     }
@@ -583,7 +588,7 @@ export class CourseLearning implements OnInit, OnDestroy {
       formData.append('submissionText', this.assignmentForm.value.submissionText || '');
 
       let attType = 0; // File
-      if (a.attachmentType === 2) {
+      if (a.attachmentType === AssignmentAttachmentType.Link) {
         attType = 1; // Link
         formData.append('submittedAssignmentUrl', this.assignmentForm.value.attachmentUrl || '');
       }
