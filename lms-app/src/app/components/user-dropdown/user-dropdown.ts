@@ -29,8 +29,14 @@ export class UserDropdown {
   }
 
   protected navigateToProfile() {
-    const role = this.user.role?.toLowerCase() === 'instructor' ? 'instructor' : 'learner';
-    this.router.navigate([`/${role}/profile`]);
+    const role = this.user.role?.toLowerCase();
+    if (role === 'admin') {
+      this.router.navigate(['/admin/profile']);
+    } else if (role === 'instructor') {
+      this.router.navigate(['/instructor/profile']);
+    } else {
+      this.router.navigate(['/learner/profile']);
+    }
     this.close.emit();
   }
 
@@ -40,13 +46,24 @@ export class UserDropdown {
   }
 
   protected navigateToRevenue() {
-    this.router.navigate(['/instructor/revenue']);
+    const role = this.user.role?.toLowerCase();
+    if (role === 'admin') {
+      this.router.navigate(['/admin/revenue-detail']);
+    } else {
+      this.router.navigate(['/instructor/revenue']);
+    }
     this.close.emit();
   }
 
   protected navigateToSettings() {
-    const role = this.user.role?.toLowerCase() === 'instructor' ? 'instructor' : 'learner';
-    this.router.navigate([`/${role}/settings`]);
+    const role = this.user.role?.toLowerCase();
+    if (role === 'admin') {
+      this.router.navigate(['/admin/settings']);
+    } else if (role === 'instructor') {
+      this.router.navigate(['/instructor/settings']);
+    } else {
+      this.router.navigate(['/learner/settings']);
+    }
     this.close.emit();
   }
 

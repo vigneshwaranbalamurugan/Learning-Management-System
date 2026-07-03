@@ -47,11 +47,22 @@ namespace LMSApi.API.Controllers
         /// <summary>Returns the overall course completion progress of all students enrolled in a course (Instructor/Admin only).</summary>
         [Authorize(Roles = "Instructor,Admin")]
         [HttpGet("course/{courseId:int}/students")]
-        public async Task<ActionResult<IEnumerable<StudentProgressSummaryDto>>> GetStudentsProgress(int courseId)
+        public async Task<ActionResult<InstructorCourseProgressResponse>> GetStudentsProgress(int courseId)
         {
             var instructorId = User.GetUserId();
             var isAdmin = User.IsInRole("Admin");
             var result = await _progressService.GetStudentsProgressForCourseAsync(instructorId, courseId, isAdmin);
+            return Ok(result);
+        }
+
+        /// <summary>Returns analytics for a course (Instructor/Admin only).</summary>
+        [Authorize(Roles = "Instructor,Admin")]
+        [HttpGet("course/{courseId:int}/analytics")]
+        public async Task<ActionResult<InstructorCourseAnalyticsResponse>> GetCourseAnalytics(int courseId)
+        {
+            var instructorId = User.GetUserId();
+            var isAdmin = User.IsInRole("Admin");
+            var result = await _progressService.GetCourseAnalyticsAsync(instructorId, courseId, isAdmin);
             return Ok(result);
         }
 

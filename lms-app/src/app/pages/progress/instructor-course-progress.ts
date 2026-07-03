@@ -80,36 +80,22 @@ export class InstructorCourseProgress implements OnInit {
   private loadData(): void {
     this.isLoading.set(true);
 
-    // Get Course details to show title
-    this.courseService.getCourseById(this.courseId)
-      .pipe(untilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (course) => {
-          if (course.status !== CourseStatus.Published && course.status !== 'Published') {
-            this.toastService.showError('Cannot view progress for an unpublished course.');
-            this.router.navigate(['/instructor/progress']);
-            return;
-          }
-          this.courseTitle.set(course.title);
-          this.loadStudentsProgress();
-        },
-        error: (err) => {
-          this.toastService.showApiError(err, 'Failed to load course details.');
-          this.router.navigate(['/instructor/progress']);
-        }
-      });
-  }
-
-  private loadStudentsProgress(): void {
     this.dashboardProgressService.getStudentsProgress(this.courseId)
       .pipe(untilDestroyed(this.destroyRef))
       .subscribe({
         next: (data) => {
-          this.students.set(data || []);
+          if (data.courseStatus !== 'Published') {
+            this.toastService.showError('Cannot view progress for an unpublished course.');
+            this.router.navigate(['/instructor/progress']);
+            return;
+          }
+          this.courseTitle.set(data.courseTitle);
+          this.students.set(data.students || []);
           this.isLoading.set(false);
         },
         error: (err) => {
           this.toastService.showApiError(err, 'Failed to load student progress.');
+          this.router.navigate(['/instructor/progress']);
           this.isLoading.set(false);
         }
       });

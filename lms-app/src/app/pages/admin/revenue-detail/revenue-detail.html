@@ -1,0 +1,422 @@
+<div class="min-h-screen bg-[#F8FAFC] pb-10">
+
+  <!-- PAGE HEADER -->
+  <header class="bg-white sticky top-0 z-20 border-b border-slate-200 px-6 py-4 flex items-center justify-between shadow-sm">
+    <div>
+      <h1 class="text-2xl font-bold text-[#1C1C7B]">Revenue Overview</h1>
+      <p class="text-sm text-slate-500 mt-0.5">All financial flows — incoming payments, instructor payouts, and platform earnings.</p>
+    </div>
+    <div class="flex items-center gap-3">
+      <button *ngIf="activeTab() === 'transactions'" (click)="exportTransactionsCsv()"
+              class="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 text-slate-600 text-sm font-semibold rounded-lg hover:bg-slate-50 transition-colors shadow-sm">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+        Export CSV
+      </button>
+      <button *ngIf="activeTab() === 'payouts'" (click)="exportPayoutsCsv()"
+              class="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 text-slate-600 text-sm font-semibold rounded-lg hover:bg-slate-50 transition-colors shadow-sm">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+        Export CSV
+      </button>
+    </div>
+  </header>
+
+  <div class="max-w-screen-xl mx-auto px-6 mt-8 space-y-6">
+
+    <!-- KPI SUMMARY CARDS -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+
+      <ng-container *ngIf="summaryLoading()">
+        <div *ngFor="let i of [1,2,3,4]"
+             class="bg-white rounded-xl border border-slate-200 shadow-sm p-5 animate-pulse h-28"></div>
+      </ng-container>
+
+      <ng-container *ngIf="!summaryLoading() && summary() as s">
+        <!-- Total Revenue -->
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-5 flex flex-col gap-2 hover:shadow-md transition-shadow">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Revenue</span>
+            <div class="w-9 h-9 bg-blue-100 rounded-lg flex items-center justify-center">
+              <svg class="w-5 h-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            </div>
+          </div>
+          <p class="text-3xl font-extrabold text-slate-900">₹{{ s.totalRevenue | number:'1.2-2' }}</p>
+          <p class="text-xs text-slate-500">Gross received from learners</p>
+        </div>
+
+        <!-- Pending Instructor Payouts -->
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-5 flex flex-col gap-2 hover:shadow-md transition-shadow">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Pending Payouts</span>
+            <div class="w-9 h-9 bg-yellow-100 rounded-lg flex items-center justify-center">
+              <svg class="w-5 h-5 text-yellow-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            </div>
+          </div>
+          <p class="text-3xl font-extrabold text-slate-900">₹{{ s.totalPendingPayouts | number:'1.2-2' }}</p>
+          <p class="text-xs text-slate-500">Instructor share not yet transferred</p>
+        </div>
+
+        <!-- Instructor Payouts -->
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-5 flex flex-col gap-2 hover:shadow-md transition-shadow">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Paid to Instructors</span>
+            <div class="w-9 h-9 bg-orange-100 rounded-lg flex items-center justify-center">
+              <svg class="w-5 h-5 text-orange-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+            </div>
+          </div>
+          <p class="text-3xl font-extrabold text-slate-900">₹{{ s.totalInstructorPayouts | number:'1.2-2' }}</p>
+          <p class="text-xs text-slate-500">Transferred to instructors</p>
+        </div>
+
+        <!-- Net Platform Revenue -->
+        <div class="bg-gradient-to-br from-[#1C1C7B] to-indigo-700 rounded-xl shadow-sm p-5 flex flex-col gap-2 hover:shadow-md transition-shadow">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold text-indigo-200 uppercase tracking-wider">Net Platform Revenue</span>
+            <div class="w-9 h-9 bg-white/20 rounded-lg flex items-center justify-center">
+              <svg class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
+            </div>
+          </div>
+          <p class="text-3xl font-extrabold text-white">₹{{ s.totalPlatformFees | number:'1.2-2' }}</p>
+          <p class="text-xs text-indigo-200">{{ s.totalTransactions }} total transactions</p>
+        </div>
+      </ng-container>
+    </div>
+
+    <!-- TABS -->
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+
+      <div class="border-b border-slate-200 px-6 flex items-center gap-0">
+        <button (click)="switchTab('transactions')"
+                class="px-5 py-4 text-sm font-semibold border-b-2 transition-colors -mb-px flex items-center gap-2"
+                [class.border-[#1C1C7B]]="activeTab() === 'transactions'"
+                [class.text-[#1C1C7B]]="activeTab() === 'transactions'"
+                [class.border-transparent]="activeTab() !== 'transactions'"
+                [class.text-slate-500]="activeTab() !== 'transactions'"
+                [class.hover:text-slate-700]="activeTab() !== 'transactions'">
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
+          Incoming Payments
+          <span *ngIf="txData()" class="ml-1 px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 text-[10px] font-bold">{{ txData()!.totalCount }}</span>
+        </button>
+        <button (click)="switchTab('payouts')"
+                class="px-5 py-4 text-sm font-semibold border-b-2 transition-colors -mb-px flex items-center gap-2"
+                [class.border-[#1C1C7B]]="activeTab() === 'payouts'"
+                [class.text-[#1C1C7B]]="activeTab() === 'payouts'"
+                [class.border-transparent]="activeTab() !== 'payouts'"
+                [class.text-slate-500]="activeTab() !== 'payouts'"
+                [class.hover:text-slate-700]="activeTab() !== 'payouts'">
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+          Instructor Payouts
+          <span *ngIf="payoutData()" class="ml-1 px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 text-[10px] font-bold">{{ payoutData()!.totalCount }}</span>
+        </button>
+        <button (click)="switchTab('balances')"
+                class="px-5 py-4 text-sm font-semibold border-b-2 transition-colors -mb-px flex items-center gap-2"
+                [class.border-[#1C1C7B]]="activeTab() === 'balances'"
+                [class.text-[#1C1C7B]]="activeTab() === 'balances'"
+                [class.border-transparent]="activeTab() !== 'balances'"
+                [class.text-slate-500]="activeTab() !== 'balances'"
+                [class.hover:text-slate-700]="activeTab() !== 'balances'">
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          Instructor Balances
+          <span *ngIf="summary()" class="ml-1 px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 text-[10px] font-bold">{{ summary()!.byInstructor.length }}</span>
+        </button>
+      </div>
+
+      <!-- ================================================== -->
+      <!-- TRANSACTIONS TAB                                    -->
+      <!-- ================================================== -->
+      <div *ngIf="activeTab() === 'transactions'" class="p-5">
+
+        <!-- Filters -->
+        <div class="flex flex-wrap items-center gap-3 mb-5">
+          <div class="relative flex-1 min-w-[200px]">
+            <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+            <input type="text" [(ngModel)]="txSearchInput" placeholder="Search learner, course, payment ID..." (keyup.enter)="applyTxFilters()"
+                   class="w-full pl-9 pr-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1C1C7B] focus:border-transparent bg-white">
+          </div>
+          <app-dropdown
+            [options]="txStatusOptions"
+            [value]="txStatusFilter"
+            (valueChange)="txStatusFilter = $event; applyTxFilters()"
+            class="min-w-[160px] z-10"
+          ></app-dropdown>
+          <input type="date" [(ngModel)]="txDateFrom" (change)="applyTxFilters()" placeholder="From"
+                 class="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1C1C7B] bg-white">
+          <input type="date" [(ngModel)]="txDateTo" (change)="applyTxFilters()" placeholder="To"
+                 class="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1C1C7B] bg-white">
+          <button (click)="clearTxFilters()" class="px-3 py-2 text-sm text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors font-medium border border-slate-200 bg-white flex items-center gap-1">
+            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+            Clear
+          </button>
+        </div>
+
+        <!-- Page Totals -->
+        <div *ngIf="txData() && !txLoading()" class="flex flex-wrap gap-3 mb-4 text-xs font-semibold text-slate-600">
+          <span class="flex items-center gap-1 bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-lg">
+            Page Gross: <span class="text-slate-900">₹{{ txData()!.totalRevenue | number:'1.2-2' }}</span>
+          </span>
+          <span class="flex items-center gap-1 bg-violet-50 border border-violet-100 px-3 py-1.5 rounded-lg">
+            Page Platform Fees: <span class="text-violet-700">₹{{ txData()!.totalPlatformFees | number:'1.2-2' }}</span>
+          </span>
+          <span class="flex items-center gap-1 bg-orange-50 border border-orange-100 px-3 py-1.5 rounded-lg">
+            Page Instructor Share: <span class="text-orange-700">₹{{ txData()!.totalInstructorShare | number:'1.2-2' }}</span>
+          </span>
+        </div>
+
+        <!-- Loading -->
+        <div *ngIf="txLoading()" class="flex justify-center py-16">
+          <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-[#1C1C7B]"></div>
+        </div>
+
+        <!-- Empty -->
+        <div *ngIf="!txLoading() && txData()?.items?.length === 0" class="text-center py-16 text-slate-500">
+          <svg class="w-12 h-12 mx-auto text-slate-300 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
+          <p class="font-semibold text-slate-700">No transactions found</p>
+          <p class="text-sm mt-1">Try adjusting your filters.</p>
+        </div>
+
+        <!-- Table -->
+        <div *ngIf="!txLoading() && txData()?.items?.length" class="overflow-x-auto rounded-xl border border-slate-200">
+          <table class="w-full text-sm text-left border-collapse">
+            <thead class="bg-slate-50 text-slate-500 text-xs font-bold uppercase border-b border-slate-200">
+              <tr>
+                <th class="px-5 py-3 whitespace-nowrap">Date</th>
+                <th class="px-5 py-3 whitespace-nowrap">Learner</th>
+                <th class="px-5 py-3 whitespace-nowrap">Course</th>
+                <th class="px-5 py-3 whitespace-nowrap">Instructor</th>
+                <th class="px-5 py-3 whitespace-nowrap text-right">Gross</th>
+                <th class="px-5 py-3 whitespace-nowrap text-right">Platform Fee</th>
+                <th class="px-5 py-3 whitespace-nowrap text-right">Instructor Share</th>
+                <th class="px-5 py-3 whitespace-nowrap">Status</th>
+                <th class="px-5 py-3 whitespace-nowrap">Payment ID</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100">
+              <tr *ngFor="let t of txData()!.items" class="hover:bg-slate-50 transition-colors">
+                <td class="px-5 py-3.5 whitespace-nowrap text-slate-600 text-xs">
+                  {{ (t.paidAt ?? t.createdAt) | date:'dd MMM yy, HH:mm' }}
+                </td>
+                <td class="px-5 py-3.5">
+                  <div class="font-semibold text-slate-800 text-sm">{{ t.learnerName }}</div>
+                  <div class="text-xs text-slate-400 mt-0.5">{{ t.learnerEmail }}</div>
+                </td>
+                <td class="px-5 py-3.5 relative group max-w-[180px]">
+                  <div class="text-slate-700 font-medium truncate">{{ t.courseName }}</div>
+                  <div class="pointer-events-none absolute left-1/2 bottom-full mb-1 -translate-x-1/2 z-[200] opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                    <div class="bg-slate-800 text-white px-3 py-1.5 rounded-lg text-xs font-normal whitespace-normal w-max max-w-[250px] shadow-lg relative text-center">
+                      {{ t.courseName }}
+                      <div class="absolute -bottom-1.5 left-1/2 -translate-x-1/2 border-[4px] border-transparent border-t-slate-800"></div>
+                    </div>
+                  </div>
+                </td>
+                <td class="px-5 py-3.5 text-slate-600 text-xs whitespace-nowrap">{{ t.instructorName }}</td>
+                <td class="px-5 py-3.5 text-right font-bold text-slate-900 whitespace-nowrap">₹{{ t.grossAmount | number:'1.2-2' }}</td>
+                <td class="px-5 py-3.5 text-right text-violet-700 font-semibold whitespace-nowrap">₹{{ t.platformFeeAmount | number:'1.2-2' }}</td>
+                <td class="px-5 py-3.5 text-right text-orange-700 font-semibold whitespace-nowrap">₹{{ t.instructorAmount | number:'1.2-2' }}</td>
+                <td class="px-5 py-3.5">
+                  <span class="px-2 py-0.5 rounded-full text-[10px] font-bold border inline-block" [ngClass]="getStatusClass(t.status)">
+                    {{ t.status }}
+                  </span>
+                  <span *ngIf="t.disputeStatus" class="ml-1 px-2 py-0.5 rounded-full text-[10px] font-bold border border-red-200 bg-red-100 text-red-700 inline-block">
+                    ⚠ {{ t.disputeStatus }}
+                  </span>
+                </td>
+                <td class="px-5 py-3.5 text-xs text-slate-400 font-mono">{{ t.providerPaymentId ?? '—' }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Pagination -->
+        <div *ngIf="txData() && txData()!.totalPages > 1" class="mt-5 flex items-center justify-between text-sm">
+          <span class="text-slate-500 text-xs">
+            Showing {{ (txFilters.page - 1) * txFilters.pageSize + 1 }}–{{ getMin(txFilters.page * txFilters.pageSize, txData()!.totalCount) }} of {{ txData()!.totalCount }}
+          </span>
+          <div class="flex items-center gap-1">
+            <button (click)="txPageChange(txFilters.page - 1)" [disabled]="txFilters.page === 1"
+                    class="px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 text-xs font-semibold hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+              ← Prev
+            </button>
+            <ng-container *ngFor="let p of txPages">
+              <button *ngIf="p === 1 || p === txData()!.totalPages || (p >= txFilters.page - 1 && p <= txFilters.page + 1)"
+                      (click)="txPageChange(p)"
+                      class="px-3 py-1.5 rounded-lg border text-xs font-semibold transition-colors"
+                      [class.bg-[#1C1C7B]]="p === txFilters.page"
+                      [class.text-white]="p === txFilters.page"
+                      [class.border-[#1C1C7B]]="p === txFilters.page"
+                      [class.border-slate-200]="p !== txFilters.page"
+                      [class.text-slate-600]="p !== txFilters.page"
+                      [class.hover:bg-slate-50]="p !== txFilters.page">
+                {{ p }}
+              </button>
+            </ng-container>
+            <button (click)="txPageChange(txFilters.page + 1)" [disabled]="txFilters.page === txData()!.totalPages"
+                    class="px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 text-xs font-semibold hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+              Next →
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================================================== -->
+      <!-- PAYOUTS TAB                                         -->
+      <!-- ================================================== -->
+      <div *ngIf="activeTab() === 'payouts'" class="p-5">
+
+        <!-- Filters -->
+        <div class="flex flex-wrap items-center gap-3 mb-5">
+          <div class="relative flex-1 min-w-[200px]">
+            <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+            <input type="text" [(ngModel)]="payoutSearchInput" placeholder="Search instructor, course, transfer ID..." (keyup.enter)="applyPayoutFilters()"
+                   class="w-full pl-9 pr-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1C1C7B] focus:border-transparent bg-white">
+          </div>
+          <app-dropdown
+            [options]="payoutStatusOptions"
+            [value]="payoutStatusFilter"
+            (valueChange)="payoutStatusFilter = $event; applyPayoutFilters()"
+            class="min-w-[160px] z-10"
+          ></app-dropdown>
+          <input type="date" [(ngModel)]="payoutDateFrom" (change)="applyPayoutFilters()"
+                 class="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1C1C7B] bg-white">
+          <input type="date" [(ngModel)]="payoutDateTo" (change)="applyPayoutFilters()"
+                 class="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1C1C7B] bg-white">
+          <button (click)="clearPayoutFilters()" class="px-3 py-2 text-sm text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors font-medium border border-slate-200 bg-white flex items-center gap-1">
+            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+            Clear
+          </button>
+        </div>
+
+        <!-- Page Totals -->
+        <div *ngIf="payoutData() && !payoutLoading()" class="flex flex-wrap gap-3 mb-4 text-xs font-semibold text-slate-600">
+          <span class="flex items-center gap-1 bg-green-50 border border-green-100 px-3 py-1.5 rounded-lg">
+            Page Paid Out: <span class="text-green-700">₹{{ payoutData()!.totalPaidOut | number:'1.2-2' }}</span>
+          </span>
+          <span class="flex items-center gap-1 bg-yellow-50 border border-yellow-100 px-3 py-1.5 rounded-lg">
+            Page Pending: <span class="text-yellow-700">₹{{ payoutData()!.totalPending | number:'1.2-2' }}</span>
+          </span>
+        </div>
+
+        <!-- Loading -->
+        <div *ngIf="payoutLoading()" class="flex justify-center py-16">
+          <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-[#1C1C7B]"></div>
+        </div>
+
+        <!-- Empty -->
+        <div *ngIf="!payoutLoading() && payoutData()?.items?.length === 0" class="text-center py-16 text-slate-500">
+          <svg class="w-12 h-12 mx-auto text-slate-300 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+          <p class="font-semibold text-slate-700">No payouts found</p>
+          <p class="text-sm mt-1">Try adjusting your filters.</p>
+        </div>
+
+        <!-- Table -->
+        <div *ngIf="!payoutLoading() && payoutData()?.items?.length" class="overflow-x-auto rounded-xl border border-slate-200">
+          <table class="w-full text-sm text-left border-collapse">
+            <thead class="bg-slate-50 text-slate-500 text-xs font-bold uppercase border-b border-slate-200">
+              <tr>
+                <th class="px-5 py-3 whitespace-nowrap">Date</th>
+                <th class="px-5 py-3 whitespace-nowrap">Instructor</th>
+                <th class="px-5 py-3 whitespace-nowrap">Course</th>
+                <th class="px-5 py-3 whitespace-nowrap">Learner</th>
+                <th class="px-5 py-3 whitespace-nowrap text-right">Amount</th>
+                <th class="px-5 py-3 whitespace-nowrap">Status</th>
+                <th class="px-5 py-3 whitespace-nowrap">Transfer ID</th>
+                <th class="px-5 py-3 whitespace-nowrap">Failure Reason</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100">
+              <tr *ngFor="let p of payoutData()!.items" class="hover:bg-slate-50 transition-colors">
+                <td class="px-5 py-3.5 whitespace-nowrap text-slate-600 text-xs">
+                  {{ p.createdAt | date:'dd MMM yy, HH:mm' }}
+                </td>
+                <td class="px-5 py-3.5">
+                  <div class="font-semibold text-slate-800 text-sm">{{ p.instructorName }}</div>
+                  <div class="text-xs text-slate-400 mt-0.5">{{ p.instructorEmail }}</div>
+                </td>
+                <td class="px-5 py-3.5 relative group max-w-[180px]">
+                  <div class="text-slate-700 font-medium truncate">{{ p.courseName }}</div>
+                  <div class="pointer-events-none absolute left-1/2 bottom-full mb-1 -translate-x-1/2 z-[200] opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                    <div class="bg-slate-800 text-white px-3 py-1.5 rounded-lg text-xs font-normal whitespace-normal w-max max-w-[250px] shadow-lg relative text-center">
+                      {{ p.courseName }}
+                      <div class="absolute -bottom-1.5 left-1/2 -translate-x-1/2 border-[4px] border-transparent border-t-slate-800"></div>
+                    </div>
+                  </div>
+                </td>
+                <td class="px-5 py-3.5 text-slate-600 text-xs whitespace-nowrap">{{ p.learnerName ?? '—' }}</td>
+                <td class="px-5 py-3.5 text-right font-bold text-slate-900 whitespace-nowrap">₹{{ p.amount | number:'1.2-2' }}</td>
+                <td class="px-5 py-3.5">
+                  <span class="px-2 py-0.5 rounded-full text-[10px] font-bold border inline-block" [ngClass]="getStatusClass(p.status)">
+                    {{ formatStatus(p.status) }}
+                  </span>
+                </td>
+                <td class="px-5 py-3.5 text-xs text-slate-400 font-mono">{{ p.razorpayTransferId ?? '—' }}</td>
+                <td class="px-5 py-3.5 text-xs text-red-500 max-w-[180px] truncate">{{ p.failureReason ?? '—' }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Pagination -->
+        <div *ngIf="payoutData() && payoutData()!.totalPages > 1" class="mt-5 flex items-center justify-between text-sm">
+          <span class="text-slate-500 text-xs">
+            Showing {{ (payoutFilters.page - 1) * payoutFilters.pageSize + 1 }}–{{ getMin(payoutFilters.page * payoutFilters.pageSize, payoutData()!.totalCount) }} of {{ payoutData()!.totalCount }}
+          </span>
+          <div class="flex items-center gap-1">
+            <button (click)="payoutPageChange(payoutFilters.page - 1)" [disabled]="payoutFilters.page === 1"
+                    class="px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 text-xs font-semibold hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+              ← Prev
+            </button>
+            <ng-container *ngFor="let p of payoutPages">
+              <button *ngIf="p === 1 || p === payoutData()!.totalPages || (p >= payoutFilters.page - 1 && p <= payoutFilters.page + 1)"
+                      (click)="payoutPageChange(p)"
+                      class="px-3 py-1.5 rounded-lg border text-xs font-semibold transition-colors"
+                      [class.bg-[#1C1C7B]]="p === payoutFilters.page"
+                      [class.text-white]="p === payoutFilters.page"
+                      [class.border-[#1C1C7B]]="p === payoutFilters.page"
+                      [class.border-slate-200]="p !== payoutFilters.page"
+                      [class.text-slate-600]="p !== payoutFilters.page"
+                      [class.hover:bg-slate-50]="p !== payoutFilters.page">
+                {{ p }}
+              </button>
+            </ng-container>
+            <button (click)="payoutPageChange(payoutFilters.page + 1)" [disabled]="payoutFilters.page === payoutData()!.totalPages"
+                    class="px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 text-xs font-semibold hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+              Next →
+            </button>
+          </div>
+        </div>
+      </div>
+
+    <!-- ================================================== -->
+      <!-- BALANCES TAB                                        -->
+      <!-- ================================================== -->
+      <div *ngIf="activeTab() === 'balances'" class="p-5">
+        <div *ngIf="!summaryLoading() && summary()" class="overflow-x-auto rounded-xl border border-slate-200">
+          <table class="w-full text-sm text-left border-collapse">
+            <thead class="bg-slate-50 text-slate-500 text-xs font-bold uppercase border-b border-slate-200">
+              <tr>
+                <th class="px-5 py-3 whitespace-nowrap">Instructor</th>
+                <th class="px-5 py-3 whitespace-nowrap text-right">Total Earned</th>
+                <th class="px-5 py-3 whitespace-nowrap text-right">Paid Out</th>
+                <th class="px-5 py-3 whitespace-nowrap text-right">Pending Balance</th>
+                <th class="px-5 py-3 whitespace-nowrap text-right">Payouts Processed</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100">
+              <tr *ngFor="let inst of summary()!.byInstructor" class="hover:bg-slate-50 transition-colors">
+                <td class="px-5 py-3.5 font-semibold text-slate-800">{{ inst.instructorName }}</td>
+                <td class="px-5 py-3.5 text-right font-bold text-slate-900">₹{{ inst.totalEarned + inst.pendingAmount | number:'1.2-2' }}</td>
+                <td class="px-5 py-3.5 text-right text-green-700 font-semibold">₹{{ inst.totalEarned | number:'1.2-2' }}</td>
+                <td class="px-5 py-3.5 text-right text-orange-700 font-bold">₹{{ inst.pendingAmount | number:'1.2-2' }}</td>
+                <td class="px-5 py-3.5 text-right text-slate-600">{{ inst.totalPayouts }}</td>
+              </tr>
+              <tr *ngIf="summary()!.byInstructor.length === 0">
+                <td colspan="5" class="px-5 py-8 text-center text-slate-500 font-semibold">
+                  No instructor balances found
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>

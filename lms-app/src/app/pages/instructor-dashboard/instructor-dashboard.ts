@@ -106,13 +106,10 @@ export class InstructorDashboard implements OnInit {
   }
 
   ngOnInit(): void {
-    forkJoin({
-      analytics: this.analyticsService.getInstructorAnalytics(),
-      courses: this.courseService.getMyCourses()
-    }).pipe(
+    this.analyticsService.getInstructorAnalytics().pipe(
       untilDestroyed(this.destroyRef)
     ).subscribe({
-      next: ({ analytics, courses }) => {
+      next: (analytics) => {
         this.stats.set([
           { label: 'Total Students', value: analytics.totalStudentsEnrolled.toLocaleString(), iconBg: '#eff6ff', iconColor: '#2563eb' },
           { label: 'Courses Created', value: analytics.totalCoursesCreated.toString(), iconBg: '#ecfdf5', iconColor: '#059669' },
@@ -124,9 +121,9 @@ export class InstructorDashboard implements OnInit {
           this.recentEnrollments.set(analytics.recentEnrollments);
         }
 
-        const mapped = (courses.courses || []).map(c => ({
+        const mapped = (analytics.recentCourses || []).map(c => ({
           title: c.title,
-          students: 0,
+          students: c.enrolledCount || 0,
           status: this.getStatusLabel(c.status),
           statusCode: typeof c.status === 'string' ? parseInt(c.status, 10) : c.status,
           rating: c.averageRating

@@ -151,6 +151,11 @@ namespace LMSApi.BALLibrary.Mappers
                 .ForMember(dest => dest.CourseDurationHours, opt => opt.MapFrom(src => src.Course != null ? src.Course.EstimatedDuration.TotalHours : 0.0))
                 .ForMember(dest => dest.CategoryName, opt => opt.MapFrom(src => src.Course != null && src.Course.Category != null ? src.Course.Category.Name : string.Empty));
             CreateMap<CertificateTemplates,CertificateTemplateResponse>();
+
+            // ─── Reviews ──────────────────────────────────────────────────
+            CreateMap<Reviews, ReviewResponse>()
+                .ForMember(dest => dest.ReviewText, opt => opt.MapFrom(src => src.Review))
+                .ForMember(dest => dest.UserName, opt => opt.MapFrom(src => src.User != null && src.User.UserProfile != null ? $"{src.User.UserProfile.FirstName} {src.User.UserProfile.LastName}".Trim() : string.Empty));
         }
     }
 }

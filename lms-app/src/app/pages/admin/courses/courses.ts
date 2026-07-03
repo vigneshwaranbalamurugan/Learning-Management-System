@@ -235,7 +235,7 @@ export class AdminCoursesComponent implements OnInit {
 
   protected previewCourse(course: CourseResponse): void {
     // Navigate to course detail and append query param for ID if needed
-    this.router.navigate(['/admin/courses', course.slug || course.id], {
+    this.router.navigate(['/admin/courses/preview', course.slug || course.id], {
       queryParams: { courseId: course.id }
     });
   }

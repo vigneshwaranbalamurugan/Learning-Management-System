@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '@environments/environment';
-import { LearnerAnalytics, InstructorAnalytics } from '@models/analytics';
+import { LearnerAnalytics, InstructorAnalytics, AdminAnalytics } from '@models/analytics';
 
 @Injectable({
   providedIn: 'root',
@@ -17,5 +17,9 @@ export class AnalyticsService {
 
   getInstructorAnalytics(): Observable<InstructorAnalytics> {
     return this.http.get<InstructorAnalytics>(`${this.baseUrl}/analytics/instructor`);
+  }
+
+  getAdminAnalytics(): Observable<AdminAnalytics> {
+    return this.http.get<AdminAnalytics>(`${this.baseUrl}/analytics/admin`);
   }
 }

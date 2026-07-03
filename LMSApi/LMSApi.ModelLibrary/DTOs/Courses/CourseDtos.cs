@@ -122,6 +122,16 @@ namespace LMSApi.ModelLibrary.DTOs
         public double CompletionRate { get; set; }
         public TimeSpan EstimatedDuration { get; set; }
         public bool HasCertificate { get; set; } = true;
+
+        // User specific data
+        public bool IsEnrolled { get; set; }
+        public double EnrollmentProgress { get; set; }
+        public int? EnrollmentId { get; set; }
+        public IEnumerable<ReviewResponse> Reviews { get; set; } = new List<ReviewResponse>();
+
+        public bool HasNonExpiredEnrollments { get; set; }
+        public bool HasActiveEnrollments { get; set; }
+        public bool IsDeleted { get; set; }
     }
 
     public class CourseDetailsResponse : CourseResponse
@@ -165,6 +175,10 @@ namespace LMSApi.ModelLibrary.DTOs
         public int EnrolledCount { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
+
+        public bool HasNonExpiredEnrollments { get; set; }
+        public bool HasActiveEnrollments { get; set; }
+        public bool IsDeleted { get; set; }
     }
 
     /// <summary>Used by admin/public paged listing — course table/card without heavy navigation</summary>

@@ -32,8 +32,7 @@ export class ExploreCourses implements OnInit {
   // ── Data signals ─────────────────────────────────────────────────────────
   protected courses          = signal<CourseListItemResponse[]>([]);
   protected availableCourses = computed(() => {
-    const enrolled = this.enrolledCourseIds();
-    let list = this.courses().filter(c => !enrolled.includes(c.id));
+    let list = this.courses();
 
     // Client-side duration filter fallback
     const durations = this.selectedDurations();
@@ -229,8 +228,7 @@ export class ExploreCourses implements OnInit {
       sortBy:           this.selectedSortBy(),
       search:           this.searchQuery() || undefined,
       pageNumber:       this.pageNumber(),
-      pageSize:         this.pageSize(),
-      excludeCourseIds: this.enrolledCourseIds().join(',') || undefined
+      pageSize:         this.pageSize()
     }).pipe(untilDestroyed(this.destroyRef)).subscribe({
       next: response => {
         this.courses.set(response?.courses ?? []);

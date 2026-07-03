@@ -130,15 +130,13 @@ export class CourseDetail implements OnInit {
   private loadCourse(courseId: number): void {
     this.isLoading.set(true);
 
-    forkJoin({
-      course: this.courseService.getCourseById(courseId),
-      enrollments: this.enrollmentService.getAllMyEnrollments(),
-      reviews: this.reviewService.getCourseReviews(courseId)
-    }).pipe(untilDestroyed(this.destroyRef)).subscribe({
-      next: ({ course, enrollments, reviews }) => {
+    this.courseService.getCourseById(courseId).pipe(untilDestroyed(this.destroyRef)).subscribe({
+      next: (course) => {
         this.course.set(course);
-        this.reviews.set(reviews);
-
+        
+        // Use backend provided fields
+        this.reviews.set(course.reviews || []);
+        
         // Expand first section by default
         if (course.sections?.length > 0) {
           this.expandedSections.update(s => {
@@ -148,16 +146,18 @@ export class CourseDetail implements OnInit {
           });
         }
         
-        // Find enrollment for this course
-        const found = enrollments.find(e => e.courseId === courseId);
         // Unlocks content for enrolled students, instructors, and admins
-        if (found || this.isInstructor() || this.isAdmin()) {
+        if (course.isEnrolled || this.isInstructor() || this.isAdmin()) {
           this.isEnrolled.set(true);
         }
 
-        if (found) {
-          this.enrollmentProgress.set(found.progressPercentage ?? 0);
-          this.enrollment.set(found);
+        if (course.isEnrolled && course.enrollmentId) {
+          this.enrollmentProgress.set(course.enrollmentProgress || 0);
+          this.enrollment.set({
+            id: course.enrollmentId,
+            courseId: course.id,
+            progressPercentage: course.enrollmentProgress || 0
+          } as any); // Type assertion for partial mock EnrollmentResponse
         }
 
         this.isLoading.set(false);

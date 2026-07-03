@@ -77,6 +77,12 @@ namespace LMSApi.DALLibrary.Contexts
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
           base.OnModelCreating(modelBuilder);
+
+          modelBuilder.Entity<Courses>().HasQueryFilter(c => !c.IsDeleted);
+
+          modelBuilder.Entity<Users>()
+                .HasIndex(u => u.Email);
+
           modelBuilder.ApplyConfigurationsFromAssembly(typeof(LMSDbContext).Assembly);
         }
 

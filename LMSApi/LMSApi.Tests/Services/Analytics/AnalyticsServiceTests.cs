@@ -1,3 +1,4 @@
+using Moq;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -22,7 +23,7 @@ namespace LMSApi.Tests.Services
             base.SetUp();
 
             var analyticsRepository = new AnalyticsRepository(DbContext);
-            _analyticsService = new AnalyticsService(analyticsRepository);
+            _analyticsService = new AnalyticsService(analyticsRepository, new Mock<ICourseService>().Object, new Mock<IEnrollmentService>().Object);
         }
 
         [Test]

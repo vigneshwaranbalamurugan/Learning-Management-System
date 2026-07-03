@@ -46,13 +46,10 @@ export class LearnerDashboard implements OnInit {
   }
 
   ngOnInit(): void {
-    forkJoin({
-      analytics: this.analyticsService.getLearnerAnalytics(),
-      enrollments: this.enrollmentService.getAllMyEnrollments()
-    }).pipe(
+    this.analyticsService.getLearnerAnalytics().pipe(
       untilDestroyed(this.destroyRef)
     ).subscribe({
-      next: ({ analytics, enrollments }) => {
+      next: (analytics) => {
         this.stats.set([
           { label: 'Active Courses', value: analytics.inProgressCourses.toString(), iconBg: '#eff6ff', iconColor: '#2563eb' },
           { label: 'Completed Courses', value: analytics.completedCourses.toString(), iconBg: '#ecfdf5', iconColor: '#059669' },
@@ -60,7 +57,7 @@ export class LearnerDashboard implements OnInit {
           { label: 'Avg Quiz Score', value: analytics.averageQuizScore != null ? `${Math.round(analytics.averageQuizScore)}%` : 'N/A', iconBg: '#fdf2f8', iconColor: '#db2777' }
         ]);
 
-        const mapped = enrollments.map(e => ({
+        const mapped = (analytics.myCourses || []).map(e => ({
           title: e.courseTitle,
           progress: Math.round(e.progressPercentage),
           category: 'Course',

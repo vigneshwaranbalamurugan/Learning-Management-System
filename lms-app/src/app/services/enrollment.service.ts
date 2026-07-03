@@ -21,8 +21,18 @@ export class EnrollmentService {
     return { headers: new HttpHeaders({ 'Idempotency-Key': key }) };
   }
 
-  getMyEnrollments(page: number = 1, pageSize: number = 10): Observable<PagedEnrollmentResponse> {
-    return this.http.get<PagedEnrollmentResponse>(`${this.baseUrl}/enrollments/my?page=${page}&pageSize=${pageSize}`);
+  getMyEnrollments(
+    page: number = 1,
+    pageSize: number = 10,
+    search?: string,
+    status?: string,
+    accessType?: string
+  ): Observable<PagedEnrollmentResponse> {
+    let url = `${this.baseUrl}/enrollments/my?page=${page}&pageSize=${pageSize}`;
+    if (search) url += `&search=${encodeURIComponent(search)}`;
+    if (status) url += `&status=${encodeURIComponent(status)}`;
+    if (accessType) url += `&accessType=${encodeURIComponent(accessType)}`;
+    return this.http.get<PagedEnrollmentResponse>(url);
   }
 
   getAllMyEnrollments(): Observable<EnrollmentResponse[]> {

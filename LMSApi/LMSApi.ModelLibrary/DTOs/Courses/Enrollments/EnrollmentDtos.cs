@@ -91,4 +91,29 @@ namespace LMSApi.ModelLibrary.DTOs
         public int TotalCount { get; set; }
         public int TotalPages { get; set; }
     }
+
+    public class InstructorCourseProgressResponse
+    {
+        public int CourseId { get; set; }
+        public string CourseTitle { get; set; } = string.Empty;
+        public string CourseStatus { get; set; } = string.Empty;
+        public IEnumerable<StudentProgressSummaryDto> Students { get; set; } = new List<StudentProgressSummaryDto>();
+    }
+
+    public class MonthlyStatDto
+    {
+        public string Month { get; set; } = string.Empty;
+        public int Count { get; set; }
+        public int HeightPercentage { get; set; }
+        public bool IsCurrent { get; set; }
+    }
+
+    public class InstructorCourseAnalyticsResponse
+    {
+        public int CourseId { get; set; }
+        public string MomGrowthText { get; set; } = string.Empty;
+        public bool IsGrowthPositive { get; set; }
+        public bool IsGrowthZero { get; set; }
+        public IEnumerable<MonthlyStatDto> MonthlyStats { get; set; } = new List<MonthlyStatDto>();
+    }
 }

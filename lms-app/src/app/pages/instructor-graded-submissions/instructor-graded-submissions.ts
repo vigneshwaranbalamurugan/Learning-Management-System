@@ -50,24 +50,12 @@ export class InstructorGradedSubmissions implements OnInit {
   private loadData(): void {
     this.isLoading.set(true);
     
-    this.assignmentService.getAssignmentById(this.assignmentId()).subscribe({
-      next: (res) => {
-        this.assignment.set(res);
-        this.loadSubmissions();
-      },
-      error: (err) => {
-        this.toastService.showApiError(err, 'Failed to load assignment details');
-        this.isLoading.set(false);
-      }
-    });
-  }
-
-  private loadSubmissions(): void {
-    this.instructorService.getGradedSubmissions(this.assignmentId())
+    this.instructorService.getGradedSubmissionsWithDetails(this.assignmentId())
       .pipe(finalize(() => this.isLoading.set(false)))
       .subscribe({
         next: (res) => {
-          this.submissions.set(res || []);
+          this.assignment.set(res.assignment);
+          this.submissions.set(res.submissions || []);
         },
         error: (err) => {
           this.toastService.showApiError(err, 'Failed to load graded submissions');
@@ -119,7 +107,7 @@ export class InstructorGradedSubmissions implements OnInit {
         next: () => {
           this.toastService.show('Grade updated successfully!', 'success');
           this.closeGradingPanel();
-          this.loadSubmissions();
+          this.loadData();
         },
         error: (err) => {
           this.toastService.showApiError(err, 'Failed to update grade.');

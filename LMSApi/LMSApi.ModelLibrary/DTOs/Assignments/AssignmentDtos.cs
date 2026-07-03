@@ -231,4 +231,17 @@ namespace LMSApi.ModelLibrary.DTOs
         public int PassedCount { get; set; }
         public int FailedCount { get; set; }
     }
+
+    public class LearnerAssignmentContextResponse
+    {
+        public AssignmentResponse Assignment { get; set; }
+        public AssignmentStatusResponse Status { get; set; }
+        public IEnumerable<AssignmentSubmissionResponse> Submissions { get; set; } = new List<AssignmentSubmissionResponse>();
+    }
+
+    public class InstructorGradedSubmissionsContextResponse
+    {
+        public AssignmentResponse Assignment { get; set; }
+        public IEnumerable<AssignmentSubmissionResponse> Submissions { get; set; } = new List<AssignmentSubmissionResponse>();
+    }
 }

@@ -50,7 +50,8 @@ namespace LMSApi.Tests.Services
                 _mockLogger.Object,
                 _mockNotificationService.Object,
                 _mockWishListRepository.Object,
-                _mockUserNotificationsService.Object
+                _mockUserNotificationsService.Object,
+                new Mock<IReviewRepository>().Object
             );
         }
 

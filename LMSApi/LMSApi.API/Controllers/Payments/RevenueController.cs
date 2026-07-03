@@ -49,10 +49,14 @@ namespace LMSApi.API.Controllers
         /// <summary>Instructor: View own revenue — all Route transfers and earnings summary.</summary>
         [HttpGet("instructor")]
         [Authorize(Roles = "Instructor")]
-        public async Task<ActionResult<InstructorRevenueSummaryResponse>> GetMyRevenue()
+        public async Task<ActionResult<PagedInstructorRevenueSummaryResponse>> GetMyRevenue(
+            [FromQuery] string? search,
+            [FromQuery] string? status,
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 10)
         {
             var instructorId = User.GetUserId();
-            var summary = await _revenueService.GetInstructorRevenueSummaryAsync(instructorId);
+            var summary = await _revenueService.GetInstructorRevenueSummaryAsync(instructorId, search, status, page, pageSize);
             return Ok(summary);
         }
 
@@ -76,6 +80,38 @@ namespace LMSApi.API.Controllers
         {
             var payouts = await _payoutService.GetPendingManualReviewAsync();
             return Ok(_mapper.Map<IEnumerable<InstructorPayoutResponse>>(payouts));
+        }
+
+        /// <summary>Admin: Paginated, filterable list of all incoming course payments.</summary>
+        [HttpGet("admin/transactions")]
+        [Authorize(Roles = "Admin")]
+        [EnableRateLimiting("AdminApis")]
+        public async Task<ActionResult<PagedAdminTransactionResponse>> GetAdminTransactions(
+            [FromQuery] string? search,
+            [FromQuery] string? status,
+            [FromQuery] DateTime? dateFrom,
+            [FromQuery] DateTime? dateTo,
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 15)
+        {
+            var result = await _revenueService.GetAdminTransactionsAsync(search, status, dateFrom, dateTo, page, pageSize);
+            return Ok(result);
+        }
+
+        /// <summary>Admin: Paginated, filterable list of all instructor payouts.</summary>
+        [HttpGet("admin/payouts")]
+        [Authorize(Roles = "Admin")]
+        [EnableRateLimiting("AdminApis")]
+        public async Task<ActionResult<PagedAdminPayoutResponse>> GetAdminPayouts(
+            [FromQuery] string? search,
+            [FromQuery] string? status,
+            [FromQuery] DateTime? dateFrom,
+            [FromQuery] DateTime? dateTo,
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 15)
+        {
+            var result = await _revenueService.GetAdminPayoutsAsync(search, status, dateFrom, dateTo, page, pageSize);
+            return Ok(result);
         }
     }
 }

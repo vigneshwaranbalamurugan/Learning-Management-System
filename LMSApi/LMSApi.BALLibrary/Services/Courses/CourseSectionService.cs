@@ -12,17 +12,20 @@ namespace LMSApi.BALLibrary.Services
     {
         private readonly ICourseSectionRepository _sectionRepository;
         private readonly ICourseRepository _courseRepository;
+        private readonly IEnrollmentRepository _enrollmentRepository;
         private readonly IMapper _mapper;
         private readonly ILogger<CourseSectionService> _logger;
 
         public CourseSectionService(
             ICourseSectionRepository sectionRepository,
             ICourseRepository courseRepository,
+            IEnrollmentRepository enrollmentRepository,
             IMapper mapper,
             ILogger<CourseSectionService> logger)
         {
             _sectionRepository = sectionRepository;
             _courseRepository = courseRepository;
+            _enrollmentRepository = enrollmentRepository;
             _mapper = mapper;
             _logger = logger;
         }
@@ -68,6 +71,12 @@ namespace LMSApi.BALLibrary.Services
 
             // Validate parent course exists
             var course = await _courseRepository.GetByIdAsync(request.CourseId);
+
+            var hasNonExpired = await _enrollmentRepository.HasNonExpiredEnrollmentsByCourseAsync(course.Id);
+            if (hasNonExpired)
+            {
+                throw new InvalidOperationException("Cannot add a section to a course that has enrolled learners.");
+            }
 
             var existingCourseSections = await _sectionRepository.GetSectionsByCourseAsync(course.Id);
             if (existingCourseSections.Any(s => string.Equals(s.Title.Trim(), request.Title.Trim(), StringComparison.OrdinalIgnoreCase)))
@@ -145,6 +154,13 @@ namespace LMSApi.BALLibrary.Services
             var section = await _sectionRepository.GetByIdAsync(id);
 
             var course = await _courseRepository.GetByIdAsync(section.CourseId);
+            
+            var hasNonExpired = await _enrollmentRepository.HasNonExpiredEnrollmentsByCourseAsync(course.Id);
+            if (hasNonExpired)
+            {
+                throw new InvalidOperationException("Cannot delete a section from a course that has enrolled learners.");
+            }
+
             await _sectionRepository.DeleteAsync(id);
 
             _logger.LogInformation("Section Deleted: Id={Id}", id);

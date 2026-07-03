@@ -1,4 +1,5 @@
 import { QuizResponse } from './quiz';
+import { ReviewResponse } from './review';
 import { AssignmentResponse } from './assignment';
 import { CourseAccessType } from '../enums/course-access-type.enum';
 import { CourseStatus } from '../enums/course-status.enum';
@@ -37,6 +38,14 @@ export interface CourseResponse {
   completionRate: number;
   estimatedDuration: string; // TimeSpan serialized as "HH:MM:SS"
   hasCertificate: boolean;
+  // User specific data
+  isEnrolled: boolean;
+  enrollmentProgress: number;
+  enrollmentId?: number;
+  reviews: ReviewResponse[];
+  hasNonExpiredEnrollments?: boolean;
+  hasActiveEnrollments?: boolean;
+  isDeleted?: boolean;
 }
 
 export interface CategoryResponse {
@@ -78,6 +87,9 @@ export interface InstructorCourseCardResponse {
   enrolledCount: number;
   createdAt: string;
   updatedAt: string;
+  hasNonExpiredEnrollments?: boolean;
+  hasActiveEnrollments?: boolean;
+  isDeleted?: boolean;
 }
 
 export interface PagedCourseResponse {

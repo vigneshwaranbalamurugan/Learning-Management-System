@@ -29,17 +29,20 @@ namespace LMSApi.API.Controllers
         private readonly AssignmentUploadHandler _assignmentUploadHandler;
         private readonly IOwnershipService _ownershipService;
         private readonly IConfiguration _configuration;
+        private readonly IAssignmentSubmissionService _assignmentSubmissionService;
 
         public AssignmentsController(
             IAssignmentService assignmentService,
             AssignmentUploadHandler assignmentUploadHandler,
             IOwnershipService ownershipService,
-            IConfiguration configuration)
+            IConfiguration configuration,
+            IAssignmentSubmissionService assignmentSubmissionService)
         {
             _assignmentService = assignmentService;
             _assignmentUploadHandler = assignmentUploadHandler;
             _ownershipService = ownershipService;
             _configuration = configuration;
+            _assignmentSubmissionService = assignmentSubmissionService;
         }
 
         /// <summary>Get paginated assignments for the authenticated learner across all enrolled courses.</summary>
@@ -94,6 +97,26 @@ namespace LMSApi.API.Controllers
             var isAdmin = User.IsAdmin();
             var result = await _assignmentService.GetAssignmentByIdAsync(id, userId, isAdmin);
             return Ok(result);
+        }
+
+        /// <summary>Get learner context for an assignment (assignment details, status, and submissions).</summary>
+        [Authorize]
+        [HttpGet("{id:int}/learner-context")]
+        public async Task<ActionResult<LearnerAssignmentContextResponse>> GetLearnerContext(int id)
+        {
+            var userId = User.GetUserId();
+            var isAdmin = User.IsAdmin();
+            
+            var assignment = await _assignmentService.GetAssignmentByIdAsync(id, userId, isAdmin);
+            var status = await _assignmentSubmissionService.GetStudentAssignmentStatusAsync(id, userId);
+            var submissions = await _assignmentSubmissionService.GetStudentSubmissionsAsync(id, userId);
+
+            return Ok(new LearnerAssignmentContextResponse
+            {
+                Assignment = assignment,
+                Status = status,
+                Submissions = submissions
+            });
         }
 
         /// <summary>Create a new assignment (Instructor/Admin only).</summary>

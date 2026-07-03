@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { untilDestroyed } from '../../../rxjs/until-destroyed';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../../environments/environment';
+import { AnalyticsService } from '@services/analytics.service';
 import { AdminAnalytics, RecentActivity } from '../../../models/analytics';
 
 @Component({
@@ -12,7 +13,7 @@ import { AdminAnalytics, RecentActivity } from '../../../models/analytics';
   templateUrl: './revenue.html'
 })
 export class AdminRevenue implements OnInit {
-  private http = inject(HttpClient);
+  private analyticsService = inject(AnalyticsService);
   private destroyRef = inject(DestroyRef);
 
   protected isLoading = signal(true);
@@ -39,7 +40,7 @@ export class AdminRevenue implements OnInit {
   }
 
   private loadAdminAnalytics() {
-    this.http.get<AdminAnalytics>(`${environment.apiUrl}/Analytics/admin`)
+    this.analyticsService.getAdminAnalytics()
       .pipe(untilDestroyed(this.destroyRef))
       .subscribe({
         next: (data) => {

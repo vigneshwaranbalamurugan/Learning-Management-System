@@ -104,6 +104,12 @@ namespace LMSApi.BALLibrary.Services
             var course = await _courseRepository.GetByIdAsync(section.CourseId)
                 ?? throw new KeyNotFoundException($"Course with id '{section.CourseId}' not found.");
 
+            var hasNonExpired = await _enrollmentRepository.HasNonExpiredEnrollmentsByCourseAsync(course.Id);
+            if (hasNonExpired)
+            {
+                throw new InvalidOperationException("Cannot add a quiz to a course that has enrolled learners.");
+            }
+
             if (course.CourseAccessType == CourseAccessType.CohortBased)
             {
                 if (!request.DeadlineDate.HasValue)
@@ -174,6 +180,15 @@ namespace LMSApi.BALLibrary.Services
 
             var section = await _sectionRepository.GetByIdAsync(quiz.CourseSectionId);
             var course = await _courseRepository.GetByIdAsync(section.CourseId);
+
+            var hasNonExpired = await _enrollmentRepository.HasNonExpiredEnrollmentsByCourseAsync(course.Id);
+            if (hasNonExpired)
+            {
+                if (request.TimeLimit.HasValue || request.PassingPercentage.HasValue || request.MaxAttempts.HasValue || request.DeadlineDate.HasValue || request.DeadlineInDays.HasValue)
+                {
+                    throw new InvalidOperationException("Cannot update quiz settings (time limit, passing percentage, max attempts, deadlines) because the course has enrolled learners.");
+                }
+            }
 
             if (request.CourseSectionId.HasValue && request.CourseSectionId.Value != quiz.CourseSectionId)
             {
@@ -273,6 +288,12 @@ namespace LMSApi.BALLibrary.Services
             var quiz = await _quizRepository.GetByIdAsync(id);
             var section = await _sectionRepository.GetByIdAsync(quiz.CourseSectionId);
             var course = await _courseRepository.GetByIdAsync(section.CourseId);
+
+            var hasNonExpired = await _enrollmentRepository.HasNonExpiredEnrollmentsByCourseAsync(course.Id);
+            if (hasNonExpired)
+            {
+                throw new InvalidOperationException("Cannot delete a quiz from a course that has enrolled learners.");
+            }
 
             await _quizRepository.DeleteAsync(id);
             

@@ -45,6 +45,10 @@ export class CourseService {
     return this.http.delete<void>(`${this.baseUrl}/Courses/${courseId}`);
   }
 
+  softDeleteCourse(courseId: number): Observable<void> {
+    return this.http.patch<void>(`${this.baseUrl}/Courses/${courseId}/soft-delete`, {});
+  }
+
   getAllCourses(query: CourseSearchQuery): Observable<PagedCourseListResponse> {
     let params = new HttpParams();
     if (query.categoryIds)      params = params.set('categoryIds', query.categoryIds);

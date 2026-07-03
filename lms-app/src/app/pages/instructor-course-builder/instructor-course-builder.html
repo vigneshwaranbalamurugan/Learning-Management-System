@@ -10,6 +10,7 @@
         Saving Order...
       </div>
       <app-button 
+        *ngIf="!course.hasNonExpiredEnrollments"
         (click)="openAddSection()" 
         variant="primary"
         customClass="!px-4 !py-2 !w-auto text-xs font-semibold shadow-sm transition">
@@ -22,10 +23,10 @@
   <div class="space-y-4">
     <div 
       *ngFor="let section of course.sections; let i = index" 
-      draggable="true"
-      (dragstart)="onSectionDragStart(i, $event)"
-      (dragover)="onSectionDragOver(i, $event)"
-      (drop)="onSectionDrop($event)"
+      [draggable]="!course.hasNonExpiredEnrollments"
+      (dragstart)="!course.hasNonExpiredEnrollments && onSectionDragStart(i, $event)"
+      (dragover)="!course.hasNonExpiredEnrollments && onSectionDragOver(i, $event)"
+      (drop)="!course.hasNonExpiredEnrollments && onSectionDrop($event)"
       [class.opacity-50]="draggedSectionIndex === i"
       class="border border-gray-200 border-l-4 border-l-[#1C1C7B] rounded-xl overflow-hidden shadow-xs bg-white transition-opacity duration-200">
       
@@ -41,7 +42,7 @@
             </svg>
           </div>
           <!-- Drag Handle and Up/Down -->
-          <div class="flex items-center gap-1.5 cursor-grab active:cursor-grabbing shrink-0" (click)="$event.stopPropagation()">
+          <div *ngIf="!course.hasNonExpiredEnrollments" class="flex items-center gap-1.5 cursor-grab active:cursor-grabbing shrink-0" (click)="$event.stopPropagation()">
             <div class="text-gray-400 hover:text-gray-600">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16"/></svg>
             </div>
@@ -59,6 +60,7 @@
         </div>
         <div class="flex flex-wrap items-center gap-2 self-end sm:self-auto shrink-0">
           <app-button 
+            *ngIf="!course.hasNonExpiredEnrollments"
             (click)="openAddLesson(section.id)" 
             variant="outline"
             customClass="!px-3 !py-1.5 !w-auto text-[11px] font-semibold transition !h-auto">
@@ -73,6 +75,7 @@
             </svg>
           </button>
           <button 
+            *ngIf="!course.hasNonExpiredEnrollments"
             (click)="confirmDeleteSection(section.id, $event)" 
             class="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 hover:cursor-pointer rounded-lg transition"
             title="Delete Section">
@@ -91,15 +94,17 @@
           <ng-container *ngFor="let lesson of section.lessons; let j = index">
           <div 
             (click)="openLessonDetail(lesson)"
-            draggable="true"
-            (dragstart)="onLessonDragStart(section.id, j, $event)"
-            (dragover)="onLessonDragOver(section.id, j, $event)"
-            (drop)="onLessonDrop(section.id, $event)"
+            [draggable]="!course.hasNonExpiredEnrollments"
+            (dragstart)="!course.hasNonExpiredEnrollments && onLessonDragStart(section.id, j, $event)"
+            (dragover)="!course.hasNonExpiredEnrollments && onLessonDragOver(section.id, j, $event)"
+            (drop)="!course.hasNonExpiredEnrollments && onLessonDrop(section.id, $event)"
             [class.opacity-50]="draggedLessonIndex === j && draggedLessonSectionId === section.id"
-            class="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-indigo-50/30 transition group cursor-grab active:cursor-grabbing overflow-hidden">
+            class="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-indigo-50/30 transition group overflow-hidden"
+            [class.cursor-grab]="!course.hasNonExpiredEnrollments"
+            [class.active:cursor-grabbing]="!course.hasNonExpiredEnrollments">
             <div class="flex items-center gap-3 min-w-0 w-full sm:w-auto">
               <!-- Drag Handle and Up/Down -->
-              <div class="flex items-center gap-1.5">
+              <div *ngIf="!course.hasNonExpiredEnrollments" class="flex items-center gap-1.5">
                 <div class="text-gray-300 group-hover:text-gray-400">
                   <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16"/></svg>
                 </div>
@@ -151,6 +156,7 @@
               </button>
               <!-- Delete button -->
               <button 
+                *ngIf="!course.hasNonExpiredEnrollments"
                 (click)="$event.stopPropagation(); confirmDeleteLesson(lesson.id, $event)"
                 class="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 hover:cursor-pointer rounded-lg transition opacity-0 group-hover:opacity-100"
                 title="Delete Lesson">
@@ -165,7 +171,7 @@
           <div *ngIf="isLessonExpanded(lesson.id)" class="pl-12 pr-4 py-2 bg-slate-50 border-t border-slate-100 transition-all duration-300">
             <div class="flex items-center justify-between mb-2">
               <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Lesson Resources</span>
-              <button (click)="openAddResource(lesson.id)" class="text-[10px] font-bold text-[#1C1C7B] hover:underline hover:cursor-pointer flex items-center gap-1">
+              <button *ngIf="!course.hasNonExpiredEnrollments" (click)="openAddResource(lesson.id)" class="text-[10px] font-bold text-[#1C1C7B] hover:underline hover:cursor-pointer flex items-center gap-1">
                 <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
                 Add Resource
               </button>
@@ -178,14 +184,16 @@
             <div class="space-y-1">
               <div 
                 *ngFor="let resource of lesson?.resources; let k = index"
-                draggable="true"
-                (dragstart)="onResourceDragStart(lesson.id, k, $event)"
-                (dragover)="onResourceDragOver(lesson.id, k, $event)"
-                (drop)="onResourceDrop(lesson.id, $event)"
+                [draggable]="!course.hasNonExpiredEnrollments"
+                (dragstart)="!course.hasNonExpiredEnrollments && onResourceDragStart(lesson.id, k, $event)"
+                (dragover)="!course.hasNonExpiredEnrollments && onResourceDragOver(lesson.id, k, $event)"
+                (drop)="!course.hasNonExpiredEnrollments && onResourceDrop(lesson.id, $event)"
                 [class.opacity-50]="draggedResourceIndex === k && draggedResourceLessonId === lesson.id"
-                class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-2 bg-white border border-slate-150 rounded-lg hover:border-slate-300 group cursor-grab active:cursor-grabbing transition-all overflow-hidden">
+                class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-2 bg-white border border-slate-150 rounded-lg hover:border-slate-300 group transition-all overflow-hidden"
+                [class.cursor-grab]="!course.hasNonExpiredEnrollments"
+                [class.active:cursor-grabbing]="!course.hasNonExpiredEnrollments">
                 <div class="flex items-center gap-2 min-w-0 w-full sm:w-auto">
-                  <div class="flex flex-col items-center opacity-0 group-hover:opacity-100 transition-opacity mr-1">
+                  <div *ngIf="!course.hasNonExpiredEnrollments" class="flex flex-col items-center opacity-0 group-hover:opacity-100 transition-opacity mr-1">
                     <button (click)="moveResource(lesson, k, 'up'); $event.stopPropagation()" [disabled]="k === 0" class="text-slate-300 hover:text-[#1C1C7B] disabled:opacity-30 disabled:hover:text-slate-300 p-0.5">
                       <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"/></svg>
                     </button>
@@ -207,7 +215,7 @@
                   <button (click)="openEditResource(resource); $event.stopPropagation()" class="p-1 text-slate-400 hover:text-[#1C1C7B] hover:bg-slate-100 hover:cursor-pointer rounded transition opacity-0 group-hover:opacity-100" title="Edit Resource">
                     <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
                   </button>
-                  <button (click)="confirmDeleteResource(resource.id, $event); $event.stopPropagation()" class="p-1 text-slate-400 hover:text-red-500 hover:bg-red-50 hover:cursor-pointer rounded transition opacity-0 group-hover:opacity-100" title="Delete Resource">
+                  <button *ngIf="!course.hasNonExpiredEnrollments" (click)="confirmDeleteResource(resource.id, $event); $event.stopPropagation()" class="p-1 text-slate-400 hover:text-red-500 hover:bg-red-50 hover:cursor-pointer rounded transition opacity-0 group-hover:opacity-100" title="Delete Resource">
                     <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                   </button>
                 </div>
@@ -227,15 +235,17 @@
           <div class="px-4 py-2 bg-purple-50/20 text-[11px] font-bold text-purple-700 uppercase tracking-wider">Assignments</div>
           <div 
             *ngFor="let assignment of section.assignments; let j = index"
-            draggable="true"
-            (dragstart)="onAssignmentDragStart(section.id, j, $event)"
-            (dragover)="onAssignmentDragOver(section.id, j, $event)"
-            (drop)="onAssignmentDrop(section.id, $event)"
+            [draggable]="!course.hasNonExpiredEnrollments"
+            (dragstart)="!course.hasNonExpiredEnrollments && onAssignmentDragStart(section.id, j, $event)"
+            (dragover)="!course.hasNonExpiredEnrollments && onAssignmentDragOver(section.id, j, $event)"
+            (drop)="!course.hasNonExpiredEnrollments && onAssignmentDrop(section.id, $event)"
             [class.opacity-50]="draggedAssignmentIndex === j && draggedAssignmentSectionId === section.id"
-            class="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-indigo-50/30 transition group cursor-grab active:cursor-grabbing overflow-hidden">
+            class="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-indigo-50/30 transition group overflow-hidden"
+            [class.cursor-grab]="!course.hasNonExpiredEnrollments"
+            [class.active:cursor-grabbing]="!course.hasNonExpiredEnrollments">
             <div class="flex items-center gap-3 min-w-0 w-full sm:w-auto">
               <!-- Drag Handle and Up/Down -->
-              <div class="flex items-center gap-1.5">
+              <div *ngIf="!course.hasNonExpiredEnrollments" class="flex items-center gap-1.5">
                 <div class="text-gray-300 group-hover:text-gray-400">
                   <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16"/></svg>
                 </div>
@@ -272,6 +282,7 @@
               </button>
               <!-- Delete button -->
               <button 
+                *ngIf="!course.hasNonExpiredEnrollments"
                 (click)="confirmDeleteAssignment(assignment.id, $event)"
                 class="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 hover:cursor-pointer rounded-lg transition opacity-0 group-hover:opacity-100"
                 title="Delete Assignment">
@@ -291,15 +302,17 @@
           <div class="px-4 py-2 bg-orange-50/20 text-[11px] font-bold text-orange-700 uppercase tracking-wider">Quizzes</div>
           <div 
             *ngFor="let quiz of section.quizzes; let j = index"
-            draggable="true"
-            (dragstart)="onQuizDragStart(section.id, j, $event)"
-            (dragover)="onQuizDragOver(section.id, j, $event)"
-            (drop)="onQuizDrop(section.id, $event)"
+            [draggable]="!course.hasNonExpiredEnrollments"
+            (dragstart)="!course.hasNonExpiredEnrollments && onQuizDragStart(section.id, j, $event)"
+            (dragover)="!course.hasNonExpiredEnrollments && onQuizDragOver(section.id, j, $event)"
+            (drop)="!course.hasNonExpiredEnrollments && onQuizDrop(section.id, $event)"
             [class.opacity-50]="draggedQuizIndex === j && draggedQuizSectionId === section.id"
-            class="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-indigo-50/30 transition group cursor-grab active:cursor-grabbing overflow-hidden">
+            class="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-indigo-50/30 transition group overflow-hidden"
+            [class.cursor-grab]="!course.hasNonExpiredEnrollments"
+            [class.active:cursor-grabbing]="!course.hasNonExpiredEnrollments">
             <div class="flex items-center gap-3 min-w-0 w-full sm:w-auto">
               <!-- Drag Handle and Up/Down -->
-              <div class="flex items-center gap-1.5">
+              <div *ngIf="!course.hasNonExpiredEnrollments" class="flex items-center gap-1.5">
                 <div class="text-gray-300 group-hover:text-gray-400">
                   <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16"/></svg>
                 </div>
@@ -335,6 +348,7 @@
               </button>
               <!-- Delete button -->
               <button 
+                *ngIf="!course.hasNonExpiredEnrollments"
                 (click)="confirmDeleteQuiz(quiz.id, $event)"
                 class="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 hover:cursor-pointer rounded-lg transition opacity-0 group-hover:opacity-100"
                 title="Delete Quiz">

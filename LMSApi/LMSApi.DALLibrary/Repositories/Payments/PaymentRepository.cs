@@ -83,6 +83,45 @@ namespace LMSApi.DALLibrary.Repositories
                 .ToListAsync();
         }
 
+        public async Task<(IEnumerable<Payments> Items, int TotalCount)> GetPagedAsync(
+            string? search, PaymentStatus? status, DateTime? dateFrom, DateTime? dateTo,
+            int page, int pageSize)
+        {
+            var query = _context.Payments
+                .Include(p => p.User).ThenInclude(u => u.UserProfile)
+                .Include(p => p.Course).ThenInclude(c => c.Instructor).ThenInclude(i => i.UserProfile)
+                .AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                var lower = search.ToLower();
+                query = query.Where(p =>
+                    p.Course.Title.ToLower().Contains(lower) ||
+                    p.User.UserProfile.FirstName.ToLower().Contains(lower) ||
+                    p.User.UserProfile.LastName.ToLower().Contains(lower) ||
+                    (p.ProviderPaymentId != null && p.ProviderPaymentId.ToLower().Contains(lower)));
+            }
+
+            if (status.HasValue)
+                query = query.Where(p => p.Status == status.Value);
+
+            if (dateFrom.HasValue)
+                query = query.Where(p => p.CreatedAt >= dateFrom.Value);
+
+            if (dateTo.HasValue)
+                query = query.Where(p => p.CreatedAt <= dateTo.Value.AddDays(1));
+
+            var totalCount = await query.CountAsync();
+
+            var items = await query
+                .OrderByDescending(p => p.CreatedAt)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            return (items, totalCount);
+        }
+
         public async Task BeginTransactionAsync()
         {
             if (_context.Database.CurrentTransaction != null)

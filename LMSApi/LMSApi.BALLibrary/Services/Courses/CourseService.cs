@@ -21,6 +21,7 @@ namespace LMSApi.BALLibrary.Services
         private readonly INotificationService _notificationService;
         private readonly IWishListRepository _wishListRepository;
         private readonly IUserNotificationsService _userNotificationsService;
+        private readonly IReviewRepository _reviewRepository;
 
         public CourseService(
             ICourseRepository courseRepository,
@@ -32,7 +33,8 @@ namespace LMSApi.BALLibrary.Services
             ILogger<CourseService> logger,
             INotificationService notificationService,
             IWishListRepository wishListRepository,
-            IUserNotificationsService userNotificationsService)
+            IUserNotificationsService userNotificationsService,
+            IReviewRepository reviewRepository)
         {
             _courseRepository = courseRepository;
             _categoryRepository = categoryRepository;
@@ -44,6 +46,7 @@ namespace LMSApi.BALLibrary.Services
             _notificationService = notificationService;
             _wishListRepository = wishListRepository;
             _userNotificationsService = userNotificationsService;
+            _reviewRepository = reviewRepository;
         }
 
         public async Task<IEnumerable<CourseResponse>> GetAllCoursesAsync()
@@ -132,10 +135,25 @@ namespace LMSApi.BALLibrary.Services
                 ?? throw new KeyNotFoundException($"Course with id '{id}' not found.");
 
             bool isEnrolled = false;
+            Enrollments? enrollment = null;
             if (currentUserId.HasValue)
             {
-                isEnrolled = await _enrollmentRepository.IsAlreadyEnrolledAsync(currentUserId.Value, course.Id);
+                enrollment = await _enrollmentRepository.GetByUserAndCourseAsync(currentUserId.Value, course.Id);
+                isEnrolled = enrollment != null;
             }
+
+            var reviewsData = await _reviewRepository.GetByCourseAsync(course.Id);
+            var reviewResponses = reviewsData.Select(r => new ReviewResponse
+            {
+                Id = r.Id,
+                CourseId = r.CourseId,
+                UserId = r.UserId,
+                UserName = r.User?.Email ?? "",
+                Rating = r.Rating,
+                ReviewText = r.Review,
+                CreatedAt = r.CreatedAt,
+                UpdatedAt = r.UpdatedAt
+            }).ToList();
 
             if (!isEnrolled && (currentUserId == null || (course.InstructorId != currentUserId && !isAdmin)))
             {
@@ -160,6 +178,9 @@ namespace LMSApi.BALLibrary.Services
                 {
                     previewResponse.IsWishlisted = await _wishListRepository.CheckExistsAsync(currentUserId.Value, course.Id);
                 }
+
+                previewResponse.IsEnrolled = false;
+                previewResponse.Reviews = reviewResponses;
                 
                 return previewResponse;
             }
@@ -176,6 +197,17 @@ namespace LMSApi.BALLibrary.Services
                 response.IsWishlisted = await _wishListRepository.CheckExistsAsync(currentUserId.Value, id);
             }
 
+            response.IsEnrolled = isEnrolled;
+            if (enrollment != null)
+            {
+                response.EnrollmentId = enrollment.Id;
+                response.EnrollmentProgress = (double)enrollment.ProgressPercentage;
+            }
+            response.Reviews = reviewResponses;
+            
+            response.HasNonExpiredEnrollments = await _enrollmentRepository.HasNonExpiredEnrollmentsByCourseAsync(id);
+            response.HasActiveEnrollments = await _enrollmentRepository.HasActiveOnlyEnrollmentsByCourseAsync(id);
+
             return response;
         }
 
@@ -185,10 +217,25 @@ namespace LMSApi.BALLibrary.Services
                 ?? throw new KeyNotFoundException($"Course with slug '{slug}' not found.");
 
             bool isEnrolled = false;
+            Enrollments? enrollment = null;
             if (currentUserId.HasValue)
             {
-                isEnrolled = await _enrollmentRepository.IsAlreadyEnrolledAsync(currentUserId.Value, course.Id);
+                enrollment = await _enrollmentRepository.GetByUserAndCourseAsync(currentUserId.Value, course.Id);
+                isEnrolled = enrollment != null;
             }
+
+            var reviewsData = await _reviewRepository.GetByCourseAsync(course.Id);
+            var reviewResponses = reviewsData.Select(r => new ReviewResponse
+            {
+                Id = r.Id,
+                CourseId = r.CourseId,
+                UserId = r.UserId,
+                UserName = r.User?.Email ?? "",
+                Rating = r.Rating,
+                ReviewText = r.Review,
+                CreatedAt = r.CreatedAt,
+                UpdatedAt = r.UpdatedAt
+            }).ToList();
 
             if (!isEnrolled && (currentUserId == null || (course.InstructorId != currentUserId && !isAdmin)))
             {
@@ -213,6 +260,9 @@ namespace LMSApi.BALLibrary.Services
                 {
                     previewResponse.IsWishlisted = await _wishListRepository.CheckExistsAsync(currentUserId.Value, course.Id);
                 }
+
+                previewResponse.IsEnrolled = false;
+                previewResponse.Reviews = reviewResponses;
                 
                 return previewResponse;
             }
@@ -228,6 +278,17 @@ namespace LMSApi.BALLibrary.Services
             {
                 response.IsWishlisted = await _wishListRepository.CheckExistsAsync(currentUserId.Value, course.Id);
             }
+
+            response.IsEnrolled = isEnrolled;
+            if (enrollment != null)
+            {
+                response.EnrollmentId = enrollment.Id;
+                response.EnrollmentProgress = (double)enrollment.ProgressPercentage;
+            }
+            response.Reviews = reviewResponses;
+
+            response.HasNonExpiredEnrollments = await _enrollmentRepository.HasNonExpiredEnrollmentsByCourseAsync(course.Id);
+            response.HasActiveEnrollments = await _enrollmentRepository.HasActiveOnlyEnrollmentsByCourseAsync(course.Id);
 
             return response;
         }
@@ -369,14 +430,21 @@ namespace LMSApi.BALLibrary.Services
         {
             await _courseRepository.GetByIdAsync(id); // throws if not found
 
-            var hasEnrollments = await _enrollmentRepository.HasEnrollmentsByCourseAsync(id);
-            if (hasEnrollments)
+            var hasNonExpired = await _enrollmentRepository.HasNonExpiredEnrollmentsByCourseAsync(id);
+            if (hasNonExpired)
             {
-                throw new InvalidOperationException($"Course '{id}' cannot be deleted because it has active enrollments.");
+                throw new InvalidOperationException("Course cannot be permanently deleted because learners are enrolled. Use soft-delete instead.");
             }
 
             await _courseRepository.DeleteAsync(id);
             _logger.LogInformation("Course Deleted: Id={Id}", id);
+        }
+
+        public async Task SoftDeleteCourseAsync(int id)
+        {
+            await _courseRepository.GetByIdAsync(id); // throws if not found
+            await _courseRepository.SoftDeleteCourseAsync(id);
+            _logger.LogInformation("Course SoftDeleted: Id={Id}", id);
         }
 
         public async Task<CourseResponse> ArchiveCourseAsync(int id, ArchiveCourseRequest request)
@@ -460,6 +528,10 @@ namespace LMSApi.BALLibrary.Services
 
                 if (course.Status != CourseStatus.Published && course.Status != CourseStatus.PendingApproval)
                     throw new InvalidOperationException($"Course with id '{id}' is not published or pending approval.");
+
+                var hasNonExpired = await _enrollmentRepository.HasNonExpiredEnrollmentsByCourseAsync(id);
+                if (hasNonExpired)
+                    throw new InvalidOperationException("Course cannot be unpublished because learners are currently enrolled.");
 
                 course.Status = CourseStatus.Draft;
 
@@ -687,6 +759,8 @@ namespace LMSApi.BALLibrary.Services
                         c.AverageRating = stats.AverageRating;
                         c.TotalReviews = stats.TotalReviews;
                     }
+                    c.HasNonExpiredEnrollments = await _enrollmentRepository.HasNonExpiredEnrollmentsByCourseAsync(c.Id);
+                    c.HasActiveEnrollments = await _enrollmentRepository.HasActiveOnlyEnrollmentsByCourseAsync(c.Id);
                 }
             }
 

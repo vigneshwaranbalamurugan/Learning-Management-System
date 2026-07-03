@@ -59,7 +59,7 @@ namespace LMSApi.DALLibrary.Repositories
                 .ToListAsync();
         }
 
-        public async Task<(IEnumerable<Enrollments> Enrollments, int TotalCount)> GetEnrollmentsByUserPagedAsync(int userId, int pageNumber, int pageSize)
+        public async Task<(IEnumerable<Enrollments> Enrollments, int TotalCount)> GetEnrollmentsByUserPagedAsync(int userId, int pageNumber, int pageSize, string? search = null, string? status = null, string? accessType = null)
         {
             var query = _context.Enrollments
                 .Include(e => e.Course)
@@ -74,6 +74,31 @@ namespace LMSApi.DALLibrary.Repositories
                         .ThenInclude(s => s.Lessons)
                 .Include(e => e.Batch)
                 .Where(e => e.UserId == userId);
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                query = query.Where(e => e.Course.Title.Contains(search) || (e.Course.Instructor.UserProfile != null && e.Course.Instructor.UserProfile.FirstName.Contains(search)));
+            }
+
+            if (!string.IsNullOrWhiteSpace(status))
+            {
+                if (status.Equals("completed", StringComparison.OrdinalIgnoreCase))
+                {
+                    query = query.Where(e => e.IsCompleted);
+                }
+                else if (status.Equals("in_progress", StringComparison.OrdinalIgnoreCase))
+                {
+                    query = query.Where(e => !e.IsCompleted);
+                }
+            }
+
+            if (!string.IsNullOrWhiteSpace(accessType))
+            {
+                if (Enum.TryParse<LMSApi.ModelLibrary.Enums.CourseAccessType>(accessType, true, out var parsedAccessType))
+                {
+                    query = query.Where(e => e.Course.CourseAccessType == parsedAccessType);
+                }
+            }
 
             var totalCount = await query.CountAsync();
 
@@ -101,6 +126,21 @@ namespace LMSApi.DALLibrary.Repositories
         public async Task<bool> HasEnrollmentsByCourseAsync(int courseId)
         {
             return await _context.Enrollments.AnyAsync(e => e.CourseId == courseId);
+        }
+
+        /// <inheritdoc/>
+        public async Task<bool> HasNonExpiredEnrollmentsByCourseAsync(int courseId)
+        {
+            return await _context.Enrollments.AnyAsync(e =>
+                e.CourseId == courseId &&
+                (e.EnrollmentStatus == LMSApi.ModelLibrary.Enums.EnrollmentStatus.Active || e.EnrollmentStatus == LMSApi.ModelLibrary.Enums.EnrollmentStatus.Completed));
+        }
+
+        /// <inheritdoc/>
+        public async Task<bool> HasActiveOnlyEnrollmentsByCourseAsync(int courseId)
+        {
+            return await _context.Enrollments.AnyAsync(e =>
+                e.CourseId == courseId && e.EnrollmentStatus == LMSApi.ModelLibrary.Enums.EnrollmentStatus.Active);
         }
 
         public async Task<bool> IsAlreadyEnrolledAsync(int userId, int courseId)

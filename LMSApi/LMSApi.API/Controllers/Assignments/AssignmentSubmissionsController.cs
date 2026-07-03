@@ -22,13 +22,16 @@ namespace LMSApi.API.Controllers
     {
         private readonly IAssignmentSubmissionService _assignmentSubmissionService;
         private readonly AssignmentUploadHandler _assignmentUploadHandler;
+        private readonly IAssignmentService _assignmentService;
 
         public AssignmentSubmissionsController(
             IAssignmentSubmissionService assignmentSubmissionService,
-            AssignmentUploadHandler assignmentUploadHandler)
+            AssignmentUploadHandler assignmentUploadHandler,
+            IAssignmentService assignmentService)
         {
             _assignmentSubmissionService = assignmentSubmissionService;
             _assignmentUploadHandler = assignmentUploadHandler;
+            _assignmentService = assignmentService;
         }
 
         /// <summary>Submit an assignment (enrolled students).</summary>
@@ -103,6 +106,22 @@ namespace LMSApi.API.Controllers
         {
             var result = await _assignmentSubmissionService.GetGradedReviewsAsync(assignmentId);
             return Ok(result);
+        }
+
+        /// <summary>Get graded submissions for an assignment with assignment details — instructor view.</summary>
+        [Authorize(Roles = "Instructor,Admin")]
+        [HttpGet("assignment/{assignmentId:int}/graded-with-details")]
+        public async Task<ActionResult<InstructorGradedSubmissionsContextResponse>> GetGradedReviewsWithDetails(int assignmentId)
+        {
+            var userId = User.GetUserId();
+            var isAdmin = User.IsAdmin();
+            var assignment = await _assignmentService.GetAssignmentByIdAsync(assignmentId, userId, isAdmin);
+            var submissions = await _assignmentSubmissionService.GetGradedReviewsAsync(assignmentId);
+            return Ok(new InstructorGradedSubmissionsContextResponse
+            {
+                Assignment = assignment,
+                Submissions = submissions
+            });
         }
 
         /// <summary>Get the authenticated student's status summary for an assignment.</summary>

@@ -61,4 +61,8 @@ export class AssignmentService {
   reorderAssignments(assignmentOrders: { assignmentId: number; sortOrder: number }[]): Observable<void> {
     return this.http.put<void>(`${this.baseUrl}/Assignments/reorder`, { assignmentOrders });
   }
+
+  getLearnerContext(assignmentId: number): Observable<any> {
+    return this.http.get<any>(`${this.baseUrl}/Assignments/${assignmentId}/learner-context`);
+  }
 }

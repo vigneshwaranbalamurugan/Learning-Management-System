@@ -557,14 +557,10 @@ export class CourseLearning implements OnInit, OnDestroy {
 
   private async loadAssignmentDetails(assignmentId: number) {
     try {
-      const [detail, status, subs] = await Promise.all([
-        this.assignmentService.getAssignment(assignmentId).toPromise(),
-        this.assignmentService.getAssignmentStatus(assignmentId).toPromise(),
-        this.assignmentService.getAssignmentSubmissions(assignmentId).toPromise()
-      ]);
-      this.assignmentDetail.set(detail!);
-      this.assignmentStatus.set(status!);
-      this.mySubmissions.set(subs || []);
+      const context = await this.assignmentService.getLearnerContext(assignmentId).toPromise();
+      this.assignmentDetail.set(context.assignment);
+      this.assignmentStatus.set(context.status);
+      this.mySubmissions.set(context.submissions || []);
     } catch (err) {
       console.error('Failed to load assignment', err);
     }

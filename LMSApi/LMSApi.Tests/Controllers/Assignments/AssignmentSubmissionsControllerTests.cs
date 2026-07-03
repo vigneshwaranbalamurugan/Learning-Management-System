@@ -32,7 +32,7 @@ namespace LMSApi.Tests.Controllers.Assignments
             _mockConfiguration = new Mock<IConfiguration>();
 
             _uploadHandler = new AssignmentUploadHandler(_mockUploadService.Object, _mockConfiguration.Object);
-            _controller = new AssignmentSubmissionsController(_mockSubmissionService.Object, _uploadHandler);
+            _controller = new AssignmentSubmissionsController(_mockSubmissionService.Object, _uploadHandler, new Mock<IAssignmentService>().Object);
 
             // Configure Mock User Principal
             var claims = new[] { new Claim(ClaimTypes.NameIdentifier, "123") };

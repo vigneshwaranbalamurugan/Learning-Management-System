@@ -193,16 +193,37 @@
 }
 .prose table {
   width: 100%;
-  border-collapse: collapse;
-  margin: 0.75rem 0;
+  border-collapse: separate;
+  border-spacing: 0;
+  margin: 1.25rem 0;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  border: 1px solid var(--color-primary-light);
 }
 .prose th, .prose td {
-  border: 1px solid var(--color-border-default);
-  padding: 0.5rem;
+  padding: 0.75rem 1rem;
   text-align: left;
+  border-bottom: 1px solid var(--color-primary-light);
+}
+.prose th:last-child, .prose td:last-child {
+  border-right: none;
+}
+.prose tr:last-child td {
+  border-bottom: none;
 }
 .prose th {
-  background-color: var(--color-bg-surface);
-  font-weight: 600;
+  background-color: var(--color-primary-light);
+  color: var(--color-primary);
+  font-weight: 700;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  letter-spacing: 0.05em;
+}
+.prose td {
+  color: var(--color-text-primary);
+  font-weight: 500;
+}
+.prose tr:hover td {
+  background-color: var(--color-bg-surface-hover);
 }
 

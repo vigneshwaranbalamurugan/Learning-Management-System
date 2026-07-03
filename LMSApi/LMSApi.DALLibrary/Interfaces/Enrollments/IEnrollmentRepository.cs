@@ -14,13 +14,19 @@ namespace LMSApi.DALLibrary.Interfaces
         Task<IEnumerable<Enrollments>> GetEnrollmentsByUserAsync(int userId);
 
         /// <summary>Returns paginated enrollments for a given user.</summary>
-        Task<(IEnumerable<Enrollments> Enrollments, int TotalCount)> GetEnrollmentsByUserPagedAsync(int userId, int pageNumber, int pageSize);
+        Task<(IEnumerable<Enrollments> Enrollments, int TotalCount)> GetEnrollmentsByUserPagedAsync(int userId, int pageNumber, int pageSize, string? search = null, string? status = null, string? accessType = null);
 
         /// <summary>Returns all active enrollments for a given course.</summary>
         Task<IEnumerable<Enrollments>> GetActiveEnrollmentsByCourseAsync(int courseId);
 
         /// <summary>Checks if a course has any enrollments.</summary>
         Task<bool> HasEnrollmentsByCourseAsync(int courseId);
+
+        /// <summary>Returns true if the course has any Active or Completed enrollments.</summary>
+        Task<bool> HasNonExpiredEnrollmentsByCourseAsync(int courseId);
+
+        /// <summary>Returns true if the course has any Active-only enrollments.</summary>
+        Task<bool> HasActiveOnlyEnrollmentsByCourseAsync(int courseId);
 
         Task<bool> IsAlreadyEnrolledAsync(int userId, int courseId);
         Task<Enrollments?> GetActiveEnrollmentAsync(int userId, int courseId);

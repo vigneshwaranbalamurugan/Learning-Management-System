@@ -194,6 +194,7 @@
               <label class="text-xs font-bold text-slate-700 block">Lesson Type <span
                   class="text-red-500">*</span></label>
               <app-dropdown [value]="type" (valueChange)="type = $event" [options]="lessonTypeOptions"
+                [disabled]="layout.course()?.hasNonExpiredEnrollments === true"
                 placeholder="Select type..." />
             </div>
 
@@ -251,13 +252,18 @@
           </div>
 
           <!-- Video / PDF: Drag & Drop Zone -->
-          <div *ngIf="type === LT_VIDEO || type === LT_PDF" class="space-y-3">
+          <div *ngIf="layout.course()?.hasNonExpiredEnrollments" class="bg-red-50 text-red-600 p-3 rounded-lg text-xs font-semibold mb-3 border border-red-100 flex items-center gap-2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+            Content editing and file replacement is disabled because this course has non-expired learners enrolled.
+          </div>
+          <div *ngIf="type === LT_VIDEO || type === LT_PDF" class="space-y-3" [class.pointer-events-none]="layout.course()?.hasNonExpiredEnrollments" [class.opacity-60]="layout.course()?.hasNonExpiredEnrollments">
 
             <div (dragover)="onDragOver($event)" (dragleave)="onDragLeave($event)" (drop)="onDrop($event)"
               class="relative border-2 border-dashed rounded-xl p-6 text-center transition-all duration-300 cursor-pointer flex flex-col items-center justify-center space-y-2"
               [ngClass]="isDragOver ? 'border-[#1C1C7B] bg-[#1C1C7B]/5 scale-[0.99] shadow-inner' : 'border-slate-300 hover:border-[#1C1C7B] bg-slate-50/50 hover:bg-slate-50/80'">
 
               <input type="file" (change)="onFileSelected($event)" id="fileInput"
+                [disabled]="layout.course()?.hasNonExpiredEnrollments === true"
                 class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
 
               <div class="p-2.5 bg-white rounded-full shadow-sm border border-slate-150">

@@ -45,6 +45,8 @@ export class InstructorCourses implements OnInit {
   protected courseToArchive: number | null = null;
   protected courseToPublish:InstructorCourseCardResponse|null=null;
   protected isPublishing=false;
+  protected showDeleteModal = false;
+  protected courseToDelete: InstructorCourseCardResponse | null = null;
   
   // Filtering States
   protected searchQuery = signal('');
@@ -232,8 +234,9 @@ export class InstructorCourses implements OnInit {
     }
   }
 
-  protected getStatusBadgeClass(status: number | string): string {
-    const statusStr = this.getStatusString(status).toLowerCase();
+  protected getStatusBadgeClass(course: InstructorCourseCardResponse): string {
+    if (course.isDeleted) return 'bg-red-50 text-red-700 border-red-200';
+    const statusStr = this.getStatusString(course.status).toLowerCase();
     if (statusStr === 'published') return 'bg-emerald-50 text-emerald-700 border-emerald-200';
     if (statusStr === 'draft') return 'bg-gray-100 text-gray-700 border-gray-200';
     if (statusStr === 'archived') return 'bg-amber-50 text-amber-700 border-amber-200';
@@ -383,6 +386,55 @@ export class InstructorCourses implements OnInit {
   protected closePublishModal():void{
     this.showPublishModal=false;
     this.courseToPublish=null;
+  }
+
+  protected confirmSoftDeleteCourse(course: InstructorCourseCardResponse): void {
+    this.courseToDelete = course;
+    this.showDeleteModal = true;
+  }
+
+  protected executeSoftDelete(): void {
+    if (!this.courseToDelete) return;
+    
+    // Determine if we should call soft delete or hard delete. Wait, the user said "only be soft deleted if enrollment active or completed... anything cannot be deleted".
+    // I will call softDeleteCourse if it has enrollments, else deleteCourse.
+    const hasEnrollments = this.courseToDelete.hasNonExpiredEnrollments;
+
+    if (hasEnrollments) {
+      this.courseService.softDeleteCourse(this.courseToDelete.id)
+        .pipe(untilDestroyed(this.destroyRef))
+        .subscribe({
+          next: () => {
+            this.toastService.showSuccess('Course soft-deleted successfully. It will remain accessible to completed learners.');
+            this.courses.update(list => list.map(c => c.id === this.courseToDelete!.id ? { ...c, isDeleted: true } : c));
+            this.closeDeleteModal();
+          },
+          error: (err) => {
+            this.toastService.showApiError(err, 'Failed to soft-delete course.');
+            this.closeDeleteModal();
+          }
+        });
+    } else {
+      this.courseService.deleteCourse(this.courseToDelete.id)
+        .pipe(untilDestroyed(this.destroyRef))
+        .subscribe({
+          next: () => {
+            this.toastService.showSuccess('Course permanently deleted.');
+            this.courses.update(list => list.filter(c => c.id !== this.courseToDelete!.id));
+            this.allCoursesForStats.update(list => list.filter(c => c.id !== this.courseToDelete!.id));
+            this.closeDeleteModal();
+          },
+          error: (err) => {
+            this.toastService.showApiError(err, 'Failed to delete course.');
+            this.closeDeleteModal();
+          }
+        });
+    }
+  }
+
+  protected closeDeleteModal(): void {
+    this.showDeleteModal = false;
+    this.courseToDelete = null;
   }
 
   protected removeFilter(filterName: string): void {

@@ -58,7 +58,7 @@ namespace LMSApi.DALLibrary.Repositories
         public async Task<IEnumerable<InstructorPayout>> GetAllAsync()
         {
             return await _context.InstructorPayouts
-                .Include(p => p.Instructor)
+                .Include(p => p.Instructor).ThenInclude(i => i.UserProfile)
                 .Include(p => p.Payment).ThenInclude(pay => pay.Course)
                 .Include(p => p.Payment).ThenInclude(pay => pay.User).ThenInclude(u => u.UserProfile)
                 .Include(p => p.PayoutAccount)

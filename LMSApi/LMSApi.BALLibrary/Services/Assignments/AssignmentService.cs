@@ -110,6 +110,12 @@ namespace LMSApi.BALLibrary.Services
             var course = await _courseRepository.GetByIdAsync(section.CourseId)
                 ?? throw new KeyNotFoundException($"Course with id '{section.CourseId}' not found.");
 
+            var hasNonExpired = await _enrollmentRepository.HasNonExpiredEnrollmentsByCourseAsync(course.Id);
+            if (hasNonExpired)
+            {
+                throw new InvalidOperationException("Cannot add an assignment to a course that has enrolled learners.");
+            }
+
             if (course.CourseAccessType == CourseAccessType.CohortBased)
             {
                 if (!request.DeadlineDate.HasValue)
@@ -191,6 +197,16 @@ namespace LMSApi.BALLibrary.Services
 
             var section = await _sectionRepository.GetByIdAsync(assignment.CourseSectionId);
             var course = await _courseRepository.GetByIdAsync(section.CourseId);
+
+            var hasNonExpired = await _enrollmentRepository.HasNonExpiredEnrollmentsByCourseAsync(course.Id);
+
+            if (hasNonExpired)
+            {
+                if (request.AttachmentType.HasValue || attachmentStream != null || request.TotalMarks.HasValue || request.PassingMarks.HasValue || request.DeadlineDate.HasValue || request.DeadlineInDays.HasValue)
+                {
+                    throw new InvalidOperationException("Cannot update assignment files, marks, or deadlines because the course has enrolled learners.");
+                }
+            }
 
             if (request.Title != null)
             {
@@ -300,6 +316,16 @@ namespace LMSApi.BALLibrary.Services
 
         public async Task DeleteAssignmentAsync(int id)
         {
+            var assignment = await _assignmentRepository.GetByIdAsync(id);
+            var section = await _sectionRepository.GetByIdAsync(assignment.CourseSectionId);
+            var course = await _courseRepository.GetByIdAsync(section.CourseId);
+
+            var hasNonExpired = await _enrollmentRepository.HasNonExpiredEnrollmentsByCourseAsync(course.Id);
+            if (hasNonExpired)
+            {
+                throw new InvalidOperationException("Cannot delete an assignment from a course that has enrolled learners.");
+            }
+
             await _assignmentRepository.DeleteAsync(id);
             _logger.LogInformation("Assignment Deleted: Id={Id}", id);
         }

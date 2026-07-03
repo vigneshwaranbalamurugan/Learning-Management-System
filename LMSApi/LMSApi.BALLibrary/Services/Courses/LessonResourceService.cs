@@ -123,6 +123,12 @@ namespace LMSApi.BALLibrary.Services
             var section = await _sectionRepository.GetByIdAsync(lesson.CourseSectionId);
             var course = await _courseRepository.GetByIdAsync(section.CourseId);
 
+            var hasNonExpired = await _enrollmentRepository.HasNonExpiredEnrollmentsByCourseAsync(course.Id);
+            if (hasNonExpired)
+            {
+                throw new InvalidOperationException("Cannot add a resource to a course that has enrolled learners.");
+            }
+
             var courseSections = await _sectionRepository.GetSectionsByCourseAsync(course.Id);
             foreach (var s in courseSections)
             {
@@ -197,6 +203,19 @@ namespace LMSApi.BALLibrary.Services
 
             var resource = await _resourceRepository.GetByIdAsync(id);
 
+            var lesson = await _lessonRepository.GetByIdAsync(resource.LessonId);
+            var section = await _sectionRepository.GetByIdAsync(lesson.CourseSectionId);
+            var course = await _courseRepository.GetByIdAsync(section.CourseId);
+
+            var hasNonExpired = await _enrollmentRepository.HasNonExpiredEnrollmentsByCourseAsync(course.Id);
+            if (hasNonExpired)
+            {
+                if (request.ResourceType.HasValue || request.ResourceUrl != null || fileStream != null)
+                {
+                    throw new InvalidOperationException("Cannot update resource files or links because the course has enrolled learners.");
+                }
+            }
+
             var finalType = request.ResourceType ?? resource.ResourceType;
 
             if (finalType == ResourceType.ExternalLink)
@@ -230,10 +249,6 @@ namespace LMSApi.BALLibrary.Services
                     throw new ArgumentException("A PDF file must be uploaded when changing resource type to PDF.");
                 }
             }
-
-            var lesson = await _lessonRepository.GetByIdAsync(resource.LessonId);
-            var section = await _sectionRepository.GetByIdAsync(lesson.CourseSectionId);
-            var course = await _courseRepository.GetByIdAsync(section.CourseId);
 
             if (request.ResourceType.HasValue) resource.ResourceType = request.ResourceType.Value;
             
@@ -281,7 +296,17 @@ namespace LMSApi.BALLibrary.Services
 
         public async Task DeleteResourceAsync(int id)
         {
-            await _resourceRepository.GetByIdAsync(id);
+            var resource = await _resourceRepository.GetByIdAsync(id);
+            var lesson = await _lessonRepository.GetByIdAsync(resource.LessonId);
+            var section = await _sectionRepository.GetByIdAsync(lesson.CourseSectionId);
+            var course = await _courseRepository.GetByIdAsync(section.CourseId);
+
+            var hasNonExpired = await _enrollmentRepository.HasNonExpiredEnrollmentsByCourseAsync(course.Id);
+            if (hasNonExpired)
+            {
+                throw new InvalidOperationException("Cannot delete a resource from a course that has enrolled learners.");
+            }
+
             await _resourceRepository.DeleteAsync(id);
 
             _logger.LogInformation("Resource Deleted: Id={Id}", id);

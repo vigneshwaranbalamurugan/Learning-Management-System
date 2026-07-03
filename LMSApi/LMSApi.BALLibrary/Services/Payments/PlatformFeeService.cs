@@ -71,6 +71,22 @@ namespace LMSApi.BALLibrary.Services
             return await _feeRepo.GetCurrentAsync(category);
         }
 
+        public async Task DeleteFeeAsync(FeeCategory category, int adminId)
+        {
+            var currentFee = await _feeRepo.GetCurrentAsync(category);
+            if (currentFee == null)
+            {
+                throw new InvalidOperationException("No active platform fee found for this category to delete.");
+            }
+
+            currentFee.IsActive = false;
+            // Optionally set EffectiveFrom to now to indicate when it was deleted?
+            // Actually just IsActive = false is enough if the repo respects it.
+            // But wait, GetCurrentAsync and GetActiveConfigAsync need to check IsActive.
+            
+            await _feeRepo.UpdateAsync(currentFee);
+        }
+
         public async Task<IEnumerable<PlatformFeeConfig>> GetFeeHistoryAsync(FeeCategory? category = null)
         {
             return await _feeRepo.GetAllAsync(category);

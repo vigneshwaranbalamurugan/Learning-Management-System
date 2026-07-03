@@ -47,94 +47,20 @@ export class InstructorCourseAnalytics implements OnInit {
 
   private loadLearnersData(courseId: number) {
     this.isLoading.set(true);
-    this.progressService.getStudentsProgress(courseId)
+    this.progressService.getCourseAnalytics(courseId)
       .pipe(untilDestroyed(this.destroyRef))
       .subscribe({
-        next: (students) => {
-          this.computeStats(students || []);
+        next: (data) => {
+          this.monthlyStats = data.monthlyStats || [];
+          this.momGrowthText = data.momGrowthText || '0% Month-over-Month';
+          this.isGrowthPositive = data.isGrowthPositive;
+          this.isGrowthZero = data.isGrowthZero;
           this.isLoading.set(false);
         },
         error: (err) => {
-          console.error('Failed to load course learners for analytics:', err);
+          console.error('Failed to load course analytics:', err);
           this.isLoading.set(false);
         }
       });
-  }
-
-  private computeStats(students: any[]) {
-    const now = new Date();
-    const months: { month: string; matchKey: string; count: number; isCurrent: boolean }[] = [];
-
-    // Initialize last 6 months
-    for (let i = 5; i >= 0; i--) {
-      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      months.push({
-        month: d.toLocaleString('en-IN', { month: 'short', timeZone: 'Asia/Kolkata' }),
-        matchKey: d.toLocaleString('en-IN', { month: 'short', year: 'numeric', timeZone: 'Asia/Kolkata' }),
-        count: 0,
-        isCurrent: i === 0
-      });
-    }
-
-    // Group students by month
-    students.forEach(student => {
-      if (!student.enrolledAt) return;
-      const enrolledDate = new Date(student.enrolledAt);
-      const matchKey = enrolledDate.toLocaleString('en-IN', { month: 'short', year: 'numeric', timeZone: 'Asia/Kolkata' });
-
-      const match = months.find(m => m.matchKey === matchKey);
-      if (match) {
-        match.count++;
-      }
-    });
-
-    // Determine max count for scaling
-    const maxCount = Math.max(...months.map(m => m.count));
-
-    // Map to monthly stats with scaled height percentage
-    this.monthlyStats = months.map(m => {
-      let heightPercentage = 10; // min height so bar is visible
-      if (maxCount > 0) {
-        heightPercentage = Math.max(10, Math.round((m.count / maxCount) * 100));
-      }
-      return {
-        month: m.month,
-        count: m.count,
-        heightPercentage,
-        isCurrent: m.isCurrent
-      };
-    });
-
-    // Compute MoM Growth
-    const prevMonth = months[4]?.count || 0;
-    const currentMonth = months[5]?.count || 0;
-
-    if (prevMonth === 0) {
-      if (currentMonth === 0) {
-        this.momGrowthText = '0% Month-over-Month';
-        this.isGrowthPositive = true;
-        this.isGrowthZero = true;
-      } else {
-        this.momGrowthText = `↑ ${currentMonth * 100}% Month-over-Month`;
-        this.isGrowthPositive = true;
-        this.isGrowthZero = false;
-      }
-    } else {
-      const diff = currentMonth - prevMonth;
-      const percentage = Math.round((diff / prevMonth) * 100);
-      if (percentage > 0) {
-        this.momGrowthText = `↑ ${percentage}% Month-over-Month`;
-        this.isGrowthPositive = true;
-        this.isGrowthZero = false;
-      } else if (percentage < 0) {
-        this.momGrowthText = `↓ ${Math.abs(percentage)}% Month-over-Month`;
-        this.isGrowthPositive = false;
-        this.isGrowthZero = false;
-      } else {
-        this.momGrowthText = '0% Month-over-Month';
-        this.isGrowthPositive = true;
-        this.isGrowthZero = true;
-      }
-    }
   }
 }

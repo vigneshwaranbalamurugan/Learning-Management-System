@@ -47,6 +47,16 @@ namespace LMSApi.API.Controllers
             return Ok(_mapper.Map<PlatformFeeResponse>(config));
         }
 
+        /// <summary>Admin: Soft delete the current active platform fee configuration.</summary>
+        [HttpDelete("{category}")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> DeleteFee(FeeCategory category)
+        {
+            var adminId = User.GetUserId();
+            await _feeService.DeleteFeeAsync(category, adminId);
+            return NoContent();
+        }
+
         /// <summary>Get the currently active fee for a category.</summary>
         [HttpGet("current")]
         [Authorize(Roles = "Admin,Instructor")]

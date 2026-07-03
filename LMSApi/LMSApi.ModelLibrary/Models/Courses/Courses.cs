@@ -28,6 +28,9 @@ namespace LMSApi.ModelLibrary.Models
         public CourseAccessType CourseAccessType { get; set; } = CourseAccessType.SelfPaced;
         public int? DefaultDeadlineDays { get; set; }
 
+        public bool IsDeleted { get; set; } = false;
+        public DateTime? DeletedAt { get; set; }
+
         // Navigation properties
         public CourseCategories Category { get; set; }
         public Users Instructor { get; set; }

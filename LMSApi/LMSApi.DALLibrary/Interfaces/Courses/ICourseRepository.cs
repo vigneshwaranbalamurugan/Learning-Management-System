@@ -25,5 +25,6 @@ namespace LMSApi.DALLibrary.Interfaces
         Task<IEnumerable<LMSApi.ModelLibrary.DTOs.InstructorMetadataDto>> GetActiveInstructorsAsync();
         Task<IEnumerable<LMSApi.ModelLibrary.DTOs.LanguageMetadataDto>> GetActiveLanguagesAsync();
         Task UpdateCourseDurationAsync(int courseId);
+        Task SoftDeleteCourseAsync(int courseId);
     }
 }

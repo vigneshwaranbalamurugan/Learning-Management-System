@@ -26,6 +26,14 @@ export const adminRoutes: Routes = [
         loadComponent: () => import('@pages/admin/settings/settings').then(m => m.AdminSettings)
       },
       {
+        path: 'profile',
+        loadComponent: () => import('@pages/profile/profile').then(m => m.Profile)
+      },
+      {
+        path: 'revenue-detail',
+        loadComponent: () => import('@pages/admin/revenue-detail/revenue-detail').then(m => m.AdminRevenueDetail)
+      },
+      {
         path: 'courses/new',
         loadComponent: () => import('@pages/instructor-course-form/instructor-course-form').then(m => m.InstructorCourseForm),
         canDeactivate: [(component: any) => component.canDeactivate ? component.canDeactivate() : true]
@@ -115,7 +123,8 @@ export const adminRoutes: Routes = [
       },
       {
         path: 'certificates',
-        loadComponent: () => import('@pages/admin/certificates/certificates').then(m => m.AdminCertificatesComponent)
+        redirectTo: 'settings',
+        pathMatch: 'full'
       },
       {
         path: 'revenue',

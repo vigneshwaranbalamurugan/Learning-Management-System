@@ -47,10 +47,11 @@ namespace LMSApi.DALLibrary.Repositories
 
         public async Task<PagedLearnerAssignmentResponse> GetLearnerAssignmentsAsync(int userId, int pageNumber, int pageSize, string? searchQuery = null)
         {
-            var enrolledCourseIds = _context.Enrollments
+            var enrollments = await _context.Enrollments
                 .Where(e => e.UserId == userId && e.EnrollmentStatus == LMSApi.ModelLibrary.Enums.EnrollmentStatus.Active)
-                .Select(e => e.CourseId)
-                .Distinct();
+                .ToListAsync();
+            var enrolledCourseIds = enrollments.Select(e => e.CourseId).Distinct().ToList();
+            var courseEnrollmentDates = enrollments.ToDictionary(e => e.CourseId, e => e.EnrolledAt);
 
             var query = _context.Assignments
                 .Include(a => a.CourseSection)
@@ -131,6 +132,15 @@ namespace LMSApi.DALLibrary.Repositories
                     }
                 }
 
+                DateTime? calculatedDeadline = a.DeadlineDate;
+                if (calculatedDeadline == null && a.DeadlineInDays > 0)
+                {
+                    if (courseEnrollmentDates.TryGetValue(a.CourseSection.CourseId, out var enrolledAt))
+                    {
+                        calculatedDeadline = enrolledAt.AddDays(a.DeadlineInDays);
+                    }
+                }
+
                 return new LearnerAssignmentDto
                 {
                     Id = a.Id,
@@ -144,7 +154,7 @@ namespace LMSApi.DALLibrary.Repositories
                     AttachmentType = a.AttachmentType,
                     AttachmentUrl = a.AttachmentUrl,
                     DeadlineInDays = a.DeadlineInDays,
-                    DeadlineDate = a.DeadlineDate,
+                    DeadlineDate = calculatedDeadline,
                     MaxSubmissions = a.MaxSubmissions,
                     IsLateSubmissionAllowed = a.IsLateSubmissionAllowed,
                     SortOrder = a.SortOrder,

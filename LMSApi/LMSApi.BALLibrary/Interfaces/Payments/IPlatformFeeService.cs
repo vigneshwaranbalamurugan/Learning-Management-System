@@ -14,6 +14,9 @@ namespace LMSApi.BALLibrary.Interfaces
         /// <summary>Get the currently active fee config for a category.</summary>
         Task<PlatformFeeConfig?> GetCurrentFeeAsync(FeeCategory category);
 
+        /// <summary>Soft delete the currently active fee config for a category.</summary>
+        Task DeleteFeeAsync(FeeCategory category, int adminId);
+
         /// <summary>Get full history of fee changes, optionally filtered by category.</summary>
         Task<IEnumerable<PlatformFeeConfig>> GetFeeHistoryAsync(FeeCategory? category = null);
 

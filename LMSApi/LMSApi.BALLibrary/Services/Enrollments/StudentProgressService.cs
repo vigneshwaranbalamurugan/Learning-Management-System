@@ -393,7 +393,7 @@ namespace LMSApi.BALLibrary.Services
             }
         }
 
-        public async Task<IEnumerable<StudentProgressSummaryDto>> GetStudentsProgressForCourseAsync(int instructorId, int courseId, bool isAdmin = false)
+        public async Task<InstructorCourseProgressResponse> GetStudentsProgressForCourseAsync(int instructorId, int courseId, bool isAdmin = false)
         {
             var course = await _courseRepository.GetByIdAsync(courseId)
                 ?? throw new KeyNotFoundException($"Course with id '{courseId}' not found.");
@@ -410,7 +410,7 @@ namespace LMSApi.BALLibrary.Services
 
             var enrollments = await _enrollmentRepository.GetEnrollmentsByCourseAsync(courseId);
 
-            return enrollments.Select(e => new StudentProgressSummaryDto
+            var students = enrollments.Select(e => new StudentProgressSummaryDto
             {
                 EnrollmentId = e.Id,
                 StudentId = e.UserId,
@@ -425,6 +425,119 @@ namespace LMSApi.BALLibrary.Services
                 CompletedAt = e.CompletedAt,
                 BatchName = e.Batch?.Name
             });
+
+            return new InstructorCourseProgressResponse
+            {
+                CourseId = course.Id,
+                CourseTitle = course.Title,
+                CourseStatus = course.Status.ToString(),
+                Students = students
+            };
+        }
+
+        public async Task<InstructorCourseAnalyticsResponse> GetCourseAnalyticsAsync(int instructorId, int courseId, bool isAdmin = false)
+        {
+            var course = await _courseRepository.GetByIdAsync(courseId)
+                ?? throw new KeyNotFoundException($"Course with id '{courseId}' not found.");
+
+            if (!isAdmin && course.InstructorId != instructorId)
+            {
+                throw new UnauthorizedAccessException("You do not have permission to view analytics for this course.");
+            }
+
+            var enrollments = await _enrollmentRepository.GetEnrollmentsByCourseAsync(courseId);
+
+            var now = DateTime.UtcNow;
+            var indiaZone = TimeZoneInfo.FindSystemTimeZoneById("Asia/Kolkata");
+            var nowInIndia = TimeZoneInfo.ConvertTimeFromUtc(now, indiaZone);
+
+            var months = new List<MonthlyStatDto>();
+            for (int i = 5; i >= 0; i--)
+            {
+                var d = nowInIndia.AddMonths(-i);
+                months.Add(new MonthlyStatDto
+                {
+                    Month = d.ToString("MMM"), // e.g., "Jan", "Feb"
+                    Count = 0,
+                    IsCurrent = i == 0
+                });
+            }
+
+            foreach (var enrollment in enrollments)
+            {
+                var enrolledInIndia = TimeZoneInfo.ConvertTimeFromUtc(enrollment.EnrolledAt, indiaZone);
+                var monthStr = enrolledInIndia.ToString("MMM");
+                var match = months.FirstOrDefault(m => m.Month == monthStr);
+                if (match != null)
+                {
+                    match.Count++;
+                }
+            }
+
+            var maxCount = months.Any() ? months.Max(m => m.Count) : 0;
+            foreach (var m in months)
+            {
+                m.HeightPercentage = 10;
+                if (maxCount > 0)
+                {
+                    m.HeightPercentage = Math.Max(10, (int)Math.Round((double)m.Count / maxCount * 100));
+                }
+            }
+
+            var prevMonthCount = months.ElementAtOrDefault(4)?.Count ?? 0;
+            var currentMonthCount = months.ElementAtOrDefault(5)?.Count ?? 0;
+
+            string momGrowthText;
+            bool isGrowthPositive;
+            bool isGrowthZero;
+
+            if (prevMonthCount == 0)
+            {
+                if (currentMonthCount == 0)
+                {
+                    momGrowthText = "0% Month-over-Month";
+                    isGrowthPositive = true;
+                    isGrowthZero = true;
+                }
+                else
+                {
+                    momGrowthText = $"↑ {currentMonthCount * 100}% Month-over-Month";
+                    isGrowthPositive = true;
+                    isGrowthZero = false;
+                }
+            }
+            else
+            {
+                var diff = currentMonthCount - prevMonthCount;
+                var percentage = (int)Math.Round((double)diff / prevMonthCount * 100);
+                if (percentage > 0)
+                {
+                    momGrowthText = $"↑ {percentage}% Month-over-Month";
+                    isGrowthPositive = true;
+                    isGrowthZero = false;
+                }
+                else if (percentage < 0)
+                {
+                    momGrowthText = $"↓ {Math.Abs(percentage)}% Month-over-Month";
+                    isGrowthPositive = false;
+                    isGrowthZero = false;
+                }
+                else
+                {
+                    momGrowthText = "0% Month-over-Month";
+                    isGrowthPositive = true;
+                    isGrowthZero = true;
+                }
+            }
+
+            return new InstructorCourseAnalyticsResponse
+            {
+                CourseId = courseId,
+                MomGrowthText = momGrowthText,
+                IsGrowthPositive = isGrowthPositive,
+                IsGrowthZero = isGrowthZero,
+                MonthlyStats = months
+            };
         }
 
         public async Task<CourseProgressResponse> GetStudentDetailedProgressForInstructorAsync(int instructorId, int studentId, int courseId, bool isAdmin = false)

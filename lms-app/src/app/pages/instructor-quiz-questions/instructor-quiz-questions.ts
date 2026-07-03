@@ -59,9 +59,12 @@ export class InstructorQuizQuestions implements OnInit {
   protected showUnsavedModal = signal(false);
   private unsavedResolve: ((val: boolean) => void) | null = null;
 
+  protected isLocked = signal(false);
   protected get isDirty(): boolean {
     return this.showQuestionModal;
   }
+
+
 
   async canDeactivate(): Promise<boolean> {
     if (!this.isDirty || this.isSaving()) return true;
@@ -110,6 +113,10 @@ export class InstructorQuizQuestions implements OnInit {
   private readonly SCROLL_SPEED = 12; // max px per frame
 
   ngOnInit() {
+    this.route.queryParams.subscribe(params => {
+      this.isLocked.set(params['locked'] === 'true');
+    });
+
     this.route.parent?.paramMap.subscribe(parentParams => {
       this.courseSlug = parentParams.get('slug') || '';
     });

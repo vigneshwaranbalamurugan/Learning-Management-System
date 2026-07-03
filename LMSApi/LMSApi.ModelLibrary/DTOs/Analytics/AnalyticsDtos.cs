@@ -34,6 +34,8 @@ namespace LMSApi.ModelLibrary.DTOs
         public System.Collections.Generic.List<MonthlyTrendDto> UserGrowth { get; set; } = new();
         public System.Collections.Generic.List<MonthlyTrendDto> EnrollmentTrend { get; set; } = new();
         public System.Collections.Generic.List<RecentActivityDto> RecentActivities { get; set; } = new();
+        public System.Collections.Generic.List<CourseListItemResponse> RecentCourses { get; set; } = new();
+        public System.Collections.Generic.List<UserMetadataDto> RecentUsers { get; set; } = new();
     }
 
     public class RecentEnrollmentDto
@@ -51,6 +53,7 @@ namespace LMSApi.ModelLibrary.DTOs
         public decimal? AverageQuizScore { get; set; }
         public decimal? AverageAssignmentScore { get; set; }
         public System.Collections.Generic.List<RecentEnrollmentDto> RecentEnrollments { get; set; } = new();
+        public System.Collections.Generic.List<InstructorCourseCardResponse> RecentCourses { get; set; } = new();
     }
 
     public class LearnerAnalyticsResponse
@@ -61,5 +64,15 @@ namespace LMSApi.ModelLibrary.DTOs
         public decimal AverageProgressPercentage { get; set; }
         public decimal? AverageQuizScore { get; set; }
         public decimal? AverageAssignmentScore { get; set; }
+        public System.Collections.Generic.List<EnrollmentResponse> MyCourses { get; set; } = new();
+    }
+
+    public class UserMetadataDto
+    {
+        public int Id { get; set; }
+        public string Email { get; set; } = string.Empty;
+        public string FullName { get; set; } = string.Empty;
+        public string Role { get; set; } = string.Empty;
+        public DateTime CreatedAt { get; set; }
     }
 }

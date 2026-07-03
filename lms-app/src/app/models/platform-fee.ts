@@ -23,4 +23,5 @@ export interface PlatformFeeResponse {
   effectiveFrom: string;
   createdByAdminEmail: string;
   createdAt: string;
+  isActive: boolean;
 }

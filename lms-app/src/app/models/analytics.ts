@@ -5,6 +5,7 @@ export interface LearnerAnalytics {
   averageProgressPercentage: number;
   averageQuizScore?: number;
   averageAssignmentScore?: number;
+  myCourses?: any[];
 }
 
 export interface RecentEnrollment {
@@ -52,4 +53,5 @@ export interface InstructorAnalytics {
   averageQuizScore?: number;
   averageAssignmentScore?: number;
   recentEnrollments: RecentEnrollment[];
+  recentCourses?: any[];
 }

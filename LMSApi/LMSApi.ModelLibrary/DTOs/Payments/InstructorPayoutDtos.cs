@@ -234,13 +234,79 @@ namespace LMSApi.ModelLibrary.DTOs
         public List<InstructorPayoutResponse> Payouts { get; set; } = new();
     }
 
+    public class PagedInstructorRevenueSummaryResponse : InstructorRevenueSummaryResponse
+    {
+        public int PageNumber { get; set; }
+        public int PageSize { get; set; }
+        public int TotalPages { get; set; }
+    }
+
     public class AdminRevenueResponse
     {
         public decimal TotalRevenue { get; set; }           // Total received from students
         public decimal TotalPlatformFees { get; set; }      // Sum of platform fees retained
         public decimal TotalInstructorPayouts { get; set; } // Sum paid out to instructors (processed)
+        public decimal TotalPendingPayouts { get; set; }    // Sum of instructor shares not yet paid out
         public int TotalTransactions { get; set; }
         public List<InstructorRevenueSummaryResponse> ByInstructor { get; set; } = new();
         public List<InstructorPayoutResponse> PendingManualReviews { get; set; } = new();
+    }
+
+    // ── Admin: Paginated Transactions ─────────────────────────────────────────
+    public class AdminTransactionResponse
+    {
+        public int Id { get; set; }
+        public string LearnerName { get; set; } = string.Empty;
+        public string LearnerEmail { get; set; } = string.Empty;
+        public string CourseName { get; set; } = string.Empty;
+        public string InstructorName { get; set; } = string.Empty;
+        public decimal GrossAmount { get; set; }         // Total paid by learner
+        public decimal PlatformFeeAmount { get; set; }   // Fee retained by platform
+        public decimal InstructorAmount { get; set; }    // Share going to instructor
+        public string Currency { get; set; } = "INR";
+        public string Status { get; set; } = string.Empty;
+        public string? DisputeStatus { get; set; }
+        public DateTime? PaidAt { get; set; }
+        public DateTime CreatedAt { get; set; }
+        public string? ProviderPaymentId { get; set; }
+    }
+
+    public class PagedAdminTransactionResponse
+    {
+        public IEnumerable<AdminTransactionResponse> Items { get; set; } = [];
+        public decimal TotalRevenue { get; set; }
+        public decimal TotalPlatformFees { get; set; }
+        public decimal TotalInstructorShare { get; set; }
+        public int PageNumber { get; set; }
+        public int PageSize { get; set; }
+        public int TotalCount { get; set; }
+        public int TotalPages { get; set; }
+    }
+
+    // ── Admin: Paginated Payouts ───────────────────────────────────────────────
+    public class AdminPayoutItemResponse
+    {
+        public int Id { get; set; }
+        public string InstructorName { get; set; } = string.Empty;
+        public string InstructorEmail { get; set; } = string.Empty;
+        public string CourseName { get; set; } = string.Empty;
+        public string? LearnerName { get; set; }
+        public decimal Amount { get; set; }
+        public string Status { get; set; } = string.Empty;
+        public string? RazorpayTransferId { get; set; }
+        public string? FailureReason { get; set; }
+        public DateTime CreatedAt { get; set; }
+        public DateTime UpdatedAt { get; set; }
+    }
+
+    public class PagedAdminPayoutResponse
+    {
+        public IEnumerable<AdminPayoutItemResponse> Items { get; set; } = [];
+        public decimal TotalPaidOut { get; set; }
+        public decimal TotalPending { get; set; }
+        public int PageNumber { get; set; }
+        public int PageSize { get; set; }
+        public int TotalCount { get; set; }
+        public int TotalPages { get; set; }
     }
 }

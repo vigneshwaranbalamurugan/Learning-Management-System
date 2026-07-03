@@ -34,26 +34,10 @@ export class InstructorRevenue implements OnInit {
   // Pagination
   protected currentPage = signal(1);
   protected itemsPerPage = signal(10);
-
-  protected filteredPayouts = computed(() => {
-    const data = this.summary()?.payouts || [];
-    const query = this.searchQuery().toLowerCase();
-    const status = this.statusFilter();
-
-    return data.filter(p => {
-      const matchesSearch = (p.courseName?.toLowerCase() || '').includes(query) || (p.studentName?.toLowerCase() || '').includes(query);
-      const matchesStatus = status === 'All' || (p.status?.toLowerCase() || '') === status.toLowerCase();
-      return matchesSearch && matchesStatus;
-    }).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-  });
+  protected totalPages = signal(1);
 
   protected paginatedPayouts = computed(() => {
-    const start = (this.currentPage() - 1) * this.itemsPerPage();
-    return this.filteredPayouts().slice(start, start + this.itemsPerPage());
-  });
-
-  protected totalPages = computed(() => {
-    return Math.ceil(this.filteredPayouts().length / this.itemsPerPage()) || 1;
+    return this.summary()?.payouts || [];
   });
 
   ngOnInit() {
@@ -62,9 +46,13 @@ export class InstructorRevenue implements OnInit {
 
   private fetchRevenue() {
     this.isLoading.set(true);
-    this.revenueService.getInstructorRevenue().subscribe({
+    const search = this.searchQuery().trim() || undefined;
+    const status = this.statusFilter() === 'All' ? undefined : this.statusFilter();
+    
+    this.revenueService.getInstructorRevenue(this.currentPage(), this.itemsPerPage(), search, status).subscribe({
       next: (res) => {
         this.summary.set(res);
+        this.totalPages.set(res.totalPages || 1);
         this.isLoading.set(false);
       },
       error: (err) => {
@@ -76,15 +64,18 @@ export class InstructorRevenue implements OnInit {
 
   protected onPageChange(page: number) {
     this.currentPage.set(page);
+    this.fetchRevenue();
   }
 
   protected onSearchChange(value: string) {
     this.searchQuery.set(value);
     this.currentPage.set(1);
+    this.fetchRevenue();
   }
 
   protected onStatusChange(value: string) {
     this.statusFilter.set(value);
     this.currentPage.set(1);
+    this.fetchRevenue();
   }
 }

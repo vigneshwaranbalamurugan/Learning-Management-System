@@ -19,3 +19,9 @@ export interface InstructorRevenueSummaryResponse {
   totalPayouts: number;
   payouts: InstructorPayoutResponse[];
 }
+
+export interface PagedInstructorRevenueSummaryResponse extends InstructorRevenueSummaryResponse {
+  pageNumber: number;
+  pageSize: number;
+  totalPages: number;
+}

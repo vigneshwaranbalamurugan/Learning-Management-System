@@ -493,6 +493,7 @@ namespace LMSApi.DALLibrary.Repositories
             course.EstimatedDuration = totalCourseDuration;
             await _context.SaveChangesAsync();
         }
+
         public async Task<LMSApi.ModelLibrary.DTOs.CourseSummaryStatsResponse> GetCourseSummaryStatsAsync()
         {
             var courses = await _context.Courses.ToListAsync();
@@ -503,6 +504,17 @@ namespace LMSApi.DALLibrary.Repositories
                 PendingApproval = courses.Count(c => c.Status == CourseStatus.PendingApproval),
                 ArchivedCourses = courses.Count(c => c.Status == CourseStatus.Archived)
             };
+        }
+
+        public async Task SoftDeleteCourseAsync(int courseId)
+        {
+            var course = await _context.Courses.FirstOrDefaultAsync(c => c.Id == courseId);
+            if (course != null)
+            {
+                course.IsDeleted = true;
+                course.DeletedAt = DateTime.UtcNow;
+                await _context.SaveChangesAsync();
+            }
         }
     }
 }

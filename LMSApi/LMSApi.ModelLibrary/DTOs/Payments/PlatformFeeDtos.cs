@@ -22,5 +22,6 @@ namespace LMSApi.ModelLibrary.DTOs
         public DateTime EffectiveFrom { get; set; }
         public string CreatedByAdminEmail { get; set; } = string.Empty;
         public DateTime CreatedAt { get; set; }
+        public bool IsActive { get; set; }
     }
 }

@@ -18,4 +18,19 @@ export class SettingsService {
   setPlatformFee(request: SetPlatformFeeRequest): Observable<PlatformFeeResponse> {
     return this.http.post<PlatformFeeResponse>(`${this.baseUrl}/platform-fees`, request);
   }
+
+  updatePlatformFee(request: SetPlatformFeeRequest): Observable<PlatformFeeResponse> {
+    return this.http.put<PlatformFeeResponse>(`${this.baseUrl}/platform-fees`, request);
+  }
+
+  deletePlatformFee(category: FeeCategory): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}/platform-fees/${category}`);
+  }
+
+  getFeeHistory(category?: FeeCategory): Observable<PlatformFeeResponse[]> {
+    const url = category != null 
+      ? `${this.baseUrl}/platform-fees/history?category=${category}`
+      : `${this.baseUrl}/platform-fees/history`;
+    return this.http.get<PlatformFeeResponse[]>(url);
+  }
 }

@@ -722,9 +722,9 @@ namespace LMSApi.BALLibrary.Services
             return _mapper.Map<IEnumerable<EnrollmentResponse>>(enrollments);
         }
 
-        public async Task<PagedEnrollmentResponse> GetMyEnrollmentsPagedAsync(int userId, int pageNumber, int pageSize)
+        public async Task<PagedEnrollmentResponse> GetMyEnrollmentsPagedAsync(int userId, int pageNumber, int pageSize, string? search = null, string? status = null, string? accessType = null)
         {
-            var (enrollments, totalCount) = await _enrollmentRepository.GetEnrollmentsByUserPagedAsync(userId, pageNumber, pageSize);
+            var (enrollments, totalCount) = await _enrollmentRepository.GetEnrollmentsByUserPagedAsync(userId, pageNumber, pageSize, search, status, accessType);
             
             var enrollmentResponses = _mapper.Map<IEnumerable<EnrollmentResponse>>(enrollments);
 

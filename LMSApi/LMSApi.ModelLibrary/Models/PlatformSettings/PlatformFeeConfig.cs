@@ -34,6 +34,9 @@ namespace LMSApi.ModelLibrary.Models
 
         public DateTime CreatedAt { get; set; }
 
+        /// <summary>Supports soft delete.</summary>
+        public bool IsActive { get; set; } = true;
+
         // Navigation
         public Users CreatedByAdmin { get; set; } = null!;
     }

@@ -41,7 +41,7 @@ export class InstructorCourseLearners implements OnInit {
       .pipe(untilDestroyed(this.destroyRef))
       .subscribe({
         next: (data) => {
-          this.learners.set(data || []);
+          this.learners.set(data?.students || []);
           this.isLoading.set(false);
         },
         error: (err) => {

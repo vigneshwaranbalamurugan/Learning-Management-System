@@ -144,6 +144,12 @@ namespace LMSApi.BALLibrary.Services
             var section = await _sectionRepository.GetByIdAsync(request.CourseSectionId);
 
             var course = await _courseRepository.GetByIdAsync(section.CourseId);
+            
+            var hasNonExpired = await _enrollmentRepository.HasNonExpiredEnrollmentsByCourseAsync(course.Id);
+            if (hasNonExpired)
+            {
+                throw new InvalidOperationException("Cannot add a lesson to a course that has enrolled learners.");
+            }
 
             var courseSections = await _sectionRepository.GetSectionsByCourseAsync(course.Id);
             foreach (var s in courseSections)
@@ -277,6 +283,12 @@ namespace LMSApi.BALLibrary.Services
             // Upload replacement content file for Video and Pdf types
             if (fileStream != null && fileName != null)
             {
+                var hasNonExpired = await _enrollmentRepository.HasNonExpiredEnrollmentsByCourseAsync(course.Id);
+                if (hasNonExpired)
+                {
+                    throw new InvalidOperationException("Cannot update lesson files because the course has enrolled learners.");
+                }
+
                 if (lesson.Type == LessonType.Video)
                 {
                     var uploadResult = await _uploadService.UploadLessonVideoAsync(
@@ -308,6 +320,13 @@ namespace LMSApi.BALLibrary.Services
 
             var section = await _sectionRepository.GetByIdAsync(lesson.CourseSectionId);
             var course = await _courseRepository.GetByIdAsync(section.CourseId);
+
+            var hasNonExpired = await _enrollmentRepository.HasNonExpiredEnrollmentsByCourseAsync(course.Id);
+            if (hasNonExpired)
+            {
+                throw new InvalidOperationException("Cannot delete a lesson from a course that has enrolled learners.");
+            }
+
             await _lessonRepository.DeleteAsync(id);
 
             await _courseRepository.UpdateCourseDurationAsync(course.Id);

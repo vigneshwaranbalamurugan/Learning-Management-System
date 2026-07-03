@@ -15,7 +15,11 @@ export class ProgressService {
     return this.http.get<CourseProgressResponse>(`${this.baseUrl}/Progress/course/${courseId}`);
   }
 
-  getStudentsProgress(courseId: number): Observable<any[]> {
-    return this.http.get<any[]>(`${this.baseUrl}/Progress/course/${courseId}/students`);
+  getStudentsProgress(courseId: number): Observable<any> {
+    return this.http.get<any>(`${this.baseUrl}/Progress/course/${courseId}/students`);
+  }
+
+  getCourseAnalytics(courseId: number): Observable<any> {
+    return this.http.get<any>(`${this.baseUrl}/Progress/course/${courseId}/analytics`);
   }
 }

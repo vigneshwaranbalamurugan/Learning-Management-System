@@ -28,10 +28,12 @@ namespace LMSApi.Tests.Services
             
             var sectionRepository = new CourseSectionRepository(DbContext);
             var courseRepository = new CourseRepository(DbContext);
+            var enrollmentRepository = new EnrollmentRepository(DbContext);
 
             _sectionService = new CourseSectionService(
                 sectionRepository,
                 courseRepository,
+                enrollmentRepository,
                 Mapper,
                 _mockLogger.Object
             );

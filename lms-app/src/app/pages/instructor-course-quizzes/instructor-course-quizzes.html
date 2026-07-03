@@ -5,6 +5,7 @@
       <p class="text-xs text-gray-500 mt-0.5">Assess student knowledge by creating quizzes and editing questions.</p>
     </div>
     <app-button 
+      *ngIf="!course.hasNonExpiredEnrollments"
       (click)="openAddQuiz()" 
       variant="primary"
       customClass="!px-4 !py-2 w-full sm:!w-auto text-xs font-semibold shadow-sm transition">
@@ -45,9 +46,10 @@
                 (click)="editQuiz(quiz.id)" 
                 variant="outline"
                 customClass="!px-3.5 !py-1.5 !w-auto text-xs font-semibold !h-auto">
-                Manage Questions
+                {{ course.hasNonExpiredEnrollments ? 'View Questions' : 'Manage Questions' }}
               </app-button>
               <app-button 
+                *ngIf="!course.hasNonExpiredEnrollments"
                 (click)="confirmDeleteQuiz(quiz.id)" 
                 variant="danger"
                 customClass="!px-3 !py-1.5 !w-auto text-xs font-semibold !h-auto">
@@ -72,6 +74,12 @@
   <div *ngIf="showQuizModal()" class="fixed inset-0 z-[1000] bg-slate-950/40 backdrop-blur-xs flex items-center justify-center p-4">
     <div class="bg-white rounded-2xl border border-gray-150 p-6 w-full max-w-2xl shadow-xl space-y-4 max-h-[90vh] overflow-y-auto">
       <h3 class="text-base font-bold text-slate-900">{{ editingQuizId ? 'Edit Quiz' : 'Create New Quiz' }}</h3>
+      
+      <div *ngIf="course.hasNonExpiredEnrollments" class="bg-red-50 text-red-600 p-3 rounded-lg text-xs font-semibold border border-red-100 flex items-center gap-2">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+        Course has active learners. Only Title and Description can be updated.
+      </div>
+      
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
         <div>
           <app-dropdown
@@ -79,6 +87,7 @@
             [value]="quizSectionIdStr"
             (valueChange)="setQuizSectionIdStr($event)"
             [options]="sectionOptions"
+            [disabled]="course.hasNonExpiredEnrollments === true"
             placeholder="Select Section" />
         </div>
         <div>
@@ -97,6 +106,7 @@
             label="Time Limit (HH:MM:SS)"
             [value]="quizTimeLimit"
             (valueChange)="quizTimeLimit = $event"
+            [disabled]="course.hasNonExpiredEnrollments === true"
             placeholder="00:30:00" />
         </div>
         <div>
@@ -104,21 +114,24 @@
             label="Passing Percentage (%)"
             type="number"
             [value]="quizPassingPercentageStr"
-            (valueChange)="quizPassingPercentageStr = $event" />
+            (valueChange)="quizPassingPercentageStr = $event"
+            [disabled]="course.hasNonExpiredEnrollments === true" />
         </div>
         <div>
           <app-form-input
             label="Max Attempts Allowed"
             type="number"
             [value]="quizMaxAttemptsStr"
-            (valueChange)="quizMaxAttemptsStr = $event" />
+            (valueChange)="quizMaxAttemptsStr = $event"
+            [disabled]="course.hasNonExpiredEnrollments === true" />
         </div>
         <div>
           <app-form-input
             label="Deadline in Days (From Enrollment)"
             type="number"
             [value]="quizDeadlineInDaysStr"
-            (valueChange)="quizDeadlineInDaysStr = $event" />
+            (valueChange)="quizDeadlineInDaysStr = $event"
+            [disabled]="course.hasNonExpiredEnrollments === true" />
         </div>
       </div>
       <div class="flex justify-end gap-2 pt-2">

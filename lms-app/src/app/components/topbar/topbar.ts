@@ -74,6 +74,8 @@ export class Topbar implements OnInit, OnDestroy {
       this.pageTitle.set('Progress Tracking');
     } else if (url.includes('/notifications')) {
       this.pageTitle.set('Notifications');
+    } else if (url.includes('/settings')) {
+      this.pageTitle.set('Platform Settings');
     } else if (url.includes('/feedback')) {
       this.pageTitle.set('Send Feedback');
     } else {
@@ -101,4 +103,5 @@ export class Topbar implements OnInit, OnDestroy {
     const count = this.unreadCount();
     return count > 99 ? '99+' : count.toString();
   }
+
 }

@@ -18,7 +18,7 @@ namespace LMSApi.DALLibrary.Repositories
         public async Task<PlatformFeeConfig?> GetActiveConfigAsync(FeeCategory category, DateTime at)
         {
             return await _context.PlatformFeeConfigs
-                .Where(f => f.FeeCategory == category && f.EffectiveFrom <= at)
+                .Where(f => f.FeeCategory == category && f.EffectiveFrom <= at && f.IsActive)
                 .OrderByDescending(f => f.EffectiveFrom)
                 .FirstOrDefaultAsync();
         }
@@ -26,7 +26,7 @@ namespace LMSApi.DALLibrary.Repositories
         public async Task<PlatformFeeConfig?> GetCurrentAsync(FeeCategory category)
         {
             return await _context.PlatformFeeConfigs
-                .Where(f => f.FeeCategory == category)
+                .Where(f => f.FeeCategory == category && f.IsActive)
                 .OrderByDescending(f => f.EffectiveFrom)
                 .FirstOrDefaultAsync();
         }

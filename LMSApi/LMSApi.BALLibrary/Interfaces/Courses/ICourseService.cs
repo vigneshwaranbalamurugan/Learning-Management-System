@@ -20,6 +20,7 @@ namespace LMSApi.BALLibrary.Interfaces
             Stream? thumbnailStream = null, string? thumbnailFileName = null,
             Stream? videoStream = null, string? videoFileName = null);
         Task DeleteCourseAsync(int id);
+        Task SoftDeleteCourseAsync(int id);
         Task<CourseResponse> PublishCourseAsync(int id, PublishCourseRequest request);
         Task<CourseResponse> ArchiveCourseAsync(int id, ArchiveCourseRequest request);
         Task<IEnumerable<CourseResponse>> GetPendingCoursesAsync();
