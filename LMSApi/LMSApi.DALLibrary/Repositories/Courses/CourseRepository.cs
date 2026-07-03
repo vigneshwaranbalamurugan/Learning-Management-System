@@ -28,8 +28,6 @@ namespace LMSApi.DALLibrary.Repositories
             var queryable = _context.Courses
                 .Include(c => c.Category)
                 .Include(c => c.Language)
-                .Include(c => c.Enrollments)
-                .Include(c => c.Reviews)
                 .Where(c => c.InstructorId == instructorId)
                 .AsQueryable();
 
@@ -89,10 +87,20 @@ namespace LMSApi.DALLibrary.Repositories
                 queryable = queryable.OrderByDescending(c => c.CreatedAt);
             }
 
-            var courses = await queryable
+            var projected = await queryable
                 .Skip((query.PageNumber - 1) * query.PageSize)
                 .Take(query.PageSize)
+                .Select(c => new 
+                {
+                    Course = c,
+                    EnrolledCount = c.Enrollments.Count()
+                })
                 .ToListAsync();
+
+            var courses = projected.Select(p => {
+                p.Course.ProjectedEnrolledCount = p.EnrolledCount;
+                return p.Course;
+            }).ToList();
 
             return (courses, totalCount);
         }
@@ -123,10 +131,6 @@ namespace LMSApi.DALLibrary.Repositories
                 .Include(c => c.Language)
                 .Include(c => c.Instructor)
                     .ThenInclude(i => i.UserProfile)
-                .Include(c => c.Sections)
-                    .ThenInclude(s => s.Lessons)
-                .Include(c => c.Reviews)
-                .Include(c => c.Enrollments)
                 .Where(c => c.Status == CourseStatus.Published)
                 .AsQueryable();
 
@@ -236,10 +240,22 @@ namespace LMSApi.DALLibrary.Repositories
                 queryable = queryable.OrderByDescending(c => c.PublishedAt);
             }
 
-            var courses = await queryable
+            var projected = await queryable
                 .Skip((query.PageNumber - 1) * query.PageSize)
                 .Take(query.PageSize)
+                .Select(c => new 
+                {
+                    Course = c,
+                    EnrolledCount = c.Enrollments.Count(),
+                    LessonsCount = c.Sections.SelectMany(s => s.Lessons).Count()
+                })
                 .ToListAsync();
+
+            var courses = projected.Select(p => {
+                p.Course.ProjectedEnrolledCount = p.EnrolledCount;
+                p.Course.ProjectedLessonsCount = p.LessonsCount;
+                return p.Course;
+            }).ToList();
 
             return (courses, totalCount);
         }
@@ -261,9 +277,6 @@ namespace LMSApi.DALLibrary.Repositories
                 .Include(c => c.Language)
                 .Include(c => c.Instructor)
                     .ThenInclude(i => i.UserProfile)
-                .Include(c => c.Enrollments)
-                .Include(c => c.Sections)
-                    .ThenInclude(s => s.Lessons)
                 .Where(c => c.Status == CourseStatus.PendingApproval)
                 .AsQueryable();
 
@@ -277,10 +290,22 @@ namespace LMSApi.DALLibrary.Repositories
             var totalCount = await queryable.CountAsync();
             queryable = queryable.OrderByDescending(c => c.CreatedAt);
 
-            var courses = await queryable
+            var projected = await queryable
                 .Skip((query.PageNumber - 1) * query.PageSize)
                 .Take(query.PageSize)
+                .Select(c => new 
+                {
+                    Course = c,
+                    EnrolledCount = c.Enrollments.Count(),
+                    LessonsCount = c.Sections.SelectMany(s => s.Lessons).Count()
+                })
                 .ToListAsync();
+
+            var courses = projected.Select(p => {
+                p.Course.ProjectedEnrolledCount = p.EnrolledCount;
+                p.Course.ProjectedLessonsCount = p.LessonsCount;
+                return p.Course;
+            }).ToList();
 
             return (courses, totalCount);
         }
@@ -293,9 +318,6 @@ namespace LMSApi.DALLibrary.Repositories
                 .Include(c => c.Language)
                 .Include(c => c.Instructor)
                     .ThenInclude(i => i.UserProfile)
-                .Include(c => c.Enrollments)
-                .Include(c => c.Sections)
-                    .ThenInclude(s => s.Lessons)
                 .AsQueryable();
 
             if (!string.IsNullOrWhiteSpace(query.Search))
@@ -313,10 +335,22 @@ namespace LMSApi.DALLibrary.Repositories
             var totalCount = await queryable.CountAsync();
             queryable = queryable.OrderByDescending(c => c.CreatedAt);
 
-            var courses = await queryable
+            var projected = await queryable
                 .Skip((query.PageNumber - 1) * query.PageSize)
                 .Take(query.PageSize)
+                .Select(c => new 
+                {
+                    Course = c,
+                    EnrolledCount = c.Enrollments.Count(),
+                    LessonsCount = c.Sections.SelectMany(s => s.Lessons).Count()
+                })
                 .ToListAsync();
+
+            var courses = projected.Select(p => {
+                p.Course.ProjectedEnrolledCount = p.EnrolledCount;
+                p.Course.ProjectedLessonsCount = p.LessonsCount;
+                return p.Course;
+            }).ToList();
 
             return (courses, totalCount);
         }
@@ -370,6 +404,29 @@ namespace LMSApi.DALLibrary.Repositories
                 .FirstOrDefaultAsync();
 
             return stats ?? new LMSApi.ModelLibrary.DTOs.CourseRatingStatsDto { AverageRating = 0.0, TotalReviews = 0 };
+        }
+
+        public async Task<Dictionary<int, LMSApi.ModelLibrary.DTOs.CourseRatingStatsDto>> GetRatingStatsBatchAsync(IEnumerable<int> courseIds)
+        {
+            var ids = courseIds.ToList();
+            var dict = await _context.Reviews
+                .Where(r => ids.Contains(r.CourseId))
+                .GroupBy(r => r.CourseId)
+                .Select(g => new 
+                { 
+                    CourseId = g.Key, 
+                    Avg = g.Average(r => r.Rating), 
+                    Count = g.Count() 
+                })
+                .ToDictionaryAsync(
+                    x => x.CourseId,
+                    x => new LMSApi.ModelLibrary.DTOs.CourseRatingStatsDto 
+                    { 
+                        AverageRating = (double)x.Avg, 
+                        TotalReviews = x.Count 
+                    }
+                );
+            return dict;
         }
 
         public async Task<IEnumerable<CourseLanguages>> GetAllLanguagesAsync()

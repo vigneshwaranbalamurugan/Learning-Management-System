@@ -63,15 +63,14 @@ export class InstructorCourseAnalytics implements OnInit {
 
   private computeStats(students: any[]) {
     const now = new Date();
-    const months: { month: string; year: number; monthNum: number; count: number; isCurrent: boolean }[] = [];
+    const months: { month: string; matchKey: string; count: number; isCurrent: boolean }[] = [];
 
     // Initialize last 6 months
     for (let i = 5; i >= 0; i--) {
       const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
       months.push({
-        month: d.toLocaleString('default', { month: 'short' }),
-        year: d.getFullYear(),
-        monthNum: d.getMonth(),
+        month: d.toLocaleString('en-IN', { month: 'short', timeZone: 'Asia/Kolkata' }),
+        matchKey: d.toLocaleString('en-IN', { month: 'short', year: 'numeric', timeZone: 'Asia/Kolkata' }),
         count: 0,
         isCurrent: i === 0
       });
@@ -81,10 +80,9 @@ export class InstructorCourseAnalytics implements OnInit {
     students.forEach(student => {
       if (!student.enrolledAt) return;
       const enrolledDate = new Date(student.enrolledAt);
-      const enrolledMonth = enrolledDate.getMonth();
-      const enrolledYear = enrolledDate.getFullYear();
+      const matchKey = enrolledDate.toLocaleString('en-IN', { month: 'short', year: 'numeric', timeZone: 'Asia/Kolkata' });
 
-      const match = months.find(m => m.monthNum === enrolledMonth && m.year === enrolledYear);
+      const match = months.find(m => m.matchKey === matchKey);
       if (match) {
         match.count++;
       }

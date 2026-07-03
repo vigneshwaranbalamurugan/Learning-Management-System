@@ -35,5 +35,11 @@ namespace LMSApi.ModelLibrary.Models
         public ICollection<CourseBatch> Batches { get; set; } = new List<CourseBatch>();
         public ICollection<Reviews> Reviews { get; set; } = new List<Reviews>();
         public ICollection<Enrollments> Enrollments { get; set; } = new List<Enrollments>();
+
+        [NotMapped]
+        public int? ProjectedEnrolledCount { get; set; }
+        
+        [NotMapped]
+        public int? ProjectedLessonsCount { get; set; }
     }
 }

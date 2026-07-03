@@ -139,6 +139,58 @@ namespace LMSApi.ModelLibrary.DTOs
         public bool IsWishlisted { get; set; }
     }
 
+    public class CoursePreviewResponse : CourseResponse
+    {
+        public string? IntroVideoUrl { get; set; }
+        public string? Requirements { get; set; }
+        public string? LearningOutcomes { get; set; }
+        public TimeSpan EstimatedDuration { get; set; }
+        public IEnumerable<CourseSectionPreviewResponse> Sections { get; set; } = [];
+
+        public IEnumerable<BatchSummaryResponse> AvailableBatches { get; set; } = [];
+
+        public bool IsWishlisted { get; set; }
+    }
+
+    /// <summary>Used by GET /Courses/my-courses — Instructor dashboard card</summary>
+    public class InstructorCourseCardResponse
+    {
+        public int Id { get; set; }
+        public string Title { get; set; }
+        public string Slug { get; set; }
+        public string? ThumbnailUrl { get; set; }
+        public CourseStatus Status { get; set; }
+        public double AverageRating { get; set; }
+        public int TotalReviews { get; set; }
+        public int EnrolledCount { get; set; }
+        public DateTime CreatedAt { get; set; }
+        public DateTime UpdatedAt { get; set; }
+    }
+
+    /// <summary>Used by admin/public paged listing — course table/card without heavy navigation</summary>
+    public class CourseListItemResponse
+    {
+        public int Id { get; set; }
+        public string Title { get; set; }
+        public string Slug { get; set; }
+        public string? ThumbnailUrl { get; set; }
+        public string CategoryName { get; set; }
+        public string InstructorName { get; set; }
+        public string LanguageName { get; set; }
+        public CourseLevel Level { get; set; }
+        public CourseStatus Status { get; set; }
+        public decimal? Price { get; set; }
+        public bool IsPremium { get; set; }
+        public CourseAccessType CourseAccessType { get; set; }
+        public double AverageRating { get; set; }
+        public int TotalReviews { get; set; }
+        public int LessonsCount { get; set; }
+        public int EnrolledCount { get; set; }
+        public TimeSpan EstimatedDuration { get; set; }
+        public bool HasCertificate { get; set; }
+        public DateTime CreatedAt { get; set; }
+    }
+
     public class CourseSummaryStatsResponse
     {
         public int TotalCourses { get; set; }
@@ -150,6 +202,24 @@ namespace LMSApi.ModelLibrary.DTOs
     public class PagedCourseResponse
     {
         public IEnumerable<CourseResponse> Courses { get; set; } = new List<CourseResponse>();
+        public int TotalCount { get; set; }
+        public int PageNumber { get; set; }
+        public int PageSize { get; set; }
+        public int TotalPages { get; set; }
+    }
+
+    public class PagedInstructorCourseResponse
+    {
+        public IEnumerable<InstructorCourseCardResponse> Courses { get; set; } = new List<InstructorCourseCardResponse>();
+        public int TotalCount { get; set; }
+        public int PageNumber { get; set; }
+        public int PageSize { get; set; }
+        public int TotalPages { get; set; }
+    }
+
+    public class PagedCourseListResponse
+    {
+        public IEnumerable<CourseListItemResponse> Courses { get; set; } = new List<CourseListItemResponse>();
         public int TotalCount { get; set; }
         public int PageNumber { get; set; }
         public int PageSize { get; set; }

@@ -240,42 +240,19 @@
           [class]="'absolute top-3 left-3 px-2.5 py-1 rounded-lg text-[10px] font-bold tracking-wider uppercase border shadow-sm ' + getStatusBadgeClass(course.status)">
           {{ getStatusString(course.status) }}
         </span>
-
-        <!-- Price Badge (optional overlay) -->
-        <span
-          class="absolute bottom-3 right-3 bg-slate-900/80 backdrop-blur-xs text-white px-2 py-1 rounded-lg text-xs font-bold">
-          {{ course.isPremium ? '₹' + course.price : 'Free' }}
-        </span>
       </div>
 
       <!-- Middle Content -->
       <div class="p-4 flex-1 flex flex-col justify-between space-y-2.5">
         <div>
-          <!-- Title & Badges -->
-          <div class="flex flex-wrap gap-1.5 mb-2">
-            <span class="bg-slate-100 text-slate-700 text-[10px] font-bold px-2 py-0.5 rounded">
-              {{ getCategoryName(course.categoryId) }}
-            </span>
-            <span [class]="'text-[10px] font-bold px-2 py-0.5 rounded ' + getLevelBadgeClass(course.level)">
-              {{ getLevelName(course.level) }}
-            </span>
-          </div>
-
           <h3
-            class="text-base font-bold text-slate-800 line-clamp-1 group-hover:text-[#1C1C7B] transition-colors duration-200">
+            class="text-base font-bold text-slate-800 line-clamp-1 group-hover:text-[#1C1C7B] transition-colors duration-200 mt-2">
             {{ course.title }}
           </h3>
-          <p class="text-gray-500 text-xs mt-1 line-clamp-2 leading-relaxed">
-            {{ course.description || 'No description provided.' }}
-          </p>
         </div>
 
         <!-- Course Details Indicators (Grid of counters) -->
-        <div class="grid grid-cols-3 gap-2 py-2 border-y border-gray-100 text-center shrink-0">
-          <div class="flex flex-col">
-            <span class="text-xs font-bold text-slate-700">{{ course.lessonsCount || 0 }}</span>
-            <span class="text-[9px] text-gray-400 font-medium uppercase tracking-wider mt-0.5">Lessons</span>
-          </div>
+        <div class="grid grid-cols-2 gap-2 py-2 border-y border-gray-100 text-center shrink-0">
           <div class="flex flex-col border-x border-gray-100">
             <span class="text-xs font-bold text-slate-700">{{ course.enrolledCount || 0 }}</span>
             <span class="text-[9px] text-gray-400 font-medium uppercase tracking-wider mt-0.5">Students</span>

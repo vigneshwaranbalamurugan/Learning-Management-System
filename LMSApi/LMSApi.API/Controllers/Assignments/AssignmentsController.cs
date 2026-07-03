@@ -42,6 +42,19 @@ namespace LMSApi.API.Controllers
             _configuration = configuration;
         }
 
+        /// <summary>Get paginated assignments for the authenticated learner across all enrolled courses.</summary>
+        [Authorize]
+        [HttpGet("my-assignments")]
+        public async Task<ActionResult<PagedLearnerAssignmentResponse>> GetMyAssignments(
+            [FromQuery] int pageNumber = 1, 
+            [FromQuery] int pageSize = 10, 
+            [FromQuery] string? searchQuery = null)
+        {
+            var userId = User.GetUserId();
+            var result = await _assignmentService.GetLearnerAssignmentsAsync(userId, pageNumber, pageSize, searchQuery);
+            return Ok(result);
+        }
+
         /// <summary>List all assignments in a section.</summary>
         [Authorize]
         [HttpGet("section/{sectionId:int}")]

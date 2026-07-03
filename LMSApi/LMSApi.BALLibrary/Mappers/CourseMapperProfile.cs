@@ -42,11 +42,38 @@ namespace LMSApi.BALLibrary.Mappers
                 .ForMember(dest => dest.Status, opt => opt.Ignore()); // set in service
                 // CourseAccessType and DefaultAssignmentDeadlineDays map by convention
 
+            CreateMap<Courses, InstructorCourseCardResponse>()
+                .ForMember(dest => dest.Slug, opt => opt.MapFrom(src => src.slug))
+                .ForMember(dest => dest.EnrolledCount, opt => opt.MapFrom(src => src.ProjectedEnrolledCount ?? (src.Enrollments != null ? src.Enrollments.Count : 0)));
+
+            CreateMap<Courses, CourseListItemResponse>()
+                .ForMember(dest => dest.Slug, opt => opt.MapFrom(src => src.slug))
+                .ForMember(dest => dest.CategoryName, opt => opt.MapFrom(src => src.Category != null ? src.Category.Name : string.Empty))
+                .ForMember(dest => dest.LanguageName, opt => opt.MapFrom(src => src.Language != null ? src.Language.Name : string.Empty))
+                .ForMember(dest => dest.InstructorName, opt => opt.MapFrom(src => src.Instructor != null && src.Instructor.UserProfile != null ? $"{src.Instructor.UserProfile.FirstName} {src.Instructor.UserProfile.LastName}".Trim() : string.Empty))
+                .ForMember(dest => dest.LessonsCount, opt => opt.MapFrom(src => src.ProjectedLessonsCount ?? (src.Sections != null ? src.Sections.SelectMany(s => s.Lessons).Count() : 0)))
+                .ForMember(dest => dest.EnrolledCount, opt => opt.MapFrom(src => src.ProjectedEnrolledCount ?? (src.Enrollments != null ? src.Enrollments.Count : 0)))
+                .ForMember(dest => dest.HasCertificate, opt => opt.MapFrom(src => true));
+
+            CreateMap<Courses, CoursePreviewResponse>()
+                .ForMember(dest => dest.Slug, opt => opt.MapFrom(src => src.slug))
+                .ForMember(dest => dest.CategoryName, opt => opt.MapFrom(src => src.Category != null ? src.Category.Name : string.Empty))
+                .ForMember(dest => dest.LanguageName, opt => opt.MapFrom(src => src.Language != null ? src.Language.Name : string.Empty))
+                .ForMember(dest => dest.InstructorName, opt => opt.MapFrom(src => src.Instructor != null && src.Instructor.UserProfile != null ? $"{src.Instructor.UserProfile.FirstName} {src.Instructor.UserProfile.LastName}".Trim() : string.Empty))
+                .ForMember(dest => dest.InstructorEmail, opt => opt.MapFrom(src => src.Instructor != null ? src.Instructor.Email : string.Empty))
+                .ForMember(dest => dest.InstructorAvatarUrl, opt => opt.MapFrom(src => src.Instructor != null && src.Instructor.UserProfile != null ? src.Instructor.UserProfile.ProfilePictureUrl : string.Empty))
+                .ForMember(dest => dest.LessonsCount, opt => opt.MapFrom(src => src.Sections != null ? src.Sections.SelectMany(s => s.Lessons).Count() : 0))
+                .ForMember(dest => dest.HasCertificate, opt => opt.MapFrom(src => true))
+                .ForMember(dest => dest.Sections, opt => opt.MapFrom(src => src.Sections))
+                .ForMember(dest => dest.AvailableBatches, opt => opt.MapFrom(src => src.Batches));
+
             // ─── Section ─────────────────────────────────────────────────────
             CreateMap<CourseSection, SectionResponse>();
             CreateMap<CreateSectionRequest, CourseSection>();
             CreateMap<UpdateSectionRequest, CourseSection>()
                 .ForAllMembers(opts => opts.Condition((src, dest, srcMember) => srcMember != null));
+            
+            CreateMap<CourseSection, CourseSectionPreviewResponse>();
 
             // ─── Lesson ──────────────────────────────────────────────────────
             CreateMap<Lessons, LessonResponse>();
@@ -55,6 +82,11 @@ namespace LMSApi.BALLibrary.Mappers
             CreateMap<CreateLessonRequest, Lessons>();
             CreateMap<UpdateLessonRequest, Lessons>()
                 .ForAllMembers(opts => opts.Condition((src, dest, srcMember) => srcMember != null));
+
+            CreateMap<Lessons, CourseLessonPreviewResponse>()
+                .ForMember(dest => dest.ContentUrl, opt => opt.MapFrom(src => src.IsPreview ? src.ContentUrl : null))
+                .ForMember(dest => dest.Content, opt => opt.MapFrom(src => src.IsPreview ? src.Content : null))
+                .ForMember(dest => dest.Resources, opt => opt.MapFrom(src => src.IsPreview ? src.Resources : new List<LessonResources>()));
 
             // ─── Progress ────────────────────────────────────────────────────
             CreateMap<StudentProgress, LessonProgressResponse>()

@@ -6,6 +6,7 @@ import { forkJoin } from 'rxjs';
 import { AnalyticsService } from '@services/analytics.service';
 import { CourseService } from '@services/course.service';
 import { Router } from '@angular/router';
+import { CourseStatus } from '@enums/course-status.enum';
 
 @Component({
   selector: 'app-instructor-dashboard',
@@ -14,6 +15,7 @@ import { Router } from '@angular/router';
   templateUrl: './instructor-dashboard.html'
 })
 export class InstructorDashboard implements OnInit {
+  protected CourseStatus = CourseStatus;
   protected authService = inject(AuthService);
   private courseService = inject(CourseService);
   private analyticsService = inject(AnalyticsService);
@@ -77,12 +79,29 @@ export class InstructorDashboard implements OnInit {
   protected getStatusLabel(status: number | string): string {
     const statusNum = typeof status === 'string' ? parseInt(status, 10) : status;
     switch (statusNum) {
-      case 1: return 'Draft';
-      case 2: return 'Published';
-      case 3: return 'Archived';
-      case 4: return 'Pending Approval';
-      case 5: return 'Rejected';
+      case CourseStatus.Draft: return 'Draft';
+      case CourseStatus.Published: return 'Published';
+      case CourseStatus.Archived: return 'Archived';
+      case CourseStatus.PendingApproval: return 'Pending Approval';
+      case CourseStatus.Rejected: return 'Rejected';
       default: return String(status);
+    }
+  }
+
+  protected getStatusClasses(statusCode: number): string {
+    switch (statusCode) {
+      case CourseStatus.Draft:
+        return 'bg-gray-100 text-gray-600';
+      case CourseStatus.Published:
+        return 'bg-emerald-50 text-emerald-600';
+      case CourseStatus.Archived:
+        return 'bg-slate-100 text-slate-600';
+      case CourseStatus.PendingApproval:
+        return 'bg-amber-50 text-amber-600';
+      case CourseStatus.Rejected:
+        return 'bg-rose-50 text-rose-600';
+      default:
+        return 'bg-gray-100 text-gray-600';
     }
   }
 
@@ -109,6 +128,7 @@ export class InstructorDashboard implements OnInit {
           title: c.title,
           students: 0,
           status: this.getStatusLabel(c.status),
+          statusCode: typeof c.status === 'string' ? parseInt(c.status, 10) : c.status,
           rating: c.averageRating
         }));
         this.courses.set(mapped);

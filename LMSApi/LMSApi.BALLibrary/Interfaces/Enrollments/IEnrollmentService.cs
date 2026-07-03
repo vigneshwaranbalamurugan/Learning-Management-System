@@ -16,5 +16,8 @@ namespace LMSApi.BALLibrary.Interfaces
 
         /// <summary>Returns all enrollments for the calling student.</summary>
         Task<IEnumerable<EnrollmentResponse>> GetMyEnrollmentsAsync(int userId);
+
+        /// <summary>Returns paginated enrollments for the calling student.</summary>
+        Task<PagedEnrollmentResponse> GetMyEnrollmentsPagedAsync(int userId, int pageNumber, int pageSize);
     }
 }

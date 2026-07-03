@@ -7,5 +7,6 @@ namespace LMSApi.DALLibrary.Interfaces
     {
         Task<IEnumerable<Assignments>> GetAssignmentsBySectionAsync(int sectionId);
         Task<IEnumerable<InstructorAssignmentSummaryDto>> GetInstructorAssignmentsAsync(int instructorId);
+        Task<PagedLearnerAssignmentResponse> GetLearnerAssignmentsAsync(int userId, int pageNumber, int pageSize, string? searchQuery = null);
     }
 }

@@ -45,7 +45,7 @@ export class ReviewsPage implements OnInit {
   private loadEligibleCourses(): void {
     this.isLoading.set(true);
 
-    this.enrollmentService.getMyEnrollments()
+    this.enrollmentService.getAllMyEnrollments()
       .pipe(untilDestroyed(this.destroyRef))
       .subscribe({
         next: (enrollments) => {

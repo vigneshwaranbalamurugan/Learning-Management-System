@@ -5,11 +5,11 @@ namespace LMSApi.BALLibrary.Interfaces
     public interface ICourseService
     {
         Task<IEnumerable<CourseResponse>> GetAllCoursesAsync();
-        Task<PagedCourseResponse> GetAllCoursesPagedAsync(CourseSearchQuery query);
-        Task<PagedCourseResponse> GetPublishedCoursesPagedAsync(
+        Task<PagedCourseListResponse> GetAllCoursesPagedAsync(CourseSearchQuery query);
+        Task<PagedCourseListResponse> GetPublishedCoursesPagedAsync(
             CourseSearchQuery query, int? currentUserId = null);
-        Task<CourseDetailsResponse> GetCourseByIdAsync(int id, int? currentUserId = null, bool isAdmin = false);
-        Task<CourseDetailsResponse> GetCourseBySlugAsync(string slug, int? currentUserId = null, bool isAdmin = false);
+        Task<CourseResponse> GetCourseByIdAsync(int id, int? currentUserId = null, bool isAdmin = false);
+        Task<CourseResponse> GetCourseBySlugAsync(string slug, int? currentUserId = null, bool isAdmin = false);
         Task<CourseResponse> CreateCourseAsync(
             int instructorId,
             CreateCourseRequest request,
@@ -23,10 +23,10 @@ namespace LMSApi.BALLibrary.Interfaces
         Task<CourseResponse> PublishCourseAsync(int id, PublishCourseRequest request);
         Task<CourseResponse> ArchiveCourseAsync(int id, ArchiveCourseRequest request);
         Task<IEnumerable<CourseResponse>> GetPendingCoursesAsync();
-        Task<PagedCourseResponse> GetPendingCoursesPagedAsync(CourseSearchQuery query);
+        Task<PagedCourseListResponse> GetPendingCoursesPagedAsync(CourseSearchQuery query);
         Task<CourseResponse> ReviewCourseAsync(int id, ReviewCourseRequest request);
         Task<IEnumerable<CourseResponse>> GetCoursesByInstructorAsync(int instructorId);
-        Task<PagedCourseResponse> GetCoursesByInstructorPagedAsync(int instructorId, CourseSearchQuery query);
+        Task<PagedInstructorCourseResponse> GetCoursesByInstructorPagedAsync(int instructorId, CourseSearchQuery query);
         Task<IEnumerable<CourseResponse>> GetCoursesByCategoryAsync(int categoryId);
         Task<CourseSummaryStatsResponse> GetCourseSummaryStatsAsync();
         Task<FiltersMetadataResponse> GetFiltersMetadataAsync();

@@ -10,6 +10,14 @@ export class AssignmentService {
   private http = inject(HttpClient);
   private readonly baseUrl = environment.apiUrl;
 
+  getMyAssignments(pageNumber: number = 1, pageSize: number = 10, searchQuery: string = ''): Observable<any> {
+    let params = `?pageNumber=${pageNumber}&pageSize=${pageSize}`;
+    if (searchQuery) {
+      params += `&searchQuery=${encodeURIComponent(searchQuery)}`;
+    }
+    return this.http.get<any>(`${this.baseUrl}/Assignments/my-assignments${params}`);
+  }
+
   getAssignmentsBySection(sectionId: number): Observable<any[]> {
     return this.http.get<any[]>(`${this.baseUrl}/Assignments/section/${sectionId}`);
   }

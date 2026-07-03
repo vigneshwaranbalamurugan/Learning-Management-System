@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule, Router } from '@angular/router';
 import { ToastService } from '@services/toast.service';
-import { CourseResponse, CategoryResponse } from '@models/course';
+import { CourseResponse, CategoryResponse, InstructorCourseCardResponse } from '@models/course';
 import { CourseLevel } from '../../enums/course-level.enum';
 import { PublishStatus } from '../../enums/publish-status.enum';
 import { CourseStatus } from '../../enums/course-status.enum';
@@ -27,7 +27,7 @@ export class InstructorCourses implements OnInit {
   private destroyRef = inject(DestroyRef);
 
   // States
-  protected courses = signal<CourseResponse[]>([]);
+  protected courses = signal<InstructorCourseCardResponse[]>([]);
   protected categories = signal<CategoryResponse[]>([]);
   protected isLoading = signal(true);
   
@@ -37,13 +37,13 @@ export class InstructorCourses implements OnInit {
   protected totalCount = signal(0);
   protected totalPages = signal(0);
   
-  protected allCoursesForStats = signal<CourseResponse[]>([]);
+  protected allCoursesForStats = signal<InstructorCourseCardResponse[]>([]);
   
   // Confirmation Modal state
   protected showArchiveModal = false;
   protected showPublishModal=false;
   protected courseToArchive: number | null = null;
-  protected courseToPublish:CourseResponse|null=null;
+  protected courseToPublish:InstructorCourseCardResponse|null=null;
   protected isPublishing=false;
   
   // Filtering States
@@ -257,21 +257,21 @@ export class InstructorCourses implements OnInit {
     return 'bg-gray-100 text-gray-600';
   }
 
-  protected isCoursePublished(course: CourseResponse): boolean {
+  protected isCoursePublished(course: InstructorCourseCardResponse): boolean {
     const status = String(course.status).toLowerCase();
     return status === String(PublishStatus.Published) || status === 'published';
   }
 
-  protected isCoursePendingApproval(course: CourseResponse): boolean {
+  protected isCoursePendingApproval(course: InstructorCourseCardResponse): boolean {
     const status = String(course.status).toLowerCase();
     return status === String(CourseStatus.PendingApproval) || status === 'pending' || status === 'pending approval';
   }
 
-  protected canUnpublish(course: CourseResponse): boolean {
+  protected canUnpublish(course: InstructorCourseCardResponse): boolean {
     return this.isCoursePublished(course) || this.isCoursePendingApproval(course);
   }
 
-  protected isCourseArchived(course: CourseResponse): boolean {
+  protected isCourseArchived(course: InstructorCourseCardResponse): boolean {
     const status = String(course.status).toLowerCase();
     return status === String(CourseStatus.Archived) || status === 'archived';
   }
@@ -318,7 +318,7 @@ export class InstructorCourses implements OnInit {
     this.toastService.showSuccess('Course duplicated successfully (Mocked).');
   }
 
-  protected togglePublishStatus(course: CourseResponse|null): void {
+  protected togglePublishStatus(course: InstructorCourseCardResponse|null): void {
     if(course==null)
       return
     const shouldUnpublish = this.canUnpublish(course);
@@ -351,7 +351,7 @@ export class InstructorCourses implements OnInit {
     this.showArchiveModal = true;
   }
 
-  protected ConfirmTogglePublishStatus(course:CourseResponse,shouldUnpublish:boolean):void{
+  protected ConfirmTogglePublishStatus(course:InstructorCourseCardResponse,shouldUnpublish:boolean):void{
     this.courseToPublish=course;
     this.isPublishing=shouldUnpublish;
     this.showPublishModal=true;

@@ -7,12 +7,13 @@ import { QuizAttemptResponse, QuizAttemptDetailResponse } from '@models/quiz';
 import { untilDestroyed } from '../../rxjs/until-destroyed';
 
 import { Loader } from '@components/loader/loader';
+import { PaginationComponent } from '@components/pagination/pagination.component';
 import { QuizService } from '@services/quiz.service';
 
 @Component({
   selector: 'app-quizzes-page',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, Loader],
+  imports: [CommonModule, FormsModule, RouterModule, Loader, PaginationComponent],
   templateUrl: './quizzes.html'
 })
 export class QuizzesPage implements OnInit {
@@ -24,14 +25,21 @@ export class QuizzesPage implements OnInit {
   protected attempts = signal<QuizAttemptResponse[]>([]);
   protected isLoading = signal(true);
   protected searchQuery = signal('');
+  
+  // Pagination State
+  protected currentPage = signal(1);
+  protected pageSize = signal(10);
+  protected totalItems = signal(0);
+  protected totalPages = signal(0);
 
-  // Stats computed signals
-  protected totalCount = computed(() => this.attempts().length);
+  // Stats computed signals (These represent the current page now, we should fetch totals from another API or keep it simple)
+  // For simplicity since the backend now returns pagination, we'll keep stats based on what we have or remove them.
+  protected totalCount = computed(() => this.totalItems());
   protected passedCount = computed(() => this.attempts().filter(a => a.isPassed).length);
   protected failedCount = computed(() => this.attempts().filter(a => !a.isPassed && a.completedAt).length);
   protected inProgressCount = computed(() => this.attempts().filter(a => !a.completedAt).length);
 
-  // Client-side search filtering
+  // Client-side search filtering - note: real search should ideally be server-side now that it is paginated
   protected filteredAttempts = computed(() => {
     let list = this.attempts();
     const query = this.searchQuery().toLowerCase().trim();
@@ -49,13 +57,17 @@ export class QuizzesPage implements OnInit {
     this.loadAttempts();
   }
 
-  private loadAttempts(): void {
+  protected loadAttempts(page: number = 1): void {
     this.isLoading.set(true);
-    this.quizService.getMyQuizAttempts()
+    this.quizService.getMyQuizAttempts(page, this.pageSize())
       .pipe(untilDestroyed(this.destroyRef))
       .subscribe({
         next: (data) => {
-          this.attempts.set(data ?? []);
+          this.attempts.set(data?.attempts ?? []);
+          this.currentPage.set(data?.pageNumber ?? 1);
+          this.pageSize.set(data?.pageSize ?? 10);
+          this.totalItems.set(data?.totalCount ?? 0);
+          this.totalPages.set(data?.totalPages ?? 0);
           this.isLoading.set(false);
         },
         error: (err) => {
@@ -63,6 +75,10 @@ export class QuizzesPage implements OnInit {
           this.isLoading.set(false);
         }
       });
+  }
+
+  protected onPageChange(page: number): void {
+    this.loadAttempts(page);
   }
 
   protected viewAttemptDetail(attemptId: number): void {

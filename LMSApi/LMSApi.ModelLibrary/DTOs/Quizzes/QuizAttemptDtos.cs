@@ -82,4 +82,13 @@ namespace LMSApi.ModelLibrary.DTOs
         public string SelectedOptionText { get; set; }
         public bool IsCorrect { get; set; }
     }
+
+    public class PagedQuizAttemptResponse
+    {
+        public IEnumerable<QuizAttemptResponse> Attempts { get; set; } = [];
+        public int PageNumber { get; set; }
+        public int PageSize { get; set; }
+        public int TotalCount { get; set; }
+        public int TotalPages { get; set; }
+    }
 }

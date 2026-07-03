@@ -74,4 +74,16 @@ namespace LMSApi.ModelLibrary.DTOs
         public IEnumerable<QuizResponse> Quizzes { get; set; } = [];
         public IEnumerable<AssignmentResponse> Assignments { get; set; } = [];
     }
+
+    public class CourseSectionPreviewResponse
+    {
+        public int Id { get; set; }
+        public string Title { get; set; }
+        public string? Description { get; set; }
+        public TimeSpan EstimatedDuration { get; set; }
+        public int SortOrder { get; set; }
+        public IEnumerable<CourseLessonPreviewResponse> Lessons { get; set; } = [];
+        public IEnumerable<QuizResponse> Quizzes { get; set; } = [];
+        public IEnumerable<AssignmentResponse> Assignments { get; set; } = [];
+    }
 }

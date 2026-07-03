@@ -6,12 +6,13 @@ import { EnrollmentResponse } from '@models/enrollment';
 import { CourseLevel } from '../../enums/course-level.enum';
 import { untilDestroyed } from '../../rxjs/until-destroyed';
 import { Loader } from '@components/loader/loader';
+import { PaginationComponent } from '@components/pagination/pagination.component';
 import { EnrollmentService } from '@services/enrollment.service';
 
 @Component({
   selector: 'app-progress-page',
   standalone: true,
-  imports: [CommonModule, RouterModule, Loader],
+  imports: [CommonModule, RouterModule, Loader, PaginationComponent],
   templateUrl: './progress.html'
 })
 export class ProgressPage implements OnInit {
@@ -22,18 +23,28 @@ export class ProgressPage implements OnInit {
 
   protected enrollments = signal<EnrollmentResponse[]>([]);
   protected isLoading = signal(true);
+  
+  // Pagination State
+  protected currentPage = signal(1);
+  protected pageSize = signal(10);
+  protected totalItems = signal(0);
+  protected totalPages = signal(0);
 
   ngOnInit(): void {
     this.loadEnrollments();
   }
 
-  private loadEnrollments(): void {
+  protected loadEnrollments(page: number = 1): void {
     this.isLoading.set(true);
-    this.enrollmentService.getMyEnrollments()
+    this.enrollmentService.getMyEnrollments(page, this.pageSize())
       .pipe(untilDestroyed(this.destroyRef))
       .subscribe({
         next: (data) => {
-          this.enrollments.set(data ?? []);
+          this.enrollments.set(data?.enrollments ?? []);
+          this.currentPage.set(data?.pageNumber ?? 1);
+          this.pageSize.set(data?.pageSize ?? 10);
+          this.totalItems.set(data?.totalCount ?? 0);
+          this.totalPages.set(data?.totalPages ?? 0);
           this.isLoading.set(false);
         },
         error: (err) => {
@@ -41,6 +52,10 @@ export class ProgressPage implements OnInit {
           this.isLoading.set(false);
         }
       });
+  }
+
+  protected onPageChange(page: number): void {
+    this.loadEnrollments(page);
   }
 
   protected viewDetailedProgress(courseId: number): void {

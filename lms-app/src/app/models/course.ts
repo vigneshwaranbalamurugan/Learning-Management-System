@@ -45,8 +45,59 @@ export interface CategoryResponse {
   description: string;
 }
 
+export interface CourseListItemResponse {
+  id: number;
+  title: string;
+  slug: string;
+  thumbnailUrl?: string;
+  categoryName: string;
+  instructorName: string;
+  languageName: string;
+  level: CourseLevel | string;
+  status: CourseStatus | string;
+  price?: number;
+  isPremium: boolean;
+  courseAccessType: CourseAccessType | string;
+  averageRating: number;
+  totalReviews: number;
+  lessonsCount: number;
+  enrolledCount: number;
+  estimatedDuration: string;
+  hasCertificate: boolean;
+  createdAt: string;
+}
+
+export interface InstructorCourseCardResponse {
+  id: number;
+  title: string;
+  slug: string;
+  thumbnailUrl?: string;
+  status: CourseStatus | string;
+  averageRating: number;
+  totalReviews: number;
+  enrolledCount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface PagedCourseResponse {
   courses: CourseResponse[];
+  pageNumber: number;
+  pageSize: number;
+  totalCount: number;
+  totalPages: number;
+}
+
+export interface PagedCourseListResponse {
+  courses: CourseListItemResponse[];
+  pageNumber: number;
+  pageSize: number;
+  totalCount: number;
+  totalPages: number;
+}
+
+export interface PagedInstructorCourseResponse {
+  courses: InstructorCourseCardResponse[];
   pageNumber: number;
   pageSize: number;
   totalCount: number;
@@ -170,6 +221,44 @@ export interface CourseDetailResponse extends CourseResponse {
   requirements?: string;           // raw text / multi-line string
   learningOutcomes?: string;       // raw text / multi-line string
   sections: CourseSectionDetail[];
+  availableBatches: BatchSummary[];
+  isWishlisted: boolean;
+}
+
+export interface CourseLessonPreviewResponse {
+  id: number;
+  courseSectionId: number;
+  title: string;
+  description?: string;
+  type: LessonType | string;
+  durationInMinutes?: string;
+  sortOrder: number;
+  isPreview: boolean;
+  status: PublishStatus | string;
+  contentUrl?: string;
+  content?: string;
+  resources?: ResourceResponse[];
+}
+
+export interface CourseSectionPreviewResponse {
+  id: number;
+  courseId: number;
+  title: string;
+  description?: string;
+  estimatedDuration: string;
+  sortOrder: number;
+  status: PublishStatus | string;
+  lessons: CourseLessonPreviewResponse[];
+  quizzes: QuizResponse[];
+  assignments: AssignmentResponse[];
+}
+
+export interface CoursePreviewResponse extends CourseResponse {
+  introVideoUrl?: string;
+  requirements?: string;
+  learningOutcomes?: string;
+  estimatedDuration: string;
+  sections: CourseSectionPreviewResponse[];
   availableBatches: BatchSummary[];
   isWishlisted: boolean;
 }

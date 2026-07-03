@@ -209,4 +209,26 @@ namespace LMSApi.ModelLibrary.DTOs
         public int PageSize { get; set; }
         public int TotalPages { get; set; }
     }
+
+    public class LearnerAssignmentDto : AssignmentResponse
+    {
+        public string CourseTitle { get; set; }
+        public string SectionTitle { get; set; }
+        public int AttemptsMade { get; set; }
+        public int RemainingAttempts { get; set; }
+        public bool? IsPassed { get; set; }
+        public string? LatestStatus { get; set; }
+    }
+
+    public class PagedLearnerAssignmentResponse
+    {
+        public IEnumerable<LearnerAssignmentDto> Assignments { get; set; } = new List<LearnerAssignmentDto>();
+        public int TotalCount { get; set; }
+        public int PageNumber { get; set; }
+        public int PageSize { get; set; }
+        public int TotalPages { get; set; }
+        public int PendingCount { get; set; }
+        public int PassedCount { get; set; }
+        public int FailedCount { get; set; }
+    }
 }

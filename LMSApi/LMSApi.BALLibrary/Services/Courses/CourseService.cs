@@ -54,18 +54,25 @@ namespace LMSApi.BALLibrary.Services
             return responses;
         }
 
-        public async Task<PagedCourseResponse> GetAllCoursesPagedAsync(CourseSearchQuery query)
+        public async Task<PagedCourseListResponse> GetAllCoursesPagedAsync(CourseSearchQuery query)
         {
             var (courses, totalCount) = await _courseRepository.GetAllCoursesPagedAsync(query);
 
-            var courseList = _mapper.Map<IEnumerable<CourseResponse>>(courses).ToList();
+            var courseList = _mapper.Map<IEnumerable<CourseListItemResponse>>(courses).ToList();
             
-            PopulateEnrollmentStatsList(courseList, courses);
-            await PopulateRatingStatsListAsync(courseList);
+            var statsDict = await _courseRepository.GetRatingStatsBatchAsync(courseList.Select(c => c.Id));
+            foreach (var c in courseList)
+            {
+                if (statsDict.TryGetValue(c.Id, out var stats))
+                {
+                    c.AverageRating = stats.AverageRating;
+                    c.TotalReviews = stats.TotalReviews;
+                }
+            }
 
             var totalPages = (int)System.Math.Ceiling((double)totalCount / query.PageSize);
 
-            return new PagedCourseResponse
+            return new PagedCourseListResponse
             {
                 Courses = courseList,
                 TotalCount = totalCount,
@@ -75,7 +82,7 @@ namespace LMSApi.BALLibrary.Services
             };
         }
 
-        public async Task<PagedCourseResponse> GetPublishedCoursesPagedAsync(
+        public async Task<PagedCourseListResponse> GetPublishedCoursesPagedAsync(
             CourseSearchQuery query, int? currentUserId = null)
         {
             if (currentUserId.HasValue)
@@ -95,14 +102,21 @@ namespace LMSApi.BALLibrary.Services
 
             var (courses, totalCount) = await _courseRepository.GetPublishedCoursesPagedAsync(query);
 
-            var courseList = _mapper.Map<IEnumerable<CourseResponse>>(courses).ToList();
+            var courseList = _mapper.Map<IEnumerable<CourseListItemResponse>>(courses).ToList();
             
-            PopulateEnrollmentStatsList(courseList, courses);
-            await PopulateRatingStatsListAsync(courseList);
+            var statsDict = await _courseRepository.GetRatingStatsBatchAsync(courseList.Select(c => c.Id));
+            foreach (var c in courseList)
+            {
+                if (statsDict.TryGetValue(c.Id, out var stats))
+                {
+                    c.AverageRating = stats.AverageRating;
+                    c.TotalReviews = stats.TotalReviews;
+                }
+            }
 
             var totalPages = (int)System.Math.Ceiling((double)totalCount / query.PageSize);
 
-            return new PagedCourseResponse
+            return new PagedCourseListResponse
             {
                 Courses = courseList,
                 TotalCount = totalCount,
@@ -112,28 +126,42 @@ namespace LMSApi.BALLibrary.Services
             };
         }
 
-        public async Task<CourseDetailsResponse> GetCourseByIdAsync(int id, int? currentUserId = null, bool isAdmin = false)
+        public async Task<CourseResponse> GetCourseByIdAsync(int id, int? currentUserId = null, bool isAdmin = false)
         {
             var course = await _courseRepository.GetCourseWithDetailsAsync(id)
                 ?? throw new KeyNotFoundException($"Course with id '{id}' not found.");
 
-            if (currentUserId == null || (course.InstructorId != currentUserId && !isAdmin))
+            bool isEnrolled = false;
+            if (currentUserId.HasValue)
+            {
+                isEnrolled = await _enrollmentRepository.IsAlreadyEnrolledAsync(currentUserId.Value, course.Id);
+            }
+
+            if (!isEnrolled && (currentUserId == null || (course.InstructorId != currentUserId && !isAdmin)))
             {
                 course.Sections = course.Sections
                     .Where(s => s.Status == PublishStatus.Published)
                     .Select(s =>
                     {
-                        s.Lessons = s.Lessons
-                            .Where(l => l.Status == PublishStatus.Published)
-                            .Select(l =>
-                            {
-                                l.Resources = l.Resources.Where(r => r.Status == PublishStatus.Published).ToList();
-                                return l;
-                            }).ToList();
+                        s.Lessons = s.Lessons.Where(l => l.Status == PublishStatus.Published).ToList();
                         s.Quizzes = s.Quizzes.Where(q => q.Status == PublishStatus.Published).ToList();
                         s.Assignments = s.Assignments.Where(a => a.Status == PublishStatus.Published).ToList();
                         return s;
                     }).ToList();
+
+                var previewResponse = _mapper.Map<CoursePreviewResponse>(course);
+                previewResponse.EnrolledCount = course.Enrollments?.Count ?? 0;
+
+                var pStats = await _courseRepository.GetCourseRatingStatsAsync(course.Id);
+                previewResponse.AverageRating = pStats.AverageRating;
+                previewResponse.TotalReviews = pStats.TotalReviews;
+
+                if (currentUserId.HasValue)
+                {
+                    previewResponse.IsWishlisted = await _wishListRepository.CheckExistsAsync(currentUserId.Value, course.Id);
+                }
+                
+                return previewResponse;
             }
 
             var response = _mapper.Map<CourseDetailsResponse>(course);
@@ -151,28 +179,42 @@ namespace LMSApi.BALLibrary.Services
             return response;
         }
 
-        public async Task<CourseDetailsResponse> GetCourseBySlugAsync(string slug, int? currentUserId = null, bool isAdmin = false)
+        public async Task<CourseResponse> GetCourseBySlugAsync(string slug, int? currentUserId = null, bool isAdmin = false)
         {
             var course = await _courseRepository.GetCourseBySlugWithDetailsAsync(slug)
                 ?? throw new KeyNotFoundException($"Course with slug '{slug}' not found.");
 
-            if (currentUserId == null || (course.InstructorId != currentUserId && !isAdmin))
+            bool isEnrolled = false;
+            if (currentUserId.HasValue)
+            {
+                isEnrolled = await _enrollmentRepository.IsAlreadyEnrolledAsync(currentUserId.Value, course.Id);
+            }
+
+            if (!isEnrolled && (currentUserId == null || (course.InstructorId != currentUserId && !isAdmin)))
             {
                 course.Sections = course.Sections
                     .Where(s => s.Status == PublishStatus.Published)
                     .Select(s =>
                     {
-                        s.Lessons = s.Lessons
-                            .Where(l => l.Status == PublishStatus.Published)
-                            .Select(l =>
-                            {
-                                l.Resources = l.Resources.Where(r => r.Status == PublishStatus.Published).ToList();
-                                return l;
-                            }).ToList();
+                        s.Lessons = s.Lessons.Where(l => l.Status == PublishStatus.Published).ToList();
                         s.Quizzes = s.Quizzes.Where(q => q.Status == PublishStatus.Published).ToList();
                         s.Assignments = s.Assignments.Where(a => a.Status == PublishStatus.Published).ToList();
                         return s;
                     }).ToList();
+
+                var previewResponse = _mapper.Map<CoursePreviewResponse>(course);
+                previewResponse.EnrolledCount = course.Enrollments?.Count ?? 0;
+
+                var pStats = await _courseRepository.GetCourseRatingStatsAsync(course.Id);
+                previewResponse.AverageRating = pStats.AverageRating;
+                previewResponse.TotalReviews = pStats.TotalReviews;
+
+                if (currentUserId.HasValue)
+                {
+                    previewResponse.IsWishlisted = await _wishListRepository.CheckExistsAsync(currentUserId.Value, course.Id);
+                }
+                
+                return previewResponse;
             }
 
             var response = _mapper.Map<CourseDetailsResponse>(course);
@@ -578,17 +620,25 @@ namespace LMSApi.BALLibrary.Services
             return responses;
         }
 
-        public async Task<PagedCourseResponse> GetPendingCoursesPagedAsync(CourseSearchQuery query)
+        public async Task<PagedCourseListResponse> GetPendingCoursesPagedAsync(CourseSearchQuery query)
         {
             var (courses, totalCount) = await _courseRepository.GetPendingCoursesPagedAsync(query);
 
-            var courseList = _mapper.Map<IEnumerable<CourseResponse>>(courses).ToList();
-            PopulateEnrollmentStatsList(courseList, courses);
-            await PopulateRatingStatsListAsync(courseList);
+            var courseList = _mapper.Map<IEnumerable<CourseListItemResponse>>(courses).ToList();
+            
+            var statsDict = await _courseRepository.GetRatingStatsBatchAsync(courseList.Select(c => c.Id));
+            foreach (var c in courseList)
+            {
+                if (statsDict.TryGetValue(c.Id, out var stats))
+                {
+                    c.AverageRating = stats.AverageRating;
+                    c.TotalReviews = stats.TotalReviews;
+                }
+            }
 
             var totalPages = (int)System.Math.Ceiling((double)totalCount / query.PageSize);
 
-            return new PagedCourseResponse
+            return new PagedCourseListResponse
             {
                 Courses = courseList,
                 TotalCount = totalCount,
@@ -622,28 +672,27 @@ namespace LMSApi.BALLibrary.Services
             return responses;
         }
 
-        public async Task<PagedCourseResponse> GetCoursesByInstructorPagedAsync(int instructorId, CourseSearchQuery query)
+        public async Task<PagedInstructorCourseResponse> GetCoursesByInstructorPagedAsync(int instructorId, CourseSearchQuery query)
         {
             var (courses, totalCount) = await _courseRepository.GetCoursesByInstructorPagedAsync(instructorId, query);
-            var courseList = courses == null ? new List<CourseResponse>() : _mapper.Map<IEnumerable<CourseResponse>>(courses).ToList();
+            var courseList = courses == null ? new List<InstructorCourseCardResponse>() : _mapper.Map<IEnumerable<InstructorCourseCardResponse>>(courses).ToList();
 
-            if (courses != null)
+            if (courseList.Any())
             {
-                foreach (var response in courseList)
+                var statsDict = await _courseRepository.GetRatingStatsBatchAsync(courseList.Select(c => c.Id));
+                foreach (var c in courseList)
                 {
-                    var original = courses.FirstOrDefault(c => c.Id == response.Id);
-                    if (original != null)
+                    if (statsDict.TryGetValue(c.Id, out var stats))
                     {
-                        response.EnrolledCount = original.Enrollments?.Count ?? 0;
+                        c.AverageRating = stats.AverageRating;
+                        c.TotalReviews = stats.TotalReviews;
                     }
                 }
             }
 
-            await PopulateRatingStatsListAsync(courseList);
-
             var totalPages = (int)System.Math.Ceiling((double)totalCount / query.PageSize);
 
-            return new PagedCourseResponse
+            return new PagedInstructorCourseResponse
             {
                 Courses = courseList,
                 TotalCount = totalCount,

@@ -47,6 +47,11 @@ namespace LMSApi.BALLibrary.Services
 
         // ─── Assignment CRUD ────────────────────────────────────────────────
 
+        public async Task<PagedLearnerAssignmentResponse> GetLearnerAssignmentsAsync(int userId, int pageNumber, int pageSize, string? searchQuery = null)
+        {
+            return await _assignmentRepository.GetLearnerAssignmentsAsync(userId, pageNumber, pageSize, searchQuery);
+        }
+
         public async Task<IEnumerable<AssignmentResponse>> GetAssignmentsBySectionAsync(int sectionId, int? currentUserId = null, bool isAdmin = false)
         {
             var section = await _sectionRepository.GetByIdAsync(sectionId)

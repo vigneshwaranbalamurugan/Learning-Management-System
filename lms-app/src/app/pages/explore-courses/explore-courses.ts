@@ -2,7 +2,7 @@ import { Component, OnInit, signal, inject, DestroyRef, computed } from '@angula
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
-import { CourseResponse, CategoryResponse, InstructorMetadata, LanguageMetadata, FiltersMetadataResponse } from '@models/course';
+import { CourseResponse, CategoryResponse, InstructorMetadata, LanguageMetadata, FiltersMetadataResponse, CourseListItemResponse } from '@models/course';
 import { CourseLevel } from '../../enums/course-level.enum';
 import { CourseAccessType } from '../../enums/course-access-type.enum';
 import { ToastService } from '@services/toast.service';
@@ -30,7 +30,7 @@ export class ExploreCourses implements OnInit {
   private destroyRef       = inject(DestroyRef);
 
   // ── Data signals ─────────────────────────────────────────────────────────
-  protected courses          = signal<CourseResponse[]>([]);
+  protected courses          = signal<CourseListItemResponse[]>([]);
   protected availableCourses = computed(() => {
     const enrolled = this.enrolledCourseIds();
     let list = this.courses().filter(c => !enrolled.includes(c.id));
@@ -192,7 +192,7 @@ export class ExploreCourses implements OnInit {
     this.filtersLoading.set(true);
     forkJoin({
       metadata: this.courseService.getFiltersMetadata(),
-      enrollments: this.enrollmentService.getMyEnrollments()
+      enrollments: this.enrollmentService.getAllMyEnrollments()
     }).pipe(untilDestroyed(this.destroyRef)).subscribe({
       next: ({ metadata, enrollments }) => {
         this.categories.set(metadata.categories ?? []);
@@ -423,7 +423,7 @@ export class ExploreCourses implements OnInit {
 
 
 
-  protected navigateToCourse(course: CourseResponse): void {
+  protected navigateToCourse(course: CourseListItemResponse): void {
   const url = this.router.serializeUrl(
     this.router.createUrlTree(
       ['/learner/explore', course.slug],

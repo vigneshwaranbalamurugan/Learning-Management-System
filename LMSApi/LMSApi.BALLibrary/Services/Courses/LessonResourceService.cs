@@ -60,6 +60,17 @@ namespace LMSApi.BALLibrary.Services
 
             if (currentUserId == null || (course.InstructorId != currentUserId && !isAdmin))
             {
+                bool isEnrolled = false;
+                if (currentUserId.HasValue)
+                {
+                    isEnrolled = await _enrollmentRepository.IsAlreadyEnrolledAsync(currentUserId.Value, course.Id);
+                }
+
+                if (!isEnrolled)
+                {
+                    throw new KeyNotFoundException($"Lesson with id '{lessonId}' not found.");
+                }
+
                 resources = resources.Where(r => r.Status == PublishStatus.Published);
             }
 
@@ -83,6 +94,17 @@ namespace LMSApi.BALLibrary.Services
             if (currentUserId == null || (course.InstructorId != currentUserId && !isAdmin))
             {
                 if (resource.Status != PublishStatus.Published)
+                {
+                    throw new KeyNotFoundException($"Resource with id '{id}' not found.");
+                }
+
+                bool isEnrolled = false;
+                if (currentUserId.HasValue)
+                {
+                    isEnrolled = await _enrollmentRepository.IsAlreadyEnrolledAsync(currentUserId.Value, course.Id);
+                }
+
+                if (!isEnrolled)
                 {
                     throw new KeyNotFoundException($"Resource with id '{id}' not found.");
                 }

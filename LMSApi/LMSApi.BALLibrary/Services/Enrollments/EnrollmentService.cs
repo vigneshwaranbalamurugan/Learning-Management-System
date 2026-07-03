@@ -716,11 +716,26 @@ namespace LMSApi.BALLibrary.Services
             return await _enrollmentRepository.ValidateBatchEnrollmentAsync(batchId);
         }
 
-        /// <inheritdoc/>
         public async Task<IEnumerable<EnrollmentResponse>> GetMyEnrollmentsAsync(int userId)
         {
             var enrollments = await _enrollmentRepository.GetEnrollmentsByUserAsync(userId);
             return _mapper.Map<IEnumerable<EnrollmentResponse>>(enrollments);
+        }
+
+        public async Task<PagedEnrollmentResponse> GetMyEnrollmentsPagedAsync(int userId, int pageNumber, int pageSize)
+        {
+            var (enrollments, totalCount) = await _enrollmentRepository.GetEnrollmentsByUserPagedAsync(userId, pageNumber, pageSize);
+            
+            var enrollmentResponses = _mapper.Map<IEnumerable<EnrollmentResponse>>(enrollments);
+
+            return new PagedEnrollmentResponse
+            {
+                Enrollments = enrollmentResponses,
+                PageNumber = pageNumber,
+                PageSize = pageSize,
+                TotalCount = totalCount,
+                TotalPages = (int)Math.Ceiling(totalCount / (double)pageSize)
+            };
         }
 
         // ─── Private helpers ──────────────────────────────────────────────────

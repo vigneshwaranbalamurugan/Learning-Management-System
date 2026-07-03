@@ -82,4 +82,13 @@ namespace LMSApi.ModelLibrary.DTOs
         public DateTime? CompletedAt { get; set; }
         public string? BatchName { get; set; }
     }
+
+    public class PagedEnrollmentResponse
+    {
+        public IEnumerable<EnrollmentResponse> Enrollments { get; set; } = [];
+        public int PageNumber { get; set; }
+        public int PageSize { get; set; }
+        public int TotalCount { get; set; }
+        public int TotalPages { get; set; }
+    }
 }

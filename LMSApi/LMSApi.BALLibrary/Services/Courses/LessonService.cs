@@ -77,6 +77,17 @@ namespace LMSApi.BALLibrary.Services
                 {
                     throw new KeyNotFoundException($"Lesson with id '{id}' not found.");
                 }
+
+                bool isEnrolled = false;
+                if (currentUserId.HasValue)
+                {
+                    isEnrolled = await _enrollmentRepository.IsAlreadyEnrolledAsync(currentUserId.Value, course.Id);
+                }
+
+                if (!isEnrolled && !lesson.IsPreview)
+                {
+                    throw new KeyNotFoundException($"Lesson with id '{id}' not found.");
+                }
             }
 
             return _mapper.Map<LessonResponse>(lesson);
@@ -99,7 +110,26 @@ namespace LMSApi.BALLibrary.Services
                 {
                     throw new KeyNotFoundException($"Lesson with id '{id}' not found.");
                 }
-                lesson.Resources = lesson.Resources.Where(r => r.Status == PublishStatus.Published).ToList();
+
+                bool isEnrolled = false;
+                if (currentUserId.HasValue)
+                {
+                    isEnrolled = await _enrollmentRepository.IsAlreadyEnrolledAsync(currentUserId.Value, course.Id);
+                }
+
+                if (!isEnrolled && !lesson.IsPreview)
+                {
+                    throw new KeyNotFoundException($"Lesson with id '{id}' not found.");
+                }
+
+                if (!isEnrolled && lesson.IsPreview)
+                {
+                    lesson.Resources = new List<LessonResources>();
+                }
+                else
+                {
+                    lesson.Resources = lesson.Resources.Where(r => r.Status == PublishStatus.Published).ToList();
+                }
             }
 
             return _mapper.Map<LessonDetailResponse>(lesson);

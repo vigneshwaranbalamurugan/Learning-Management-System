@@ -8,12 +8,13 @@ import { CertificateResponse } from '@models/certificate';
 import { untilDestroyed } from '../../rxjs/until-destroyed';
 
 import { Loader } from '@components/loader/loader';
+import { PaginationComponent } from '@components/pagination/pagination.component';
 import { CertificateService } from '@services/certificate.service';
 
 @Component({
   selector: 'app-certificates-page',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, Loader],
+  imports: [CommonModule, FormsModule, RouterModule, Loader, PaginationComponent],
   templateUrl: './certificates.html'
 })
 export class CertificatesPage implements OnInit {
@@ -28,7 +29,13 @@ export class CertificatesPage implements OnInit {
   protected isLoading = signal(true);
   protected searchQuery = signal('');
 
-  // Client-side search filtering
+  // Pagination State
+  protected currentPage = signal(1);
+  protected pageSize = signal(10);
+  protected totalItems = signal(0);
+  protected totalPages = signal(0);
+
+  // Client-side search filtering (only applies to current page now)
   protected filteredCertificates = computed(() => {
     let list = this.certificates();
     const query = this.searchQuery().toLowerCase().trim();
@@ -46,13 +53,17 @@ export class CertificatesPage implements OnInit {
     this.loadCertificates();
   }
 
-  private loadCertificates(): void {
+  protected loadCertificates(page: number = 1): void {
     this.isLoading.set(true);
-    this.certificateService.getMyCertificates()
+    this.certificateService.getMyCertificates(page, this.pageSize())
       .pipe(untilDestroyed(this.destroyRef))
       .subscribe({
         next: (data) => {
-          this.certificates.set(data ?? []);
+          this.certificates.set(data?.certificates ?? []);
+          this.currentPage.set(data?.pageNumber ?? 1);
+          this.pageSize.set(data?.pageSize ?? 10);
+          this.totalItems.set(data?.totalCount ?? 0);
+          this.totalPages.set(data?.totalPages ?? 0);
           this.isLoading.set(false);
 
           // Check if redirect query param exists
@@ -61,7 +72,7 @@ export class CertificatesPage implements OnInit {
             .subscribe(params => {
               const courseIdParam = params['courseId'];
               if (courseIdParam) {
-                const found = (data ?? []).find(c => c.courseId === Number(courseIdParam));
+                const found = (data?.certificates ?? []).find(c => c.courseId === Number(courseIdParam));
                 if (found) {
                   this.router.navigate(['/learner/certificates', found.certificateId]);
                 }
@@ -73,6 +84,10 @@ export class CertificatesPage implements OnInit {
           this.isLoading.set(false);
         }
       });
+  }
+
+  protected onPageChange(page: number): void {
+    this.loadCertificates(page);
   }
 
   protected viewCertificatePdf(cert: CertificateResponse): void {

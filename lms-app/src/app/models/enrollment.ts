@@ -22,3 +22,11 @@ export interface EnrollmentResponse {
   hasCertificate: boolean;
   courseAccessType: number | string;
 }
+
+export interface PagedEnrollmentResponse {
+  enrollments: EnrollmentResponse[];
+  pageNumber: number;
+  pageSize: number;
+  totalCount: number;
+  totalPages: number;
+}

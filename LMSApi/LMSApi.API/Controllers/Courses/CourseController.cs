@@ -35,7 +35,7 @@ namespace LMSApi.API.Controllers
         [HttpGet]
         [EnableRateLimiting("PublicCourseListing")]
         [RequestTimeout("Quick")]
-        public async Task<ActionResult<PagedCourseResponse>> GetAll([FromQuery] CourseSearchQuery query)
+        public async Task<ActionResult<PagedCourseListResponse>> GetAll([FromQuery] CourseSearchQuery query)
         {
             int? userId = null;
             if (User.Identity?.IsAuthenticated == true)
@@ -67,7 +67,7 @@ namespace LMSApi.API.Controllers
         [HttpGet("{id:int}")]
         [EnableRateLimiting("PublicCourseListing")]
         [RequestTimeout("Quick")]
-        public async Task<ActionResult<CourseDetailsResponse>> GetById(int id)
+        public async Task<ActionResult<CourseResponse>> GetById(int id)
         {
             int? userId = null;
             bool isAdmin = false;
@@ -90,7 +90,7 @@ namespace LMSApi.API.Controllers
         [HttpGet("slug/{slug}")]
         [EnableRateLimiting("PublicCourseListing")]
         [RequestTimeout("Quick")]
-        public async Task<ActionResult<CourseDetailsResponse>> GetBySlug(string slug)
+        public async Task<ActionResult<CourseResponse>> GetBySlug(string slug)
         {
             int? userId = null;
             bool isAdmin = false;
@@ -113,7 +113,7 @@ namespace LMSApi.API.Controllers
         [Authorize(Roles = "Instructor,Admin")]
         [HttpGet("instructor/slug/{slug}")]
         [RequestTimeout("Quick")]
-        public async Task<ActionResult<CourseDetailsResponse>> GetInstructorCourseBySlug(string slug)
+        public async Task<ActionResult<CourseResponse>> GetInstructorCourseBySlug(string slug)
         {
             var userId = User.GetUserId();
             var isAdmin = User.IsAdmin();
@@ -139,7 +139,7 @@ namespace LMSApi.API.Controllers
         [Authorize(Roles = "Instructor,Admin")]
         [HttpGet("my-courses")]
         [RequestTimeout("Quick")]
-        public async Task<ActionResult<PagedCourseResponse>> GetMyCourses([FromQuery] CourseSearchQuery query)
+        public async Task<ActionResult<PagedInstructorCourseResponse>> GetMyCourses([FromQuery] CourseSearchQuery query)
         {
             var instructorId = User.GetUserId();
             var result = await _courseService.GetCoursesByInstructorPagedAsync(instructorId, query);
@@ -266,7 +266,7 @@ namespace LMSApi.API.Controllers
         [Authorize(Roles = "Admin")]
         [HttpGet("pending")]
         [EnableRateLimiting("AdminApis")]
-        public async Task<ActionResult<PagedCourseResponse>> GetPending([FromQuery] CourseSearchQuery query)
+        public async Task<ActionResult<PagedCourseListResponse>> GetPending([FromQuery] CourseSearchQuery query)
         {
             var result = await _courseService.GetPendingCoursesPagedAsync(query);
             return Ok(result);
@@ -276,7 +276,7 @@ namespace LMSApi.API.Controllers
         [Authorize(Roles = "Admin")]
         [HttpGet("all")]
         [EnableRateLimiting("AdminApis")]
-        public async Task<ActionResult<PagedCourseResponse>> GetAllAdmin([FromQuery] CourseSearchQuery query)
+        public async Task<ActionResult<PagedCourseListResponse>> GetAllAdmin([FromQuery] CourseSearchQuery query)
         {
             var result = await _courseService.GetAllCoursesPagedAsync(query);
             return Ok(result);

@@ -127,3 +127,11 @@ export interface SubmitAnswerItem {
 export interface SubmitQuizRequest {
   answers: SubmitAnswerItem[];
 }
+
+export interface PagedQuizAttemptResponse {
+  attempts: QuizAttemptResponse[];
+  pageNumber: number;
+  pageSize: number;
+  totalCount: number;
+  totalPages: number;
+}

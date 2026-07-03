@@ -108,5 +108,26 @@ namespace LMSApi.DALLibrary.Repositories
                 .OrderByDescending(a => a.StartedAt)
                 .ToListAsync();
         }
+
+        public async Task<(IEnumerable<QuizAttempts> Attempts, int TotalCount)> GetAttemptsByUserPagedAsync(int userId, int pageNumber, int pageSize)
+        {
+            var query = _context.QuizAttempts
+                .Include(a => a.Quiz)
+                    .ThenInclude(q => q.CourseSection)
+                        .ThenInclude(s => s.Course)
+                .Include(a => a.Quiz)
+                    .ThenInclude(q => q.Questions)
+                .Where(a => a.UserId == userId);
+
+            var totalCount = await query.CountAsync();
+
+            var attempts = await query
+                .OrderByDescending(a => a.StartedAt)
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            return (attempts, totalCount);
+        }
     }
 }

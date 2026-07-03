@@ -49,6 +49,29 @@ namespace LMSApi.DALLibrary.Repositories
                 .ToListAsync();
         }
 
+        public async Task<(IEnumerable<Certificates> Certificates, int TotalCount)> GetCertificatesByUserPagedAsync(int userId, int pageNumber, int pageSize)
+        {
+            var query = _context.Certificates
+                .Include(c => c.Course)
+                    .ThenInclude(course => course.Instructor)
+                        .ThenInclude(i => i.UserProfile)
+                .Include(c => c.Course)
+                    .ThenInclude(course => course.Category)
+                .Include(c => c.User)
+                    .ThenInclude(u => u.UserProfile)
+                .Where(c => c.UserId == userId);
+
+            var totalCount = await query.CountAsync();
+
+            var certificates = await query
+                .OrderByDescending(c => c.IssuedAt)
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            return (certificates, totalCount);
+        }
+
         public async Task<CertificateTemplates?> GetActiveTemplateAsync()
         {
             return await _context.CertificateTemplates

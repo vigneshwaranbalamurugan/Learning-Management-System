@@ -13,5 +13,6 @@ namespace LMSApi.BALLibrary.Interfaces
         Task DeleteAssignmentAsync(int id);
         Task<AssignmentResponse> PublishAssignmentAsync(int id, bool publish);
         Task ReorderAssignmentsAsync(ReorderAssignmentsRequest request);
+        Task<PagedLearnerAssignmentResponse> GetLearnerAssignmentsAsync(int userId, int pageNumber, int pageSize, string? searchQuery = null);
     }
 }

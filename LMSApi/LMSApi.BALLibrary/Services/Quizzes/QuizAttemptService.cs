@@ -299,6 +299,22 @@ namespace LMSApi.BALLibrary.Services
             var attempts = await _attemptRepository.GetAttemptsByUserAsync(userId);
             return _mapper.Map<IEnumerable<QuizAttemptResponse>>(attempts);
         }
+
+        public async Task<PagedQuizAttemptResponse> GetMyAttemptsPagedAsync(int userId, int pageNumber, int pageSize)
+        {
+            var (attempts, totalCount) = await _attemptRepository.GetAttemptsByUserPagedAsync(userId, pageNumber, pageSize);
+            
+            var attemptResponses = _mapper.Map<IEnumerable<QuizAttemptResponse>>(attempts);
+
+            return new PagedQuizAttemptResponse
+            {
+                Attempts = attemptResponses,
+                PageNumber = pageNumber,
+                PageSize = pageSize,
+                TotalCount = totalCount,
+                TotalPages = (int)Math.Ceiling(totalCount / (double)pageSize)
+            };
+        }
    
     }
 }

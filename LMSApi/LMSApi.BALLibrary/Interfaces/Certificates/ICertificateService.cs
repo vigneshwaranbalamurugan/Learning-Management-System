@@ -16,6 +16,9 @@ namespace LMSApi.BALLibrary.Interfaces
         /// <summary>Get all certificates issued to the student.</summary>
         Task<IEnumerable<CertificateResponse>> GetMyCertificatesAsync(int userId);
 
+        /// <summary>Get all certificates issued to the student with pagination.</summary>
+        Task<PagedCertificateResponse> GetMyCertificatesPagedAsync(int userId, int pageNumber, int pageSize);
+
         /// <summary>Admin: create a new certificate template with a background image.</summary>
         Task<CertificateTemplateResponse> CreateTemplateAsync(
             CreateCertificateTemplateRequest request,

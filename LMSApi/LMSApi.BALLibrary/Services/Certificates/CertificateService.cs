@@ -143,6 +143,22 @@ namespace LMSApi.BALLibrary.Services
             return _mapper.Map<IEnumerable<CertificateResponse>>(certs);
         }
 
+        public async Task<PagedCertificateResponse> GetMyCertificatesPagedAsync(int userId, int pageNumber, int pageSize)
+        {
+            var (certs, totalCount) = await _certificateRepository.GetCertificatesByUserPagedAsync(userId, pageNumber, pageSize);
+            
+            var certificateResponses = _mapper.Map<IEnumerable<CertificateResponse>>(certs);
+
+            return new PagedCertificateResponse
+            {
+                Certificates = certificateResponses,
+                PageNumber = pageNumber,
+                PageSize = pageSize,
+                TotalCount = totalCount,
+                TotalPages = (int)Math.Ceiling(totalCount / (double)pageSize)
+            };
+        }
+
         public async Task<CertificateVerificationResponse> VerifyCertificateAsync(Guid certificateId)
         {
             var cert = await _certificateRepository.GetByGuidAsync(certificateId);

@@ -38,3 +38,19 @@ export interface UpdateCertificateTemplateRequest {
   description?: string;
   isActive?: boolean;
 }
+
+export interface PagedCertificateResponse {
+  certificates: CertificateResponse[];
+  pageNumber: number;
+  pageSize: number;
+  totalCount: number;
+  totalPages: number;
+}
+
+export interface PagedCertificateTemplateResponse {
+  templates: CertificateTemplateResponse[];
+  pageNumber: number;
+  pageSize: number;
+  totalCount: number;
+  totalPages: number;
+}

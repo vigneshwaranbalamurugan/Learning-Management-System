@@ -21,10 +21,10 @@ namespace LMSApi.API.Controllers
         [HttpGet("my")]
         [Authorize]
         [EnableRateLimiting("CertificateDownload")]
-        public async Task<ActionResult<IEnumerable<CertificateResponse>>> GetMyCertificates()
+        public async Task<ActionResult<PagedCertificateResponse>> GetMyCertificates([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
         {
             var userId = User.GetUserId();
-            var result = await _certificateService.GetMyCertificatesAsync(userId);
+            var result = await _certificateService.GetMyCertificatesPagedAsync(userId, page, pageSize);
             return Ok(result);
         }
 

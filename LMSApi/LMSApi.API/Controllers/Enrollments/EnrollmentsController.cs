@@ -70,10 +70,10 @@ namespace LMSApi.API.Controllers
         /// <summary>Get all enrollments for the authenticated student.</summary>
         [HttpGet("enrollments/my")]
         [RequestTimeout("Quick")]
-        public async Task<ActionResult<IEnumerable<EnrollmentResponse>>> GetMyEnrollments()
+        public async Task<ActionResult<PagedEnrollmentResponse>> GetMyEnrollments([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
         {
             var userId = User.GetUserId();
-            var result = await _enrollmentService.GetMyEnrollmentsAsync(userId);
+            var result = await _enrollmentService.GetMyEnrollmentsPagedAsync(userId, page, pageSize);
             return Ok(result);
         }
     }

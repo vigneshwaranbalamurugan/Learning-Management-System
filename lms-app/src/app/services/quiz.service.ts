@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '@environments/environment';
-import { QuizAttemptResponse, QuizAttemptDetailResponse } from '@models/quiz';
+import { QuizAttemptResponse, QuizAttemptDetailResponse, PagedQuizAttemptResponse } from '@models/quiz';
 
 @Injectable({
   providedIn: 'root',
@@ -47,8 +47,8 @@ export class QuizService {
     return this.http.put<void>(`${this.baseUrl}/Quizzes/reorder`, { quizOrders });
   }
 
-  getMyQuizAttempts(): Observable<QuizAttemptResponse[]> {
-    return this.http.get<QuizAttemptResponse[]>(`${this.baseUrl}/QuizAttempts/my`);
+  getMyQuizAttempts(page: number = 1, pageSize: number = 10): Observable<PagedQuizAttemptResponse> {
+    return this.http.get<PagedQuizAttemptResponse>(`${this.baseUrl}/QuizAttempts/my?page=${page}&pageSize=${pageSize}`);
   }
 
   getQuizAttemptDetail(attemptId: number): Observable<QuizAttemptDetailResponse> {

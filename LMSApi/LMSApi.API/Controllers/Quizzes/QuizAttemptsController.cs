@@ -79,10 +79,10 @@ namespace LMSApi.API.Controllers
 
         [Authorize]
         [HttpGet("my")]
-        public async Task<ActionResult<IEnumerable<QuizAttemptResponse>>> GetMyAttempts()
+        public async Task<ActionResult<PagedQuizAttemptResponse>> GetMyAttempts([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
         {
             var userId = User.GetUserId();
-            var result = await _quizAttemptService.GetMyAttemptsAsync(userId);
+            var result = await _quizAttemptService.GetMyAttemptsPagedAsync(userId, page, pageSize);
             return Ok(result);
         }
     }

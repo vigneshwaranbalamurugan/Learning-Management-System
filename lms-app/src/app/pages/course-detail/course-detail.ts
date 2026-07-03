@@ -2,7 +2,7 @@ import { Component, OnInit, signal, computed, inject, DestroyRef } from '@angula
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { ToastService } from '@services/toast.service';
-import { CourseDetailResponse } from '@models/course';
+import { CourseDetailResponse, CoursePreviewResponse } from '@models/course';
 import { EnrollmentResponse } from '@models/enrollment';
 import { CourseLevel } from '../../enums/course-level.enum';
 import { LessonType } from '../../enums/lesson-types.enum';
@@ -40,7 +40,7 @@ export class CourseDetail implements OnInit {
   private reviewService    = inject(ReviewService);
 
   // ── Data ─────────────────────────────────────────────────────────────────
-  protected course            = signal<CourseDetailResponse | null>(null);
+  protected course            = signal<CourseDetailResponse | CoursePreviewResponse | null>(null);
   protected enrollment        = signal<EnrollmentResponse | null>(null);
   protected isEnrolled        = signal(false);
   protected enrollmentProgress = signal(0);
@@ -132,7 +132,7 @@ export class CourseDetail implements OnInit {
 
     forkJoin({
       course: this.courseService.getCourseById(courseId),
-      enrollments: this.enrollmentService.getMyEnrollments(),
+      enrollments: this.enrollmentService.getAllMyEnrollments(),
       reviews: this.reviewService.getCourseReviews(courseId)
     }).pipe(untilDestroyed(this.destroyRef)).subscribe({
       next: ({ course, enrollments, reviews }) => {
@@ -227,7 +227,7 @@ export class CourseDetail implements OnInit {
     });
   }
 
-  protected async purchasePremiumCourse(course: CourseDetailResponse) {
+  protected async purchasePremiumCourse(course: CourseDetailResponse | CoursePreviewResponse) {
     this.isEnrolling.set(true);
     this.isInitializingPayment.set(true);
     

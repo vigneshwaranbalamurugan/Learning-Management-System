@@ -48,7 +48,7 @@ export class LearnerDashboard implements OnInit {
   ngOnInit(): void {
     forkJoin({
       analytics: this.analyticsService.getLearnerAnalytics(),
-      enrollments: this.enrollmentService.getMyEnrollments()
+      enrollments: this.enrollmentService.getAllMyEnrollments()
     }).pipe(
       untilDestroyed(this.destroyRef)
     ).subscribe({

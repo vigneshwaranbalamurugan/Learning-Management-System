@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '@environments/environment';
-import { CourseResponse, CategoryResponse, PagedCourseResponse, FiltersMetadataResponse, CourseSearchQuery, CourseDetailResponse } from '@models/course';
+import { CourseResponse, CategoryResponse, PagedCourseResponse, FiltersMetadataResponse, CourseSearchQuery, CourseDetailResponse, PagedInstructorCourseResponse, PagedCourseListResponse, CoursePreviewResponse } from '@models/course';
 
 @Injectable({
   providedIn: 'root',
@@ -11,7 +11,7 @@ export class CourseService {
   private http = inject(HttpClient);
   private readonly baseUrl = environment.apiUrl;
 
-  getMyCourses(query?: any): Observable<PagedCourseResponse> {
+  getMyCourses(query?: any): Observable<PagedInstructorCourseResponse> {
     let params = new HttpParams();
     if (query) {
       if (query.categoryIds)        params = params.set('categoryIds', query.categoryIds);
@@ -26,7 +26,7 @@ export class CourseService {
       params = params.set('pageNumber', '1');
       params = params.set('pageSize', '1000');
     }
-    return this.http.get<PagedCourseResponse>(`${this.baseUrl}/Courses/my-courses`, { params });
+    return this.http.get<PagedInstructorCourseResponse>(`${this.baseUrl}/Courses/my-courses`, { params });
   }
 
   createCourse(formData: FormData): Observable<CourseResponse> {
@@ -45,7 +45,7 @@ export class CourseService {
     return this.http.delete<void>(`${this.baseUrl}/Courses/${courseId}`);
   }
 
-  getAllCourses(query: CourseSearchQuery): Observable<PagedCourseResponse> {
+  getAllCourses(query: CourseSearchQuery): Observable<PagedCourseListResponse> {
     let params = new HttpParams();
     if (query.categoryIds)      params = params.set('categoryIds', query.categoryIds);
     if (query.levels)           params = params.set('levels', query.levels);
@@ -60,7 +60,7 @@ export class CourseService {
     if (query.excludeCourseIds) params = params.set('excludeCourseIds', query.excludeCourseIds);
     params = params.set('pageNumber', query.pageNumber.toString());
     params = params.set('pageSize', query.pageSize.toString());
-    return this.http.get<PagedCourseResponse>(`${this.baseUrl}/Courses`, { params });
+    return this.http.get<PagedCourseListResponse>(`${this.baseUrl}/Courses`, { params });
   }
 
   getAllCategories(): Observable<CategoryResponse[]> {
@@ -71,12 +71,12 @@ export class CourseService {
     return this.http.get<FiltersMetadataResponse>(`${this.baseUrl}/Courses/filters-metadata`);
   }
 
-  getCourseById(courseId: number): Observable<CourseDetailResponse> {
-    return this.http.get<CourseDetailResponse>(`${this.baseUrl}/Courses/${courseId}`);
+  getCourseById(courseId: number): Observable<CourseDetailResponse | CoursePreviewResponse> {
+    return this.http.get<CourseDetailResponse | CoursePreviewResponse>(`${this.baseUrl}/Courses/${courseId}`);
   }
 
-  getCourseBySlug(slug: string): Observable<CourseDetailResponse> {
-    return this.http.get<CourseDetailResponse>(`${this.baseUrl}/Courses/slug/${slug}`);
+  getCourseBySlug(slug: string): Observable<CourseDetailResponse | CoursePreviewResponse> {
+    return this.http.get<CourseDetailResponse | CoursePreviewResponse>(`${this.baseUrl}/Courses/slug/${slug}`);
   }
 
   getInstructorCourseBySlug(slug: string): Observable<CourseDetailResponse> {

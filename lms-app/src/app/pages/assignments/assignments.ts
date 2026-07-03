@@ -1,4 +1,4 @@
-import { Component, OnInit, signal, computed, inject, DestroyRef } from '@angular/core';
+import { Component, OnInit, signal, computed, inject, DestroyRef, effect, untracked } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule, Router } from '@angular/router';
@@ -30,10 +30,12 @@ interface EnrichedAssignment {
   deadline?: string;
 }
 
+import { PaginationComponent } from '../../components/pagination/pagination.component';
+
 @Component({
   selector: 'app-assignments-page',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, Loader],
+  imports: [CommonModule, FormsModule, RouterModule, Loader, PaginationComponent],
   templateUrl: './assignments.html'
 })
 export class AssignmentsPage implements OnInit {
@@ -48,138 +50,53 @@ export class AssignmentsPage implements OnInit {
   protected isLoading = signal(true);
   protected searchQuery = signal('');
 
-  // Statistics
-  protected totalCount = computed(() => this.assignments().length);
-  protected pendingCount = computed(() => this.assignments().filter(a => a.status === 'Pending' || a.status === 'Submitted' || a.status === 'UnderReview').length);
-  protected passedCount = computed(() => this.assignments().filter(a => a.isPassed === true).length);
-  protected failedCount = computed(() => this.assignments().filter(a => a.isPassed === false).length);
+  protected currentPage = signal(1);
+  protected pageSize = signal(10);
+  protected totalPages = signal(0);
+  
+  protected totalCount = signal(0);
+  protected pendingCount = signal(0);
+  protected passedCount = signal(0);
+  protected failedCount = signal(0);
+  protected Math = Math;
 
-  // Client-side search filtering
-  protected filteredAssignments = computed(() => {
-    let list = this.assignments();
-    const query = this.searchQuery().toLowerCase().trim();
+  // Client-side search filtering no longer used directly since backend handles it, but we can debounce search.
+  protected filteredAssignments = computed(() => this.assignments());
 
-    if (query) {
-      list = list.filter(a => 
-        (a.title && a.title.toLowerCase().includes(query)) ||
-        (a.courseTitle && a.courseTitle.toLowerCase().includes(query)) ||
-        (a.sectionTitle && a.sectionTitle.toLowerCase().includes(query))
-      );
-    }
-    return list;
-  });
+  constructor() {
+    // Handle search debounce
+    effect(() => {
+      const query = this.searchQuery();
+      untracked(() => {
+        this.currentPage.set(1);
+        this.loadAssignments();
+      });
+    });
+  }
 
   ngOnInit(): void {
+    // Load initial page
+    this.loadAssignments();
+  }
+
+  protected onPageChange(page: number): void {
+    this.currentPage.set(page);
     this.loadAssignments();
   }
 
   private loadAssignments(): void {
     this.isLoading.set(true);
-
-    this.enrollmentService.getMyEnrollments()
-      .pipe(
-        untilDestroyed(this.destroyRef),
-        switchMap(enrollments => {
-          if (!enrollments || enrollments.length === 0) {
-            return of([]);
-          }
-
-          // Fetch full details (sections) for all enrolled courses
-          const courseDetailObs = enrollments.map(e => 
-            this.courseService.getCourseById(e.courseId).pipe(
-              catchError(() => of(null))
-            )
-          );
-
-          return forkJoin(courseDetailObs).pipe(
-            switchMap(courseDetails => {
-              const validDetails = courseDetails.filter(c => c !== null);
-              if (validDetails.length === 0) {
-                return of([]);
-              }
-
-              // Collect all sections
-              const sectionsList: { sectionId: number; courseTitle: string; sectionTitle: string }[] = [];
-              for (const course of validDetails) {
-                if (course.sections) {
-                  for (const sec of course.sections) {
-                    sectionsList.push({
-                      sectionId: sec.id,
-                      courseTitle: course.title,
-                      sectionTitle: sec.title
-                    });
-                  }
-                }
-              }
-
-              if (sectionsList.length === 0) {
-                return of([]);
-              }
-
-              // Fetch assignments for each section
-              const assignmentsObs = sectionsList.map(sec => 
-                this.assignmentService.getAssignmentsBySection(sec.sectionId).pipe(
-                  map(assignments => (assignments || []).map(a => ({
-                    ...a,
-                    courseTitle: sec.courseTitle,
-                    sectionTitle: sec.sectionTitle
-                  }))),
-                  catchError(() => of([]))
-                )
-              );
-
-              return forkJoin(assignmentsObs).pipe(
-                map(results => results.flat()),
-                switchMap(allAssignments => {
-                  if (allAssignments.length === 0) {
-                    return of([]);
-                  }
-
-                  // Fetch status for each assignment
-                  const statusObs = allAssignments.map(a => 
-                    this.assignmentService.getAssignmentStatus(a.id).pipe(
-                      map(status => ({
-                        ...a,
-                        statusInfo: status
-                      })),
-                      catchError(() => of({
-                        ...a,
-                        statusInfo: null
-                      }))
-                    )
-                  );
-
-                  return forkJoin(statusObs);
-                })
-              );
-            })
-          );
-        })
-      )
+    
+    this.assignmentService.getMyAssignments(this.currentPage(), this.pageSize(), this.searchQuery())
+      .pipe(untilDestroyed(this.destroyRef))
       .subscribe({
-        next: (data: any[]) => {
-          const enriched: EnrichedAssignment[] = data.map(item => {
-            const statusInfo: AssignmentStatusResponse | null = item.statusInfo;
-            return {
-              id: item.id,
-              title: item.title,
-              courseTitle: item.courseTitle,
-              sectionTitle: item.sectionTitle,
-              isCompulsory: item.isCompulsory,
-              totalMarks: item.totalMarks,
-              passingMarks: item.passingMarks,
-              deadlineInDays: item.deadlineInDays,
-              deadlineDate: item.deadlineDate,
-              maxSubmissions: item.maxSubmissions,
-              status: statusInfo?.latestStatus || 'Pending',
-              isPassed: statusInfo?.isPassed !== undefined ? statusInfo.isPassed : null,
-              attemptsMade: statusInfo?.attemptsMade || 0,
-              remainingAttempts: statusInfo?.remainingAttempts !== undefined ? statusInfo.remainingAttempts : item.maxSubmissions,
-              deadline: statusInfo?.deadline
-            };
-          });
-
-          this.assignments.set(enriched);
+        next: (data: any) => {
+          this.assignments.set(data.assignments || []);
+          this.totalCount.set(data.totalCount || 0);
+          this.totalPages.set(data.totalPages || 0);
+          this.pendingCount.set(data.pendingCount || 0);
+          this.passedCount.set(data.passedCount || 0);
+          this.failedCount.set(data.failedCount || 0);
           this.isLoading.set(false);
         },
         error: (err) => {

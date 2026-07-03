@@ -59,6 +59,33 @@ namespace LMSApi.DALLibrary.Repositories
                 .ToListAsync();
         }
 
+        public async Task<(IEnumerable<Enrollments> Enrollments, int TotalCount)> GetEnrollmentsByUserPagedAsync(int userId, int pageNumber, int pageSize)
+        {
+            var query = _context.Enrollments
+                .Include(e => e.Course)
+                    .ThenInclude(c => c.Category)
+                .Include(e => e.Course)
+                    .ThenInclude(c => c.Language)
+                .Include(e => e.Course)
+                    .ThenInclude(c => c.Instructor)
+                        .ThenInclude(i => i.UserProfile)
+                .Include(e => e.Course)
+                    .ThenInclude(c => c.Sections)
+                        .ThenInclude(s => s.Lessons)
+                .Include(e => e.Batch)
+                .Where(e => e.UserId == userId);
+
+            var totalCount = await query.CountAsync();
+
+            var enrollments = await query
+                .OrderByDescending(e => e.EnrolledAt)
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            return (enrollments, totalCount);
+        }
+
         /// <inheritdoc/>
         public async Task<IEnumerable<Enrollments>> GetActiveEnrollmentsByCourseAsync(int courseId)
         {

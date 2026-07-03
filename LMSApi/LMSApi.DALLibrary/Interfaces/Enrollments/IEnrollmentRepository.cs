@@ -13,6 +13,9 @@ namespace LMSApi.DALLibrary.Interfaces
         /// <summary>Returns all enrollments for a given user, including course and batch navigation.</summary>
         Task<IEnumerable<Enrollments>> GetEnrollmentsByUserAsync(int userId);
 
+        /// <summary>Returns paginated enrollments for a given user.</summary>
+        Task<(IEnumerable<Enrollments> Enrollments, int TotalCount)> GetEnrollmentsByUserPagedAsync(int userId, int pageNumber, int pageSize);
+
         /// <summary>Returns all active enrollments for a given course.</summary>
         Task<IEnumerable<Enrollments>> GetActiveEnrollmentsByCourseAsync(int courseId);
 

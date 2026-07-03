@@ -68,7 +68,7 @@ export class MyCourses implements OnInit {
 
   private loadMyEnrollments(): void {
     this.isLoading.set(true);
-    this.enrollmentService.getMyEnrollments()
+    this.enrollmentService.getAllMyEnrollments()
       .pipe(untilDestroyed(this.destroyRef))
       .subscribe({
         next: (data) => {

@@ -14,13 +14,13 @@
       </p>
     </div>
     <div class="hidden lg:flex flex-col items-end gap-2 relative z-10 text-right">
-      <div class="text-4xl font-black text-white/15 select-none">{{ attempts().length }}</div>
+      <div class="text-4xl font-black text-white/15 select-none">{{ totalItems() }}</div>
       <span class="text-xs text-white/60 font-semibold uppercase tracking-widest">Quizzes Attempted</span>
     </div>
   </div>
 
   <!-- ═══════════ STATS OVERVIEW ═══════════ -->
-  @if (!isLoading() && totalCount() > 0) {
+  @if (!isLoading() && totalItems() > 0) {
     <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
       <div class="bg-white border border-gray-200 rounded-xl p-4 flex flex-col justify-between shadow-xs">
         <span class="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Total Attempts</span>
@@ -41,34 +41,6 @@
     </div>
   }
 
-  <!-- ═══════════ SEARCH & CONTROLS ═══════════ -->
-  @if (!isLoading() && attempts().length > 0) {
-    <div class="flex flex-col sm:flex-row gap-4 items-center justify-between bg-white border border-gray-200 rounded-xl p-3 shadow-xs">
-      <div class="relative w-full sm:max-w-xs">
-        <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
-          <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-          </svg>
-        </span>
-        <input type="text"
-          id="quiz-search"
-          placeholder="Search by quiz or course title..."
-          [ngModel]="searchQuery()"
-          (ngModelChange)="searchQuery.set($event)"
-          class="w-full pl-9 pr-9 py-2 border border-gray-200 rounded-lg text-xs bg-white text-gray-800 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition" />
-        @if (searchQuery()) {
-          <button (click)="searchQuery.set('')"
-            class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 cursor-pointer transition">
-            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-            </svg>
-          </button>
-        }
-      </div>
-      <span class="text-xs text-gray-400 font-semibold">Showing {{ filteredAttempts().length }} attempts</span>
-    </div>
-  }
-
   <!-- ═══════════ LOADING STATE ═══════════ -->
   @if (isLoading()) {
     <div class="flex items-center justify-center min-h-[60vh]">
@@ -76,95 +48,94 @@
     </div>
   }
 
-  <!-- ═══════════ QUIZZES LIST ═══════════ -->
+  <!-- ═══════════ QUIZZES TABLE ═══════════ -->
   @if (!isLoading()) {
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-      @for (attempt of filteredAttempts(); track attempt.id) {
-        <div class="bg-white border border-gray-250 rounded-2xl p-5 flex flex-col min-h-[250px] shadow-xs relative overflow-hidden
-                    hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 group">
-          
-          <!-- Decorative Status Line at the top -->
-          <div class="absolute top-0 left-0 right-0 h-1.5"
-               [class.bg-emerald-500]="attempt.isPassed"
-               [class.bg-red-500]="!attempt.isPassed"></div>
+    @if (attempts().length > 0) {
+      <div class="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden flex flex-col">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="bg-gray-50 border-b border-gray-200 text-xs font-bold text-gray-500 uppercase tracking-wider">
+                <th class="p-4 whitespace-nowrap font-bold">Quiz Details</th>
+                <th class="p-4 whitespace-nowrap font-bold">Score</th>
+                <th class="p-4 whitespace-nowrap font-bold hidden md:table-cell">Duration</th>
+                <th class="p-4 whitespace-nowrap font-bold hidden sm:table-cell">Status</th>
+                <th class="p-4 whitespace-nowrap font-bold text-center">Action</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+              @for (attempt of attempts(); track attempt.id) {
+                <tr class="hover:bg-gray-50 transition-colors group">
+                  <td class="p-4 align-top">
+                    <div class="flex flex-col">
+                      <span class="text-[10px] text-gray-400 font-bold uppercase tracking-wider truncate mb-1">
+                        {{ attempt.courseTitle || 'Course' }} @if (attempt.sectionTitle) { • {{ attempt.sectionTitle }} }
+                      </span>
+                      <h3 class="text-sm font-bold text-gray-900 leading-snug line-clamp-2 m-0 mb-1">
+                        {{ attempt.quizTitle || 'Quiz Title' }}
+                      </h3>
+                      <div class="text-[10px] text-gray-500 font-medium">
+                        {{ attempt.startedAt | date:'MMM dd, yyyy - hh:mm a' }}
+                      </div>
+                    </div>
+                  </td>
+                  
+                  <td class="p-4 align-top">
+                    <div class="flex flex-col gap-1">
+                      <div class="flex items-baseline gap-1">
+                        <span class="text-sm font-black text-slate-800">{{ attempt.obtainedScore }}/{{ attempt.totalScore }}</span>
+                        <span class="text-[10px] text-gray-500 font-bold">({{ getPercentage(attempt.obtainedScore, attempt.totalScore) }}%)</span>
+                      </div>
+                      <span class="text-[9px] text-gray-400 font-bold uppercase">Pass: {{ attempt.passingPercentage }}%</span>
+                    </div>
+                  </td>
 
-          <!-- Course & Quiz Header -->
-          <div class="flex flex-col gap-0.5 mb-1 shrink-0">
-            <span class="text-[9px] text-gray-400 font-bold uppercase tracking-wider truncate">
-              {{ attempt.courseTitle || 'Course Title' }}
-            </span>
-            @if (attempt.sectionTitle) {
-              <span class="text-[9px] text-indigo-600 font-extrabold uppercase tracking-wider truncate">
-                📂 {{ attempt.sectionTitle }}
-              </span>
-            }
-          </div>
-          <h3 class="text-sm font-bold text-gray-900 leading-snug line-clamp-2 m-0 mb-3 h-10 pr-2">
-            {{ attempt.quizTitle || 'Quiz Title' }}
-          </h3>
+                  <td class="p-4 align-top hidden md:table-cell">
+                    <span class="text-xs font-semibold text-slate-700 bg-gray-100 px-2 py-1 rounded-md">
+                      {{ getDuration(attempt.startedAt, attempt.completedAt) }}
+                    </span>
+                  </td>
 
-          <!-- Details Grid -->
-          <div class="grid grid-cols-2 gap-3 bg-gray-50 border border-gray-150 rounded-xl p-3 mb-3 text-[11px] select-none">
-            <div class="flex flex-col gap-0.5">
-              <span class="text-gray-400 font-bold uppercase text-[8px] tracking-wider">Score</span>
-              <div class="flex items-baseline gap-1">
-                <span class="text-xs font-black text-slate-800">{{ attempt.obtainedScore }}/{{ attempt.totalScore }}</span>
-                <span class="text-[9px] text-gray-500 font-bold">({{ getPercentage(attempt.obtainedScore, attempt.totalScore) }}%)</span>
-              </div>
-            </div>
-            
-            <div class="flex flex-col gap-0.5">
-              <span class="text-gray-400 font-bold uppercase text-[8px] tracking-wider">Passing Score</span>
-              <span class="text-xs font-black text-slate-700">{{ attempt.passingPercentage }}%</span>
-            </div>
+                  <td class="p-4 align-top hidden sm:table-cell">
+                    <span class="px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wider inline-block"
+                          [class.bg-emerald-50]="attempt.isPassed"
+                          [class.text-emerald-700]="attempt.isPassed"
+                          [class.bg-red-50]="!attempt.isPassed"
+                          [class.text-red-700]="!attempt.isPassed"
+                          [class.bg-amber-50]="!attempt.completedAt"
+                          [class.text-amber-700]="!attempt.completedAt">
+                      {{ !attempt.completedAt ? 'In Progress' : (attempt.isPassed ? 'PASSED' : 'FAILED') }}
+                    </span>
+                  </td>
 
-            <div class="flex flex-col gap-0.5">
-              <span class="text-gray-400 font-bold uppercase text-[8px] tracking-wider">Questions</span>
-              <span class="text-xs font-black text-slate-700">{{ attempt.questionsCount }} {{ attempt.questionsCount === 1 ? 'question' : 'questions' }}</span>
-            </div>
-
-            <div class="flex flex-col gap-0.5">
-              <span class="text-gray-400 font-bold uppercase text-[8px] tracking-wider">Time Spent</span>
-              <span class="text-xs font-black text-slate-700">{{ getDuration(attempt.startedAt, attempt.completedAt) }}</span>
-            </div>
-          </div>
-
-          <!-- Progress Bar & Status -->
-          <div class="flex flex-col gap-2 mb-auto">
-            <div class="w-full bg-gray-100 rounded-full h-1.5 overflow-hidden">
-              <div class="h-full rounded-full transition-all duration-300"
-                   [class.bg-emerald-500]="attempt.isPassed"
-                   [class.bg-red-500]="!attempt.isPassed"
-                   [style.width.%]="attempt.totalScore > 0 ? (attempt.obtainedScore / attempt.totalScore) * 100 : 0"></div>
-            </div>
-
-            <div class="flex items-center justify-between text-[9px] text-gray-400 font-bold uppercase tracking-wider mt-1">
-              <span>{{ attempt.startedAt | date:'MMM dd, yyyy - hh:mm a' }}</span>
-              <span class="px-2 py-0.5 rounded-full font-extrabold"
-                    [class.bg-emerald-50]="attempt.isPassed"
-                    [class.text-emerald-700]="attempt.isPassed"
-                    [class.bg-red-50]="!attempt.isPassed"
-                    [class.text-red-700]="!attempt.isPassed">
-                {{ attempt.isPassed ? 'PASSED' : 'FAILED' }}
-              </span>
-            </div>
-          </div>
-
-          <!-- Footer Actions -->
-          <div class="flex items-center gap-2 pt-3 border-t border-gray-100 mt-4">
-            <button (click)="viewAttemptDetail(attempt.id)"
-              class="w-full px-3 py-2.5 rounded-lg text-xs font-bold bg-[#1C1C7B] text-white hover:bg-[#14145a] cursor-pointer transition shadow-sm disabled:opacity-50 flex items-center justify-center gap-2">
-              <span>👁 Review Questions</span>
-            </button>
-          </div>
+                  <td class="p-4 align-top text-center">
+                    <button (click)="viewAttemptDetail(attempt.id)"
+                      class="px-3 py-1.5 rounded-lg text-[11px] font-bold bg-[#1C1C7B]/5 text-[#1C1C7B] hover:bg-[#1C1C7B]/10 hover:text-[#14145a] cursor-pointer transition whitespace-nowrap">
+                      Review 👁
+                    </button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
         </div>
-      }
-    </div>
+
+        <!-- Pagination -->
+        @if (totalPages() > 1) {
+          <div class="p-4 border-t border-gray-100 flex justify-center bg-gray-50/50">
+            <app-pagination 
+              [pageNumber]="currentPage()" 
+              [totalPages]="totalPages()" 
+              (pageChange)="onPageChange($event)">
+            </app-pagination>
+          </div>
+        }
+      </div>
+    }
 
     <!-- Empty State -->
-    @if (filteredAttempts().length === 0) {
-      <div class="flex flex-col items-center justify-center py-16 px-6 text-center bg-white border border-dashed border-gray-200 rounded-2xl animate-[fadeInContent_300ms_ease]">
-        <!-- SVG Empty State Illustration -->
+    @if (attempts().length === 0) {
+      <div class="flex flex-col items-center justify-center py-16 px-6 text-center bg-white border border-dashed border-gray-200 rounded-2xl mt-6 animate-[fadeInContent_300ms_ease]">
         <svg class="w-52 h-52 mb-4" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
           <circle cx="100" cy="100" r="85" fill="#f8fafc" />
           <circle cx="100" cy="100" r="75" stroke="#e2e8f0" stroke-width="1.5" stroke-dasharray="4 4" />
@@ -176,25 +147,14 @@
         <div class="text-center max-w-sm">
           <h4 class="text-sm font-bold text-gray-800 m-0 mb-1">No Quiz Submissions Yet</h4>
           <p class="text-xs text-gray-400 mx-auto leading-relaxed">
-            @if (attempts().length === 0) {
-              Complete quizzes inside your course modules to view grades, review answers, and check score explanations here!
-            } @else {
-              No quiz attempts match your search query. Try clearing the search.
-            }
+            Complete quizzes inside your course modules to view grades, review answers, and check score explanations here!
           </p>
         </div>
 
-        @if (attempts().length === 0) {
-          <button (click)="navigateToExplore()"
-            class="mt-4 px-5 py-2.5 rounded-lg bg-primary text-white text-xs font-bold hover:bg-[#14145a] cursor-pointer transition shadow-sm hover:shadow-md">
-            🚀 Explore Courses
-          </button>
-        } @else {
-          <button (click)="searchQuery.set('')"
-            class="mt-4 px-5 py-2.5 rounded-lg bg-primary text-white text-xs font-bold hover:bg-[#14145a] cursor-pointer transition shadow-sm hover:shadow-md">
-            Clear Search
-          </button>
-        }
+        <button (click)="navigateToExplore()"
+          class="mt-4 px-5 py-2.5 rounded-lg bg-primary text-white text-xs font-bold hover:bg-[#14145a] cursor-pointer transition shadow-sm hover:shadow-md">
+          🚀 Explore Courses
+        </button>
       </div>
     }
   }

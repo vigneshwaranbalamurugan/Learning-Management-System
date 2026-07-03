@@ -7,6 +7,7 @@ namespace LMSApi.DALLibrary.Interfaces
         Task<Certificates?> GetByGuidAsync(Guid certificateId);
         Task<Certificates?> GetByUserAndCourseAsync(int userId, int courseId);
         Task<IEnumerable<Certificates>> GetCertificatesByUserAsync(int userId);
+        Task<(IEnumerable<Certificates> Certificates, int TotalCount)> GetCertificatesByUserPagedAsync(int userId, int pageNumber, int pageSize);
         Task<CertificateTemplates?> GetActiveTemplateAsync();
         Task<CertificateTemplates?> GetTemplateByIdAsync(int id);
         Task<IEnumerable<CertificateTemplates>> GetAllTemplatesAsync();

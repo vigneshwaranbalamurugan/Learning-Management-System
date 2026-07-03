@@ -101,4 +101,26 @@ namespace LMSApi.ModelLibrary.DTOs
     public class LessonDetailResponse : LessonResponse
     {
     }
+
+    /// <summary>
+    /// Sent to unenrolled learners in course preview.
+    /// ContentUrl and Content are null unless IsPreview == true.
+    /// </summary>
+    public class CourseLessonPreviewResponse
+    {
+        public int Id { get; set; }
+        public int CourseSectionId { get; set; }
+        public string Title { get; set; }
+        public string? Description { get; set; }
+        public LessonType Type { get; set; }
+        public TimeSpan? DurationInMinutes { get; set; }
+        public int SortOrder { get; set; }
+        public bool IsPreview { get; set; }
+        // ContentUrl only populated when IsPreview == true
+        public string? ContentUrl { get; set; }
+        // Content only populated when IsPreview == true
+        public string? Content { get; set; }
+        // Resources: empty list unless IsPreview == true
+        public List<ResourceResponse> Resources { get; set; } = [];
+    }
 }

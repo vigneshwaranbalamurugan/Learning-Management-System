@@ -1,8 +1,8 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, map } from 'rxjs';
 import { environment } from '@environments/environment';
-import { EnrollmentResponse } from '@models/enrollment';
+import { EnrollmentResponse, PagedEnrollmentResponse } from '@models/enrollment';
 
 @Injectable({
   providedIn: 'root',
@@ -21,8 +21,13 @@ export class EnrollmentService {
     return { headers: new HttpHeaders({ 'Idempotency-Key': key }) };
   }
 
-  getMyEnrollments(): Observable<EnrollmentResponse[]> {
-    return this.http.get<EnrollmentResponse[]>(`${this.baseUrl}/enrollments/my`);
+  getMyEnrollments(page: number = 1, pageSize: number = 10): Observable<PagedEnrollmentResponse> {
+    return this.http.get<PagedEnrollmentResponse>(`${this.baseUrl}/enrollments/my?page=${page}&pageSize=${pageSize}`);
+  }
+
+  getAllMyEnrollments(): Observable<EnrollmentResponse[]> {
+    return this.http.get<PagedEnrollmentResponse>(`${this.baseUrl}/enrollments/my?page=1&pageSize=1000`)
+      .pipe(map(res => res?.enrollments || []));
   }
 
   enrollFreeCourse(courseId: number): Observable<any> {

@@ -83,7 +83,7 @@
         <ng-container *ngIf="!isLoading()">
           <div class="p-4 border border-gray-100 bg-gray-50/50 rounded-lg flex flex-col gap-2.5" *ngFor="let course of displayedCourses()">
             <div class="flex gap-3 items-center">
-              <span class="bg-emerald-50 text-emerald-600 text-[10px] font-bold px-2 py-0.5 rounded" [class.bg-gray-100]="course.status === 'Draft'" [class.text-gray-500]="course.status === 'Draft'">{{ course.status }}</span>
+              <span class="text-[10px] font-bold px-2 py-0.5 rounded" [ngClass]="getStatusClasses(course.statusCode)">{{ course.status }}</span>
               <span class="text-xs text-gray-500 font-medium" *ngIf="course.students > 0">{{ course.students }} Students</span>
             </div>
             <h4 class="text-sm font-semibold text-gray-800 m-0">{{ course.title }}</h4>
