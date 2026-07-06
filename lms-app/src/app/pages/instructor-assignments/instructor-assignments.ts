@@ -1,71 +1,94 @@
-import { Component, OnInit, signal, computed, inject, DestroyRef } from '@angular/core';
+import { Component, OnInit, inject, DestroyRef, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
-import { InstructorAssignmentService, InstructorAssignmentSummaryDto } from '@services/instructor-assignment.service';
+import { InstructorAssignmentService } from '@services/instructor-assignment.service';
+import { InstructorAssignmentSummaryDto, PagedInstructorAssignmentResponse } from '@models/assignment';
 import { ToastService } from '@services/toast.service';
 import { untilDestroyed } from '../../rxjs/until-destroyed';
 import { Loader } from '@components/loader/loader';
+import { PaginationComponent } from '@components/pagination/pagination.component';
+import { SearchInput } from '@components/search-input/search-input';
+import { Dropdown } from '@components/dropdown/dropdown';
 
 @Component({
   selector: 'app-instructor-assignments',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, Loader],
+  imports: [CommonModule, FormsModule, RouterModule, Loader, PaginationComponent, SearchInput, Dropdown],
   templateUrl: './instructor-assignments.html'
 })
 export class InstructorAssignments implements OnInit {
   private assignmentService = inject(InstructorAssignmentService);
   private toastService = inject(ToastService);
   private destroyRef = inject(DestroyRef);
+  private cdr = inject(ChangeDetectorRef);
 
-  protected assignments = signal<InstructorAssignmentSummaryDto[]>([]);
-  protected isLoading = signal(true);
-  protected searchQuery = signal('');
+  assignments: InstructorAssignmentSummaryDto[] = [];
+  isLoading = true;
+  
+  // Pagination
+  page = 1;
+  pageSize = 10;
+  totalCount = 0;
+  totalPages = 0;
 
-  // Statistics
-  protected totalCount = computed(() => this.assignments().length);
-  protected totalPendingSubmissions = computed(() => 
-    this.assignments().reduce((sum, a) => sum + (a.pendingSubmissionsCount || 0), 0)
-  );
-  protected fullyGradedCount = computed(() => 
-    this.assignments().filter(a => a.pendingSubmissionsCount === 0).length
-  );
-  protected uniqueCoursesCount = computed(() => 
-    new Set(this.assignments().map(a => a.courseTitle)).size
-  );
+  // Filters
+  searchQuery = '';
+  selectedStatus = '';
 
-  // Client-side filtering by query
-  protected filteredAssignments = computed(() => {
-    let list = this.assignments();
-    const query = this.searchQuery().toLowerCase().trim();
+  // Stats
+  totalPendingSubmissions = 0;
+  fullyGradedCount = 0;
+  uniqueCoursesCount = 0;
 
-    if (query) {
-      list = list.filter(a =>
-        (a.title && a.title.toLowerCase().includes(query)) ||
-        (a.courseTitle && a.courseTitle.toLowerCase().includes(query)) ||
-        (a.sectionTitle && a.sectionTitle.toLowerCase().includes(query))
-      );
-    }
-    return list;
-  });
+  statusOptions = [
+    { value: '', label: 'All Statuses' },
+    { value: '0', label: 'Draft' },
+    { value: '1', label: 'Published' }
+  ];
 
   ngOnInit(): void {
     this.loadAssignments();
   }
 
-  private loadAssignments(): void {
-    this.isLoading.set(true);
-    this.assignmentService.getInstructorAssignments()
+  loadAssignments(): void {
+    this.isLoading = true;
+    const statusFilter = this.selectedStatus ? parseInt(this.selectedStatus) : undefined;
+    
+    this.assignmentService.getInstructorAssignments(this.page, this.pageSize, this.searchQuery, statusFilter)
       .pipe(untilDestroyed(this.destroyRef))
       .subscribe({
-        next: (data) => {
-          this.assignments.set(data || []);
-          this.isLoading.set(false);
+        next: (res: PagedInstructorAssignmentResponse) => {
+          this.assignments = res.assignments;
+          this.totalCount = res.totalCount;
+          this.totalPages = res.totalPages;
+          this.totalPendingSubmissions = res.totalPendingCount;
+          this.fullyGradedCount = res.fullyGradedCount;
+          this.uniqueCoursesCount = res.uniqueCourseCount;
+          this.isLoading = false;
+          this.cdr.detectChanges();
         },
         error: (err) => {
           this.toastService.showApiError(err, 'Failed to load assignments.');
-          this.isLoading.set(false);
+          this.isLoading = false;
         }
       });
+  }
+
+  onSearchChange(search: string) {
+    this.searchQuery = search;
+    this.page = 1;
+    this.loadAssignments();
+  }
+
+  onStatusChange(status: string) {
+    this.selectedStatus = status;
+    this.page = 1;
+    this.loadAssignments();
+  }
+
+  onPageChange(newPage: number) {
+    this.page = newPage;
+    this.loadAssignments();
   }
 }

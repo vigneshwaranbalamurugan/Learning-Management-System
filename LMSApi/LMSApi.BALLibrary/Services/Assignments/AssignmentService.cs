@@ -75,6 +75,11 @@ namespace LMSApi.BALLibrary.Services
             return await _assignmentRepository.GetInstructorAssignmentsAsync(instructorId);
         }
 
+        public async Task<PagedInstructorAssignmentResponse> GetInstructorAssignmentsPagedAsync(int instructorId, int pageNumber, int pageSize, string? searchQuery, int? statusFilter)
+        {
+            return await _assignmentRepository.GetInstructorAssignmentsPagedAsync(instructorId, pageNumber, pageSize, searchQuery, statusFilter);
+        }
+
         public async Task<AssignmentResponse> GetAssignmentByIdAsync(int id, int? currentUserId = null, bool isAdmin = false)
         {
             var assignment = await _assignmentRepository.GetByIdAsync(id)

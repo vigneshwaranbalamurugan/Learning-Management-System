@@ -7,6 +7,7 @@ namespace LMSApi.BALLibrary.Interfaces
         // ─── Assignment CRUD ────────────────────────────────────────────────
         Task<IEnumerable<AssignmentResponse>> GetAssignmentsBySectionAsync(int sectionId, int? currentUserId = null, bool isAdmin = false);
         Task<IEnumerable<InstructorAssignmentSummaryDto>> GetInstructorAssignmentsAsync(int instructorId);
+        Task<PagedInstructorAssignmentResponse> GetInstructorAssignmentsPagedAsync(int instructorId, int pageNumber, int pageSize, string? searchQuery, int? statusFilter);
         Task<AssignmentResponse> GetAssignmentByIdAsync(int id, int? currentUserId = null, bool isAdmin = false);
         Task<AssignmentResponse> CreateAssignmentAsync(CreateAssignmentRequest request, Stream? attachmentStream = null, string? attachmentFileName = null);
         Task<AssignmentResponse> UpdateAssignmentAsync(int id, UpdateAssignmentRequest request, Stream? attachmentStream = null, string? attachmentFileName = null);

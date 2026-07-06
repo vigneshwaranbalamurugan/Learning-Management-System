@@ -2,7 +2,8 @@ import { Component, OnInit, signal, computed, inject, DestroyRef } from '@angula
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
-import { InstructorProgressService, StudentProgressSummaryDto, StudentCourseProgressResponse } from '@services/instructor-progress.service';
+import { InstructorProgressService, StudentCourseProgressResponse } from '@services/instructor-progress.service';
+import { StudentProgressSummaryDto, PagedStudentProgressResponse } from '@models/progress';
 import { ToastService } from '@services/toast.service';
 import { untilDestroyed } from '../../rxjs/until-destroyed';
 import { Loader } from '@components/loader/loader';
@@ -10,11 +11,14 @@ import { CourseService } from '@services/course.service';
 import { ProgressService } from '@services/progress.service';
 import { PublishStatus } from '../../enums/publish-status.enum';
 import { CourseStatus } from '../../enums/course-status.enum';
+import { PaginationComponent } from '@components/pagination/pagination.component';
+import { SearchInput } from '@components/search-input/search-input';
+import { Dropdown } from '@components/dropdown/dropdown';
 
 @Component({
   selector: 'app-instructor-course-progress',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, Loader],
+  imports: [CommonModule, FormsModule, RouterModule, Loader, PaginationComponent, SearchInput, Dropdown],
   templateUrl: './instructor-course-progress.html'
 })
 export class InstructorCourseProgress implements OnInit {
@@ -31,32 +35,27 @@ export class InstructorCourseProgress implements OnInit {
   
   protected students = signal<StudentProgressSummaryDto[]>([]);
   protected isLoading = signal(true);
+  
+  // Pagination
+  protected page = signal(1);
+  protected pageSize = signal(10);
+  protected totalPages = signal(0);
+  protected totalCount = signal(0);
+  
+  // Filters
   protected searchQuery = signal('');
+  protected selectedStatus = signal('');
 
   // Statistics
-  protected totalStudents = computed(() => this.students().length);
-  protected completedCount = computed(() => this.students().filter(s => s.isCompleted).length);
-  protected averageProgress = computed(() => {
-    const list = this.students();
-    if (list.length === 0) return 0;
-    const sum = list.reduce((total, s) => total + (s.progressPercentage || 0), 0);
-    return Math.round(sum / list.length);
-  });
+  protected totalStudents = signal(0);
+  protected completedCount = signal(0);
+  protected averageProgress = signal(0);
 
-  // Local Search filtering
-  protected filteredStudents = computed(() => {
-    let list = this.students();
-    const query = this.searchQuery().toLowerCase().trim();
-
-    if (query) {
-      list = list.filter(s => 
-        (s.studentName && s.studentName.toLowerCase().includes(query)) ||
-        (s.studentEmail && s.studentEmail.toLowerCase().includes(query)) ||
-        (s.batchName && s.batchName.toLowerCase().includes(query))
-      );
-    }
-    return list;
-  });
+  protected statusOptions = [
+    { value: '', label: 'All Statuses' },
+    { value: 'true', label: 'Completed' },
+    { value: 'false', label: 'In Progress' }
+  ];
 
   // Selected student detailed progress drawer state
   protected selectedStudent = signal<StudentProgressSummaryDto | null>(null);
@@ -80,10 +79,12 @@ export class InstructorCourseProgress implements OnInit {
   private loadData(): void {
     this.isLoading.set(true);
 
-    this.dashboardProgressService.getStudentsProgress(this.courseId)
+    const isCompletedFilter = this.selectedStatus() ? this.selectedStatus() === 'true' : undefined;
+
+    this.dashboardProgressService.getStudentsProgress(this.courseId, this.page(), this.pageSize(), this.searchQuery(), isCompletedFilter)
       .pipe(untilDestroyed(this.destroyRef))
       .subscribe({
-        next: (data) => {
+        next: (data: PagedStudentProgressResponse) => {
           if (data.courseStatus !== 'Published') {
             this.toastService.showError('Cannot view progress for an unpublished course.');
             this.router.navigate(['/instructor/progress']);
@@ -91,6 +92,11 @@ export class InstructorCourseProgress implements OnInit {
           }
           this.courseTitle.set(data.courseTitle);
           this.students.set(data.students || []);
+          this.totalCount.set(data.totalCount);
+          this.totalPages.set(data.totalPages);
+          this.totalStudents.set(data.totalStudents);
+          this.completedCount.set(data.completedCount);
+          this.averageProgress.set(data.averageProgress);
           this.isLoading.set(false);
         },
         error: (err) => {
@@ -99,6 +105,23 @@ export class InstructorCourseProgress implements OnInit {
           this.isLoading.set(false);
         }
       });
+  }
+
+  onSearchChange(search: string) {
+    this.searchQuery.set(search);
+    this.page.set(1);
+    this.loadData();
+  }
+
+  onStatusChange(status: string) {
+    this.selectedStatus.set(status);
+    this.page.set(1);
+    this.loadData();
+  }
+
+  onPageChange(newPage: number) {
+    this.page.set(newPage);
+    this.loadData();
   }
 
   protected viewStudentDetails(student: StudentProgressSummaryDto): void {

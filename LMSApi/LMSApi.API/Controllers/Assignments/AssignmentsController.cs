@@ -72,10 +72,14 @@ namespace LMSApi.API.Controllers
         /// <summary>Get all assignments created by the authenticated instructor.</summary>
         [Authorize(Roles = "Instructor,Admin")]
         [HttpGet("my-created")]
-        public async Task<ActionResult<IEnumerable<InstructorAssignmentSummaryDto>>> GetInstructorAssignments()
+        public async Task<ActionResult<PagedInstructorAssignmentResponse>> GetInstructorAssignments(
+            [FromQuery] int page = 1, 
+            [FromQuery] int pageSize = 10, 
+            [FromQuery] string? search = null, 
+            [FromQuery] int? status = null)
         {
             var userId = User.GetUserId();
-            var result = await _assignmentService.GetInstructorAssignmentsAsync(userId);
+            var result = await _assignmentService.GetInstructorAssignmentsPagedAsync(userId, page, pageSize, search, status);
             return Ok(result);
         }
 

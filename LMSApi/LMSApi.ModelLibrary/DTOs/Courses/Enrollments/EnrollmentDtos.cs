@@ -100,6 +100,21 @@ namespace LMSApi.ModelLibrary.DTOs
         public IEnumerable<StudentProgressSummaryDto> Students { get; set; } = new List<StudentProgressSummaryDto>();
     }
 
+    public class PagedStudentProgressResponse
+    {
+        public IEnumerable<StudentProgressSummaryDto> Students { get; set; } = new List<StudentProgressSummaryDto>();
+        public int TotalCount { get; set; }
+        public int PageNumber { get; set; }
+        public int PageSize { get; set; }
+        public int TotalPages { get; set; }
+        public int TotalStudents { get; set; }
+        public int CompletedCount { get; set; }
+        public int AverageProgress { get; set; }
+        public int CourseId { get; set; }
+        public string CourseTitle { get; set; } = string.Empty;
+        public string CourseStatus { get; set; } = string.Empty;
+    }
+
     public class MonthlyStatDto
     {
         public string Month { get; set; } = string.Empty;

@@ -4,19 +4,8 @@ import { Observable } from 'rxjs';
 import { environment } from '@environments/environment';
 import { AssignmentSubmissionResponse } from '@models/assignment';
 
-export interface InstructorAssignmentSummaryDto {
-  id: number;
-  courseSectionId: number;
-  title: string;
-  courseTitle: string;
-  sectionTitle: string;
-  totalMarks: number;
-  deadlineInDays: number;
-  deadlineDate?: string;
-  pendingSubmissionsCount: number;
-  status: number;
-  createdAt: string;
-}
+import { HttpParams } from '@angular/common/http';
+import { PagedInstructorAssignmentResponse, InstructorAssignmentSummaryDto } from '@models/assignment';
 
 @Injectable({
   providedIn: 'root'
@@ -25,8 +14,15 @@ export class InstructorAssignmentService {
   private http = inject(HttpClient);
   private readonly baseUrl = environment.apiUrl;
 
-  getInstructorAssignments(): Observable<InstructorAssignmentSummaryDto[]> {
-    return this.http.get<InstructorAssignmentSummaryDto[]>(`${this.baseUrl}/Assignments/my-created`);
+  getInstructorAssignments(page: number = 1, pageSize: number = 10, search?: string, status?: number): Observable<PagedInstructorAssignmentResponse> {
+    let params = new HttpParams()
+      .set('page', page.toString())
+      .set('pageSize', pageSize.toString());
+
+    if (search) params = params.set('search', search);
+    if (status != null) params = params.set('status', status.toString());
+
+    return this.http.get<PagedInstructorAssignmentResponse>(`${this.baseUrl}/Assignments/my-created`, { params });
   }
 
   getPendingSubmissions(assignmentId: number): Observable<AssignmentSubmissionResponse[]> {

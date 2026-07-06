@@ -10,5 +10,6 @@ namespace LMSApi.BALLibrary.Interfaces
         Task DeleteReviewByAdminAsync(int reviewId);
         Task<IEnumerable<ReviewResponse>> GetCourseReviewsAsync(int courseId);
         Task<PagedReviewResponse> GetAllReviewsPagedAsync(int pageNumber, int pageSize, string? search);
+        Task<PagedInstructorReviewResponse> GetInstructorReviewsPagedAsync(int instructorId, int pageNumber, int pageSize, int? ratingFilter, int? courseId, string? search);
     }
 }

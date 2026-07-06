@@ -7,6 +7,7 @@ using LMSApi.BALLibrary.Services;
 using LMSApi.BALLibrary.Services.Upload;
 using LMSApi.BALLibrary.Services.Notification;
 using LMSApi.BALLibrary.Mappers;
+using LMSApi.BALLibrary.Utils;
 using LMSApi.API.Middlewares;
 using LMSApi.API.Handlers;
 using Asp.Versioning;
@@ -177,6 +178,7 @@ builder.Services.AddScoped<IActivityLogService, ActivityLogService>();
 builder.Services.AddScoped<IAdminLogService, AdminLogService>();
 builder.Services.AddScoped<ICurrentUserProvider, CurrentUserProvider>();
 builder.Services.AddScoped<IWebhookEventService, WebhookEventService>();
+builder.Services.AddScoped<ICacheService, CacheService>();
 #endregion
 
 builder.Services.AddStackExchangeRedisCache(options =>

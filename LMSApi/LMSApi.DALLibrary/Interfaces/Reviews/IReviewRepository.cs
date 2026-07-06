@@ -7,5 +7,6 @@ namespace LMSApi.DALLibrary.Interfaces
         Task<Reviews> GetByUserAndCourseAsync(int userId, int courseId);
         Task<IEnumerable<Reviews>> GetByCourseAsync(int courseId);
         Task<(IEnumerable<Reviews> Reviews, int TotalCount)> GetAllReviewsPagedAsync(int pageNumber, int pageSize, string? search);
+        Task<(IEnumerable<Reviews> Reviews, int TotalCount, double AverageRating, Dictionary<int, int> RatingDistribution)> GetInstructorReviewsPagedAsync(int instructorId, int pageNumber, int pageSize, int? ratingFilter, int? courseId, string? search);
     }
 }

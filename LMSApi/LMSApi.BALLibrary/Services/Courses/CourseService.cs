@@ -4,13 +4,19 @@ using LMSApi.DALLibrary.Interfaces;
 using LMSApi.ModelLibrary.DTOs;
 using LMSApi.ModelLibrary.Enums;
 using LMSApi.ModelLibrary.Models;
+using LMSApi.ModelLibrary.Models;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Configuration;
 using LMSApi.BALLibrary.Utils;
 
 namespace LMSApi.BALLibrary.Services
 {
     public class CourseService : ICourseService
     {
+        private const string CacheKeyDetailPrefix = "course:detail:";
+        private const string CacheKeySlugPrefix = "course:slug:";
+        private const string CacheKeyStatsPrefix = "course:stats:";
+
         private readonly ICourseRepository _courseRepository;
         private readonly ICourseCategoryRepository _categoryRepository;
         private readonly IUserRepository _userRepository;
@@ -22,6 +28,9 @@ namespace LMSApi.BALLibrary.Services
         private readonly IWishListRepository _wishListRepository;
         private readonly IUserNotificationsService _userNotificationsService;
         private readonly IReviewRepository _reviewRepository;
+        private readonly ICacheService _cacheService;
+        private readonly int _detailTtlMinutes;
+        private readonly int _statsTtlMinutes;
 
         public CourseService(
             ICourseRepository courseRepository,
@@ -34,7 +43,9 @@ namespace LMSApi.BALLibrary.Services
             INotificationService notificationService,
             IWishListRepository wishListRepository,
             IUserNotificationsService userNotificationsService,
-            IReviewRepository reviewRepository)
+            IReviewRepository reviewRepository,
+            ICacheService cacheService,
+            IConfiguration configuration)
         {
             _courseRepository = courseRepository;
             _categoryRepository = categoryRepository;
@@ -47,6 +58,9 @@ namespace LMSApi.BALLibrary.Services
             _wishListRepository = wishListRepository;
             _userNotificationsService = userNotificationsService;
             _reviewRepository = reviewRepository;
+            _cacheService = cacheService;
+            _detailTtlMinutes = configuration.GetValue<int>("Cache:CourseDetailTtlMinutes", 30);
+            _statsTtlMinutes = configuration.GetValue<int>("Cache:CourseStatsTtlMinutes", 10);
         }
 
         public async Task<IEnumerable<CourseResponse>> GetAllCoursesAsync()
@@ -131,58 +145,74 @@ namespace LMSApi.BALLibrary.Services
 
         public async Task<CourseResponse> GetCourseByIdAsync(int id, int? currentUserId = null, bool isAdmin = false)
         {
+            async Task<CoursePreviewResponse> GetCachedPreviewAsync()
+            {
+                return await _cacheService.GetOrSetAsync(
+                    $"{CacheKeyDetailPrefix}{id}",
+                    async () => 
+                    {
+                        var c = await _courseRepository.GetCourseWithDetailsAsync(id)
+                            ?? throw new KeyNotFoundException($"Course with id '{id}' not found.");
+
+                        var reviewsData = await _reviewRepository.GetByCourseAsync(c.Id);
+                        var reviewResponses = reviewsData.Select(r => new ReviewResponse
+                        {
+                            Id = r.Id,
+                            CourseId = r.CourseId,
+                            UserId = r.UserId,
+                            UserName = r.User?.Email ?? "",
+                            Rating = r.Rating,
+                            ReviewText = r.Review,
+                            CreatedAt = r.CreatedAt,
+                            UpdatedAt = r.UpdatedAt
+                        }).ToList();
+
+                        c.Sections = c.Sections
+                            .Where(s => s.Status == PublishStatus.Published)
+                            .Select(s =>
+                            {
+                                s.Lessons = s.Lessons.Where(l => l.Status == PublishStatus.Published).ToList();
+                                s.Quizzes = s.Quizzes.Where(q => q.Status == PublishStatus.Published).ToList();
+                                s.Assignments = s.Assignments.Where(a => a.Status == PublishStatus.Published).ToList();
+                                return s;
+                            }).ToList();
+
+                        var preview = _mapper.Map<CoursePreviewResponse>(c);
+                        preview.EnrolledCount = c.Enrollments?.Count ?? 0;
+
+                        var pStats = await _courseRepository.GetCourseRatingStatsAsync(c.Id);
+                        preview.AverageRating = pStats.AverageRating;
+                        preview.TotalReviews = pStats.TotalReviews;
+                        preview.IsEnrolled = false;
+                        preview.Reviews = reviewResponses;
+                        
+                        return preview;
+                    },
+                    TimeSpan.FromMinutes(_detailTtlMinutes));
+            }
+
+            if (currentUserId == null)
+            {
+                return await GetCachedPreviewAsync();
+            }
+
             var course = await _courseRepository.GetCourseWithDetailsAsync(id)
                 ?? throw new KeyNotFoundException($"Course with id '{id}' not found.");
 
-            bool isEnrolled = false;
-            Enrollments? enrollment = null;
-            if (currentUserId.HasValue)
+            var enrollment = await _enrollmentRepository.GetByUserAndCourseAsync(currentUserId.Value, course.Id);
+            bool isEnrolled = enrollment != null;
+
+            if (!isEnrolled && course.InstructorId != currentUserId && !isAdmin)
             {
-                enrollment = await _enrollmentRepository.GetByUserAndCourseAsync(currentUserId.Value, course.Id);
-                isEnrolled = enrollment != null;
-            }
-
-            var reviewsData = await _reviewRepository.GetByCourseAsync(course.Id);
-            var reviewResponses = reviewsData.Select(r => new ReviewResponse
-            {
-                Id = r.Id,
-                CourseId = r.CourseId,
-                UserId = r.UserId,
-                UserName = r.User?.Email ?? "",
-                Rating = r.Rating,
-                ReviewText = r.Review,
-                CreatedAt = r.CreatedAt,
-                UpdatedAt = r.UpdatedAt
-            }).ToList();
-
-            if (!isEnrolled && (currentUserId == null || (course.InstructorId != currentUserId && !isAdmin)))
-            {
-                course.Sections = course.Sections
-                    .Where(s => s.Status == PublishStatus.Published)
-                    .Select(s =>
-                    {
-                        s.Lessons = s.Lessons.Where(l => l.Status == PublishStatus.Published).ToList();
-                        s.Quizzes = s.Quizzes.Where(q => q.Status == PublishStatus.Published).ToList();
-                        s.Assignments = s.Assignments.Where(a => a.Status == PublishStatus.Published).ToList();
-                        return s;
-                    }).ToList();
-
-                var previewResponse = _mapper.Map<CoursePreviewResponse>(course);
-                previewResponse.EnrolledCount = course.Enrollments?.Count ?? 0;
-
-                var pStats = await _courseRepository.GetCourseRatingStatsAsync(course.Id);
-                previewResponse.AverageRating = pStats.AverageRating;
-                previewResponse.TotalReviews = pStats.TotalReviews;
-
-                if (currentUserId.HasValue)
+                // Clone the cached preview so we don't mutate the cached instance directly
+                var cachedPreview = await GetCachedPreviewAsync();
+                var preview = Newtonsoft.Json.JsonConvert.DeserializeObject<CoursePreviewResponse>(Newtonsoft.Json.JsonConvert.SerializeObject(cachedPreview));
+                if (preview != null)
                 {
-                    previewResponse.IsWishlisted = await _wishListRepository.CheckExistsAsync(currentUserId.Value, course.Id);
+                    preview.IsWishlisted = await _wishListRepository.CheckExistsAsync(currentUserId.Value, course.Id);
+                    return preview;
                 }
-
-                previewResponse.IsEnrolled = false;
-                previewResponse.Reviews = reviewResponses;
-                
-                return previewResponse;
+                return cachedPreview;
             }
 
             var response = _mapper.Map<CourseDetailsResponse>(course);
@@ -192,18 +222,27 @@ namespace LMSApi.BALLibrary.Services
             response.AverageRating = stats.AverageRating;
             response.TotalReviews = stats.TotalReviews;
 
-            if (currentUserId.HasValue)
-            {
-                response.IsWishlisted = await _wishListRepository.CheckExistsAsync(currentUserId.Value, id);
-            }
-
+            response.IsWishlisted = await _wishListRepository.CheckExistsAsync(currentUserId.Value, id);
+            
             response.IsEnrolled = isEnrolled;
             if (enrollment != null)
             {
                 response.EnrollmentId = enrollment.Id;
                 response.EnrollmentProgress = (double)enrollment.ProgressPercentage;
             }
-            response.Reviews = reviewResponses;
+
+            var rData = await _reviewRepository.GetByCourseAsync(course.Id);
+            response.Reviews = rData.Select(r => new ReviewResponse
+            {
+                Id = r.Id,
+                CourseId = r.CourseId,
+                UserId = r.UserId,
+                UserName = r.User?.Email ?? "",
+                Rating = r.Rating,
+                ReviewText = r.Review,
+                CreatedAt = r.CreatedAt,
+                UpdatedAt = r.UpdatedAt
+            }).ToList();
             
             response.HasNonExpiredEnrollments = await _enrollmentRepository.HasNonExpiredEnrollmentsByCourseAsync(id);
             response.HasActiveEnrollments = await _enrollmentRepository.HasActiveOnlyEnrollmentsByCourseAsync(id);
@@ -213,19 +252,94 @@ namespace LMSApi.BALLibrary.Services
 
         public async Task<CourseResponse> GetCourseBySlugAsync(string slug, int? currentUserId = null, bool isAdmin = false)
         {
+            async Task<CoursePreviewResponse> GetCachedPreviewAsync()
+            {
+                return await _cacheService.GetOrSetAsync(
+                    $"{CacheKeySlugPrefix}{slug}",
+                    async () => 
+                    {
+                        var c = await _courseRepository.GetCourseBySlugWithDetailsAsync(slug)
+                            ?? throw new KeyNotFoundException($"Course with slug '{slug}' not found.");
+
+                        var reviewsData = await _reviewRepository.GetByCourseAsync(c.Id);
+                        var reviewResponses = reviewsData.Select(r => new ReviewResponse
+                        {
+                            Id = r.Id,
+                            CourseId = r.CourseId,
+                            UserId = r.UserId,
+                            UserName = r.User?.Email ?? "",
+                            Rating = r.Rating,
+                            ReviewText = r.Review,
+                            CreatedAt = r.CreatedAt,
+                            UpdatedAt = r.UpdatedAt
+                        }).ToList();
+
+                        c.Sections = c.Sections
+                            .Where(s => s.Status == PublishStatus.Published)
+                            .Select(s =>
+                            {
+                                s.Lessons = s.Lessons.Where(l => l.Status == PublishStatus.Published).ToList();
+                                s.Quizzes = s.Quizzes.Where(q => q.Status == PublishStatus.Published).ToList();
+                                s.Assignments = s.Assignments.Where(a => a.Status == PublishStatus.Published).ToList();
+                                return s;
+                            }).ToList();
+
+                        var preview = _mapper.Map<CoursePreviewResponse>(c);
+                        preview.EnrolledCount = c.Enrollments?.Count ?? 0;
+
+                        var pStats = await _courseRepository.GetCourseRatingStatsAsync(c.Id);
+                        preview.AverageRating = pStats.AverageRating;
+                        preview.TotalReviews = pStats.TotalReviews;
+                        preview.IsEnrolled = false;
+                        preview.Reviews = reviewResponses;
+                        
+                        return preview;
+                    },
+                    TimeSpan.FromMinutes(_detailTtlMinutes));
+            }
+
+            if (currentUserId == null)
+            {
+                return await GetCachedPreviewAsync();
+            }
+
             var course = await _courseRepository.GetCourseBySlugWithDetailsAsync(slug)
                 ?? throw new KeyNotFoundException($"Course with slug '{slug}' not found.");
 
-            bool isEnrolled = false;
-            Enrollments? enrollment = null;
-            if (currentUserId.HasValue)
+            var enrollment = await _enrollmentRepository.GetByUserAndCourseAsync(currentUserId.Value, course.Id);
+            bool isEnrolled = enrollment != null;
+
+            if (!isEnrolled && course.InstructorId != currentUserId && !isAdmin)
             {
-                enrollment = await _enrollmentRepository.GetByUserAndCourseAsync(currentUserId.Value, course.Id);
-                isEnrolled = enrollment != null;
+                // Clone the cached preview
+                var cachedPreview = await GetCachedPreviewAsync();
+                var preview = Newtonsoft.Json.JsonConvert.DeserializeObject<CoursePreviewResponse>(Newtonsoft.Json.JsonConvert.SerializeObject(cachedPreview));
+                if (preview != null)
+                {
+                    preview.IsWishlisted = await _wishListRepository.CheckExistsAsync(currentUserId.Value, course.Id);
+                    return preview;
+                }
+                return cachedPreview;
             }
 
-            var reviewsData = await _reviewRepository.GetByCourseAsync(course.Id);
-            var reviewResponses = reviewsData.Select(r => new ReviewResponse
+            var response = _mapper.Map<CourseDetailsResponse>(course);
+            response.EnrolledCount = course.Enrollments?.Count ?? 0;
+
+            var stats = await _courseRepository.GetCourseRatingStatsAsync(course.Id);
+            response.AverageRating = stats.AverageRating;
+            response.TotalReviews = stats.TotalReviews;
+
+            response.IsWishlisted = await _wishListRepository.CheckExistsAsync(currentUserId.Value, course.Id);
+
+            response.IsEnrolled = isEnrolled;
+            if (enrollment != null)
+            {
+                response.EnrollmentId = enrollment.Id;
+                response.EnrollmentProgress = (double)enrollment.ProgressPercentage;
+            }
+
+            var rData = await _reviewRepository.GetByCourseAsync(course.Id);
+            response.Reviews = rData.Select(r => new ReviewResponse
             {
                 Id = r.Id,
                 CourseId = r.CourseId,
@@ -237,56 +351,6 @@ namespace LMSApi.BALLibrary.Services
                 UpdatedAt = r.UpdatedAt
             }).ToList();
 
-            if (!isEnrolled && (currentUserId == null || (course.InstructorId != currentUserId && !isAdmin)))
-            {
-                course.Sections = course.Sections
-                    .Where(s => s.Status == PublishStatus.Published)
-                    .Select(s =>
-                    {
-                        s.Lessons = s.Lessons.Where(l => l.Status == PublishStatus.Published).ToList();
-                        s.Quizzes = s.Quizzes.Where(q => q.Status == PublishStatus.Published).ToList();
-                        s.Assignments = s.Assignments.Where(a => a.Status == PublishStatus.Published).ToList();
-                        return s;
-                    }).ToList();
-
-                var previewResponse = _mapper.Map<CoursePreviewResponse>(course);
-                previewResponse.EnrolledCount = course.Enrollments?.Count ?? 0;
-
-                var pStats = await _courseRepository.GetCourseRatingStatsAsync(course.Id);
-                previewResponse.AverageRating = pStats.AverageRating;
-                previewResponse.TotalReviews = pStats.TotalReviews;
-
-                if (currentUserId.HasValue)
-                {
-                    previewResponse.IsWishlisted = await _wishListRepository.CheckExistsAsync(currentUserId.Value, course.Id);
-                }
-
-                previewResponse.IsEnrolled = false;
-                previewResponse.Reviews = reviewResponses;
-                
-                return previewResponse;
-            }
-
-            var response = _mapper.Map<CourseDetailsResponse>(course);
-            response.EnrolledCount = course.Enrollments?.Count ?? 0;
-
-            var stats = await _courseRepository.GetCourseRatingStatsAsync(course.Id);
-            response.AverageRating = stats.AverageRating;
-            response.TotalReviews = stats.TotalReviews;
-
-            if (currentUserId.HasValue)
-            {
-                response.IsWishlisted = await _wishListRepository.CheckExistsAsync(currentUserId.Value, course.Id);
-            }
-
-            response.IsEnrolled = isEnrolled;
-            if (enrollment != null)
-            {
-                response.EnrollmentId = enrollment.Id;
-                response.EnrollmentProgress = (double)enrollment.ProgressPercentage;
-            }
-            response.Reviews = reviewResponses;
-
             response.HasNonExpiredEnrollments = await _enrollmentRepository.HasNonExpiredEnrollmentsByCourseAsync(course.Id);
             response.HasActiveEnrollments = await _enrollmentRepository.HasActiveOnlyEnrollmentsByCourseAsync(course.Id);
 
@@ -294,9 +358,7 @@ namespace LMSApi.BALLibrary.Services
         }
 
         /// <summary>
-        /// Creates a new course. instructorId is always sourced from the caller's JWT token.
-        /// </summary>
-        public async Task<CourseResponse> CreateCourseAsync(
+public async Task<CourseResponse> CreateCourseAsync(
             int instructorId,
             CreateCourseRequest request,
             Stream? thumbnailStream = null, string? thumbnailFileName = null,
@@ -786,7 +848,10 @@ namespace LMSApi.BALLibrary.Services
 
         public async Task<CourseSummaryStatsResponse> GetCourseSummaryStatsAsync()
         {
-            return await _courseRepository.GetCourseSummaryStatsAsync();
+            return await _cacheService.GetOrSetAsync(
+                CacheKeyStatsPrefix + "global",
+                async () => await _courseRepository.GetCourseSummaryStatsAsync(),
+                TimeSpan.FromMinutes(_statsTtlMinutes));
         }
 
         public async Task<IEnumerable<CategoryResponse>> GetAllCategoriesAsync()

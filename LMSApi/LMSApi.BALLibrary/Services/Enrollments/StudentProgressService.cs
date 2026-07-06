@@ -393,7 +393,7 @@ namespace LMSApi.BALLibrary.Services
             }
         }
 
-        public async Task<InstructorCourseProgressResponse> GetStudentsProgressForCourseAsync(int instructorId, int courseId, bool isAdmin = false)
+        public async Task<PagedStudentProgressResponse> GetStudentsProgressForCoursePagedAsync(int instructorId, int courseId, int pageNumber, int pageSize, string? searchQuery, bool? isCompleted, bool isAdmin = false)
         {
             var course = await _courseRepository.GetByIdAsync(courseId)
                 ?? throw new KeyNotFoundException($"Course with id '{courseId}' not found.");
@@ -410,7 +410,22 @@ namespace LMSApi.BALLibrary.Services
 
             var enrollments = await _enrollmentRepository.GetEnrollmentsByCourseAsync(courseId);
 
-            var students = enrollments.Select(e => new StudentProgressSummaryDto
+            var query = enrollments.AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(searchQuery))
+            {
+                var lowerQuery = searchQuery.ToLower();
+                query = query.Where(e => 
+                    (e.User.UserProfile != null && (e.User.UserProfile.FirstName.ToLower().Contains(lowerQuery) || e.User.UserProfile.LastName.ToLower().Contains(lowerQuery))) ||
+                    e.User.Email.ToLower().Contains(lowerQuery));
+            }
+
+            if (isCompleted.HasValue)
+            {
+                query = query.Where(e => e.IsCompleted == isCompleted.Value);
+            }
+
+            var allStudents = query.Select(e => new StudentProgressSummaryDto
             {
                 EnrollmentId = e.Id,
                 StudentId = e.UserId,
@@ -423,15 +438,32 @@ namespace LMSApi.BALLibrary.Services
                 ProgressPercentage = e.ProgressPercentage,
                 IsCompleted = e.IsCompleted,
                 CompletedAt = e.CompletedAt,
-                BatchName = e.Batch?.Name
-            });
+                BatchName = e.Batch != null ? e.Batch.Name : null
+            }).OrderByDescending(s => s.EnrolledAt).ToList();
 
-            return new InstructorCourseProgressResponse
+            var totalCount = allStudents.Count;
+            var completedCount = allStudents.Count(s => s.IsCompleted);
+            var totalStudents = enrollments.Count();
+            var avgProgress = totalStudents > 0 ? (int)Math.Round(enrollments.Average(e => e.ProgressPercentage)) : 0;
+
+            var pagedStudents = allStudents
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .ToList();
+
+            return new PagedStudentProgressResponse
             {
+                Students = pagedStudents,
+                TotalCount = totalCount,
+                PageNumber = pageNumber,
+                PageSize = pageSize,
+                TotalPages = (int)Math.Ceiling(totalCount / (double)pageSize),
+                TotalStudents = totalStudents,
+                CompletedCount = completedCount,
+                AverageProgress = avgProgress,
                 CourseId = course.Id,
                 CourseTitle = course.Title,
-                CourseStatus = course.Status.ToString(),
-                Students = students
+                CourseStatus = course.Status.ToString()
             };
         }
 

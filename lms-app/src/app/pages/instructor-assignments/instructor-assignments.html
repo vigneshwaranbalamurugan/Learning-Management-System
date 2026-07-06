@@ -1,14 +1,11 @@
 <div class="flex flex-col gap-6 animate-[fadeInContent_400ms_ease]">
-
+  
   <!-- ═══════════ HEADER BANNER ═══════════ -->
-  <div
-    class="relative overflow-hidden bg-slate-950 text-white rounded-2xl p-7 flex items-center justify-between shadow-xs">
-    <img src="/explore-banner.png" alt="Instructor Banner"
-      class="absolute inset-0 w-full h-full object-cover opacity-30 select-none pointer-events-none" />
+  <div class="relative overflow-hidden bg-slate-950 text-white rounded-2xl p-7 flex items-center justify-between shadow-xs">
+    <img src="/explore-banner.png" alt="Instructor Banner" class="absolute inset-0 w-full h-full object-cover opacity-30 select-none pointer-events-none" />
     <div class="absolute inset-0 bg-gradient-to-r from-primary/90 via-slate-950/80 to-transparent"></div>
     <div class="flex flex-col relative z-10">
-      <div
-        class="bg-white/15 border border-white/20 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider self-start mb-3">
+      <div class="bg-white/15 border border-white/20 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider self-start mb-3">
         Instructor Panel
       </div>
       <h2 class="text-2xl sm:text-3xl font-extrabold mb-2 tracking-tight flex items-center gap-2.5">
@@ -21,55 +18,52 @@
         </svg>
       </h2>
       <p class="text-white/85 text-xs sm:text-sm max-w-[500px] leading-relaxed">
-        Track assignments you have created across your courses, view the maximum score, and monitor learner submissions
-        waiting for your feedback.
+        Track assignments you have created across your courses, view the maximum score, and monitor learner submissions waiting for your feedback.
       </p>
     </div>
     <div class="hidden lg:flex flex-col items-end gap-2 relative z-10 text-right">
-      <div class="text-4xl font-black text-white/15 select-none">{{ totalCount() }}</div>
+      <div class="text-4xl font-black text-white/15 select-none">{{ totalCount }}</div>
       <span class="text-xs text-white/60 font-semibold uppercase tracking-widest">Total Created</span>
     </div>
   </div>
 
   <!-- ═══════════ STATS OVERVIEW ═══════════ -->
-  @if (!isLoading() && totalCount() > 0) {
-  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4" *ngIf="!isLoading && totalCount > 0">
     <div class="bg-white border border-gray-200 rounded-xl p-5 flex items-center justify-between shadow-xs">
       <div>
         <span class="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Total Assignments</span>
-        <h3 class="text-2xl font-black text-slate-800 mt-1 mb-0">{{ totalCount() }}</h3>
+        <h3 class="text-2xl font-black text-slate-800 mt-1 mb-0">{{ totalCount }}</h3>
       </div>
       <div class="p-3 bg-blue-50 text-blue-600 rounded-xl">
         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-            d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
         </svg>
       </div>
     </div>
 
     <div class="border rounded-xl p-5 flex items-center justify-between shadow-xs"
-      [class.bg-amber-50]="totalPendingSubmissions() > 0" [class.border-amber-200]="totalPendingSubmissions() > 0"
-      [class.bg-white]="totalPendingSubmissions() === 0" [class.border-gray-200]="totalPendingSubmissions() === 0">
+      [class.bg-amber-50]="totalPendingSubmissions > 0" [class.border-amber-200]="totalPendingSubmissions > 0"
+      [class.bg-white]="totalPendingSubmissions === 0" [class.border-gray-200]="totalPendingSubmissions === 0">
       <div>
         <span class="text-[10px] font-bold uppercase tracking-wider"
-          [class.text-amber-700]="totalPendingSubmissions() > 0"
-          [class.text-gray-400]="totalPendingSubmissions() === 0">Pending Evaluation</span>
-        <h3 class="text-2xl font-black mt-1 mb-0" [class.text-amber-800]="totalPendingSubmissions() > 0"
-          [class.text-slate-800]="totalPendingSubmissions() === 0">{{ totalPendingSubmissions() }}</h3>
+          [class.text-amber-700]="totalPendingSubmissions > 0"
+          [class.text-gray-400]="totalPendingSubmissions === 0">Pending Evaluation</span>
+        <h3 class="text-2xl font-black mt-1 mb-0" [class.text-amber-800]="totalPendingSubmissions > 0"
+          [class.text-slate-800]="totalPendingSubmissions === 0">{{ totalPendingSubmissions }}</h3>
       </div>
-      <div class="p-3 rounded-xl" [class.bg-amber-100]="totalPendingSubmissions() > 0"
-        [class.text-amber-600]="totalPendingSubmissions() > 0" [class.bg-gray-50]="totalPendingSubmissions() === 0"
-        [class.text-gray-400]="totalPendingSubmissions() === 0">
+      <div class="p-3 rounded-xl" [class.bg-amber-100]="totalPendingSubmissions > 0"
+        [class.text-amber-600]="totalPendingSubmissions > 0" [class.bg-gray-50]="totalPendingSubmissions === 0"
+        [class.text-gray-400]="totalPendingSubmissions === 0">
         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-            d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
         </svg>
       </div>
     </div>
+    
     <div class="bg-white border border-gray-200 rounded-xl p-5 flex items-center justify-between shadow-xs">
       <div>
         <span class="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Fully Graded</span>
-        <h3 class="text-2xl font-black text-slate-800 mt-1 mb-0">{{ fullyGradedCount() }}</h3>
+        <h3 class="text-2xl font-black text-slate-800 mt-1 mb-0">{{ fullyGradedCount }}</h3>
       </div>
       <div class="p-3 bg-emerald-50 text-emerald-600 rounded-xl">
         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -81,7 +75,7 @@
     <div class="bg-white border border-gray-200 rounded-xl p-5 flex items-center justify-between shadow-xs">
       <div>
         <span class="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Active Courses</span>
-        <h3 class="text-2xl font-black text-slate-800 mt-1 mb-0">{{ uniqueCoursesCount() }}</h3>
+        <h3 class="text-2xl font-black text-slate-800 mt-1 mb-0">{{ uniqueCoursesCount }}</h3>
       </div>
       <div class="p-3 bg-purple-50 text-purple-600 rounded-xl">
         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -90,164 +84,101 @@
       </div>
     </div>
   </div>
-  }
 
   <!-- ═══════════ SEARCH & CONTROLS ═══════════ -->
-  @if (!isLoading() && totalCount() > 0) {
-  <div
-    class="flex flex-col sm:flex-row gap-4 items-center justify-between bg-white border border-gray-200 rounded-xl p-3 shadow-xs">
-    <div class="relative w-full sm:max-w-xs">
-      <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
-        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-        </svg>
-      </span>
-      <input type="text" id="instructor-assignment-search" placeholder="Search by assignment, section or course..."
-        [ngModel]="searchQuery()" (ngModelChange)="searchQuery.set($event)"
-        class="w-full pl-9 pr-9 py-2 border border-gray-200 rounded-lg text-xs bg-white text-gray-800 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition" />
-      @if (searchQuery()) {
-      <button (click)="searchQuery.set('')"
-        class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 cursor-pointer transition">
-        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-        </svg>
-      </button>
-      }
+  <div class="flex flex-col sm:flex-row gap-4 mb-2">
+    <div class="w-full sm:w-80">
+      <app-search-input 
+        placeholder="Search assignments or courses..."
+        [value]="searchQuery"
+        (searchChange)="onSearchChange($event)">
+      </app-search-input>
     </div>
-    <span class="text-xs text-gray-400 font-semibold">Showing {{ filteredAssignments().length }} assignments</span>
+    <div class="w-full sm:w-48">
+      <app-dropdown
+        [options]="statusOptions"
+        [value]="selectedStatus"
+        (valueChange)="onStatusChange($event)">
+      </app-dropdown>
+    </div>
   </div>
-  }
 
   <!-- ═══════════ LOADING STATE ═══════════ -->
-  @if (isLoading()) {
-  <div class="flex items-center justify-center min-h-[60vh]">
+  <div *ngIf="isLoading" class="flex items-center justify-center py-12">
     <app-loader></app-loader>
   </div>
-  }
 
-  <!-- ═══════════ ASSIGNMENTS LIST ═══════════ -->
-  @if (!isLoading()) {
-  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-    @for (assignment of filteredAssignments(); track assignment.id) {
-    <div class="bg-white border border-gray-250 rounded-2xl p-5 flex flex-col min-h-[240px] shadow-xs relative overflow-hidden
-                    hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 group">
+  <!-- ═══════════ ASSIGNMENTS TABLE ═══════════ -->
+  <div *ngIf="!isLoading" class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="w-full text-left border-collapse">
+        <thead>
+          <tr class="bg-slate-50 border-b border-slate-200 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+            <th class="px-6 py-4 min-w-[200px]">Assignment Details</th>
+            <th class="px-6 py-4 min-w-[150px]">Course</th>
+            <th class="px-6 py-4">Deadline</th>
+            <th class="px-6 py-4 text-center">Pending Evaluation</th>
+            <th class="px-6 py-4 text-right">Actions</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-200">
+          <tr *ngIf="assignments.length === 0">
+            <td colspan="5" class="px-6 py-12 text-center text-slate-500">
+              <svg class="w-12 h-12 mx-auto text-slate-300 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+              </svg>
+              <p class="text-sm">No assignments found.</p>
+            </td>
+          </tr>
 
-      <!-- Decorative Highlight Line -->
-      <div class="absolute top-0 left-0 right-0 h-1.5" [class.bg-primary]="assignment.pendingSubmissionsCount === 0"
-        [class.bg-secondary]="assignment.pendingSubmissionsCount > 0"></div>
-
-      <!-- Course & Section Header -->
-      <div class="flex flex-col gap-0.5 mb-2 shrink-0">
-        <span class="text-[9px] text-gray-400 font-bold uppercase tracking-wider truncate">
-          {{ assignment.courseTitle }}
-        </span>
-        <span class="text-[9px] text-primary font-extrabold uppercase tracking-wider truncate">
-          {{ assignment.sectionTitle }}
-        </span>
-      </div>
-
-      <h3 class="text-sm font-bold text-gray-900 leading-snug line-clamp-2 m-0 mb-3 h-10 pr-2">
-        {{ assignment.title }}
-      </h3>
-
-      <!-- Details Grid -->
-      <div class="grid grid-cols-2 gap-3 bg-gray-50 border border-gray-150 rounded-xl p-3 mb-3 text-[11px] select-none">
-        <div class="flex flex-col gap-0.5">
-          <span class="text-gray-400 font-bold uppercase text-[8px] tracking-wider">Total Marks</span>
-          <span class="text-xs font-black text-slate-800">{{ assignment.totalMarks }}</span>
-        </div>
-
-        <div class="flex flex-col gap-0.5">
-          <span class="text-gray-400 font-bold uppercase text-[8px] tracking-wider">Deadline Days</span>
-          <span class="text-xs font-black text-slate-700">
-            {{ assignment.deadlineInDays > 0 ? assignment.deadlineInDays + ' Days' : 'No Deadline' }}
-          </span>
-        </div>
-
-        <div class="flex flex-col gap-0.5 col-span-2">
-          <span class="text-gray-400 font-bold uppercase text-[8px] tracking-wider">Exact Deadline</span>
-          <span class="text-xs font-black text-slate-700">
-            @if (assignment.deadlineDate) {
-            {{ assignment.deadlineDate | date:'MMM dd, yyyy - hh:mm a' }}
-            } @else {
-            Based on enrollment date
-            }
-          </span>
-        </div>
-      </div>
-
-      <!-- Pending Submissions Indicator -->
-      <div
-        class="flex items-center justify-between text-[9px] text-gray-400 font-bold uppercase tracking-wider mt-auto pt-2">
-        <span>Pending Submissions</span>
-        <span class="px-2.5 py-1 rounded-full font-extrabold"
-          [class.bg-amber-50]="assignment.pendingSubmissionsCount > 0"
-          [class.text-amber-700]="assignment.pendingSubmissionsCount > 0"
-          [class.bg-gray-100]="assignment.pendingSubmissionsCount === 0"
-          [class.text-gray-600]="assignment.pendingSubmissionsCount === 0">
-          @if (assignment.pendingSubmissionsCount > 0) {
-          {{ assignment.pendingSubmissionsCount }} to evaluate
-          } @else {
-          All Graded
-          }
-        </span>
-      </div>
-
-      <!-- Footer Actions -->
-      <div class="grid grid-cols-2 gap-2 pt-3 border-t border-gray-100 mt-4">
-        @if (assignment.pendingSubmissionsCount > 0) {
-        <a [routerLink]="['/instructor/assignments', assignment.id, 'evaluate']"
-          class="w-full px-3 py-2.5 rounded-lg text-xs font-bold bg-primary hover:bg-primary-hover text-white cursor-pointer transition shadow-sm flex items-center justify-center gap-1 text-center decoration-none no-underline">
-          <span>Evaluate</span>
-        </a>
-        <a [routerLink]="['/instructor/assignments', assignment.id, 'graded']"
-          class="w-full px-3 py-2.5 rounded-lg text-xs font-bold bg-primary-light/50 border border-primary/20 hover:bg-primary-light text-primary-hover cursor-pointer transition shadow-sm flex items-center justify-center gap-1 text-center decoration-none no-underline">
-          <span>View Graded</span>
-        </a>
-        } @else {
-        <a [routerLink]="['/instructor/assignments', assignment.id, 'graded']"
-          class="col-span-2 w-full px-3 py-2.5 rounded-lg text-xs font-bold bg-primary hover:bg-primary-hover text-white cursor-pointer transition shadow-sm flex items-center justify-center gap-2 text-center decoration-none no-underline">
-          <span>View Graded Submissions</span>
-        </a>
-        }
-      </div>
-
+          <tr *ngFor="let assignment of assignments" class="hover:bg-slate-50/80 transition-colors">
+            <td class="px-6 py-4">
+              <div class="font-semibold text-slate-900 line-clamp-1" [title]="assignment.title">{{ assignment.title }}</div>
+              <div class="text-xs text-slate-500 mt-0.5">Marks: <span class="font-medium">{{ assignment.totalMarks }}</span></div>
+            </td>
+            <td class="px-6 py-4">
+              <div class="text-sm font-medium text-slate-700 line-clamp-1" [title]="assignment.courseTitle">{{ assignment.courseTitle }}</div>
+              <div class="text-xs text-primary font-medium uppercase tracking-wider mt-0.5">{{ assignment.sectionTitle }}</div>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap">
+              <div class="text-sm text-slate-700">
+                <span *ngIf="assignment.deadlineDate">{{ assignment.deadlineDate | date:'mediumDate' }}</span>
+                <span *ngIf="!assignment.deadlineDate">{{ assignment.deadlineInDays }} Days from Enroll</span>
+              </div>
+            </td>
+            <td class="px-6 py-4 text-center whitespace-nowrap">
+              <span class="inline-flex items-center justify-center px-2.5 py-1 text-xs font-bold rounded-full"
+                [class.bg-amber-100]="assignment.pendingSubmissionsCount > 0"
+                [class.text-amber-700]="assignment.pendingSubmissionsCount > 0"
+                [class.bg-slate-100]="assignment.pendingSubmissionsCount === 0"
+                [class.text-slate-600]="assignment.pendingSubmissionsCount === 0">
+                {{ assignment.pendingSubmissionsCount > 0 ? assignment.pendingSubmissionsCount + ' Pending' : 'All Graded' }}
+              </span>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-right text-sm">
+              <div class="flex items-center justify-end gap-2">
+                <a *ngIf="assignment.pendingSubmissionsCount > 0" [routerLink]="['/instructor/assignments', assignment.id, 'evaluate']"
+                  class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-primary hover:bg-primary-hover text-white transition-colors">
+                  Evaluate
+                </a>
+                <a [routerLink]="['/instructor/assignments', assignment.id, 'graded']"
+                  class="px-3 py-1.5 rounded-lg text-xs font-semibold border border-slate-300 text-slate-700 hover:bg-slate-100 transition-colors">
+                  View Graded
+                </a>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
     </div>
-    }
-  </div>
-
-  <!-- Empty State -->
-  @if (filteredAssignments().length === 0) {
-  <div
-    class="flex flex-col items-center justify-center py-16 px-6 text-center bg-white border border-dashed border-gray-200 rounded-2xl animate-[fadeInContent_300ms_ease]">
-    <!-- SVG Empty State Illustration -->
-    <svg class="w-52 h-52 mb-4" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <circle cx="100" cy="100" r="85" fill="#f8fafc" />
-      <circle cx="100" cy="100" r="75" stroke="#e2e8f0" stroke-width="1.5" stroke-dasharray="4 4" />
-      <path d="M70 70h60v60H70z" fill="#cbd5e1" opacity="0.3" />
-      <path d="M85 85h30v5H85zM85 95h30v5H85z" fill="#cbd5e1" opacity="0.5" />
-    </svg>
-
-    <div class="text-center max-w-sm">
-      <h4 class="text-sm font-bold text-gray-800 m-0 mb-1">No Assignments Found</h4>
-      <p class="text-xs text-gray-400 mx-auto leading-relaxed">
-        @if (assignments().length === 0) {
-        Create courses and add assignments in the curriculum editor to see them here.
-        } @else {
-        No assignments match your search query. Try clearing the search.
-        }
-      </p>
+    
+    <!-- Pagination -->
+    <div class="px-6 py-4 border-t border-slate-200" *ngIf="totalPages > 1">
+      <app-pagination
+        [pageNumber]="page"
+        [totalPages]="totalPages"
+        (pageChange)="onPageChange($event)">
+      </app-pagination>
     </div>
-
-    @if (assignments().length > 0) {
-    <button (click)="searchQuery.set('')"
-      class="mt-4 px-5 py-2.5 rounded-lg bg-primary text-white text-xs font-bold hover:bg-primary-hover cursor-pointer transition shadow-sm hover:shadow-md">
-      Clear Search
-    </button>
-    }
   </div>
-  }
-  }
-
 </div>

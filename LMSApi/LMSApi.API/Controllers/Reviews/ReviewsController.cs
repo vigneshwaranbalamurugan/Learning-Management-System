@@ -69,5 +69,19 @@ namespace LMSApi.API.Controllers
             await _reviewService.DeleteReviewByAdminAsync(id);
             return NoContent();
         }
+
+        [Authorize(Roles = "Instructor")]
+        [HttpGet("instructor")]
+        public async Task<ActionResult<PagedInstructorReviewResponse>> GetInstructorReviews(
+            [FromQuery] int page = 1, 
+            [FromQuery] int pageSize = 10, 
+            [FromQuery] int? rating = null, 
+            [FromQuery] int? courseId = null, 
+            [FromQuery] string? search = null)
+        {
+            var instructorId = User.GetUserId();
+            var result = await _reviewService.GetInstructorReviewsPagedAsync(instructorId, page, pageSize, rating, courseId, search);
+            return Ok(result);
+        }
     }
 }

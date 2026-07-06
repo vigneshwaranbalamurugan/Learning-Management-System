@@ -53,5 +53,56 @@ namespace LMSApi.DALLibrary.Repositories
 
             return (reviews, totalCount);
         }
+        public async Task<(IEnumerable<Reviews> Reviews, int TotalCount, double AverageRating, Dictionary<int, int> RatingDistribution)> GetInstructorReviewsPagedAsync(int instructorId, int pageNumber, int pageSize, int? ratingFilter, int? courseId, string? search)
+        {
+            var queryable = _context.Reviews
+                .Include(r => r.User)
+                    .ThenInclude(u => u.UserProfile)
+                .Include(r => r.Course)
+                .Where(r => r.Course.InstructorId == instructorId && !r.IsDeleted)
+                .AsQueryable();
+
+            if (courseId.HasValue)
+            {
+                queryable = queryable.Where(r => r.CourseId == courseId.Value);
+            }
+
+            if (ratingFilter.HasValue && ratingFilter.Value > 0)
+            {
+                queryable = queryable.Where(r => r.Rating == ratingFilter.Value);
+            }
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                var s = search.Trim().ToLower();
+                queryable = queryable.Where(r => r.Review.ToLower().Contains(s) || 
+                                                (r.User != null && r.User.UserProfile != null && r.User.UserProfile.FirstName.ToLower().Contains(s)) ||
+                                                (r.Course != null && r.Course.Title.ToLower().Contains(s)));
+            }
+
+            var allFiltered = await queryable.ToListAsync();
+            var totalCount = allFiltered.Count;
+            
+            double avgRating = 0;
+            var distribution = new Dictionary<int, int> { { 1, 0 }, { 2, 0 }, { 3, 0 }, { 4, 0 }, { 5, 0 } };
+            
+            if (totalCount > 0)
+            {
+                avgRating = allFiltered.Average(r => r.Rating);
+                foreach (var r in allFiltered)
+                {
+                    if (distribution.ContainsKey(r.Rating))
+                        distribution[r.Rating]++;
+                }
+            }
+
+            var reviews = allFiltered
+                .OrderByDescending(r => r.CreatedAt)
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .ToList();
+
+            return (reviews, totalCount, avgRating, distribution);
+        }
     }
 }

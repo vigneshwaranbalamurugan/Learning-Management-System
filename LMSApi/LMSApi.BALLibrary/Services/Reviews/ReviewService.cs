@@ -152,5 +152,33 @@ namespace LMSApi.BALLibrary.Services
                 TotalPages = totalPages
             };
         }
+        public async Task<PagedInstructorReviewResponse> GetInstructorReviewsPagedAsync(int instructorId, int pageNumber, int pageSize, int? ratingFilter, int? courseId, string? search)
+        {
+            var (reviews, totalCount, avgRating, distribution) = await _reviewRepository.GetInstructorReviewsPagedAsync(instructorId, pageNumber, pageSize, ratingFilter, courseId, search);
+
+            var totalPages = (int)Math.Ceiling((double)totalCount / pageSize);
+
+            return new PagedInstructorReviewResponse
+            {
+                Reviews = reviews.Select(r => new InstructorReviewResponse
+                {
+                    Id = r.Id,
+                    CourseId = r.CourseId,
+                    CourseTitle = r.Course?.Title ?? "",
+                    UserId = r.UserId,
+                    ReviewerName = r.User?.UserProfile?.FirstName != null ? $"{r.User.UserProfile.FirstName} {r.User.UserProfile.LastName}".Trim() : r.User?.Email ?? "",
+                    Rating = r.Rating,
+                    ReviewText = r.Review,
+                    CreatedAt = r.CreatedAt,
+                    UpdatedAt = r.UpdatedAt
+                }).ToList(),
+                TotalCount = totalCount,
+                PageNumber = pageNumber,
+                PageSize = pageSize,
+                TotalPages = totalPages,
+                AverageRating = avgRating,
+                RatingDistribution = distribution
+            };
+        }
     }
 }

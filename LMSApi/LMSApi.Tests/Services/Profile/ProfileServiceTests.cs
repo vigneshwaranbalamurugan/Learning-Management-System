@@ -8,14 +8,17 @@ using LMSApi.ModelLibrary.Models;
 using Moq;
 using NUnit.Framework;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Configuration;
 
 namespace LMSApi.Tests.Services
 {
     [TestFixture]
     public class ProfileServiceTests : BaseServiceTest
     {
-        private Mock<IUploadService> _mockUploadService = null!;
-        private Mock<ILogger<ProfileService>> _mockLogger = null!;
+        private Mock<IUploadService> _uploadServiceMock = null!;
+        private Mock<ICacheService> _cacheServiceMock = null!;
+        private Mock<IConfiguration> _configMock = null!;
+        private Mock<ILogger<ProfileService>> _loggerMock = null!;
         private IProfileService _profileService = null!;
 
         [SetUp]
@@ -23,18 +26,37 @@ namespace LMSApi.Tests.Services
         {
             base.SetUp();
 
-            _mockUploadService = new Mock<IUploadService>();
-            _mockLogger = new Mock<ILogger<ProfileService>>();
-            
+            _uploadServiceMock = new Mock<IUploadService>();
+            _cacheServiceMock = new Mock<ICacheService>();
+
+            // Pass-through: always call factory (simulates cache miss → go to DB)
+            _cacheServiceMock
+                .Setup(c => c.GetOrSetAsync(
+                    It.IsAny<string>(),
+                    It.IsAny<Func<Task<ProfileResponse>>>(),
+                    It.IsAny<TimeSpan?>()))
+                .Returns((string key, Func<Task<ProfileResponse>> factory, TimeSpan? expiry) => factory());
+            _cacheServiceMock.Setup(c => c.InvalidateAsync(It.IsAny<string[]>())).Returns(Task.CompletedTask);
+            _cacheServiceMock.Setup(c => c.RemoveAsync(It.IsAny<string>())).Returns(Task.CompletedTask);
+
+            _configMock = new Mock<IConfiguration>();
+            var configSection = new Mock<IConfigurationSection>();
+            configSection.Setup(s => s.Value).Returns("15");
+            _configMock.Setup(c => c.GetSection(It.IsAny<string>())).Returns(configSection.Object);
+
+            _loggerMock = new Mock<ILogger<ProfileService>>();
+
             var userProfileRepository = new UserProfileRepository(DbContext);
             var userRepository = new UserRepository(DbContext);
 
             _profileService = new ProfileService(
                 userRepository,
                 userProfileRepository,
-                _mockUploadService.Object,
+                _uploadServiceMock.Object,
                 Mapper,
-                _mockLogger.Object
+                _cacheServiceMock.Object,
+                _configMock.Object,
+                _loggerMock.Object
             );
         }
 
@@ -83,7 +105,7 @@ namespace LMSApi.Tests.Services
             Assert.That(result.FirstName, Is.EqualTo("John"));
             Assert.That(result.LastName, Is.EqualTo("Doe"));
 
-            _mockLogger.Verify(
+            _loggerMock.Verify(
                 x => x.Log(
                     LogLevel.Information,
                     It.IsAny<EventId>(),
@@ -121,7 +143,7 @@ namespace LMSApi.Tests.Services
             // Default profile has empty strings
             Assert.That(result.FirstName, Is.EqualTo(string.Empty).Or.Null);
 
-            _mockLogger.Verify(
+            _loggerMock.Verify(
                 x => x.Log(
                     LogLevel.Information,
                     It.IsAny<EventId>(),
@@ -171,7 +193,7 @@ namespace LMSApi.Tests.Services
             var dbProfile = await DbContext.UserProfiles.FindAsync(profile.Id);
             Assert.That(dbProfile!.FirstName, Is.EqualTo("New"));
 
-            _mockLogger.Verify(
+            _loggerMock.Verify(
                 x => x.Log(
                     LogLevel.Information,
                     It.IsAny<EventId>(),
@@ -180,7 +202,7 @@ namespace LMSApi.Tests.Services
                     It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
                 Times.Once);
 
-            _mockLogger.Verify(
+            _loggerMock.Verify(
                 x => x.Log(
                     LogLevel.Information,
                     It.IsAny<EventId>(),
@@ -235,13 +257,13 @@ namespace LMSApi.Tests.Services
             var user = await CreateUser("imgtest@example.com");
 
             // Mock: file type not allowed
-            _mockUploadService.Setup(s => s.IsAllowedProfileImage(It.IsAny<string>(), It.IsAny<string>())).Returns(false);
+            _uploadServiceMock.Setup(s => s.IsAllowedProfileImage(It.IsAny<string>(), It.IsAny<string>())).Returns(false);
 
             using var stream = new System.IO.MemoryStream(new byte[] { 1, 2, 3 });
             Assert.ThrowsAsync<InvalidOperationException>(() =>
                 _profileService.UpdateProfileImageAsync(user.Email, stream, "malicious.exe", "application/octet-stream"));
 
-            _mockLogger.Verify(
+            _loggerMock.Verify(
                 x => x.Log(
                     LogLevel.Warning,
                     It.IsAny<EventId>(),
@@ -266,8 +288,8 @@ namespace LMSApi.Tests.Services
             DbContext.UserProfiles.Add(profile);
             await DbContext.SaveChangesAsync();
 
-            _mockUploadService.Setup(s => s.IsAllowedProfileImage(It.IsAny<string>(), It.IsAny<string>())).Returns(true);
-            _mockUploadService.Setup(s => s.UploadProfileImageAsync(It.IsAny<System.IO.Stream>(), It.IsAny<string>(), It.IsAny<string>()))
+            _uploadServiceMock.Setup(s => s.IsAllowedProfileImage(It.IsAny<string>(), It.IsAny<string>())).Returns(true);
+            _uploadServiceMock.Setup(s => s.UploadProfileImageAsync(It.IsAny<System.IO.Stream>(), It.IsAny<string>(), It.IsAny<string>()))
                 .ReturnsAsync("https://cdn.example.com/new-pic.jpg");
 
             using var stream = new System.IO.MemoryStream(new byte[] { 1, 2, 3 });
@@ -275,7 +297,7 @@ namespace LMSApi.Tests.Services
 
             Assert.That(result.ProfilePictureUrl, Is.EqualTo("https://cdn.example.com/new-pic.jpg"));
 
-            _mockLogger.Verify(
+            _loggerMock.Verify(
                 x => x.Log(
                     LogLevel.Information,
                     It.IsAny<EventId>(),

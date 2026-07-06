@@ -45,4 +45,27 @@ namespace LMSApi.ModelLibrary.DTOs
         public int PageSize { get; set; }
         public int TotalPages { get; set; }
     }
+    public class InstructorReviewResponse
+    {
+        public int Id { get; set; }
+        public int CourseId { get; set; }
+        public string CourseTitle { get; set; }
+        public int UserId { get; set; }
+        public string ReviewerName { get; set; }
+        public int Rating { get; set; }
+        public string ReviewText { get; set; }
+        public DateTime CreatedAt { get; set; }
+        public DateTime UpdatedAt { get; set; }
+    }
+
+    public class PagedInstructorReviewResponse
+    {
+        public IEnumerable<InstructorReviewResponse> Reviews { get; set; } = new List<InstructorReviewResponse>();
+        public int TotalCount { get; set; }
+        public int PageNumber { get; set; }
+        public int PageSize { get; set; }
+        public int TotalPages { get; set; }
+        public double AverageRating { get; set; }
+        public Dictionary<int, int> RatingDistribution { get; set; } = new Dictionary<int, int>();
+    }
 }

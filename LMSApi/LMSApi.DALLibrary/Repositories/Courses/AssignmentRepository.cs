@@ -45,6 +45,77 @@ namespace LMSApi.DALLibrary.Repositories
                 .ToListAsync();
         }
 
+        public async Task<PagedInstructorAssignmentResponse> GetInstructorAssignmentsPagedAsync(int instructorId, int pageNumber, int pageSize, string? searchQuery, int? statusFilter)
+        {
+            var query = _context.Assignments
+                .Include(a => a.CourseSection)
+                    .ThenInclude(cs => cs.Course)
+                .Where(a => a.CourseSection.Course.InstructorId == instructorId && a.CourseSection.Course.Status == LMSApi.ModelLibrary.Enums.CourseStatus.Published)
+                .AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(searchQuery))
+            {
+                var lowerQuery = searchQuery.ToLower();
+                query = query.Where(a => a.Title.ToLower().Contains(lowerQuery) || 
+                                         a.CourseSection.Course.Title.ToLower().Contains(lowerQuery) ||
+                                         a.CourseSection.Title.ToLower().Contains(lowerQuery));
+            }
+
+            var allAssignments = await query
+                .Select(a => new InstructorAssignmentSummaryDto
+                {
+                    Id = a.Id,
+                    CourseSectionId = a.CourseSectionId,
+                    Title = a.Title,
+                    CourseTitle = a.CourseSection.Course.Title,
+                    SectionTitle = a.CourseSection.Title,
+                    TotalMarks = a.TotalMarks,
+                    DeadlineInDays = a.DeadlineInDays,
+                    DeadlineDate = a.DeadlineDate,
+                    Status = a.Status,
+                    CreatedAt = a.CreatedAt,
+                    PendingSubmissionsCount = _context.AssignmentSubmissions
+                        .Count(s => s.AssignmentId == a.Id && (s.Status == LMSApi.ModelLibrary.Enums.SubmissionStatus.Submitted || s.Status == LMSApi.ModelLibrary.Enums.SubmissionStatus.UnderReview))
+                })
+                .OrderByDescending(a => a.CreatedAt)
+                .ToListAsync();
+
+            if (statusFilter.HasValue)
+            {
+                // statusFilter: 0 = All, 1 = Pending Submissions, 2 = Fully Graded
+                if (statusFilter.Value == 1)
+                {
+                    allAssignments = allAssignments.Where(a => a.PendingSubmissionsCount > 0).ToList();
+                }
+                else if (statusFilter.Value == 2)
+                {
+                    allAssignments = allAssignments.Where(a => a.PendingSubmissionsCount == 0).ToList();
+                }
+            }
+
+            var totalCount = allAssignments.Count;
+            var pendingCount = allAssignments.Count(a => a.PendingSubmissionsCount > 0);
+            var fullyGradedCount = allAssignments.Count(a => a.PendingSubmissionsCount == 0);
+            var uniqueCourseCount = allAssignments.Select(a => a.CourseTitle).Distinct().Count();
+
+            var pagedAssignments = allAssignments
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .ToList();
+
+            return new PagedInstructorAssignmentResponse
+            {
+                Assignments = pagedAssignments,
+                TotalCount = totalCount,
+                PageNumber = pageNumber,
+                PageSize = pageSize,
+                TotalPages = (int)Math.Ceiling(totalCount / (double)pageSize),
+                TotalPendingCount = pendingCount,
+                FullyGradedCount = fullyGradedCount,
+                UniqueCourseCount = uniqueCourseCount
+            };
+        }
+
         public async Task<PagedLearnerAssignmentResponse> GetLearnerAssignmentsAsync(int userId, int pageNumber, int pageSize, string? searchQuery = null)
         {
             var enrollments = await _context.Enrollments

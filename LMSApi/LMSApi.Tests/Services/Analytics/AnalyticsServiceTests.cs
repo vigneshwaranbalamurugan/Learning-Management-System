@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using LMSApi.BALLibrary.Interfaces;
 using LMSApi.BALLibrary.Services;
 using LMSApi.DALLibrary.Repositories;
+using LMSApi.ModelLibrary.DTOs;
 using LMSApi.ModelLibrary.Enums;
 using LMSApi.ModelLibrary.Models;
 
@@ -16,14 +17,54 @@ namespace LMSApi.Tests.Services
     public class AnalyticsServiceTests : BaseServiceTest
     {
         private IAnalyticsService _analyticsService = null!;
+        private Mock<ICourseService> _courseServiceMock = null!;
+        private Mock<IEnrollmentService> _enrollmentServiceMock = null!;
 
         [SetUp]
         public override void SetUp()
         {
             base.SetUp();
 
+            _courseServiceMock = new Mock<ICourseService>();
+            _enrollmentServiceMock = new Mock<IEnrollmentService>();
+
+            // Return empty paged results so AnalyticsService doesn't NPE on .Courses / .Enrollments
+            var emptyPagedCourses = new PagedCourseListResponse
+            {
+                Courses = new List<CourseListItemResponse>(),
+                TotalCount = 0,
+                PageNumber = 1,
+                PageSize = 5,
+                TotalPages = 0
+            };
+            _courseServiceMock
+                .Setup(s => s.GetAllCoursesPagedAsync(It.IsAny<CourseSearchQuery>()))
+                .ReturnsAsync(emptyPagedCourses);
+            _courseServiceMock
+                .Setup(s => s.GetCoursesByInstructorPagedAsync(It.IsAny<int>(), It.IsAny<CourseSearchQuery>()))
+                .ReturnsAsync(new PagedInstructorCourseResponse
+                {
+                    Courses = new List<InstructorCourseCardResponse>(),
+                    TotalCount = 0,
+                    PageNumber = 1,
+                    PageSize = 4,
+                    TotalPages = 0
+                });
+
+            var emptyPagedEnrollments = new PagedEnrollmentResponse
+            {
+                Enrollments = new List<EnrollmentResponse>(),
+                TotalCount = 0,
+                PageNumber = 1,
+                PageSize = 4,
+                TotalPages = 0
+            };
+            _enrollmentServiceMock
+                .Setup(s => s.GetMyEnrollmentsPagedAsync(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<int>()))
+                .ReturnsAsync(emptyPagedEnrollments);
+
             var analyticsRepository = new AnalyticsRepository(DbContext);
-            _analyticsService = new AnalyticsService(analyticsRepository, new Mock<ICourseService>().Object, new Mock<IEnrollmentService>().Object);
+            _analyticsService = new AnalyticsService(analyticsRepository, _courseServiceMock.Object, _enrollmentServiceMock.Object);
         }
 
         [Test]

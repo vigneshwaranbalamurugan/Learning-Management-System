@@ -4,9 +4,11 @@ using System.Threading.Tasks;
 using LMSApi.BALLibrary.Interfaces;
 using LMSApi.BALLibrary.Services;
 using LMSApi.DALLibrary.Repositories;
+using LMSApi.DALLibrary.Interfaces;
 using LMSApi.ModelLibrary.DTOs;
 using LMSApi.ModelLibrary.Models;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Configuration;
 using Moq;
 using NUnit.Framework;
 
@@ -15,7 +17,9 @@ namespace LMSApi.Tests.Services
     [TestFixture]
     public class CourseCategoryServiceTests : BaseServiceTest
     {
-        private Mock<ILogger<CourseCategoryService>> _mockLogger = null!;
+        private Mock<ICacheService> _cacheServiceMock = null!;
+        private Mock<IConfiguration> _configMock = null!;
+        private Mock<ILogger<CourseCategoryService>> _loggerMock = null!;
         private ICourseCategoryService _courseCategoryService = null!;
 
         [SetUp]
@@ -23,8 +27,24 @@ namespace LMSApi.Tests.Services
         {
             base.SetUp();
 
-            _mockLogger = new Mock<ILogger<CourseCategoryService>>();
-            
+            _cacheServiceMock = new Mock<ICacheService>();
+            // Pass-through: always call factory (simulates cache miss → go to DB)
+            _cacheServiceMock
+                .Setup(c => c.GetOrSetAsync(
+                    It.IsAny<string>(),
+                    It.IsAny<Func<Task<IEnumerable<CategoryResponse>>>>(),
+                    It.IsAny<TimeSpan?>()))
+                .Returns((string key, Func<Task<IEnumerable<CategoryResponse>>> factory, TimeSpan? expiry) => factory());
+            _cacheServiceMock.Setup(c => c.InvalidateAsync(It.IsAny<string[]>())).Returns(Task.CompletedTask);
+
+            _configMock = new Mock<IConfiguration>();
+            var configSection = new Mock<IConfigurationSection>();
+            configSection.Setup(s => s.Value).Returns("1440");
+            _configMock.Setup(c => c.GetSection(It.IsAny<string>())).Returns(configSection.Object);
+
+            _loggerMock = new Mock<ILogger<CourseCategoryService>>();
+
+            // Use real repositories backed by in-memory DbContext
             var categoryRepository = new CourseCategoryRepository(DbContext);
             var courseRepository = new CourseRepository(DbContext);
 
@@ -32,7 +52,9 @@ namespace LMSApi.Tests.Services
                 categoryRepository,
                 courseRepository,
                 Mapper,
-                _mockLogger.Object
+                _cacheServiceMock.Object,
+                _configMock.Object,
+                _loggerMock.Object
             );
         }
 

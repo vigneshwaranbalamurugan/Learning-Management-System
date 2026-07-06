@@ -40,3 +40,37 @@ export interface CourseProgressResponse {
   totalLessonsCount: number;
   sections: SectionProgressResponse[];
 }
+
+export interface StudentProgressSummaryDto {
+  enrollmentId: number;
+  studentId: number;
+  studentName: string;
+  studentEmail: string;
+  enrolledAt: string;
+  enrollmentStatus: string;
+  progressPercentage: number;
+  isCompleted: boolean;
+  completedAt?: string;
+  batchName?: string;
+}
+
+export interface InstructorCourseProgressResponse {
+  courseId: number;
+  courseTitle: string;
+  courseStatus: string;
+  students: StudentProgressSummaryDto[];
+}
+
+export interface PagedStudentProgressResponse {
+  students: StudentProgressSummaryDto[];
+  totalCount: number;
+  pageNumber: number;
+  pageSize: number;
+  totalPages: number;
+  totalStudents: number;
+  completedCount: number;
+  averageProgress: number;
+  courseId: number;
+  courseTitle: string;
+  courseStatus: string;
+}

@@ -84,33 +84,26 @@
   </div>
 
   <!-- ═══════════ SEARCH & CONTROLS ═══════════ -->
-  <div
-    class="flex flex-col sm:flex-row gap-4 items-center justify-between bg-white border border-gray-200 rounded-xl p-3 shadow-xs">
-    <div class="relative w-full sm:max-w-xs">
-      <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
-        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-        </svg>
-      </span>
-      <input type="text" id="student-progress-search" placeholder="Search by student name or email..."
-        [ngModel]="searchQuery()" (ngModelChange)="searchQuery.set($event)"
-        class="w-full pl-9 pr-9 py-2 border border-gray-200 rounded-lg text-xs bg-white text-gray-800 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition" />
-      @if (searchQuery()) {
-      <button (click)="searchQuery.set('')"
-        class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 cursor-pointer transition">
-        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-        </svg>
-      </button>
-      }
+  <div class="flex flex-col sm:flex-row gap-4 mb-2">
+    <div class="w-full sm:w-80">
+      <app-search-input 
+        placeholder="Search by student name or email..."
+        [value]="searchQuery()"
+        (searchChange)="onSearchChange($event)">
+      </app-search-input>
     </div>
-    <span class="text-xs text-gray-400 font-semibold">Showing {{ filteredStudents().length }} students</span>
+    <div class="w-full sm:w-48">
+      <app-dropdown
+        [options]="statusOptions"
+        [value]="selectedStatus()"
+        (valueChange)="onStatusChange($event)">
+      </app-dropdown>
+    </div>
   </div>
 
   <!-- ═══════════ STUDENT PROGRESS TABLE ═══════════ -->
   <div class="bg-white border border-gray-200 rounded-2xl shadow-xs overflow-hidden">
-    @if (filteredStudents().length > 0) {
+    @if (students().length > 0) {
     <!-- Table (desktop / large tablet) -->
     <div class="hidden lg:block overflow-x-auto w-full">
       <table class="w-full text-left border-collapse text-xs min-w-[900px]">
@@ -125,7 +118,7 @@
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-100 text-slate-700">
-          @for (student of filteredStudents(); track student.enrollmentId) {
+          @for (student of students(); track student.enrollmentId) {
           <tr class="hover:bg-gray-50/70 transition-colors">
             <!-- Student Card -->
             <td class="px-6 py-4">
@@ -190,7 +183,7 @@
 
     <!-- Cards (mobile / tablet) -->
     <div class="lg:hidden divide-y divide-gray-100">
-      @for (student of filteredStudents(); track student.enrollmentId) {
+      @for (student of students(); track student.enrollmentId) {
       <div class="p-4 flex flex-col gap-3">
         <!-- Student + Status -->
         <div class="flex items-center justify-between gap-3">
@@ -253,14 +246,21 @@
       </svg>
       <h4 class="text-sm font-bold text-slate-800 m-0 mb-1">No Enrolled Students</h4>
       <p class="text-xs text-gray-400 max-w-xs leading-relaxed">
-        @if (students().length === 0) {
-        There are currently no students enrolled in this course.
-        } @else {
-        No students match your search criteria. Try modifying your query.
+        @if (totalCount() === 0) {
+        There are currently no students enrolled in this course matching your search criteria.
         }
       </p>
     </div>
     }
+    
+    <!-- Pagination -->
+    <div class="px-6 py-4 border-t border-slate-200" *ngIf="totalPages() > 1">
+      <app-pagination
+        [pageNumber]="page()"
+        [totalPages]="totalPages()"
+        (pageChange)="onPageChange($event)">
+      </app-pagination>
+    </div>
   </div>
   }
 

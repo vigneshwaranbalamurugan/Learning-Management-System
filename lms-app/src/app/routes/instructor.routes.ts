@@ -130,6 +130,10 @@ export const instructorRoutes: Routes = [
       {
         path: 'settings',
         loadComponent: () => import('@pages/instructor-settings/instructor-settings').then(m => m.InstructorSettings)
+      },
+      {
+        path: 'reviews',
+        loadComponent: () => import('@pages/instructor-reviews/instructor-reviews').then(m => m.InstructorReviewsPage)
       }
     ]
   }

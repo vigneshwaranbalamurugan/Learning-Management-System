@@ -4,8 +4,10 @@ using System.Threading.Tasks;
 using LMSApi.BALLibrary.Interfaces;
 using LMSApi.BALLibrary.Services;
 using LMSApi.DALLibrary.Repositories;
-using LMSApi.ModelLibrary.Enums;
+using LMSApi.DALLibrary.Interfaces;
+using LMSApi.ModelLibrary.DTOs;
 using LMSApi.ModelLibrary.Models;
+using LMSApi.ModelLibrary.Enums;
 using Microsoft.EntityFrameworkCore;
 using Moq;
 using NUnit.Framework;
@@ -16,9 +18,9 @@ namespace LMSApi.Tests.Services
     [TestFixture]
     public class UserNotificationsServiceTests : BaseServiceTest
     {
-        private UserNotificationsRepository _repository = null!;
-        private Mock<INotificationRealtimeService> _mockRealtimeService = null!;
-        private Mock<ILogger<UserNotificationsService>> _mockLogger = null!;
+        private Mock<ICacheService> _cacheServiceMock = null!;
+        private Mock<INotificationRealtimeService> _realtimeServiceMock = null!;
+        private Mock<ILogger<UserNotificationsService>> _loggerMock = null!;
         private UserNotificationsService _service = null!;
         private Users _testUser = null!;
 
@@ -40,10 +42,30 @@ namespace LMSApi.Tests.Services
             DbContext.Users.Add(_testUser);
             DbContext.SaveChanges();
 
-            _repository = new UserNotificationsRepository(DbContext);
-            _mockRealtimeService = new Mock<INotificationRealtimeService>();
-            _mockLogger = new Mock<ILogger<UserNotificationsService>>();
-            _service = new UserNotificationsService(_repository, Mapper, _mockRealtimeService.Object, _mockLogger.Object);
+            _cacheServiceMock = new Mock<ICacheService>();
+            // Pass-through: always call factory (simulates cache miss → go to DB)
+            _cacheServiceMock
+                .Setup(c => c.GetOrSetAsync(
+                    It.IsAny<string>(),
+                    It.IsAny<Func<Task<int>>>(),
+                    It.IsAny<TimeSpan?>()))
+                .Returns((string key, Func<Task<int>> factory, TimeSpan? expiry) => factory());
+            _cacheServiceMock.Setup(c => c.SetAsync(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<TimeSpan?>())).Returns(Task.CompletedTask);
+            _cacheServiceMock.Setup(c => c.InvalidateAsync(It.IsAny<string[]>())).Returns(Task.CompletedTask);
+
+            _realtimeServiceMock = new Mock<INotificationRealtimeService>();
+            _loggerMock = new Mock<ILogger<UserNotificationsService>>();
+
+            // Use real repository backed by in-memory DbContext
+            var repository = new UserNotificationsRepository(DbContext);
+
+            _service = new UserNotificationsService(
+                repository,
+                Mapper,
+                _realtimeServiceMock.Object,
+                _cacheServiceMock.Object,
+                _loggerMock.Object
+            );
         }
 
         [Test]
@@ -70,7 +92,7 @@ namespace LMSApi.Tests.Services
             Assert.That((DateTime.UtcNow - notification.CreatedAt).TotalSeconds, Is.LessThan(5));
 
             // Assert Realtime broadcast called
-            _mockRealtimeService.Verify(r => r.SendNotificationAsync(
+            _realtimeServiceMock.Verify(r => r.SendNotificationAsync(
                 _testUser.Id,
                 It.Is<ModelLibrary.DTOs.Notifications.NotificationResponse>(resp =>
                     resp.Title == "Test Title" &&
@@ -82,7 +104,7 @@ namespace LMSApi.Tests.Services
             ), Times.Once);
 
             // Assert logging
-            _mockLogger.Verify(
+            _loggerMock.Verify(
                 x => x.Log(
                     LogLevel.Information,
                     It.IsAny<EventId>(),
@@ -91,7 +113,7 @@ namespace LMSApi.Tests.Services
                     It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
                 Times.Once);
 
-            _mockLogger.Verify(
+            _loggerMock.Verify(
                 x => x.Log(
                     LogLevel.Information,
                     It.IsAny<EventId>(),
@@ -171,7 +193,7 @@ namespace LMSApi.Tests.Services
             Assert.That(updated.ReadAt, Is.Not.Null);
             Assert.That((DateTime.UtcNow - updated.ReadAt.Value).TotalSeconds, Is.LessThan(5));
 
-            _mockLogger.Verify(
+            _loggerMock.Verify(
                 x => x.Log(
                     LogLevel.Information,
                     It.IsAny<EventId>(),
@@ -180,7 +202,7 @@ namespace LMSApi.Tests.Services
                     It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
                 Times.Once);
 
-            _mockLogger.Verify(
+            _loggerMock.Verify(
                 x => x.Log(
                     LogLevel.Information,
                     It.IsAny<EventId>(),
@@ -203,7 +225,7 @@ namespace LMSApi.Tests.Services
                 await _service.MarkAsReadAsync(_testUser.Id + 999, n.Id)
             );
 
-            _mockLogger.Verify(
+            _loggerMock.Verify(
                 x => x.Log(
                     LogLevel.Warning,
                     It.IsAny<EventId>(),
@@ -238,7 +260,7 @@ namespace LMSApi.Tests.Services
             Assert.That(unreadCountUser, Is.EqualTo(0));
             Assert.That(unreadCountOther, Is.EqualTo(1));
 
-            _mockLogger.Verify(
+            _loggerMock.Verify(
                 x => x.Log(
                     LogLevel.Information,
                     It.IsAny<EventId>(),
@@ -263,7 +285,7 @@ namespace LMSApi.Tests.Services
             var deleted = await DbContext.Notifications.FindAsync(n.Id);
             Assert.That(deleted, Is.Null);
 
-            _mockLogger.Verify(
+            _loggerMock.Verify(
                 x => x.Log(
                     LogLevel.Information,
                     It.IsAny<EventId>(),
@@ -272,7 +294,7 @@ namespace LMSApi.Tests.Services
                     It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
                 Times.Once);
 
-            _mockLogger.Verify(
+            _loggerMock.Verify(
                 x => x.Log(
                     LogLevel.Information,
                     It.IsAny<EventId>(),
@@ -295,7 +317,7 @@ namespace LMSApi.Tests.Services
                 await _service.DeleteNotificationAsync(_testUser.Id + 999, n.Id)
             );
 
-            _mockLogger.Verify(
+            _loggerMock.Verify(
                 x => x.Log(
                     LogLevel.Warning,
                     It.IsAny<EventId>(),

@@ -9,7 +9,9 @@ using LMSApi.ModelLibrary.DTOs;
 using LMSApi.ModelLibrary.Enums;
 using LMSApi.ModelLibrary.Models;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Configuration;
 using Moq;
+using LMSApi.BALLibrary.Interfaces;
 using NUnit.Framework;
 
 namespace LMSApi.Tests.Services
@@ -22,6 +24,9 @@ namespace LMSApi.Tests.Services
         private Mock<INotificationService> _mockNotificationService = null!;
         private Mock<IWishListRepository> _mockWishListRepository = null!;
         private Mock<IUserNotificationsService> _mockUserNotificationsService = null!;
+        private Mock<IReviewRepository> _mockReviewRepository = null!;
+        private Mock<ICacheService> _mockCacheService = null!;
+        private Mock<IConfiguration> _mockConfiguration = null!;
         private ICourseService _courseService = null!;
 
         [SetUp]
@@ -34,11 +39,32 @@ namespace LMSApi.Tests.Services
             _mockNotificationService = new Mock<INotificationService>();
             _mockWishListRepository = new Mock<IWishListRepository>();
             _mockUserNotificationsService = new Mock<IUserNotificationsService>();
-            
+            _mockReviewRepository = new Mock<IReviewRepository>();
+            _mockCacheService = new Mock<ICacheService>();
+            _mockCacheService.Setup(c => c.InvalidateAsync(It.IsAny<string[]>())).Returns(Task.CompletedTask);
+            // Pass-through: simulate cache miss → always call the factory so the real DB is hit
+            _mockCacheService
+                .Setup(c => c.GetOrSetAsync(
+                    It.IsAny<string>(),
+                    It.IsAny<Func<Task<CoursePreviewResponse>>>(),
+                    It.IsAny<TimeSpan?>()))
+                .Returns((string key, Func<Task<CoursePreviewResponse>> factory, TimeSpan? expiry) => factory());
+            _mockCacheService
+                .Setup(c => c.GetOrSetAsync(
+                    It.IsAny<string>(),
+                    It.IsAny<Func<Task<CourseSummaryStatsResponse>>>(),
+                    It.IsAny<TimeSpan?>()))
+                .Returns((string key, Func<Task<CourseSummaryStatsResponse>> factory, TimeSpan? expiry) => factory());
+            _mockConfiguration = new Mock<IConfiguration>();
+
             var courseRepository = new CourseRepository(DbContext);
             var categoryRepository = new CourseCategoryRepository(DbContext);
             var userRepository = new UserRepository(DbContext);
             var enrollmentRepository = new EnrollmentRepository(DbContext);
+
+            var configSection = new Mock<IConfigurationSection>();
+            configSection.Setup(s => s.Value).Returns("30");
+            _mockConfiguration.Setup(c => c.GetSection(It.IsAny<string>())).Returns(configSection.Object);
 
             _courseService = new CourseService(
                 courseRepository,
@@ -51,7 +77,9 @@ namespace LMSApi.Tests.Services
                 _mockNotificationService.Object,
                 _mockWishListRepository.Object,
                 _mockUserNotificationsService.Object,
-                new Mock<IReviewRepository>().Object
+                _mockReviewRepository.Object,
+                _mockCacheService.Object,
+                _mockConfiguration.Object
             );
         }
 

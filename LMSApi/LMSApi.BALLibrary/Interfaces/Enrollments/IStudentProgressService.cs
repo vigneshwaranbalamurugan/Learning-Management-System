@@ -20,7 +20,7 @@ namespace LMSApi.BALLibrary.Interfaces
         /// Returns null when the student has never started this lesson.
         /// </summary>
         Task<LessonProgressResponse?> GetLessonProgressAsync(int userId, int lessonId);
-        Task<InstructorCourseProgressResponse> GetStudentsProgressForCourseAsync(int instructorId, int courseId, bool isAdmin = false);
+        Task<PagedStudentProgressResponse> GetStudentsProgressForCoursePagedAsync(int instructorId, int courseId, int pageNumber, int pageSize, string? searchQuery, bool? isCompleted, bool isAdmin = false);
         Task<InstructorCourseAnalyticsResponse> GetCourseAnalyticsAsync(int instructorId, int courseId, bool isAdmin = false);
         Task<CourseProgressResponse> GetStudentDetailedProgressForInstructorAsync(int instructorId, int studentId, int courseId, bool isAdmin = false);
     }

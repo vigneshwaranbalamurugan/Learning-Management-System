@@ -49,3 +49,28 @@ export interface AssignmentStatusResponse {
   latestStatus?: string;
   deadline?: string;
 }
+
+export interface InstructorAssignmentSummaryDto {
+  id: number;
+  courseSectionId: number;
+  title: string;
+  courseTitle: string;
+  sectionTitle: string;
+  totalMarks: number;
+  deadlineInDays: number;
+  deadlineDate?: string;
+  pendingSubmissionsCount: number;
+  status: number;
+  createdAt: string;
+}
+
+export interface PagedInstructorAssignmentResponse {
+  assignments: InstructorAssignmentSummaryDto[];
+  totalCount: number;
+  pageNumber: number;
+  pageSize: number;
+  totalPages: number;
+  totalPendingCount: number;
+  fullyGradedCount: number;
+  uniqueCourseCount: number;
+}

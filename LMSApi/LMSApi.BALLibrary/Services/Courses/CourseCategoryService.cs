@@ -4,32 +4,47 @@ using LMSApi.DALLibrary.Interfaces;
 using LMSApi.ModelLibrary.DTOs;
 using LMSApi.ModelLibrary.Models;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Configuration;
 
 namespace LMSApi.BALLibrary.Services
 {
     public class CourseCategoryService : ICourseCategoryService
     {
+        private const string CacheKey = "categories:all";
+
         private readonly ICourseCategoryRepository _categoryRepository;
         private readonly ICourseRepository _courseRepository;
         private readonly IMapper _mapper;
+        private readonly ICacheService _cacheService;
+        private readonly int _ttlMinutes;
         private readonly ILogger<CourseCategoryService> _logger;
 
         public CourseCategoryService(
             ICourseCategoryRepository categoryRepository,
             ICourseRepository courseRepository,
             IMapper mapper,
+            ICacheService cacheService,
+            IConfiguration configuration,
             ILogger<CourseCategoryService> logger)
         {
             _categoryRepository = categoryRepository;
             _courseRepository = courseRepository;
             _mapper = mapper;
+            _cacheService = cacheService;
+            _ttlMinutes = configuration.GetValue<int>("Cache:CategoriesTtlMinutes", 1440);
             _logger = logger;
         }
 
         public async Task<IEnumerable<CategoryResponse>> GetAllCategoriesAsync()
         {
-            var categories = await _categoryRepository.GetAllAsync();
-            return _mapper.Map<IEnumerable<CategoryResponse>>(categories);
+            return await _cacheService.GetOrSetAsync(
+                CacheKey,
+                async () => 
+                {
+                    var categories = await _categoryRepository.GetAllAsync();
+                    return _mapper.Map<IEnumerable<CategoryResponse>>(categories);
+                },
+                TimeSpan.FromMinutes(_ttlMinutes));
         }
 
         public async Task<CategoryResponse> GetCategoryByIdAsync(int id)
@@ -48,6 +63,7 @@ namespace LMSApi.BALLibrary.Services
             await _categoryRepository.AddAsync(category);
 
             _logger.LogInformation("Category Created: {Name}", request.Name);
+            await _cacheService.InvalidateAsync(CacheKey);
 
             return _mapper.Map<CategoryResponse>(category);
         }
@@ -71,6 +87,7 @@ namespace LMSApi.BALLibrary.Services
             await _categoryRepository.UpdateAsync(category);
 
             _logger.LogInformation("Category Updated: Id={Id}", id);
+            await _cacheService.InvalidateAsync(CacheKey);
 
             return _mapper.Map<CategoryResponse>(category);
         }
@@ -89,6 +106,7 @@ namespace LMSApi.BALLibrary.Services
             await _categoryRepository.DeleteAsync(id);
 
             _logger.LogInformation("Category Deleted: Id={Id}", id);
+            await _cacheService.InvalidateAsync(CacheKey);
         }
     }
 }

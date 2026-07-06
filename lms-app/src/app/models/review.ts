@@ -27,3 +27,25 @@ export interface PagedReviewResponse {
   pageSize: number;
   totalPages: number;
 }
+
+export interface InstructorReviewResponse {
+  id: number;
+  courseId: number;
+  courseTitle: string;
+  userId: number;
+  reviewerName: string;
+  rating: number;
+  reviewText: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PagedInstructorReviewResponse {
+  reviews: InstructorReviewResponse[];
+  totalCount: number;
+  pageNumber: number;
+  pageSize: number;
+  totalPages: number;
+  averageRating: number;
+  ratingDistribution: { [key: number]: number };
+}

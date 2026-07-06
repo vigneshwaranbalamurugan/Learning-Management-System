@@ -4,15 +4,20 @@ using LMSApi.ModelLibrary.DTOs;
 using LMSApi.ModelLibrary.Models;
 using AutoMapper;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Configuration;
 
 namespace LMSApi.BALLibrary.Services
 {
 	public class ProfileService : IProfileService
 	{
+		private const string CacheKeyPrefix = "profile:";
+
 		private readonly IUserRepository _userRepository;
 		private readonly IUserProfileRepository _userProfileRepository;
 		private readonly IUploadService _uploadService;
 		private readonly IMapper _mapper;
+		private readonly ICacheService _cacheService;
+		private readonly int _ttlMinutes;
 		private readonly ILogger<ProfileService>? _logger;
 
 		public ProfileService(
@@ -20,12 +25,16 @@ namespace LMSApi.BALLibrary.Services
 			IUserProfileRepository userProfileRepository, 
 			IUploadService uploadService, 
 			IMapper mapper,
+			ICacheService cacheService,
+			IConfiguration configuration,
 			ILogger<ProfileService>? logger = null)
 		{
 			_userRepository = userRepository;
 			_userProfileRepository = userProfileRepository;
 			_uploadService = uploadService;
 			_mapper = mapper;
+			_cacheService = cacheService;
+			_ttlMinutes = configuration.GetValue<int>("Cache:ProfileTtlMinutes", 15);
 			_logger = logger;
 		}
 
@@ -36,17 +45,25 @@ namespace LMSApi.BALLibrary.Services
 			_logger?.LogInformation("Retrieving profile for email: {Email}", email);
 
 			var user = await _userRepository.GetByEmailAsync(email);
-			var profile = await _userProfileRepository.GetByUserIdAsync(user.Id);
-			if (profile is null)
-			{
-				_logger?.LogInformation("No profile found for user ID: {UserId}. Creating default profile.", user.Id);
-				profile = CreateDefaultProfile(user.Id);
-				await _userProfileRepository.AddAsync(profile);
-			}
-			var response = _mapper.Map<ProfileResponse>(profile);
-			response.Email = user.Email;
-			response.Role = user.Role?.RoleName;
-			return response;
+			var cacheKey = $"{CacheKeyPrefix}{user.Id}";
+
+			return await _cacheService.GetOrSetAsync(
+				cacheKey,
+				async () => 
+				{
+					var profile = await _userProfileRepository.GetByUserIdAsync(user.Id);
+					if (profile is null)
+					{
+						_logger?.LogInformation("No profile found for user ID: {UserId}. Creating default profile.", user.Id);
+						profile = CreateDefaultProfile(user.Id);
+						await _userProfileRepository.AddAsync(profile);
+					}
+					var response = _mapper.Map<ProfileResponse>(profile);
+					response.Email = user.Email;
+					response.Role = user.Role?.RoleName;
+					return response;
+				},
+				TimeSpan.FromMinutes(_ttlMinutes));
 		}
 
 		public async Task<ProfileResponse> UpdateProfileAsync(string email, ProfileUpdateRequest request)
@@ -78,6 +95,9 @@ namespace LMSApi.BALLibrary.Services
 
 			await _userProfileRepository.UpdateAsync(profile);
 			_logger?.LogInformation("Profile updated successfully for user ID: {UserId}", user.Id);
+			
+			await _cacheService.InvalidateAsync($"{CacheKeyPrefix}{user.Id}");
+			
 			var response = _mapper.Map<ProfileResponse>(profile);
 			response.Email = user.Email;
 			response.Role = user.Role?.RoleName;
@@ -113,6 +133,9 @@ namespace LMSApi.BALLibrary.Services
 			await _userProfileRepository.UpdateAsync(profile);
 
 			_logger?.LogInformation("Profile image updated successfully for user ID: {UserId}. Image URL: {Url}", user.Id, profile.ProfilePictureUrl);
+			
+			await _cacheService.InvalidateAsync($"{CacheKeyPrefix}{user.Id}");
+
 			var response = _mapper.Map<ProfileResponse>(profile);
 			response.Email = user.Email;
 			response.Role = user.Role?.RoleName;
