@@ -74,7 +74,7 @@ export class InstructorCourseForm implements OnInit {
     level: '',
     languageId: '',
     courseAccessType: '',
-    defaultDeadlineDays: '30'
+    defaultDeadlineDays: ''
   };
 
   private initialFormState = JSON.stringify(this.form);
@@ -91,6 +91,9 @@ export class InstructorCourseForm implements OnInit {
   protected introVideoFile: File | null = null;
   protected introVideoName: string | null = null;
 
+  protected thumbnailLimitMB = signal(5);
+  protected videoLimitMB = signal(500);
+
   // Dropdown options
   protected levelOptions = [
     { value: String(CourseLevel.Beginner), label: 'Beginner' },
@@ -99,8 +102,8 @@ export class InstructorCourseForm implements OnInit {
   ];
 
   protected accessTypeOptions = [
-    { value: String(CourseAccessType.SelfPaced), label: 'Self Paced' },
-    { value: String(CourseAccessType.CohortPaced), label: 'Cohort Based' }
+    { value: String(CourseAccessType.SelfPaced), label: 'Self Paced' }
+    // { value: String(CourseAccessType.CohortPaced), label: 'Cohort Based' }
   ];
 
   protected languageOptions = signal<{ value: string; label: string }[]>([]);
@@ -126,6 +129,19 @@ export class InstructorCourseForm implements OnInit {
 
   ngOnInit(): void {
     this.loadMetadata();
+    this.loadUploadLimits();
+  }
+
+  private loadUploadLimits(): void {
+    this.courseService.getUploadLimits()
+      .pipe(untilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (limits) => {
+          this.thumbnailLimitMB.set(limits.thumbnailSizeMB);
+          this.videoLimitMB.set(limits.videoSizeMB);
+        },
+        error: (err) => console.error('Failed to load upload limits', err)
+      });
   }
 
   private loadMetadata(): void {
@@ -162,8 +178,8 @@ export class InstructorCourseForm implements OnInit {
       this.errors.thumbnail = 'Only JPG, PNG, or WebP images are allowed.';
       return;
     }
-    if (file.size > 5 * 1024 * 1024) {
-      this.errors.thumbnail = 'Thumbnail must be under 5 MB.';
+    if (file.size > this.thumbnailLimitMB() * 1024 * 1024) {
+      this.errors.thumbnail = `Thumbnail must be under ${this.thumbnailLimitMB()} MB.`;
       return;
     }
 
@@ -192,8 +208,8 @@ export class InstructorCourseForm implements OnInit {
       this.toastService.showError('Only MP4, WebM, or OGG videos are allowed.');
       return;
     }
-    if (file.size > 500 * 1024 * 1024) {
-      this.toastService.showError('Intro video must be under 500 MB.');
+    if (file.size > this.videoLimitMB() * 1024 * 1024) {
+      this.toastService.showError(`Intro video must be under ${this.videoLimitMB()} MB.`);
       return;
     }
 
@@ -253,6 +269,11 @@ export class InstructorCourseForm implements OnInit {
 
     if (!this.form.courseAccessType) {
       this.errors.courseAccessType = 'Please select an access type.';
+      valid = false;
+    }
+
+    if (!this.thumbnailFile) {
+      this.errors.thumbnail = 'Course thumbnail is required.';
       valid = false;
     }
 

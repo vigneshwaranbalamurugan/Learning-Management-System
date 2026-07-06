@@ -23,7 +23,8 @@
       "@interceptors/*": ["src/app/interceptors/*"],
       "@guards/*": ["src/app/guards/*"],
       "@pages/*":["src/app/pages/*"],
-      "@enums/*":["src/app/enums/*"]
+      "@enums/*":["src/app/enums/*"],
+      "@env/*":["src/environments/*"]
     }
   },
   "angularCompilerOptions": {

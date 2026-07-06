@@ -45,6 +45,11 @@ export class UserDropdown {
     this.close.emit();
   }
 
+  protected navigateToPayments() {
+    this.router.navigate(['/learner/payments']);
+    this.close.emit();
+  }
+
   protected navigateToRevenue() {
     const role = this.user.role?.toLowerCase();
     if (role === 'admin') {

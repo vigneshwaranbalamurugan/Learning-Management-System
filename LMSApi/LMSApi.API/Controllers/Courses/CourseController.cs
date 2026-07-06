@@ -63,6 +63,17 @@ namespace LMSApi.API.Controllers
             return Ok(result);
         }
 
+        /// <summary>Get file size limits for course uploads.</summary>
+        [HttpGet("upload-limits")]
+        [EnableRateLimiting("PublicCourseListing")]
+        [RequestTimeout("Quick")]
+        public ActionResult<object> GetUploadLimits([FromServices] IConfiguration configuration)
+        {
+            int thumbnailLimit = configuration["FileSizeLimits:CourseThumbnailInMB"] is string s1 ? int.Parse(s1) : 5;
+            int videoLimit = configuration["FileSizeLimits:CourseVideoInMB"] is string s2 ? int.Parse(s2) : 500;
+            return Ok(new { ThumbnailSizeMB = thumbnailLimit, VideoSizeMB = videoLimit });
+        }
+
         /// <summary>Get a course with full details (sections + lessons).</summary>
         [HttpGet("{id:int}")]
         [EnableRateLimiting("PublicCourseListing")]

@@ -64,6 +64,19 @@ namespace LMSApi.BALLibrary.Utils
           </html>";
         }
 
+        public static string GetPaymentInvoiceTemplate(string learnerName, string courseTitle, decimal amount, string currency, string invoiceNo)
+        {
+            return $@"<html>
+            <body>
+              <h2>Payment Successful</h2>
+              <p>Hi {System.Net.WebUtility.HtmlEncode(learnerName)},</p>
+              <p>Thank you for purchasing <strong>{System.Net.WebUtility.HtmlEncode(courseTitle)}</strong>.</p>
+              <p>Your payment of {System.Net.WebUtility.HtmlEncode(currency)} {amount} was successful. Invoice <strong>{System.Net.WebUtility.HtmlEncode(invoiceNo)}</strong> is attached to this email as a PDF.</p>
+              <p>Happy learning!</p>
+            </body>
+          </html>";
+        }
+
         public static string GetCourseStatusUpdatedTemplate(string name, string courseTitle, string newStatus, string? reason)
         {
             var reasonInfo = !string.IsNullOrEmpty(reason) 

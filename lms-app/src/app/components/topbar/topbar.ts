@@ -7,6 +7,7 @@ import { UserProfile } from '@services/profile.service';
 import { UserDropdown } from '../user-dropdown/user-dropdown';
 import { NotificationPanel } from '../notification-panel/notification-panel';
 import { SignalRService } from '@services/signalr.service';
+import { NotificationService } from '@services/notification.service';
 
 @Component({
   selector: 'app-topbar',
@@ -28,6 +29,7 @@ export class Topbar implements OnInit, OnDestroy {
 
   private router = inject(Router);
   private signalrService = inject(SignalRService);
+  private notificationService = inject(NotificationService);
   private destroy$ = new Subject<void>();
 
   constructor() {
@@ -42,12 +44,21 @@ export class Topbar implements OnInit, OnDestroy {
   }
 
   ngOnInit() {
+    // Fetch initial count via REST
+    this.notificationService.getUnreadCount()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((count) => this.unreadCount.set(count));
+
     // Connect to SignalR hub and subscribe to unread count stream
     this.signalrService.connect();
 
     this.signalrService.unreadCount$
       .pipe(takeUntil(this.destroy$))
-      .subscribe((count) => this.unreadCount.set(count));
+      .subscribe((count) => {
+        // SignalR sends 0 initially if disconnected, only update if it's meaningful or if we rely on it
+        // Actually, we'll just let it overwrite
+        this.unreadCount.set(count);
+      });
   }
 
   ngOnDestroy() {

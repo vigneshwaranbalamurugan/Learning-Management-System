@@ -65,6 +65,10 @@ export const learnerRoutes: Routes = [
       {
         path: 'assignments/:id',
         loadComponent: () => import('@pages/assignments/assignment-detail').then(m => m.AssignmentDetailPage)
+      },
+      {
+        path: 'payments',
+        loadComponent: () => import('@pages/my-payments/my-payments').then(m => m.MyPaymentsPage)
       }
     ]
   },

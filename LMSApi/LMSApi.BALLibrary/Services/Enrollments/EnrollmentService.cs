@@ -23,6 +23,7 @@ namespace LMSApi.BALLibrary.Services
         private readonly IUserRepository _userRepository;
         private readonly INotificationService _notificationService;
         private readonly IUserNotificationsService _userNotificationsService;
+        private readonly IInvoiceService _invoiceService;
 
         public EnrollmentService(
             IEnrollmentRepository enrollmentRepository,
@@ -36,7 +37,8 @@ namespace LMSApi.BALLibrary.Services
             IInstructorPayoutService payoutService,
             IUserRepository userRepository,
             INotificationService notificationService,
-            IUserNotificationsService userNotificationsService)
+            IUserNotificationsService userNotificationsService,
+            IInvoiceService invoiceService)
         {
             _enrollmentRepository = enrollmentRepository;
             _courseRepository = courseRepository;
@@ -50,6 +52,7 @@ namespace LMSApi.BALLibrary.Services
             _userRepository = userRepository;
             _notificationService = notificationService;
             _userNotificationsService = userNotificationsService;
+            _invoiceService = invoiceService;
         }
 
         public async Task<EnrollmentResponse> EnrollInFreeCourseAsync(int userId, int courseId, int? batchId)
@@ -276,6 +279,25 @@ namespace LMSApi.BALLibrary.Services
                 Message msg = new EmailMessage(learner.Email, $"You're enrolled in {course.Title}!", html) { IsHtml = true };
                 await _notificationService.Send(msg);
 
+                // ── Send Invoice Email ──
+                try
+                {
+                    var pdfBytes = await _invoiceService.GenerateInvoiceAsync(payment.Id);
+                    var invoiceHtml = EmailTemplate.GetPaymentInvoiceTemplate(learnerName, course.Title, payment.Amount, payment.Currency, $"INV-{payment.Id}");
+                    var invoiceMsg = new EmailMessage(learner.Email, $"Invoice for {course.Title}", invoiceHtml) { IsHtml = true };
+                    invoiceMsg.Attachments.Add(new EmailAttachment 
+                    { 
+                        Data = pdfBytes, 
+                        FileName = $"Invoice_INV-{payment.Id}.pdf", 
+                        ContentType = "application/pdf" 
+                    });
+                    await _notificationService.Send(invoiceMsg);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Failed to generate/send invoice email for payment {PaymentId}", payment.Id);
+                }
+
                 try
                 {
                     await _userNotificationsService.CreateAndSendNotificationAsync(
@@ -402,6 +424,25 @@ namespace LMSApi.BALLibrary.Services
                     var html = EmailTemplate.GetCourseEnrollmentTemplate(learnerName, course.Title, course.CourseAccessType, batchName);
                     Message msg = new EmailMessage(learner.Email, $"You're enrolled in {course.Title}!", html) { IsHtml = true };
                     await _notificationService.Send(msg);
+
+                    // ── Send Invoice Email ──
+                    try
+                    {
+                        var pdfBytes = await _invoiceService.GenerateInvoiceAsync(payment.Id);
+                        var invoiceHtml = EmailTemplate.GetPaymentInvoiceTemplate(learnerName, course.Title, payment.Amount, payment.Currency, $"INV-{payment.Id}");
+                        var invoiceMsg = new EmailMessage(learner.Email, $"Invoice for {course.Title}", invoiceHtml) { IsHtml = true };
+                        invoiceMsg.Attachments.Add(new EmailAttachment 
+                        { 
+                            Data = pdfBytes, 
+                            FileName = $"Invoice_INV-{payment.Id}.pdf", 
+                            ContentType = "application/pdf" 
+                        });
+                        await _notificationService.Send(invoiceMsg);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Failed to generate/send invoice email for payment {PaymentId} in webhook", payment.Id);
+                    }
 
                     try
                     {

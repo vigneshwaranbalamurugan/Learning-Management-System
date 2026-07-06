@@ -29,6 +29,10 @@ export class CourseService {
     return this.http.get<PagedInstructorCourseResponse>(`${this.baseUrl}/Courses/my-courses`, { params });
   }
 
+  getUploadLimits(): Observable<{ thumbnailSizeMB: number, videoSizeMB: number }> {
+    return this.http.get<{ thumbnailSizeMB: number, videoSizeMB: number }>(`${this.baseUrl}/Courses/upload-limits`);
+  }
+
   createCourse(formData: FormData): Observable<CourseResponse> {
     return this.http.post<CourseResponse>(`${this.baseUrl}/Courses`, formData);
   }

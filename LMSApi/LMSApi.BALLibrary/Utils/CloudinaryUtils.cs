@@ -29,9 +29,11 @@ namespace LMSApi.BALLibrary.Utils
 			var cloudinary = CreateClient(configuration);
 			var folder = configuration["Cloudinary:Folder"] ?? "lms/profile-pictures";
 
+			using var sanitizedStream = await FileSanitizer.SanitizeImageAsync(fileStream);
+
 			var uploadParams = new ImageUploadParams
 			{
-				File = new FileDescription(fileName, fileStream),
+				File = new FileDescription(fileName, sanitizedStream),
 				Folder = folder,
 				PublicId = publicId,
 				Overwrite = true,
@@ -55,10 +57,12 @@ namespace LMSApi.BALLibrary.Utils
 			using var memoryStream = new MemoryStream();
 			await fileStream.CopyToAsync(memoryStream);
 			memoryStream.Position = 0;
+            
+			using var sanitizedStream = await FileSanitizer.SanitizeImageAsync(memoryStream);
 
 			var uploadParams = new ImageUploadParams
 			{
-				File = new FileDescription(fileName, memoryStream),
+				File = new FileDescription(fileName, sanitizedStream),
 				Folder = folder,
 				PublicId = publicId,
 				Overwrite = true,
@@ -88,7 +92,9 @@ namespace LMSApi.BALLibrary.Utils
 				Folder = folder,
 				PublicId = publicId,
 				Overwrite = true,
-				UniqueFilename = true
+				UniqueFilename = true,
+				// This incoming transformation forces Cloudinary to transcode and strip metadata before saving the original
+				Transformation = new Transformation().Quality("auto").FetchFormat("auto")
 			};
 
 			var result = await cloudinary.UploadAsync(uploadParams);
@@ -114,7 +120,9 @@ namespace LMSApi.BALLibrary.Utils
 				Folder = folder,
 				PublicId = publicId,
 				Overwrite = true,
-				UniqueFilename = true
+				UniqueFilename = true,
+				// This incoming transformation forces Cloudinary to transcode and strip metadata before saving the original
+				Transformation = new Transformation().Quality("auto").FetchFormat("auto")
 			};
 
 			var result = await cloudinary.UploadAsync(uploadParams);
@@ -133,13 +141,15 @@ namespace LMSApi.BALLibrary.Utils
 			using var memoryStream = new MemoryStream();
 			await fileStream.CopyToAsync(memoryStream);
 			memoryStream.Position = 0;
+            
+			using var sanitizedStream = await FileSanitizer.SanitizePdfAsync(memoryStream);
 
 			var extension = Path.GetExtension(fileName);
 			var publicIdWithExt = string.IsNullOrWhiteSpace(extension) ? publicId : $"{publicId}{extension}";
 
 			var uploadParams = new RawUploadParams
 			{
-				File = new FileDescription(fileName, memoryStream),
+				File = new FileDescription(fileName, sanitizedStream),
 				Folder = folder,
 				PublicId = publicIdWithExt,
 				Overwrite = true
@@ -161,12 +171,27 @@ namespace LMSApi.BALLibrary.Utils
 			await fileStream.CopyToAsync(memoryStream);
 			memoryStream.Position = 0;
 
-			var extension = Path.GetExtension(fileName);
+			var extension = Path.GetExtension(fileName)?.ToLowerInvariant() ?? "";
 			var publicIdWithExt = string.IsNullOrWhiteSpace(extension) ? publicId : $"{publicId}{extension}";
+            
+			MemoryStream sanitizedStream;
+			if (extension == ".pdf")
+			{
+				sanitizedStream = await FileSanitizer.SanitizePdfAsync(memoryStream);
+			}
+			else if (extension == ".jpg" || extension == ".jpeg" || extension == ".png" || extension == ".webp")
+			{
+				sanitizedStream = await FileSanitizer.SanitizeImageAsync(memoryStream);
+			}
+			else
+			{
+				// If not an image or pdf, use original stream
+				sanitizedStream = new MemoryStream(memoryStream.ToArray());
+			}
 
 			var uploadParams = new RawUploadParams
 			{
-				File = new FileDescription(fileName, memoryStream),
+				File = new FileDescription(fileName, sanitizedStream),
 				Folder = folder,
 				PublicId = publicIdWithExt,
 				Overwrite = true
@@ -187,10 +212,12 @@ namespace LMSApi.BALLibrary.Utils
 			using var memoryStream = new MemoryStream();
 			await fileStream.CopyToAsync(memoryStream);
 			memoryStream.Position = 0;
+            
+			using var sanitizedStream = await FileSanitizer.SanitizeImageAsync(memoryStream);
 
 			var uploadParams = new ImageUploadParams
 			{
-				File = new FileDescription(fileName, memoryStream),
+				File = new FileDescription(fileName, sanitizedStream),
 				Folder = folder,
 				PublicId = publicId,
 				Overwrite = true,

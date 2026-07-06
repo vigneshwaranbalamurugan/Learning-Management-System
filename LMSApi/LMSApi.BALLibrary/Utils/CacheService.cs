@@ -54,19 +54,28 @@ namespace LMSApi.BALLibrary.Utils
 
         public async Task<T> GetOrSetAsync<T>(string key, Func<Task<T>> factory, TimeSpan? expiry = null)
         {
-            var cachedValue = await GetAsync<T>(key);
-            if (cachedValue != null)
+            try
             {
-                return cachedValue;
+                var cachedString = await _cache.GetStringAsync(key);
+                if (!string.IsNullOrEmpty(cachedString))
+                {
+                    var deserialized = JsonSerializer.Deserialize<T>(cachedString);
+                    if (deserialized is not null)
+                        return deserialized;
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to get value from cache for key {Key}", key);
             }
 
             var value = await factory();
-            
-            if (value != null)
+
+            if (value is not null)
             {
                 await SetAsync(key, value, expiry);
             }
-            
+
             return value;
         }
 

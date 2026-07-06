@@ -22,6 +22,7 @@ namespace LMSApi.Tests.Services
         private Mock<IInstructorPayoutService> _mockInstructorPayoutService = null!;
         private Mock<INotificationService> _mockNotificationService = null!;
         private Mock<IUserNotificationsService> _mockUserNotificationsService = null!;
+        private Mock<IInvoiceService> _mockInvoiceService = null!;
         private IEnrollmentService _enrollmentService = null!;
 
         [SetUp]
@@ -35,6 +36,7 @@ namespace LMSApi.Tests.Services
             _mockInstructorPayoutService = new Mock<IInstructorPayoutService>();
             _mockNotificationService = new Mock<INotificationService>();
             _mockUserNotificationsService = new Mock<IUserNotificationsService>();
+            _mockInvoiceService = new Mock<IInvoiceService>();
             
             var enrollmentRepository = new EnrollmentRepository(DbContext);
             var courseRepository = new CourseRepository(DbContext);
@@ -54,7 +56,8 @@ namespace LMSApi.Tests.Services
                 _mockInstructorPayoutService.Object,
                 userRepository,
                 _mockNotificationService.Object,
-                _mockUserNotificationsService.Object
+                _mockUserNotificationsService.Object,
+                _mockInvoiceService.Object
             );
         }
 

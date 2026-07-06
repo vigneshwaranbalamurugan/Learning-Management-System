@@ -1,0 +1,168 @@
+<div class="p-8 max-w-6xl mx-auto min-h-screen">
+  <div class="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div>
+      <h1 class="text-3xl font-bold text-gray-800">My Payments</h1>
+      <p class="text-gray-500 mt-2">View your payment history and download invoices.</p>
+    </div>
+    <div class="flex items-center gap-4">
+      <div class="w-64">
+        <app-form-input 
+          type="text" 
+          placeholder="Search courses..." 
+          icon="none" 
+          [value]="searchTerm()"
+          (valueChange)="onSearch($event)">
+        </app-form-input>
+      </div>
+      <div class="w-48">
+        <app-dropdown
+          [options]="statusOptions"
+          [value]="statusFilter()"
+          (valueChange)="onStatusChange($event)">
+        </app-dropdown>
+      </div>
+    </div>
+  </div>
+
+  <div *ngIf="isLoading()" class="space-y-4">
+    <!-- Skeleton loader -->
+    <div *ngFor="let i of [1, 2, 3]" class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 animate-pulse flex items-center justify-between">
+      <div class="flex items-center gap-4">
+        <div class="w-20 h-16 bg-gray-200 rounded-lg"></div>
+        <div class="space-y-2">
+          <div class="w-48 h-5 bg-gray-200 rounded"></div>
+          <div class="w-32 h-4 bg-gray-200 rounded"></div>
+        </div>
+      </div>
+      <div class="w-24 h-10 bg-gray-200 rounded-lg"></div>
+    </div>
+  </div>
+
+  <div *ngIf="!isLoading() && payments().length === 0" class="text-center py-16 bg-white rounded-2xl shadow-sm border border-gray-100">
+    <div class="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
+      <svg class="w-10 h-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+      </svg>
+    </div>
+    <h3 class="text-xl font-semibold text-gray-800">No Payments Found</h3>
+    <p class="text-gray-500 mt-2">You haven't made any purchases matching your criteria.</p>
+  </div>
+
+  <div *ngIf="!isLoading() && payments().length > 0" class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex flex-col">
+    <!-- Table Layout for Desktop -->
+    <div class="hidden md:block overflow-x-auto">
+      <table class="w-full text-left border-collapse">
+        <thead>
+          <tr class="bg-gray-50 border-b border-gray-100">
+            <th class="py-4 px-6 text-sm font-semibold text-gray-600">Course</th>
+            <th class="py-4 px-6 text-sm font-semibold text-gray-600">Amount</th>
+            <th class="py-4 px-6 text-sm font-semibold text-gray-600">Status</th>
+            <th class="py-4 px-6 text-sm font-semibold text-gray-600">Date</th>
+            <th class="py-4 px-6 text-sm font-semibold text-gray-600">Invoice No</th>
+            <th class="py-4 px-6 text-sm font-semibold text-gray-600 text-right">Action</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+          <tr *ngFor="let p of payments()" class="hover:bg-gray-50/50 transition duration-150">
+            <td class="py-4 px-6">
+              <div class="flex items-center gap-4">
+                <div class="w-12 h-12 rounded-lg bg-gray-100 overflow-hidden flex-shrink-0">
+                  <img *ngIf="p.courseThumbnailUrl" [src]="p.courseThumbnailUrl" [alt]="p.courseTitle" class="w-full h-full object-cover">
+                  <div *ngIf="!p.courseThumbnailUrl" class="w-full h-full flex items-center justify-center text-gray-400">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                  </div>
+                </div>
+                <div class="font-medium text-gray-800 line-clamp-2 max-w-[200px]">{{ p.courseTitle }}</div>
+              </div>
+            </td>
+            <td class="py-4 px-6 font-medium text-gray-800">
+              {{ p.currency }} {{ p.amount | number:'1.2-2' }}
+            </td>
+            <td class="py-4 px-6">
+              <span class="px-2.5 py-1 rounded-full text-xs font-semibold" [ngClass]="getStatusClass(p.status)">
+                {{ p.status }}
+              </span>
+            </td>
+            <td class="py-4 px-6 text-gray-600">
+              {{ (p.paidAt || p.createdAt) | date:'mediumDate' }}
+            </td>
+            <td class="py-4 px-6 text-gray-600 font-mono text-sm">
+              {{ p.invoiceNumber }}
+            </td>
+            <td class="py-4 px-6 text-right">
+              <button 
+                *ngIf="p.status.toLowerCase() === 'completed' || p.status.toLowerCase() === 'transferred'"
+                (click)="downloadInvoice(p)" 
+                [disabled]="downloadingInvoiceId() === p.id"
+                class="inline-flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 hover:text-primary transition font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed">
+                <svg *ngIf="downloadingInvoiceId() !== p.id" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                </svg>
+                <svg *ngIf="downloadingInvoiceId() === p.id" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                {{ downloadingInvoiceId() === p.id ? 'Downloading...' : 'Invoice' }}
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Card Layout for Mobile -->
+    <div class="md:hidden divide-y divide-gray-100 flex-1">
+      <div *ngFor="let p of payments()" class="p-6">
+        <div class="flex items-start gap-4 mb-4">
+          <div class="w-16 h-16 rounded-lg bg-gray-100 overflow-hidden flex-shrink-0">
+            <img *ngIf="p.courseThumbnailUrl" [src]="p.courseThumbnailUrl" [alt]="p.courseTitle" class="w-full h-full object-cover">
+          </div>
+          <div>
+            <h4 class="font-medium text-gray-800 line-clamp-2">{{ p.courseTitle }}</h4>
+            <div class="text-primary font-semibold mt-1">{{ p.currency }} {{ p.amount | number:'1.2-2' }}</div>
+          </div>
+        </div>
+        
+        <div class="grid grid-cols-2 gap-4 mb-4 text-sm">
+          <div>
+            <div class="text-gray-500 mb-1">Status</div>
+            <span class="px-2.5 py-1 rounded-full text-xs font-semibold inline-block" [ngClass]="getStatusClass(p.status)">
+              {{ p.status }}
+            </span>
+          </div>
+          <div>
+            <div class="text-gray-500 mb-1">Date</div>
+            <div class="text-gray-800 font-medium">{{ (p.paidAt || p.createdAt) | date:'mediumDate' }}</div>
+          </div>
+          <div class="col-span-2">
+            <div class="text-gray-500 mb-1">Invoice No</div>
+            <div class="text-gray-800 font-mono">{{ p.invoiceNumber }}</div>
+          </div>
+        </div>
+
+        <button 
+          *ngIf="p.status.toLowerCase() === 'completed' || p.status.toLowerCase() === 'transferred'"
+          (click)="downloadInvoice(p)" 
+          [disabled]="downloadingInvoiceId() === p.id"
+          class="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 hover:text-primary transition font-medium text-sm disabled:opacity-50">
+          <svg *ngIf="downloadingInvoiceId() !== p.id" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+          </svg>
+          <svg *ngIf="downloadingInvoiceId() === p.id" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          {{ downloadingInvoiceId() === p.id ? 'Downloading...' : 'Download Invoice' }}
+        </button>
+      </div>
+    </div>
+
+    <app-pagination 
+      [pageNumber]="currentPage()"
+      [totalPages]="totalPages()"
+      [totalCount]="totalCount()"
+      [pageSize]="10"
+      (pageChange)="onPageChange($event)">
+    </app-pagination>
+  </div>
+</div>

@@ -43,6 +43,14 @@ namespace LMSApi.BALLibrary.Utils
 			mail.IsBodyHtml = message.IsHtml;
 			mail.BodyEncoding = System.Text.Encoding.UTF8;
 
+			if (message.Attachments != null && message.Attachments.Any())
+			{
+				foreach (var att in message.Attachments)
+				{
+					mail.Attachments.Add(new Attachment(new System.IO.MemoryStream(att.Data), att.FileName, att.ContentType));
+				}
+			}
+
 			await smtp.SendMailAsync(mail);
 		}
 	}

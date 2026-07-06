@@ -151,6 +151,7 @@ builder.Services.AddScoped<IEnrollmentService, EnrollmentService>();
 builder.Services.AddScoped<IPaymentProvider, RazorpayPaymentProvider>();
 builder.Services.AddScoped<IPaymentProvider, StripePaymentProvider>();
 builder.Services.AddScoped<IPaymentService, PaymentService>();
+builder.Services.AddScoped<IInvoiceService, InvoiceService>();
 
 // Platform Charges & Payout services
 builder.Services.AddScoped<IPlatformFeeService, PlatformFeeService>();

@@ -12,6 +12,7 @@ namespace LMSApi.BALLibrary.Services
     public class UserNotificationsService : IUserNotificationsService
     {
         private const string CacheKeyPrefix = "notifications:unread:";
+        private static readonly TimeSpan UnreadCountCacheTtl = TimeSpan.FromMinutes(5);
         private readonly IUserNotificationsRepository _notificationsRepository;
         private readonly IMapper _mapper;
         private readonly INotificationRealtimeService _realtimeService;
@@ -43,7 +44,8 @@ namespace LMSApi.BALLibrary.Services
             var cacheKey = $"{CacheKeyPrefix}{userId}";
             return await _cacheService.GetOrSetAsync(
                 cacheKey,
-                async () => await _notificationsRepository.GetUnreadCountByUserIdAsync(userId)
+                async () => await _notificationsRepository.GetUnreadCountByUserIdAsync(userId),
+                UnreadCountCacheTtl
             );
         }
 
@@ -67,7 +69,7 @@ namespace LMSApi.BALLibrary.Services
 
                 // Push updated badge count to connected client
                 var unreadCount = await _notificationsRepository.GetUnreadCountByUserIdAsync(userId);
-                await _cacheService.SetAsync($"{CacheKeyPrefix}{userId}", unreadCount);
+                await _cacheService.SetAsync($"{CacheKeyPrefix}{userId}", unreadCount, UnreadCountCacheTtl);
                 await _realtimeService.SendUnreadCountAsync(userId, unreadCount);
             }
         }
@@ -77,7 +79,7 @@ namespace LMSApi.BALLibrary.Services
             _logger?.LogInformation("Marking all notifications as read for user {UserId}", userId);
             await _notificationsRepository.MarkAllAsReadAsync(userId);
 
-            await _cacheService.SetAsync($"{CacheKeyPrefix}{userId}", 0);
+            await _cacheService.SetAsync($"{CacheKeyPrefix}{userId}", 0, UnreadCountCacheTtl);
 
             // Push zero badge count to connected client
             await _realtimeService.SendUnreadCountAsync(userId, 0);
@@ -94,8 +96,17 @@ namespace LMSApi.BALLibrary.Services
                 throw new UnauthorizedAccessException("You do not have permission to delete this notification.");
             }
 
+            var wasUnread = !notification.IsRead;
             await _notificationsRepository.DeleteAsync(notificationId);
             _logger?.LogInformation("Notification {NotificationId} deleted successfully for user {UserId}", notificationId, userId);
+
+            // Refresh the unread count cache so the badge stays accurate after deletion
+            if (wasUnread)
+            {
+                var unreadCount = await _notificationsRepository.GetUnreadCountByUserIdAsync(userId);
+                await _cacheService.SetAsync($"{CacheKeyPrefix}{userId}", unreadCount, UnreadCountCacheTtl);
+                await _realtimeService.SendUnreadCountAsync(userId, unreadCount);
+            }
         }
 
         public async Task CreateAndSendNotificationAsync(int userId, string title, string message, NotificationType type, string? redirectUrl = null)
@@ -121,7 +132,7 @@ namespace LMSApi.BALLibrary.Services
 
             // Push the updated unread count — increments the badge in real-time
             var unreadCount = await _notificationsRepository.GetUnreadCountByUserIdAsync(userId);
-            await _cacheService.SetAsync($"{CacheKeyPrefix}{userId}", unreadCount);
+            await _cacheService.SetAsync($"{CacheKeyPrefix}{userId}", unreadCount, UnreadCountCacheTtl);
             await _realtimeService.SendUnreadCountAsync(userId, unreadCount);
 
             _logger?.LogInformation("Real-time notification pushed successfully to user {UserId}. Unread count: {Count}", userId, unreadCount);

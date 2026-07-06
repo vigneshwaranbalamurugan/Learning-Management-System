@@ -71,6 +71,36 @@ namespace LMSApi.DALLibrary.Repositories
                 .ToListAsync();
         }
 
+        public async Task<(IEnumerable<Payments> Items, int TotalCount)> GetLearnerPaymentsPagedAsync(
+            int userId, string? search, PaymentStatus? status, int page, int pageSize)
+        {
+            var query = _context.Payments
+                .Where(p => p.UserId == userId)
+                .Include(p => p.Course)
+                .AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                var lowerSearch = search.ToLower();
+                query = query.Where(p => p.Course.Title.ToLower().Contains(lowerSearch));
+            }
+
+            if (status.HasValue)
+            {
+                query = query.Where(p => p.Status == status.Value);
+            }
+
+            var totalCount = await query.CountAsync();
+
+            var items = await query
+                .OrderByDescending(p => p.PaidAt ?? p.CreatedAt)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            return (items, totalCount);
+        }
+
         public async Task<IEnumerable<Payments>> GetPaymentsByInstructorAsync(int instructorId)
         {
             return await _context.Payments
