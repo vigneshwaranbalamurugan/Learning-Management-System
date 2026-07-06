@@ -167,6 +167,7 @@
           <app-form-input 
             label="Marks *" 
             type="number" 
+            [error]="errors['mark']"
             [value]="currentQuestion.mark.toString()" 
             (valueChange)="currentQuestion.mark = $event ? +$event : 1">
           </app-form-input>
@@ -184,6 +185,7 @@
       <div>
         <label class="text-sm font-bold text-slate-700 block mb-1">Question Text <span class="text-red-500">*</span></label>
         <textarea [(ngModel)]="currentQuestion.questionText" rows="3" placeholder="Enter the question..." class="w-full border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#1C1C7B] transition"></textarea>
+        <p *ngIf="errors['questionText']" class="text-xs text-red-500 mt-1 font-medium">{{ errors['questionText'] }}</p>
       </div>
 
       <div class="space-y-3">
@@ -208,6 +210,7 @@
           </div>
         </div>
         <p class="text-[11px] text-gray-500">Select the radio button next to the correct answer.</p>
+        <p *ngIf="errors['options']" class="text-xs text-red-500 mt-1 font-medium">{{ errors['options'] }}</p>
       </div>
 
       <div>

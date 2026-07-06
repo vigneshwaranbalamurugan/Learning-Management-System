@@ -88,6 +88,7 @@
             (valueChange)="setQuizSectionIdStr($event)"
             [options]="sectionOptions"
             [disabled]="course.hasNonExpiredEnrollments === true"
+            [error]="errors['sectionId']"
             placeholder="Select Section" />
         </div>
         <div>
@@ -95,6 +96,7 @@
             label="Quiz Title"
             [value]="quizTitle"
             (valueChange)="quizTitle = $event"
+            [error]="errors['title']"
             placeholder="e.g. Chapter 1 Assessment" />
         </div>
         <div class="md:col-span-2">
@@ -107,6 +109,7 @@
             [value]="quizTimeLimit"
             (valueChange)="quizTimeLimit = $event"
             [disabled]="course.hasNonExpiredEnrollments === true"
+            [error]="errors['timeLimit']"
             placeholder="00:30:00" />
         </div>
         <div>
@@ -115,6 +118,7 @@
             type="number"
             [value]="quizPassingPercentageStr"
             (valueChange)="quizPassingPercentageStr = $event"
+            [error]="errors['passingPercentage']"
             [disabled]="course.hasNonExpiredEnrollments === true" />
         </div>
         <div>
@@ -123,6 +127,7 @@
             type="number"
             [value]="quizMaxAttemptsStr"
             (valueChange)="quizMaxAttemptsStr = $event"
+            [error]="errors['maxAttempts']"
             [disabled]="course.hasNonExpiredEnrollments === true" />
         </div>
         <div>
@@ -131,6 +136,7 @@
             type="number"
             [value]="quizDeadlineInDaysStr"
             (valueChange)="quizDeadlineInDaysStr = $event"
+            [error]="errors['deadlineInDays']"
             [disabled]="course.hasNonExpiredEnrollments === true" />
         </div>
       </div>
@@ -160,6 +166,17 @@
     [isDanger]="true"
     (confirm)="deleteQuiz()"
     (cancel)="closeDeleteModal()">
+  </app-confirm-modal>
+
+  <app-confirm-modal
+    [isOpen]="showUnsavedModal()"
+    title="Unsaved Changes"
+    message="You have unsaved changes in this quiz form. Are you sure you want to leave without saving?"
+    confirmText="Leave without saving"
+    cancelText="Stay"
+    [isDanger]="true"
+    (confirm)="confirmLeave()"
+    (cancel)="cancelLeave()">
   </app-confirm-modal>
 
 </div>

@@ -36,6 +36,7 @@ export class InstructorAssignmentForm implements OnInit {
   protected assignmentId: number | null = null;
   protected isLoading = signal(true);
   protected isSaving = signal(false);
+  protected errors: Record<string, string> = {};
 
   // Form Fields
   protected sectionId: number | null = null;
@@ -242,23 +243,78 @@ export class InstructorAssignmentForm implements OnInit {
   protected onFileSelected(event: any) {
     const file = event.target.files?.[0];
     if (file) {
-      this.selectedFile = file;
+      if (file.size > this.maxFileSizeMB * 1024 * 1024) {
+        this.errors['file'] = `File size exceeds ${this.maxFileSizeMB}MB.`;
+        this.selectedFile = null;
+      } else {
+        delete this.errors['file'];
+        this.selectedFile = file;
+      }
     }
   }
 
   protected saveAssignment() {
+    this.errors = {};
     if (!this.course) return;
+
+    let isValid = true;
+    
     if (!this.sectionId) {
       this.toastService.showError('Section is required.');
-      return;
+      this.errors['sectionId'] = 'Section is required.';
+      isValid = false;
     }
     if (!this.title.trim()) {
       this.toastService.showError('Assignment title is required.');
-      return;
+      this.errors['title'] = 'Title is required.';
+      isValid = false;
+    }
+    if (this.totalMarks <= 0) {
+      this.toastService.showError('Total marks must be greater than 0.');
+      this.errors['totalMarks'] = 'Total marks must be > 0.';
+      isValid = false;
+    }
+    if (this.passingMarks <= 0 || this.passingMarks > this.totalMarks) {
+      this.toastService.showError('Passing marks must be between 1 and total marks.');
+      this.errors['passingMarks'] = 'Must be between 1 and Total Marks.';
+      isValid = false;
+    }
+    if (this.deadlineInDays < 0) {
+      this.toastService.showError('Deadline in days cannot be negative.');
+      this.errors['deadlineInDays'] = 'Cannot be negative.';
+      isValid = false;
+    }
+    if (this.maxSubmissions < 1) {
+      this.toastService.showError('Max submissions must be at least 1.');
+      this.errors['maxSubmissions'] = 'Must be at least 1.';
+      isValid = false;
     }
 
+    if (this.attachmentType == AssignmentAttachmentType.File) {
+      if (!this.selectedFile && !this.currentAttachmentPath) {
+        this.toastService.showError('Please select a file to upload.');
+        this.errors['file'] = 'File is required.';
+        isValid = false;
+      }
+    } else if (this.attachmentType == AssignmentAttachmentType.Link) {
+      if (!this.attachmentUrl.trim()) {
+        this.toastService.showError('Attachment URL is required.');
+        this.errors['attachmentUrl'] = 'URL is required.';
+        isValid = false;
+      } else {
+        const urlRegex = /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/i;
+        if (!urlRegex.test(this.attachmentUrl)) {
+          this.toastService.showError('Please enter a valid URL.');
+          this.errors['attachmentUrl'] = 'Invalid URL format.';
+          isValid = false;
+        }
+      }
+    }
+
+    if (!isValid) return;
+
     const formData = new FormData();
-    formData.append('CourseSectionId', this.sectionId.toString());
+    formData.append('CourseSectionId', this.sectionId!.toString());
     formData.append('Title', this.title);
     formData.append('Description', this.description);
     formData.append('Instructions', this.instructions);

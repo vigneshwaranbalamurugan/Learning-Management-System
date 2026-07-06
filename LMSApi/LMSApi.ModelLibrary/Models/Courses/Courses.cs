@@ -44,5 +44,8 @@ namespace LMSApi.ModelLibrary.Models
         
         [NotMapped]
         public int? ProjectedLessonsCount { get; set; }
+
+        [NotMapped]
+        public double? ProjectedCompletionRate { get; set; }
     }
 }

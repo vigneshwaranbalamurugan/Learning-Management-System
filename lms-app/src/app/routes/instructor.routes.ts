@@ -42,7 +42,8 @@ export const instructorRoutes: Routes = [
           },
           {
             path: 'quizzes',
-            loadComponent: () => import('@pages/instructor-course-quizzes/instructor-course-quizzes').then(m => m.InstructorCourseQuizzes)
+            loadComponent: () => import('@pages/instructor-course-quizzes/instructor-course-quizzes').then(m => m.InstructorCourseQuizzes),
+            canDeactivate: [(component: any) => component.canDeactivate ? component.canDeactivate() : true]
           },
           {
             path: 'assignments',

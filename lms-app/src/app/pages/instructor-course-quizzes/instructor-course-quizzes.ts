@@ -38,6 +38,63 @@ export class InstructorCourseQuizzes {
   protected quizSectionId: number | null = null;
   protected quizDeadlineInDays = 0;
 
+  protected showUnsavedModal = signal(false);
+  private unsavedResolve: ((val: boolean) => void) | null = null;
+  private initialFormState = '';
+  protected isSaving = signal(false);
+  protected errors: Record<string, string> = {};
+
+  private captureInitialState() {
+    this.initialFormState = JSON.stringify({
+      quizSectionId: this.quizSectionId,
+      quizTitle: this.quizTitle,
+      quizDescription: this.quizDescription,
+      quizTimeLimit: this.quizTimeLimit,
+      quizPassingPercentage: this.quizPassingPercentage,
+      quizMaxAttempts: this.quizMaxAttempts,
+      quizDeadlineInDays: this.quizDeadlineInDays
+    });
+  }
+
+  protected get isDirty(): boolean {
+    if (!this.showQuizModal()) return false;
+    const currentState = JSON.stringify({
+      quizSectionId: this.quizSectionId,
+      quizTitle: this.quizTitle,
+      quizDescription: this.quizDescription,
+      quizTimeLimit: this.quizTimeLimit,
+      quizPassingPercentage: this.quizPassingPercentage,
+      quizMaxAttempts: this.quizMaxAttempts,
+      quizDeadlineInDays: this.quizDeadlineInDays
+    });
+    return currentState !== this.initialFormState;
+  }
+
+  async canDeactivate(): Promise<boolean> {
+    if (!this.isDirty || this.isSaving()) return true;
+
+    return new Promise<boolean>((resolve) => {
+      this.unsavedResolve = resolve;
+      this.showUnsavedModal.set(true);
+    });
+  }
+
+  protected confirmLeave(): void {
+    this.showUnsavedModal.set(false);
+    if (this.unsavedResolve) {
+      this.unsavedResolve(true);
+      this.unsavedResolve = null;
+    }
+  }
+
+  protected cancelLeave(): void {
+    this.showUnsavedModal.set(false);
+    if (this.unsavedResolve) {
+      this.unsavedResolve(false);
+      this.unsavedResolve = null;
+    }
+  }
+
   protected get quizSectionIdStr(): string {
     return this.quizSectionId ? String(this.quizSectionId) : '';
   }
@@ -99,11 +156,15 @@ export class InstructorCourseQuizzes {
     this.quizPassingPercentage = 60;
     this.quizMaxAttempts = 3;
     this.quizDeadlineInDays = 0;
+    this.captureInitialState();
     this.showQuizModal.set(true);
   }
 
-  protected closeQuizModal() {
-    this.showQuizModal.set(false);
+  protected async closeQuizModal() {
+    const canClose = await this.canDeactivate();
+    if (canClose) {
+      this.showQuizModal.set(false);
+    }
   }
 
   protected openEditQuiz(quiz: any, sectionId: number) {
@@ -115,15 +176,48 @@ export class InstructorCourseQuizzes {
     this.quizPassingPercentage = quiz.passingPercentage || 60;
     this.quizMaxAttempts = quiz.maxAttempts || 3;
     this.quizDeadlineInDays = quiz.deadlineInDays || 0;
+    this.captureInitialState();
     this.showQuizModal.set(true);
   }
 
   protected saveQuiz() {
+    this.errors = {};
     if (!this.course || !this.quizSectionId) return;
+
+    let isValid = true;
+    
     if (!this.quizTitle.trim()) {
       this.toastService.showError('Quiz title is required.');
-      return;
+      this.errors['title'] = 'Title is required.';
+      isValid = false;
     }
+    const timeLimitRegex = /^([01]?[0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$/;
+    if (!timeLimitRegex.test(this.quizTimeLimit)) {
+      this.toastService.showError('Time limit must be in HH:mm:ss format.');
+      this.errors['timeLimit'] = 'Format: HH:mm:ss';
+      isValid = false;
+    } else if (this.quizTimeLimit === '00:00:00' || this.quizTimeLimit === '00:00') {
+      this.toastService.showError('Time limit must be greater than 0.');
+      this.errors['timeLimit'] = 'Must be > 00:00:00';
+      isValid = false;
+    }
+    if (this.quizPassingPercentage <= 0 || this.quizPassingPercentage > 100) {
+      this.toastService.showError('Passing percentage must be between 1 and 100.');
+      this.errors['passingPercentage'] = 'Must be 1-100';
+      isValid = false;
+    }
+    if (this.quizMaxAttempts < 1) {
+      this.toastService.showError('Max attempts must be at least 1.');
+      this.errors['maxAttempts'] = 'At least 1';
+      isValid = false;
+    }
+    if (this.quizDeadlineInDays < 0) {
+      this.toastService.showError('Deadline in days cannot be negative.');
+      this.errors['deadlineInDays'] = 'Cannot be negative';
+      isValid = false;
+    }
+
+    if (!isValid) return;
 
     const data = {
       courseSectionId: this.quizSectionId,
@@ -137,22 +231,32 @@ export class InstructorCourseQuizzes {
     };
 
     if (this.editingQuizId) {
+      this.isSaving.set(true);
       this.quizService.updateQuiz(this.editingQuizId, data).subscribe({
         next: () => {
+          this.isSaving.set(false);
           this.toastService.showSuccess('Quiz updated successfully.');
           this.layout.loadCourse(this.course!.id);
           this.closeQuizModal();
         },
-        error: (err) => this.toastService.showApiError(err, 'Failed to update quiz.')
+        error: (err) => {
+          this.isSaving.set(false);
+          this.toastService.showApiError(err, 'Failed to update quiz.');
+        }
       });
     } else {
+      this.isSaving.set(true);
       this.quizService.createQuiz(data).subscribe({
         next: () => {
+          this.isSaving.set(false);
           this.toastService.showSuccess('Quiz created successfully.');
           this.layout.loadCourse(this.course!.id);
           this.closeQuizModal();
         },
-        error: (err) => this.toastService.showApiError(err, 'Failed to create quiz.')
+        error: (err) => {
+          this.isSaving.set(false);
+          this.toastService.showApiError(err, 'Failed to create quiz.');
+        }
       });
     }
   }

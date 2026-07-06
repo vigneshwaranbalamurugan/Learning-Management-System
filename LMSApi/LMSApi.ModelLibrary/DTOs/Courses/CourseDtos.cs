@@ -200,6 +200,7 @@ namespace LMSApi.ModelLibrary.DTOs
         public int TotalReviews { get; set; }
         public int LessonsCount { get; set; }
         public int EnrolledCount { get; set; }
+        public double CompletionRate { get; set; }
         public TimeSpan EstimatedDuration { get; set; }
         public bool HasCertificate { get; set; }
         public DateTime CreatedAt { get; set; }

@@ -29,6 +29,7 @@
             (valueChange)="setSectionIdStr($event)"
             [options]="sectionOptions"
             [disabled]="course?.hasNonExpiredEnrollments === true"
+            [error]="errors['sectionId']"
             placeholder="Select Section" />
         </div>
         
@@ -37,6 +38,7 @@
             label="Assignment Title"
             [value]="title"
             (valueChange)="title = $event"
+            [error]="errors['title']"
             placeholder="e.g. Final Capstone Project" />
         </div>
 
@@ -65,6 +67,7 @@
               type="number"
               [value]="totalMarksStr"
               (valueChange)="totalMarksStr = $event"
+              [error]="errors['totalMarks']"
               [disabled]="course?.hasNonExpiredEnrollments === true" />
           </div>
           <div>
@@ -73,6 +76,7 @@
               type="number"
               [value]="passingMarksStr"
               (valueChange)="passingMarksStr = $event"
+              [error]="errors['passingMarks']"
               [disabled]="course?.hasNonExpiredEnrollments === true" />
           </div>
         </div>
@@ -84,6 +88,7 @@
               type="number"
               [value]="deadlineInDaysStr"
               (valueChange)="deadlineInDaysStr = $event"
+              [error]="errors['deadlineInDays']"
               [disabled]="course?.hasNonExpiredEnrollments === true" />
           </div>
           <div>
@@ -92,6 +97,7 @@
               type="number"
               [value]="maxSubmissionsStr"
               (valueChange)="maxSubmissionsStr = $event"
+              [error]="errors['maxSubmissions']"
               [disabled]="course?.hasNonExpiredEnrollments === true" />
           </div>
         </div>
@@ -119,6 +125,7 @@
               <span class="text-[10px] font-bold text-indigo-700 bg-white px-2 py-0.5 rounded-md border border-indigo-100 uppercase tracking-wider">Max Size: {{ maxFileSizeMB }}MB</span>
             </div>
             <input type="file" (change)="onFileSelected($event)" [disabled]="course?.hasNonExpiredEnrollments === true" class="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-white file:text-[#1C1C7B] file:shadow-sm hover:file:bg-gray-50 cursor-pointer" />
+            <p *ngIf="errors['file']" class="text-xs text-red-500 mt-2 font-medium">{{ errors['file'] }}</p>
             <p *ngIf="currentAttachmentPath" class="text-xs text-gray-500 mt-2">Current file attached.</p>
           </div>
           
@@ -127,6 +134,7 @@
               label="Attachment URL"
               [value]="attachmentUrl"
               (valueChange)="attachmentUrl = $event"
+              [error]="errors['attachmentUrl']"
               [disabled]="course?.hasNonExpiredEnrollments === true"
               placeholder="https://example.com/resource" />
           </div>

@@ -53,6 +53,7 @@ namespace LMSApi.BALLibrary.Mappers
                 .ForMember(dest => dest.InstructorName, opt => opt.MapFrom(src => src.Instructor != null && src.Instructor.UserProfile != null ? $"{src.Instructor.UserProfile.FirstName} {src.Instructor.UserProfile.LastName}".Trim() : string.Empty))
                 .ForMember(dest => dest.LessonsCount, opt => opt.MapFrom(src => src.ProjectedLessonsCount ?? (src.Sections != null ? src.Sections.SelectMany(s => s.Lessons).Count() : 0)))
                 .ForMember(dest => dest.EnrolledCount, opt => opt.MapFrom(src => src.ProjectedEnrolledCount ?? (src.Enrollments != null ? src.Enrollments.Count : 0)))
+                .ForMember(dest => dest.CompletionRate, opt => opt.MapFrom(src => src.ProjectedCompletionRate ?? 0))
                 .ForMember(dest => dest.HasCertificate, opt => opt.MapFrom(src => true));
 
             CreateMap<Courses, CoursePreviewResponse>()

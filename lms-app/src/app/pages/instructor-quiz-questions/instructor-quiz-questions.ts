@@ -60,8 +60,17 @@ export class InstructorQuizQuestions implements OnInit {
   private unsavedResolve: ((val: boolean) => void) | null = null;
 
   protected isLocked = signal(false);
+  private initialFormState = '';
+  protected errors: Record<string, string> = {};
+  
+  
+  private captureInitialState() {
+    this.initialFormState = JSON.stringify(this.currentQuestion);
+  }
+
   protected get isDirty(): boolean {
-    return this.showQuestionModal;
+    if (!this.showQuestionModal) return false;
+    return JSON.stringify(this.currentQuestion) !== this.initialFormState;
   }
 
 
@@ -175,6 +184,7 @@ export class InstructorQuizQuestions implements OnInit {
     this.currentQuestion.sortOrder = maxSortOrder + 1;
     
     this.isEditingQuestion = false;
+    this.captureInitialState();
     this.showQuestionModal = true;
   }
 
@@ -189,11 +199,15 @@ export class InstructorQuizQuestions implements OnInit {
       options: question.options.map((o: any) => ({ ...o }))
     };
     this.isEditingQuestion = true;
+    this.captureInitialState();
     this.showQuestionModal = true;
   }
 
-  protected closeQuestionModal() {
-    this.showQuestionModal = false;
+  protected async closeQuestionModal() {
+    const canClose = await this.canDeactivate();
+    if (canClose) {
+      this.showQuestionModal = false;
+    }
   }
 
   protected addOption() {
@@ -244,23 +258,50 @@ export class InstructorQuizQuestions implements OnInit {
   }
 
   protected saveQuestion() {
+    this.errors = {};
     if (!this.quizId) return;
+
+    let isValid = true;
     if (!this.currentQuestion.questionText.trim()) {
       this.toastService.showError('Question text is required.');
-      return;
+      this.errors['questionText'] = 'Question text is required.';
+      isValid = false;
+    }
+    if (this.currentQuestion.mark <= 0) {
+      this.toastService.showError('Mark must be greater than 0.');
+      this.errors['mark'] = 'Must be > 0';
+      isValid = false;
+    }
+    
+    if (this.currentQuestion.questionType == QuizQuestionType.MultipleChoice) {
+      if (this.currentQuestion.options.length !== 4) {
+        this.toastService.showError('A multiple choice question must have exactly 4 options.');
+        this.errors['options'] = 'Must have exactly 4 options.';
+        isValid = false;
+      }
+    } else if (this.currentQuestion.questionType == QuizQuestionType.TrueFalse) {
+      if (this.currentQuestion.options.length !== 2) {
+        this.toastService.showError('A true/false question must have exactly 2 options.');
+        this.errors['options'] = 'Must have exactly 2 options.';
+        isValid = false;
+      }
     }
     
     const hasCorrectOption = this.currentQuestion.options.some(o => o.isCorrect);
     if (!hasCorrectOption) {
       this.toastService.showError('Please mark at least one option as correct.');
-      return;
+      this.errors['options'] = this.errors['options'] || 'Select at least one correct option.';
+      isValid = false;
     }
     
     const hasEmptyOption = this.currentQuestion.options.some(o => !o.optionText.trim());
     if (hasEmptyOption) {
       this.toastService.showError('Option text cannot be empty.');
-      return;
+      this.errors['options'] = this.errors['options'] || 'Option text cannot be empty.';
+      isValid = false;
     }
+
+    if (!isValid) return;
 
     const payload = {
       quizId: this.quizId,
