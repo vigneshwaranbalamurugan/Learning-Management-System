@@ -24,13 +24,13 @@ import { EnrollmentService } from '@services/enrollment.service';
 export class ExploreCourses implements OnInit {
   private enrollmentService = inject(EnrollmentService);
   private courseService = inject(CourseService);
-  private toastService     = inject(ToastService);
-  private router           = inject(Router);
-  private route            = inject(ActivatedRoute);
-  private destroyRef       = inject(DestroyRef);
+  private toastService = inject(ToastService);
+  private router = inject(Router);
+  private route = inject(ActivatedRoute);
+  private destroyRef = inject(DestroyRef);
 
   // ── Data signals ─────────────────────────────────────────────────────────
-  protected courses          = signal<CourseListItemResponse[]>([]);
+  protected courses = signal<CourseListItemResponse[]>([]);
   protected availableCourses = computed(() => {
     let list = this.courses();
 
@@ -53,41 +53,41 @@ export class ExploreCourses implements OnInit {
     }
     return list;
   });
-  protected categories       = signal<CategoryResponse[]>([]);
-  protected languages        = signal<LanguageMetadata[]>([]);
-  protected instructors      = signal<InstructorMetadata[]>([]);
+  protected categories = signal<CategoryResponse[]>([]);
+  protected languages = signal<LanguageMetadata[]>([]);
+  protected instructors = signal<InstructorMetadata[]>([]);
   protected enrolledCourseIds = signal<number[]>([]);
   protected enrollmentProgress = signal<{ [courseId: number]: number }>({});
 
   // ── UI state ─────────────────────────────────────────────────────────────
-  protected isLoading       = signal(true);
-  protected filtersLoading  = signal(true);
+  protected isLoading = signal(true);
+  protected filtersLoading = signal(true);
   protected mobileFiltersOpen = signal(false);
   protected desktopFiltersOpen = signal(true);
   protected showMoreCategories = signal(false);
   protected showMoreInstructors = signal(false);
-  protected searchInput     = '';
-  private searchSubject     = new Subject<string>();
+  protected searchInput = '';
+  private searchSubject = new Subject<string>();
   protected collapsedSections = signal<Record<string, boolean>>({});
   protected sortDropdownOpen = signal(false);
 
   // ── Pagination state ─────────────────────────────────────────────────────
   protected pageNumber = signal(1);
-  protected pageSize   = signal(6);
+  protected pageSize = signal(6);
   protected totalPages = signal(1);
   protected totalCount = signal(0);
 
   // ── Filter state ─────────────────────────────────────────────────────────
-  protected selectedCategoryIds  = signal<number[]>([]);
-  protected selectedLevels       = signal<number[]>([]);
-  protected selectedLanguageIds  = signal<number[]>([]);
-  protected selectedIsPremium    = signal<boolean | null>(null);
-  protected selectedMinRating    = signal<number | null>(null);
-  protected selectedDurations    = signal<string[]>([]);
+  protected selectedCategoryIds = signal<number[]>([]);
+  protected selectedLevels = signal<number[]>([]);
+  protected selectedLanguageIds = signal<number[]>([]);
+  protected selectedIsPremium = signal<boolean | null>(null);
+  protected selectedMinRating = signal<number | null>(null);
+  protected selectedDurations = signal<string[]>([]);
   protected selectedInstructorIds = signal<number[]>([]);
-  protected selectedAccessTypes  = signal<number[]>([]);
-  protected selectedSortBy       = signal<string>('newest');
-  protected searchQuery          = signal<string>('');
+  protected selectedAccessTypes = signal<number[]>([]);
+  protected selectedSortBy = signal<string>('newest');
+  protected searchQuery = signal<string>('');
 
   // ── Active filter chips ─────────────────────────────────────────────────
   protected activeFilterChips = computed<Array<{ label: string; removeKey: string; removeValue: string }>>(() => {
@@ -107,7 +107,7 @@ export class ExploreCourses implements OnInit {
       if (lang) chips.push({ label: lang.name, removeKey: 'language', removeValue: String(id) });
     });
 
-    if (this.selectedIsPremium() === true)  chips.push({ label: 'Paid', removeKey: 'premium', removeValue: 'true' });
+    if (this.selectedIsPremium() === true) chips.push({ label: 'Paid', removeKey: 'premium', removeValue: 'true' });
     if (this.selectedIsPremium() === false) chips.push({ label: 'Free', removeKey: 'premium', removeValue: 'false' });
 
     if (this.selectedMinRating() != null)
@@ -135,11 +135,11 @@ export class ExploreCourses implements OnInit {
   ];
 
   readonly DURATIONS = [
-    { key: 'lt1',    label: '< 1 Hour' },
-    { key: '1to5',   label: '1 – 5 Hours' },
-    { key: '5to10',  label: '5 – 10 Hours' },
+    { key: 'lt1', label: '< 1 Hour' },
+    { key: '1to5', label: '1 – 5 Hours' },
+    { key: '5to10', label: '5 – 10 Hours' },
     { key: '10to20', label: '10 – 20 Hours' },
-    { key: 'gt20',   label: '20+ Hours' }
+    { key: 'gt20', label: '20+ Hours' }
   ];
 
   readonly RATINGS = [
@@ -154,32 +154,32 @@ export class ExploreCourses implements OnInit {
   ];
 
   readonly SORT_OPTIONS = [
-    { value: 'newest',       label: 'Newest First' },
-    { value: 'popular',      label: 'Most Popular' },
-    { value: 'rating',       label: 'Highest Rated' },
-    { value: 'oldest',       label: 'Oldest First' },
-    { value: 'az',           label: 'A – Z' },
-    { value: 'za',           label: 'Z – A' },
+    { value: 'newest', label: 'Newest First' },
+    { value: 'popular', label: 'Most Popular' },
+    { value: 'rating', label: 'Highest Rated' },
+    { value: 'oldest', label: 'Oldest First' },
+    { value: 'az', label: 'A – Z' },
+    { value: 'za', label: 'Z – A' },
     { value: 'duration_asc', label: 'Duration: Low to High' },
-    { value: 'duration_desc','label': 'Duration: High to Low' }
+    { value: 'duration_desc', 'label': 'Duration: High to Low' }
   ];
 
   ngOnInit(): void {
     // Read URL params on init
     this.route.queryParams.pipe(untilDestroyed(this.destroyRef)).subscribe(params => {
-      if (params['search'])       this.searchQuery.set(params['search']);
-      if (params['sortBy'])       this.selectedSortBy.set(params['sortBy']);
-      if (params['pageNumber'])   this.pageNumber.set(Number(params['pageNumber']));
-      if (params['categories'])   this.selectedCategoryIds.set(params['categories'].split(',').map(Number));
-      if (params['levels'])       this.selectedLevels.set(params['levels'].split(',').map(Number));
-      if (params['languages'])    this.selectedLanguageIds.set(params['languages'].split(',').map(Number));
+      if (params['search']) this.searchQuery.set(params['search']);
+      if (params['sortBy']) this.selectedSortBy.set(params['sortBy']);
+      if (params['pageNumber']) this.pageNumber.set(Number(params['pageNumber']));
+      if (params['categories']) this.selectedCategoryIds.set(params['categories'].split(',').map(Number));
+      if (params['levels']) this.selectedLevels.set(params['levels'].split(',').map(Number));
+      if (params['languages']) this.selectedLanguageIds.set(params['languages'].split(',').map(Number));
       if (params['isPremium'] != null) {
         this.selectedIsPremium.set(params['isPremium'] === 'true' ? true : (params['isPremium'] === 'false' ? false : null));
       }
-      if (params['minRating'])    this.selectedMinRating.set(Number(params['minRating']));
-      if (params['durations'])    this.selectedDurations.set(params['durations'].split(','));
-      if (params['instructors'])  this.selectedInstructorIds.set(params['instructors'].split(',').map(Number));
-      if (params['accessTypes'])  this.selectedAccessTypes.set(params['accessTypes'].split(',').map(Number));
+      if (params['minRating']) this.selectedMinRating.set(Number(params['minRating']));
+      if (params['durations']) this.selectedDurations.set(params['durations'].split(','));
+      if (params['instructors']) this.selectedInstructorIds.set(params['instructors'].split(',').map(Number));
+      if (params['accessTypes']) this.selectedAccessTypes.set(params['accessTypes'].split(',').map(Number));
       this.searchInput = this.searchQuery();
     });
 
@@ -217,18 +217,18 @@ export class ExploreCourses implements OnInit {
     this.updateUrlParams();
 
     this.courseService.getAllCourses({
-      categoryIds:      this.selectedCategoryIds().join(',') || undefined,
-      levels:           this.selectedLevels().join(',') || undefined,
-      languageIds:      this.selectedLanguageIds().join(',') || undefined,
-      isPremium:        this.selectedIsPremium(),
-      minRating:        this.selectedMinRating(),
-      durations:        this.selectedDurations().join(',') || undefined,
-      instructorIds:    this.selectedInstructorIds().join(',') || undefined,
+      categoryIds: this.selectedCategoryIds().join(',') || undefined,
+      levels: this.selectedLevels().join(',') || undefined,
+      languageIds: this.selectedLanguageIds().join(',') || undefined,
+      isPremium: this.selectedIsPremium(),
+      minRating: this.selectedMinRating(),
+      durations: this.selectedDurations().join(',') || undefined,
+      instructorIds: this.selectedInstructorIds().join(',') || undefined,
       courseAccessTypes: this.selectedAccessTypes().join(',') || undefined,
-      sortBy:           this.selectedSortBy(),
-      search:           this.searchQuery() || undefined,
-      pageNumber:       this.pageNumber(),
-      pageSize:         this.pageSize()
+      sortBy: this.selectedSortBy(),
+      search: this.searchQuery() || undefined,
+      pageNumber: this.pageNumber(),
+      pageSize: this.pageSize()
     }).pipe(untilDestroyed(this.destroyRef)).subscribe({
       next: response => {
         this.courses.set(response?.courses ?? []);
@@ -245,15 +245,15 @@ export class ExploreCourses implements OnInit {
 
   private updateUrlParams(): void {
     const queryParams: Record<string, string | null> = {
-      search:      this.searchQuery() || null,
-      sortBy:      this.selectedSortBy() !== 'newest' ? this.selectedSortBy() : null,
-      pageNumber:  this.pageNumber() > 1 ? String(this.pageNumber()) : null,
-      categories:  this.selectedCategoryIds().length ? this.selectedCategoryIds().join(',') : null,
-      levels:      this.selectedLevels().length ? this.selectedLevels().join(',') : null,
-      languages:   this.selectedLanguageIds().length ? this.selectedLanguageIds().join(',') : null,
-      isPremium:   this.selectedIsPremium() != null ? String(this.selectedIsPremium()) : null,
-      minRating:   this.selectedMinRating() != null ? String(this.selectedMinRating()) : null,
-      durations:   this.selectedDurations().length ? this.selectedDurations().join(',') : null,
+      search: this.searchQuery() || null,
+      sortBy: this.selectedSortBy() !== 'newest' ? this.selectedSortBy() : null,
+      pageNumber: this.pageNumber() > 1 ? String(this.pageNumber()) : null,
+      categories: this.selectedCategoryIds().length ? this.selectedCategoryIds().join(',') : null,
+      levels: this.selectedLevels().length ? this.selectedLevels().join(',') : null,
+      languages: this.selectedLanguageIds().length ? this.selectedLanguageIds().join(',') : null,
+      isPremium: this.selectedIsPremium() != null ? String(this.selectedIsPremium()) : null,
+      minRating: this.selectedMinRating() != null ? String(this.selectedMinRating()) : null,
+      durations: this.selectedDurations().length ? this.selectedDurations().join(',') : null,
       instructors: this.selectedInstructorIds().length ? this.selectedInstructorIds().join(',') : null,
       accessTypes: this.selectedAccessTypes().length ? this.selectedAccessTypes().join(',') : null
     };
@@ -335,14 +335,14 @@ export class ExploreCourses implements OnInit {
 
   protected removeChip(chip: { removeKey: string; removeValue: string }): void {
     switch (chip.removeKey) {
-      case 'category':    this.selectedCategoryIds.update(a => a.filter(x => x !== Number(chip.removeValue))); break;
-      case 'level':       this.selectedLevels.update(a => a.filter(x => x !== Number(chip.removeValue))); break;
-      case 'language':    this.selectedLanguageIds.update(a => a.filter(x => x !== Number(chip.removeValue))); break;
-      case 'premium':     this.selectedIsPremium.set(null); break;
-      case 'rating':      this.selectedMinRating.set(null); break;
-      case 'duration':    this.selectedDurations.update(a => a.filter(x => x !== chip.removeValue)); break;
-      case 'instructor':  this.selectedInstructorIds.update(a => a.filter(x => x !== Number(chip.removeValue))); break;
-      case 'accessType':  this.selectedAccessTypes.update(a => a.filter(x => x !== Number(chip.removeValue))); break;
+      case 'category': this.selectedCategoryIds.update(a => a.filter(x => x !== Number(chip.removeValue))); break;
+      case 'level': this.selectedLevels.update(a => a.filter(x => x !== Number(chip.removeValue))); break;
+      case 'language': this.selectedLanguageIds.update(a => a.filter(x => x !== Number(chip.removeValue))); break;
+      case 'premium': this.selectedIsPremium.set(null); break;
+      case 'rating': this.selectedMinRating.set(null); break;
+      case 'duration': this.selectedDurations.update(a => a.filter(x => x !== chip.removeValue)); break;
+      case 'instructor': this.selectedInstructorIds.update(a => a.filter(x => x !== Number(chip.removeValue))); break;
+      case 'accessType': this.selectedAccessTypes.update(a => a.filter(x => x !== Number(chip.removeValue))); break;
     }
     this.pageNumber.set(1);
     this.loadCoursesAndUpdateUrl();
@@ -422,18 +422,18 @@ export class ExploreCourses implements OnInit {
 
 
   protected navigateToCourse(course: CourseListItemResponse): void {
-  const url = this.router.serializeUrl(
-    this.router.createUrlTree(
-      ['/learner/explore', course.slug],
-      {
-        queryParams: {
-          courseId: course.id
+    const url = this.router.serializeUrl(
+      this.router.createUrlTree(
+        ['/learner/explore', course.slug],
+        {
+          queryParams: {
+            courseId: course.id
+          }
         }
-      }
-    )
-  );
+      )
+    );
 
-  window.open(url, '_blank');
+    window.open(url, '_self');
   }
 
   protected hasActiveFilters(): boolean {
