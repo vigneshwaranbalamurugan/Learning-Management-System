@@ -1,0 +1,55 @@
+<div class="flex flex-col min-h-screen bg-bg-main relative overflow-hidden text-text-primary">
+  <app-navbar></app-navbar>
+
+  <main class="flex-grow flex items-center justify-center p-6 relative z-10">
+    <div class="max-w-md w-full bg-white rounded-3xl p-8 sm:p-10 shadow-sm border border-slate-200 text-center relative overflow-hidden animate-[fadeIn_0.5s_ease-out]">
+      
+      <!-- Top Accent -->
+      <div class="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-primary via-secondary to-primary"></div>
+
+      <!-- Loading State -->
+      <ng-container *ngIf="status() === 'loading'">
+        <div class="flex justify-center mb-6">
+          <div class="w-16 h-16 border-4 border-slate-100 border-t-primary rounded-full animate-spin"></div>
+        </div>
+        <h1 class="text-2xl font-bold mb-2">Verifying Email...</h1>
+        <p class="text-slate-500">Please wait while we confirm your email address.</p>
+      </ng-container>
+
+      <!-- Success State -->
+      <ng-container *ngIf="status() === 'success'">
+        <div class="flex justify-center mb-6">
+          <div class="w-20 h-20 bg-green-50 rounded-full flex items-center justify-center animate-[bounceIn_0.6s_cubic-bezier(0.175,0.885,0.32,1.275)]">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-10 h-10 text-green-500">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+            </svg>
+          </div>
+        </div>
+        <h1 class="text-2xl font-bold mb-3">Email Verified!</h1>
+        <p class="text-slate-500 mb-8 leading-relaxed">Your email address has been successfully verified. You can now sign in to your account and start learning.</p>
+        <app-button variant="primary" (click)="goToLogin()" class="w-full">
+          Sign In to Your Account
+        </app-button>
+      </ng-container>
+
+      <!-- Error State -->
+      <ng-container *ngIf="status() === 'error'">
+        <div class="flex justify-center mb-6">
+          <div class="w-20 h-20 bg-red-50 rounded-full flex items-center justify-center animate-[bounceIn_0.6s_cubic-bezier(0.175,0.885,0.32,1.275)]">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-10 h-10 text-red-500">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </div>
+        </div>
+        <h1 class="text-2xl font-bold mb-3">Verification Failed</h1>
+        <p class="text-slate-500 mb-8 leading-relaxed">{{ errorMessage() }}</p>
+        <app-button variant="secondary" (click)="goToLogin()" class="w-full mb-3">
+          Back to Login
+        </app-button>
+      </ng-container>
+
+    </div>
+  </main>
+
+  <app-footer></app-footer>
+</div>

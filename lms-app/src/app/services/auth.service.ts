@@ -4,7 +4,7 @@ import { Observable, of } from 'rxjs';
 import { catchError, tap, finalize, shareReplay } from 'rxjs/operators';
 import { Router } from '@angular/router';
 import { environment } from '@environments/environment';
-import { LoginModel, ResetPasswordModel } from '@models/auth';
+import { LoginModel, ResetPasswordModel, RegisterModel } from '@models/auth';
 import { ProfileService, UserProfile } from './profile.service';
 
 @Injectable({
@@ -35,12 +35,24 @@ export class AuthService {
     });
   }
 
+  registerApiCall(data: RegisterModel): Observable<any> {
+    return this.http.post<any>(`${this.baseUrl}/auth/register`, {
+      email: data.email,
+      password: data.password,
+      role: data.role
+    });
+  }
+
   forgotPassword(email: string): Observable<any> {
     return this.http.post<any>(`${this.baseUrl}/auth/forgot-password`, { email });
   }
 
   resendVerification(email: string): Observable<any> {
     return this.http.post<any>(`${this.baseUrl}/auth/resend`, { email });
+  }
+
+  verifyEmail(email: string, token: string): Observable<any> {
+    return this.http.get<any>(`${this.baseUrl}/auth/verify?email=${encodeURIComponent(email)}&token=${encodeURIComponent(token)}`);
   }
 
   resetPassword(data: ResetPasswordModel): Observable<any> {

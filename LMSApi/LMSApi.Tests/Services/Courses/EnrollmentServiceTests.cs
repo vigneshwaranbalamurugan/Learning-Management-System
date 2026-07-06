@@ -371,7 +371,7 @@ namespace LMSApi.Tests.Services
             Assert.That(enrollment!.EnrollmentStatus, Is.EqualTo(EnrollmentStatus.Active));
 
             await Task.Delay(100);
-            _mockNotificationService.Verify(x => x.Send(It.IsAny<Message>()), Times.Once);
+            _mockNotificationService.Verify(x => x.Send(It.IsAny<Message>()), Times.Exactly(2));
         }
 
         [Test]

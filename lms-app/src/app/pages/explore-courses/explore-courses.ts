@@ -73,7 +73,7 @@ export class ExploreCourses implements OnInit {
 
   // ── Pagination state ─────────────────────────────────────────────────────
   protected pageNumber = signal(1);
-  protected pageSize   = signal(10);
+  protected pageSize   = signal(6);
   protected totalPages = signal(1);
   protected totalCount = signal(0);
 

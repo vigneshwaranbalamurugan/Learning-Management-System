@@ -164,11 +164,17 @@ export class Login implements OnInit {
 
   protected handleRegister(data: RegisterModel): void {
     this.isSubmitting.set(true);
-    setTimeout(() => {
-      this.isSubmitting.set(false);
-      this.toastService.showSuccess('Registration successful');
-      this.changeScreen('login');
-    }, 1500);
+    this.authService.registerApiCall(data).subscribe({
+      next: (response: any) => {
+        this.isSubmitting.set(false);
+        this.toastService.showSuccess(response.message || 'Registration successful. Please verify your email.');
+        this.changeScreen('login');
+      },
+      error: (err: any) => {
+        this.isSubmitting.set(false);
+        this.toastService.showApiError(err?.error?.message, 'Registration failed. Please try again.');
+      }
+    });
   }
 
 
