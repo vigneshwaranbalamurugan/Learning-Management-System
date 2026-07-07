@@ -315,11 +315,16 @@
                 [max]="assignment()?.totalMarks || 100"
                 min="0"
                 [(ngModel)]="marksAwarded"
-                class="w-full px-3 py-2 border border-gray-200 rounded-lg text-xs bg-white text-gray-800 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition" />
+                (input)="marksError.set('')"
+                class="w-full px-3 py-2 border rounded-lg text-xs bg-white focus:outline-none focus:ring-2 transition"
+                [ngClass]="marksError() ? 'border-red-500 text-red-900 focus:border-red-500 focus:ring-red-500/20' : 'border-gray-200 text-gray-800 focus:border-primary focus:ring-primary/10'" />
               <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                <span class="text-gray-400 text-xs">/ {{ assignment()?.totalMarks }}</span>
+                <span class="text-xs" [ngClass]="marksError() ? 'text-red-400' : 'text-gray-400'">/ {{ assignment()?.totalMarks }}</span>
               </div>
             </div>
+            @if (marksError()) {
+              <span class="text-[10px] text-red-500 font-medium animate-[fadeIn_200ms_ease]">{{ marksError() }}</span>
+            }
           </div>
 
           <!-- Feedback -->
@@ -329,8 +334,13 @@
               id="grading-feedback"
               rows="5"
               [(ngModel)]="feedback"
+              (input)="feedbackError.set('')"
               placeholder="Provide constructive review remarks on their solution..."
-              class="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-xs bg-white text-gray-800 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition resize-none"></textarea>
+              class="w-full px-3 py-2.5 border rounded-lg text-xs bg-white focus:outline-none focus:ring-2 transition resize-none"
+              [ngClass]="feedbackError() ? 'border-red-500 text-red-900 focus:border-red-500 focus:ring-red-500/20' : 'border-gray-200 text-gray-800 focus:border-primary focus:ring-primary/10'"></textarea>
+            @if (feedbackError()) {
+              <span class="text-[10px] text-red-500 font-medium animate-[fadeIn_200ms_ease]">{{ feedbackError() }}</span>
+            }
           </div>
 
           <!-- Actions -->

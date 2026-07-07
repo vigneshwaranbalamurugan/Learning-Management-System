@@ -100,6 +100,10 @@ export class InstructorCourseBuilder {
   protected sectionDescription = '';
 
   protected sectionSortOrder = 0;
+  protected errors: any = {};
+  
+  private initialSectionTitle = '';
+  private initialSectionDescription = '';
 
   // Lesson ADD modal state
   protected showLessonModal = signal(false);
@@ -423,34 +427,76 @@ export class InstructorCourseBuilder {
 
   // ── Section operations ────────────────────────────────────────────────────
 
+  protected validateField(field: string): void {
+    if (this.errors[field]) {
+      this.errors[field] = undefined;
+    }
+  }
+
+  protected validateSection(): boolean {
+    this.errors = {};
+    let valid = true;
+
+    if (!this.sectionTitle?.trim()) {
+      this.errors.sectionTitle = 'Section title is required.';
+      valid = false;
+    } else if (this.sectionTitle.trim().length > 200) {
+      this.errors.sectionTitle = 'Section title must not exceed 200 characters.';
+      valid = false;
+    }
+
+    if (this.sectionDescription && this.sectionDescription.trim().length > 500) {
+      this.errors.sectionDescription = 'Description must not exceed 500 characters.';
+      valid = false;
+    }
+
+    return valid;
+  }
+
   protected openAddSection() {
+    this.errors = {};
     this.editSectionId = null;
     this.sectionTitle = '';
     this.sectionDescription = '';
+
+    this.initialSectionTitle = '';
+    this.initialSectionDescription = '';
 
     this.sectionSortOrder = (this.course?.sections?.length || 0) + 1;
     this.showSectionModal.set(true);
   }
 
   protected openEditSection(section: any, event: Event) {
+    this.errors = {};
     event.stopPropagation();
     this.editSectionId = section.id;
     this.sectionTitle = section.title;
     this.sectionDescription = section.description || '';
-    this.sectionDescription = section.description || '';
     this.sectionSortOrder = section.sortOrder || 0;
+
+    this.initialSectionTitle = this.sectionTitle;
+    this.initialSectionDescription = this.sectionDescription;
+
     this.showSectionModal.set(true);
   }
 
   protected closeSectionModal() {
+    this.errors = {};
     this.showSectionModal.set(false);
     this.editSectionId = null;
   }
 
+  protected hasSectionChanges(): boolean {
+    if (!this.editSectionId) {
+      return !!this.sectionTitle?.trim() || !!this.sectionDescription?.trim();
+    }
+    return this.sectionTitle !== this.initialSectionTitle || this.sectionDescription !== this.initialSectionDescription;
+  }
+
   protected saveSection() {
     if (!this.course) return;
-    if (!this.sectionTitle.trim()) {
-      this.toastService.showError('Section title is required.');
+    if (!this.validateSection()) {
+      this.toastService.showError('Please fix the errors before saving.');
       return;
     }
     const data = {
@@ -496,13 +542,15 @@ export class InstructorCourseBuilder {
 
   protected openLessonDetail(lesson: any) {
     if (!this.course) return;
-    this.router.navigate([`/${this.routePrefix}/courses`, this.course.slug, 'lessons', lesson.id, 'detail']);
+    const queryParams = this.course.hasNonExpiredEnrollments ? { locked: 'true' } : {};
+    this.router.navigate([`/${this.routePrefix}/courses`, this.course.slug, 'lessons', lesson.id, 'detail'], { queryParams });
   }
 
   protected openEditLesson(lesson: any, event?: Event) {
     event?.stopPropagation();
     if (!this.course) return;
-    this.router.navigate([`/${this.routePrefix}/courses`, this.course.slug, 'lessons', lesson.id, 'edit']);
+    const queryParams = this.course.hasNonExpiredEnrollments ? { locked: 'true' } : {};
+    this.router.navigate([`/${this.routePrefix}/courses`, this.course.slug, 'lessons', lesson.id, 'edit'], { queryParams });
   }
 
   // ── Lesson DELETE ─────────────────────────────────────────────────────────
@@ -584,7 +632,8 @@ export class InstructorCourseBuilder {
   protected openEditQuiz(quizId: number, event?: Event) {
     event?.stopPropagation();
     if (!this.course) return;
-    this.router.navigate([`/${this.routePrefix}/courses`, this.course.slug, 'quizzes', quizId, 'questions']);
+    const queryParams = this.course.hasNonExpiredEnrollments ? { locked: 'true' } : {};
+    this.router.navigate([`/${this.routePrefix}/courses`, this.course.slug, 'quizzes', quizId, 'questions'], { queryParams });
   }
 
   protected confirmDeleteQuiz(quizId: number, event?: Event) {
@@ -597,7 +646,8 @@ export class InstructorCourseBuilder {
   protected openEditAssignment(assignmentId: number, event?: Event) {
     event?.stopPropagation();
     if (!this.course) return;
-    this.router.navigate([`/${this.routePrefix}/courses`, this.course.slug, 'assignments', assignmentId, 'edit']);
+    const queryParams = this.course.hasNonExpiredEnrollments ? { locked: 'true' } : {};
+    this.router.navigate([`/${this.routePrefix}/courses`, this.course.slug, 'assignments', assignmentId, 'edit'], { queryParams });
   }
 
   protected confirmDeleteAssignment(assignmentId: number, event?: Event) {
@@ -614,7 +664,8 @@ export class InstructorCourseBuilder {
 
   protected openEditResource(resource: any) {
     if (!this.course) return;
-    this.router.navigate([`/${this.routePrefix}/courses`, this.course.slug, 'resources', resource.id, 'edit']);
+    const queryParams = this.course.hasNonExpiredEnrollments ? { locked: 'true' } : {};
+    this.router.navigate([`/${this.routePrefix}/courses`, this.course.slug, 'resources', resource.id, 'edit'], { queryParams });
   }
 
   // ── Quiz Navigation ─────────────────────────────────────────────────────────

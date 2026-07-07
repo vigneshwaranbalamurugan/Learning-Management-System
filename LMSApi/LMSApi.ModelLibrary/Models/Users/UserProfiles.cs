@@ -12,8 +12,10 @@ namespace LMSApi.ModelLibrary.Models
         public string Location { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
-        
         // Navigation property
         public Users User { get; set; }
+        
+        public DateTime? LastCertificateRegenerationAt { get; set; }
+        public DateTime? NameLastChangedAt { get; set; }
     }
 }

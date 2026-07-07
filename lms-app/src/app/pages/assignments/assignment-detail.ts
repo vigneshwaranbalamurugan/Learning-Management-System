@@ -32,6 +32,7 @@ export class AssignmentDetailPage implements OnInit {
   protected submissionType = 'file'; // 'file' | 'link'
   protected submittedUrl = '';
   protected selectedFile: File | null = null;
+  protected maxFileSizeMB = signal<number>(10);
 
   ngOnInit(): void {
     this.route.paramMap
@@ -58,6 +59,18 @@ export class AssignmentDetailPage implements OnInit {
           
           // Load submissions and status
           this.loadStatusAndSubmissions(assignmentId);
+
+          // Fetch upload limits
+          this.assignmentService.getAssignmentUploadLimits()
+            .pipe(untilDestroyed(this.destroyRef))
+            .subscribe({
+              next: (limits) => {
+                if (limits?.maxFileSizeMB) {
+                  this.maxFileSizeMB.set(limits.maxFileSizeMB);
+                }
+              },
+              error: () => console.warn('Failed to load upload limits, using defaults.')
+            });
         },
         error: (err) => {
           this.toastService.showApiError(err, 'Failed to load assignment details.');
@@ -98,6 +111,13 @@ export class AssignmentDetailPage implements OnInit {
   protected onFileSelected(event: any): void {
     const file = event.target.files[0];
     if (file) {
+      const maxBytes = this.maxFileSizeMB() * 1024 * 1024;
+      if (file.size > maxBytes) {
+        this.toastService.showError(`File size must be less than ${this.maxFileSizeMB()}MB.`);
+        event.target.value = '';
+        this.selectedFile = null;
+        return;
+      }
       this.selectedFile = file;
     }
   }

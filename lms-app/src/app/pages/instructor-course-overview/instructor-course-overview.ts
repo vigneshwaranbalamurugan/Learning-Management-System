@@ -56,6 +56,8 @@ export class InstructorCourseOverview implements OnInit {
   private initialFormState:string | null=null;
   private isSubmitted=false;
   protected showUnsavedModal=signal(false);
+  protected errors: any = {};
+  protected thumbnailLimitMB = signal(5);
   private pendingNavigationResolve?: (value: boolean) => void;
 
   // Parsed Markdown
@@ -88,6 +90,13 @@ export class InstructorCourseOverview implements OnInit {
 }
 
   ngOnInit() {
+    this.courseService.getUploadLimits().subscribe({
+      next: (limits) => {
+        this.thumbnailLimitMB.set(limits.thumbnailSizeMB);
+      },
+      error: (err) => console.error('Failed to load upload limits', err)
+    });
+
     this.courseService.getFiltersMetadata().subscribe({
       next: (data) => {
         this.categories = data.categories || [];
@@ -105,7 +114,7 @@ export class InstructorCourseOverview implements OnInit {
     return this.layout.course();
   }
 
-private hasUnsavedChanges(): boolean {
+protected hasUnsavedChanges(): boolean {
   const currentState = JSON.stringify({
     title: this.title,
     categoryIdStr: this.categoryIdStr,
@@ -151,6 +160,58 @@ protected toggleEditMode() {
   this.isEditMode = !this.isEditMode;
 }
 
+  protected validateField(field: string): void {
+    if (this.errors[field]) {
+      this.errors[field] = undefined;
+    }
+  }
+
+  protected validate(): boolean {
+    this.errors = {};
+    let valid = true;
+
+    if (!this.title?.trim()) {
+      this.errors.title = 'Title is required.';
+      valid = false;
+    } else if (this.title.trim().length > 300) {
+      this.errors.title = 'Title must not exceed 300 characters.';
+      valid = false;
+    }
+
+    if (!this.description?.trim()) {
+      this.errors.description = 'Description is required.';
+      valid = false;
+    } else if (this.description.trim().length > 500) {
+      this.errors.description = 'Description must not exceed 500 characters.';
+      valid = false;
+    }
+
+    if (this.requirements?.length > 1000) {
+      this.errors.requirements = 'Requirements must not exceed 1000 characters.';
+      valid = false;
+    }
+
+    if (this.learningOutcomes?.length > 1000) {
+      this.errors.learningOutcomes = 'Learning outcomes must not exceed 1000 characters.';
+      valid = false;
+    }
+
+    if (!this.categoryIdStr) {
+      this.errors.categoryId = 'Please select a category.';
+      valid = false;
+    }
+
+    if (this.isPremium) {
+      const price = parseFloat(this.priceStr);
+      if (isNaN(price) || price <= 0) {
+        this.errors.price = 'Price must be greater than 0 for premium courses.';
+        valid = false;
+      }
+    }
+
+    return valid;
+  }
+
   protected cancelEdit() {
     this.isEditMode = false;
     this.thumbnailFile = null;
@@ -163,6 +224,19 @@ protected toggleEditMode() {
   protected onThumbnailSelected(event: any) {
     const file = event.target.files?.[0];
     if (file) {
+      const allowed = ['image/jpeg', 'image/png', 'image/webp'];
+      if (!allowed.includes(file.type)) {
+        this.errors.thumbnail = 'Only JPG, PNG, or WebP images are allowed.';
+        this.toastService.showError(this.errors.thumbnail);
+        return;
+      }
+      if (file.size > this.thumbnailLimitMB() * 1024 * 1024) {
+        this.errors.thumbnail = `Thumbnail must be under ${this.thumbnailLimitMB()} MB.`;
+        this.toastService.showError(this.errors.thumbnail);
+        return;
+      }
+      this.errors.thumbnail = undefined;
+
       this.thumbnailFile = file;
       const reader = new FileReader();
       reader.onload = (e: any) => {
@@ -192,6 +266,12 @@ protected toggleEditMode() {
 
   protected saveChanges() {
     if (!this.course) return;
+
+    if (!this.validate()) {
+      this.toastService.showError('Please fix the errors before saving.');
+      return;
+    }
+
     this.isSaving = true;
 
     const formData = new FormData();

@@ -84,8 +84,17 @@ namespace LMSApi.BALLibrary.Services
 				await _userProfileRepository.AddAsync(profile);
 			}
 
+			var oldFirstName = profile.FirstName;
+			var oldLastName = profile.LastName;
+
 			profile.FirstName = request.FirstName.Trim();
 			profile.LastName = string.IsNullOrWhiteSpace(request.LastName) ? profile.LastName : request.LastName.Trim();
+			
+			if (oldFirstName != profile.FirstName || oldLastName != profile.LastName)
+			{
+				profile.NameLastChangedAt = DateTime.UtcNow;
+			}
+
 			profile.Bio = string.IsNullOrWhiteSpace(request.Bio) ? profile.Bio : request.Bio.Trim();
 			profile.Location = string.IsNullOrWhiteSpace(request.Location) ? profile.Location : request.Location.Trim();
 			if (request.DateOfBirth != default)

@@ -85,4 +85,19 @@ namespace LMSApi.ModelLibrary.DTOs
         public int TotalCount { get; set; }
         public int TotalPages { get; set; }
     }
+
+    public class CertificateRegenerationStatusResponse
+    {
+        public DateTime? LastRegeneratedAt { get; set; }
+        public DateTime? NextAllowedAt { get; set; }
+        public bool CanRegenerate { get; set; }
+        public bool NameHasChanged { get; set; }
+    }
+
+    public class RegenerateCertificatesResponse
+    {
+        public int RegeneratedCount { get; set; }
+        public DateTime? LastRegeneratedAt { get; set; }
+        public DateTime? NextAllowedAt { get; set; }
+    }
 }

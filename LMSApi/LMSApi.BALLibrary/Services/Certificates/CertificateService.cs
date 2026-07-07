@@ -243,7 +243,70 @@ namespace LMSApi.BALLibrary.Services
             return _mapper.Map<CertificateTemplateResponse>(template);
         }
 
-        private async Task<Stream> GenerateCertificatePdfAsync(
+        public async Task<CertificateRegenerationStatusResponse> GetRegenerationStatusAsync(int userId)
+        {
+            var userProfile = await _userProfileRepository.GetByUserIdAsync(userId);
+            if (userProfile == null) throw new InvalidOperationException("User profile not found.");
+
+            var lastRegeneratedAt = userProfile.LastCertificateRegenerationAt;
+            DateTime? nextAllowedAt = null;
+            bool canRegenerate = true;
+
+            if (lastRegeneratedAt.HasValue)
+            {
+                // Next allowed is the 1st of the next month
+                nextAllowedAt = new DateTime(lastRegeneratedAt.Value.Year, lastRegeneratedAt.Value.Month, 1).AddMonths(1);
+                if (DateTime.UtcNow < nextAllowedAt)
+                {
+                    canRegenerate = false;
+                }
+            }
+
+            bool nameHasChanged = false;
+            if (userProfile.NameLastChangedAt.HasValue)
+            {
+                nameHasChanged = !userProfile.LastCertificateRegenerationAt.HasValue 
+                    || userProfile.NameLastChangedAt.Value > userProfile.LastCertificateRegenerationAt.Value;
+            }
+
+            return new CertificateRegenerationStatusResponse
+            {
+                LastRegeneratedAt = lastRegeneratedAt,
+                NextAllowedAt = nextAllowedAt,
+                CanRegenerate = canRegenerate,
+                NameHasChanged = nameHasChanged
+            };
+        }
+
+        public async Task<RegenerateCertificatesResponse> TriggerRegenerationAsync(int userId)
+        {
+            var status = await GetRegenerationStatusAsync(userId);
+            if (!status.CanRegenerate)
+            {
+                throw new InvalidOperationException($"Cannot regenerate certificates yet. Next allowed date is {status.NextAllowedAt}.");
+            }
+
+            var certs = await _certificateRepository.GetCertificatesByUserAsync(userId);
+            if (!certs.Any())
+            {
+                throw new InvalidOperationException("No certificates found to regenerate.");
+            }
+
+            var userProfile = await _userProfileRepository.GetByUserIdAsync(userId);
+            userProfile.LastCertificateRegenerationAt = DateTime.UtcNow;
+            await _userProfileRepository.UpdateAsync(userProfile);
+
+            _backgroundJobClient.Enqueue<IRegenerateCertificatesJob>(job => job.ExecuteAsync(userId));
+
+            return new RegenerateCertificatesResponse
+            {
+                RegeneratedCount = certs.Count(),
+                LastRegeneratedAt = userProfile.LastCertificateRegenerationAt,
+                NextAllowedAt = new DateTime(userProfile.LastCertificateRegenerationAt.Value.Year, userProfile.LastCertificateRegenerationAt.Value.Month, 1).AddMonths(1)
+            };
+        }
+
+        public async Task<Stream> GenerateCertificatePdfAsync(
             CertificateTemplates template,
             string courseName,
             string learnerName,

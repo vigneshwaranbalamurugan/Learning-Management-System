@@ -38,6 +38,8 @@ export class InstructorEvaluate implements OnInit {
   protected feedback = '';
 
   protected showUnsavedModal = signal(false);
+  protected marksError = signal('');
+  protected feedbackError = signal('');
   private unsavedResolve: ((val: boolean) => void) | null = null;
   protected readonly AssignmentAttachmentType = AssignmentAttachmentType;
 
@@ -129,6 +131,8 @@ export class InstructorEvaluate implements OnInit {
 
   protected closeGradingPanel(): void {
     this.selectedSubmission.set(null);
+    this.marksError.set('');
+    this.feedbackError.set('');
   }
 
   protected submitGrade(): void {
@@ -136,15 +140,21 @@ export class InstructorEvaluate implements OnInit {
     const assignmentData = this.assignment();
     if (!submission || !assignmentData) return;
 
-    if (this.marksAwarded < 0 || this.marksAwarded > assignmentData.totalMarks) {
-      this.toastService.show(`Marks awarded must be between 0 and ${assignmentData.totalMarks}.`, 'error');
-      return;
+    this.marksError.set('');
+    this.feedbackError.set('');
+    let hasError = false;
+
+    if (this.marksAwarded === null || this.marksAwarded === undefined || this.marksAwarded < 0 || this.marksAwarded > assignmentData.totalMarks) {
+      this.marksError.set(`Marks must be between 0 and ${assignmentData.totalMarks}.`);
+      hasError = true;
     }
 
-    if (!this.feedback.trim()) {
-      this.toastService.show('Please provide feedback for the submission.', 'error');
-      return;
+    if (!this.feedback || !this.feedback.trim()) {
+      this.feedbackError.set('Please provide feedback for the submission.');
+      hasError = true;
     }
+
+    if (hasError) return;
 
     this.isSubmitting.set(true);
     this.instructorAssignmentService.gradeSubmission(submission.id, this.marksAwarded, this.feedback)

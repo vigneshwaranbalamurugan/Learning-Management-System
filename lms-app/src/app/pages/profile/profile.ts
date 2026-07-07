@@ -5,11 +5,12 @@ import { ProfileService, UserProfile } from '@services/profile.service';
 import { ToastService } from '@services/toast.service';
 import { AuthService } from '@services/auth.service';
 import { ConfirmModal } from '@components/confirm-modal/confirm-modal';
+import { RouterModule } from '@angular/router';
 
 @Component({
   selector: 'app-profile-page',
   standalone: true,
-  imports: [CommonModule, FormsModule, ConfirmModal],
+  imports: [CommonModule, FormsModule, ConfirmModal, RouterModule],
   templateUrl: './profile.html'
 })
 export class Profile implements OnInit {
@@ -20,6 +21,7 @@ export class Profile implements OnInit {
   protected profile = signal<UserProfile | null>(null);
   protected isSaving = signal(false);
   protected profileImageLimitInMB = signal<number>(5);
+  protected showCertRegenerateHint = signal(false);
 
   // Edit fields
   protected firstName = '';
@@ -142,6 +144,14 @@ export class Profile implements OnInit {
     }
 
     this.isSaving.set(true);
+    
+    // Check if name has changed before applying the update
+    const currentProfile = this.profile();
+    const nameChanged = currentProfile && (
+      this.firstName !== (currentProfile.firstName || '') ||
+      this.lastName !== (currentProfile.lastName || '')
+    );
+
     const updateData = {
       firstName: this.firstName,
       lastName: this.lastName,
@@ -169,6 +179,12 @@ export class Profile implements OnInit {
           const updatedAuthUser = { ...currentAuthUser, ...updated };
           this.authService.currentUser.set(updatedAuthUser);
           localStorage.setItem('user_profile', JSON.stringify(updatedAuthUser));
+        }
+        
+        if (nameChanged) {
+          this.showCertRegenerateHint.set(true);
+        } else {
+          this.showCertRegenerateHint.set(false);
         }
       },
       error: (err) => {

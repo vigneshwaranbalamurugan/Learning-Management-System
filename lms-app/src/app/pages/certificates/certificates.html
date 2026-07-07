@@ -13,9 +13,42 @@
         Access, verify, and share your earned course certificates. Keep building skills and growing your collection!
       </p>
     </div>
-    <div class="hidden lg:flex flex-col items-end gap-2 relative z-10 text-right">
-      <div class="text-4xl font-black text-white/15 select-none">{{ totalItems() }}</div>
-      <span class="text-xs text-white/60 font-semibold uppercase tracking-widest">Certificates Earned</span>
+    <div class="hidden md:flex flex-col items-end justify-center gap-3 relative z-10 text-right">
+      <div class="flex flex-col items-end gap-1">
+        <div class="text-3xl font-black text-white/20 select-none leading-none">{{ totalItems() }}</div>
+        <span class="text-[10px] text-white/60 font-semibold uppercase tracking-widest">Earned</span>
+      </div>
+      
+      @if (certificates().length > 0) {
+        <div class="flex flex-col items-end gap-1.5 mt-2">
+          <button 
+            (click)="triggerRegeneration()"
+            [disabled]="!canRegenerate() || !nameHasChanged() || isRegenerating()"
+            class="px-4 py-2 rounded-lg text-xs font-bold transition flex items-center gap-2"
+            [ngClass]="canRegenerate() && nameHasChanged() ? 'bg-amber-500 hover:bg-amber-600 text-slate-900 shadow-md' : 'bg-white/10 text-white/40 cursor-not-allowed border border-white/5'"
+            [title]="!nameHasChanged() ? 'Your name has not changed' : (!canRegenerate() ? 'You can only regenerate once per month' : 'Regenerate all certificates with your new name')">
+            @if (isRegenerating()) {
+              <div class="w-3.5 h-3.5 border-2 border-slate-900/30 border-t-slate-900 rounded-full animate-spin"></div>
+              Regenerating...
+            } @else {
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+              Regenerate All
+            }
+          </button>
+          
+          <div class="text-[9px] text-white/50 max-w-[180px] leading-tight text-right">
+            @if (!canRegenerate() && nextAllowedAt()) {
+              Next available: {{ nextAllowedAt() | date:'mediumDate' }}
+            } @else if (lastRegeneratedAt()) {
+              Last: {{ lastRegeneratedAt() | date:'mediumDate' }}
+            } @else {
+              Updates name on all certificates.
+            }
+          </div>
+        </div>
+      }
     </div>
   </div>
 
@@ -148,3 +181,14 @@
   }
 
 </div>
+
+<app-confirm-modal 
+  [isOpen]="showRegenerateModal()" 
+  title="Regenerate Certificates"
+  message="Are you sure you want to regenerate all your certificates? This will update them to use your current profile name. This action can only be performed once per month and runs in the background."
+  confirmText="Yes, Regenerate All"
+  cancelText="Cancel"
+  [isDanger]="false"
+  (confirm)="confirmRegeneration()"
+  (cancel)="cancelRegeneration()">
+</app-confirm-modal>

@@ -133,6 +133,7 @@ builder.Services.AddScoped<INotificationHandler, EmailNotificationHandler>();
 builder.Services.AddScoped<INotificationHandler, SmsNotificationHandler>();
 builder.Services.AddScoped<IEmailJob, EmailJob>();
 builder.Services.AddScoped<ICertificateEmailJob, CertificateEmailJob>();
+builder.Services.AddScoped<IRegenerateCertificatesJob, RegenerateCertificatesJob>();
 builder.Services.AddSingleton<ITokenService, TokenService>();
 builder.Services.AddSingleton<ITokenRevocationService, TokenRevocationService>();
 builder.Services.AddScoped<IAssignmentService, AssignmentService>();

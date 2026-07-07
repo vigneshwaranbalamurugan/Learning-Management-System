@@ -374,10 +374,33 @@
     <div class="bg-white rounded-2xl border border-gray-150 p-6 w-full max-w-md shadow-xl space-y-4">
       <h3 class="text-base font-bold text-slate-900">{{ editSectionId ? 'Edit Section' : 'Add New Section' }}</h3>
       <div class="space-y-3 text-left">
-        <app-form-input label="Section Title" [value]="sectionTitle" (valueChange)="sectionTitle = $event" placeholder="e.g. Getting Started" />
+        <div>
+          <app-form-input label="Section Title" [value]="sectionTitle" (valueChange)="sectionTitle = $event; validateField('sectionTitle')" placeholder="e.g. Getting Started" />
+          <div *ngIf="errors.sectionTitle" class="text-xs text-red-500 mt-1 flex items-center gap-1">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0Zm-9 3.75h.008v.008H12v-.008z" />
+            </svg>
+            {{ errors.sectionTitle }}
+          </div>
+          <p class="text-[10px] text-gray-400 mt-1 text-right">{{ sectionTitle?.length || 0 }}/200</p>
+        </div>
         <div>
           <label class="text-xs font-bold text-slate-700 block mb-1">Description (Optional)</label>
-          <textarea [(ngModel)]="sectionDescription" placeholder="What is this section about?" rows="3" class="w-full border border-gray-200 rounded-xl p-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-[#1C1C7B]"></textarea>
+          <textarea 
+            [(ngModel)]="sectionDescription" 
+            (ngModelChange)="validateField('sectionDescription')"
+            placeholder="What is this section about?" 
+            rows="3" 
+            maxlength="500"
+            [class]="'w-full border rounded-xl p-2.5 text-xs focus:outline-none focus:ring-1 ' + 
+                     (errors.sectionDescription ? 'border-red-400 focus:ring-red-400' : 'border-gray-200 focus:ring-[#1C1C7B]')"></textarea>
+          <div *ngIf="errors.sectionDescription" class="text-xs text-red-500 mt-1 flex items-center gap-1">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0Zm-9 3.75h.008v.008H12v-.008z" />
+            </svg>
+            {{ errors.sectionDescription }}
+          </div>
+          <p class="text-[10px] text-gray-400 mt-1 text-right">{{ sectionDescription?.length || 0 }}/500</p>
         </div>
         <div class="space-y-3 text-left">
 
@@ -385,7 +408,11 @@
       </div>
       <div class="flex justify-end gap-2 pt-2">
         <app-button (click)="closeSectionModal()" variant="outline" customClass="!px-4 !py-2 !w-auto text-xs font-bold">Cancel</app-button>
-        <app-button (click)="saveSection()" variant="primary" customClass="!px-4 !py-2 !w-auto text-xs font-semibold shadow-sm transition">
+        <app-button 
+          (click)="saveSection()" 
+          variant="primary" 
+          [disabled]="!hasSectionChanges() || !sectionTitle?.trim()"
+          customClass="!px-4 !py-2 !w-auto text-xs font-semibold shadow-sm transition">
           {{ editSectionId ? 'Save Changes' : 'Create Section' }}
         </app-button>
       </div>

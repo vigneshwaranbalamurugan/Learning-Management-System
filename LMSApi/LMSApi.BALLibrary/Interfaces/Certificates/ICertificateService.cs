@@ -30,5 +30,17 @@ namespace LMSApi.BALLibrary.Interfaces
 
         /// <summary>Admin: update template fields (no image re-upload).</summary>
         Task<CertificateTemplateResponse> UpdateTemplateAsync(int templateId, UpdateCertificateTemplateRequest request);
+
+        Task<CertificateRegenerationStatusResponse> GetRegenerationStatusAsync(int userId);
+
+        Task<RegenerateCertificatesResponse> TriggerRegenerationAsync(int userId);
+        
+        Task<Stream> GenerateCertificatePdfAsync(
+            LMSApi.ModelLibrary.Models.CertificateTemplates template,
+            string courseName,
+            string learnerName,
+            string instructorName,
+            string certificateId,
+            string issuedDate);
     }
 }

@@ -39,6 +39,8 @@ interface FormErrors {
   languageId?: string;
   courseAccessType?: string;
   thumbnail?: string;
+  requirements?: string;
+  learningOutcomes?: string;
 }
 
 @Component({
@@ -242,6 +244,16 @@ export class InstructorCourseForm implements OnInit {
     }else if(this.form.description.trim().length>500){
         this.errors.description='Description must not exeed 500 charactera.';
         valid=false;
+    }
+
+    if (this.form.requirements.length > 1000) {
+      this.errors.requirements = 'Requirements must not exceed 1000 characters.';
+      valid = false;
+    }
+
+    if (this.form.learningOutcomes.length > 1000) {
+      this.errors.learningOutcomes = 'Learning outcomes must not exceed 1000 characters.';
+      valid = false;
     }
 
     if (!this.form.categoryId) {

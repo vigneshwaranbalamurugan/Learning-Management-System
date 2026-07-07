@@ -211,6 +211,20 @@
             <span *ngIf="isSaving()">Saving...</span>
           </button>
         </div>
+
+        <!-- Regeneration Hint Banner -->
+        <div *ngIf="showCertRegenerateHint()" class="mt-6 flex items-start gap-3 bg-blue-50 border border-blue-200 rounded-lg p-4 animate-[fadeInContent_300ms_ease]">
+          <svg class="w-5 h-5 text-blue-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <div class="flex flex-col gap-1.5 flex-1 text-sm text-blue-900">
+            <p class="m-0 font-medium">Your name was updated successfully!</p>
+            <p class="m-0 text-blue-800 opacity-90 text-xs">Don't forget to regenerate your certificates so they reflect your new name.</p>
+          </div>
+          <a routerLink="/learner/certificates" class="text-xs font-bold text-blue-700 bg-white border border-blue-200 hover:bg-blue-100 hover:text-blue-900 px-3 py-1.5 rounded-md transition whitespace-nowrap">
+            Go to Certificates &rarr;
+          </a>
+        </div>
       </form>
     </div>
   </div>

@@ -54,3 +54,16 @@ export interface PagedCertificateTemplateResponse {
   totalCount: number;
   totalPages: number;
 }
+
+export interface RegenerateCertificatesResponse {
+  regeneratedCount: number;
+  lastRegeneratedAt: string;
+  nextAllowedAt: string;
+}
+
+export interface CertificateRegenerationStatus {
+  lastRegeneratedAt: string | null;
+  nextAllowedAt: string | null;
+  canRegenerate: boolean;
+  nameHasChanged: boolean;
+}

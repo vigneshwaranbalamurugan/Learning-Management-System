@@ -76,5 +76,32 @@ namespace LMSApi.API.Controllers
             var result = await _certificateService.UpdateTemplateAsync(templateId, request);
             return Ok(result);
         }
+
+        [HttpGet("regeneration-status")]
+        [Authorize]
+        [EnableRateLimiting("CertificateDownload")]
+        public async Task<ActionResult<CertificateRegenerationStatusResponse>> GetRegenerationStatus()
+        {
+            var userId = User.GetUserId();
+            var result = await _certificateService.GetRegenerationStatusAsync(userId);
+            return Ok(result);
+        }
+
+        [HttpPost("regenerate-all")]
+        [Authorize]
+        [EnableRateLimiting("CertificateDownload")]
+        public async Task<ActionResult<RegenerateCertificatesResponse>> RegenerateAllCertificates()
+        {
+            var userId = User.GetUserId();
+            try
+            {
+                var result = await _certificateService.TriggerRegenerationAsync(userId);
+                return Ok(result);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
     }
 }
