@@ -119,7 +119,7 @@ namespace LMSApi.BALLibrary.Services
                 _ => throw new InvalidOperationException("Invalid registration role")
             };
 
-            var user = new Users
+            var user = new LMSApi.ModelLibrary.Models.Users
             {
                 Email = request.Email,
                 PasswordHash = passwordHash,

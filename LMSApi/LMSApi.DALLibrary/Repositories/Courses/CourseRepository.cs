@@ -255,7 +255,10 @@ namespace LMSApi.DALLibrary.Repositories
             var courses = projected.Select(p => {
                 p.Course.ProjectedEnrolledCount = p.EnrolledCount;
                 p.Course.ProjectedLessonsCount = p.LessonsCount;
-                p.Course.ProjectedCompletionRate = p.EnrolledCount > 0 ? (double)p.CompletedCount / p.EnrolledCount * 100 : 0;
+                p.Course.ProjectedCompletionRate =
+                p.EnrolledCount > 0
+                    ? ((double)p.CompletedCount / p.EnrolledCount) * 100
+                    : 0;
                 return p.Course;
             }).ToList();
 

@@ -38,5 +38,43 @@ namespace LMSApi.DALLibrary.Repositories
                 .Where(u => u.Role.RoleName.ToLower() == "admin" && u.IsActive)
                 .ToListAsync();
         }
+
+        public async Task<(IEnumerable<Users> Users, int TotalCount)> GetAllUsersPagedAsync(LMSApi.ModelLibrary.DTOs.UserManagement.UserSearchQuery query)
+        {
+            var queryable = _context.Users
+                .Include(u => u.Role)
+                .Include(u => u.UserProfile)
+                .AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(query.Search))
+            {
+                var s = query.Search.Trim().ToLower();
+                queryable = queryable.Where(u => 
+                    u.Email.ToLower().Contains(s) || 
+                    (u.UserProfile != null && u.UserProfile.FirstName.ToLower().Contains(s)) ||
+                    (u.UserProfile != null && u.UserProfile.LastName.ToLower().Contains(s))
+                );
+            }
+
+            if (query.RoleId.HasValue)
+            {
+                queryable = queryable.Where(u => u.RoleId == query.RoleId.Value);
+            }
+
+            if (query.IsActive.HasValue)
+            {
+                queryable = queryable.Where(u => u.IsActive == query.IsActive.Value);
+            }
+
+            var totalCount = await queryable.CountAsync();
+            
+            var users = await queryable
+                .OrderByDescending(u => u.CreatedAt)
+                .Skip((query.PageNumber - 1) * query.PageSize)
+                .Take(query.PageSize)
+                .ToListAsync();
+
+            return (users, totalCount);
+        }
     }
 }

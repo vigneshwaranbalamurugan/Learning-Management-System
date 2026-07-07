@@ -7,7 +7,7 @@ import { ToastService } from '../../../services/toast.service';
 import { untilDestroyed } from '../../../rxjs/until-destroyed';
 import { CourseResponse, CourseSummaryStatsResponse, CategoryResponse, InstructorMetadata } from '../../../models/course';
 import { CourseStatus } from '../../../enums/course-status.enum';
-import { RouterModule, Router } from '@angular/router';
+import { RouterModule, Router, ActivatedRoute } from '@angular/router';
 import { Dropdown } from '../../../components/dropdown/dropdown';
 import { Button } from '../../../components/button/button';
 import { FormsModule } from '@angular/forms';
@@ -25,6 +25,7 @@ export class AdminCoursesComponent implements OnInit {
   private toast = inject(ToastService);
   private datePipe = inject(DatePipe);
   private router = inject(Router);
+  private route = inject(ActivatedRoute);
 
   // State Signals
   protected isLoading = signal(true);
@@ -53,6 +54,10 @@ export class AdminCoursesComponent implements OnInit {
   protected filterStatus = signal<string>('');
   protected filterCategory = signal<string>('');
 
+  protected hasActiveFilters = computed(() => {
+    return !!this.searchQuery() || !!this.filterStatus() || !!this.filterCategory();
+  });
+
   protected mathMin = Math.min;
 
   // Dropdown options
@@ -72,14 +77,38 @@ export class AdminCoursesComponent implements OnInit {
       const tab = this.activeTab();
       const status = this.filterStatus();
       const category = this.filterCategory();
+      const search = this.searchQuery();
       
       untracked(() => {
+        this.updateUrlParams(page, tab, status, category, search);
         this.fetchCourses(page, tab, status, category);
       });
     });
   }
 
+  private updateUrlParams(page: number, tab: string, status: string, category: string, search: string) {
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: {
+        tab: tab === 'all' ? null : tab,
+        page: page === 1 ? null : page,
+        search: search || null,
+        status: status || null,
+        category: category || null
+      },
+      queryParamsHandling: 'merge',
+      replaceUrl: true
+    });
+  }
+
   ngOnInit(): void {
+    const params = this.route.snapshot.queryParams;
+    if (params['tab']) this.activeTab.set(params['tab'] as 'all' | 'pending');
+    if (params['page']) this.pageNumber.set(parseInt(params['page'], 10) || 1);
+    if (params['search']) this.searchQuery.set(params['search']);
+    if (params['status']) this.filterStatus.set(params['status']);
+    if (params['category']) this.filterCategory.set(params['category']);
+
     this.fetchSummaryStats();
     this.fetchFiltersMetadata();
   }
@@ -146,7 +175,6 @@ export class AdminCoursesComponent implements OnInit {
     const input = event.target as HTMLInputElement;
     this.searchQuery.set(input.value);
     this.pageNumber.set(1);
-    this.fetchCourses(1, this.activeTab(), this.filterStatus(), this.filterCategory());
   }
 
   protected onTabChange(tab: 'all' | 'pending'): void {
@@ -161,6 +189,13 @@ export class AdminCoursesComponent implements OnInit {
 
   protected onFilterCategoryChange(category: string): void {
     this.filterCategory.set(category);
+    this.pageNumber.set(1);
+  }
+
+  protected clearFilters(): void {
+    this.searchQuery.set('');
+    this.filterStatus.set('');
+    this.filterCategory.set('');
     this.pageNumber.set(1);
   }
 

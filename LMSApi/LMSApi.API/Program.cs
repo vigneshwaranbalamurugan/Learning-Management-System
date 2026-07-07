@@ -10,6 +10,8 @@ using LMSApi.BALLibrary.Mappers;
 using LMSApi.BALLibrary.Utils;
 using LMSApi.API.Middlewares;
 using LMSApi.API.Handlers;
+using LMSApi.BALLibrary.Interfaces.Users;
+using LMSApi.ModelLibrary.Models;
 using Asp.Versioning;
 using Microsoft.EntityFrameworkCore;
 using Hangfire;
@@ -124,6 +126,7 @@ builder.Services.AddScoped<IWebhookEventLogRepository, WebhookEventLogRepository
 #region Dependency Injection for Services
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IProfileService, ProfileService>();
+builder.Services.AddScoped<IAdminUserService, LMSApi.BALLibrary.Services.Users.AdminUserService>();
 builder.Services.AddScoped<IUploadService, UploadService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<INotificationHandler, EmailNotificationHandler>();

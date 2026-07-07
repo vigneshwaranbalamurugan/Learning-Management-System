@@ -10,5 +10,7 @@ namespace LMSApi.DALLibrary.Interfaces
 
         /// <summary>Returns all users whose role is Admin, for platform-level notifications.</summary>
         Task<IEnumerable<Users>> GetAdminUsersAsync();
+
+        Task<(IEnumerable<Users> Users, int TotalCount)> GetAllUsersPagedAsync(LMSApi.ModelLibrary.DTOs.UserManagement.UserSearchQuery query);
     }
 }

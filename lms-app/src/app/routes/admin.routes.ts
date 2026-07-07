@@ -22,6 +22,10 @@ export const adminRoutes: Routes = [
         loadComponent: () => import('@pages/admin/courses/courses').then(m => m.AdminCoursesComponent)
       },
       {
+        path: 'users',
+        loadComponent: () => import('@pages/admin/users/users').then(m => m.AdminUsersComponent)
+      },
+      {
         path: 'settings',
         loadComponent: () => import('@pages/admin/settings/settings').then(m => m.AdminSettings)
       },
