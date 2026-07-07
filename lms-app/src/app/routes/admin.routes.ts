@@ -18,6 +18,10 @@ export const adminRoutes: Routes = [
         loadComponent: () => import('@pages/admin/logs/logs').then(m => m.AdminLogs)
       },
       {
+        path: 'logs/audit/:id',
+        loadComponent: () => import('@pages/admin/audit-log-detail/audit-log-detail').then(m => m.AuditLogDetail)
+      },
+      {
         path: 'courses',
         loadComponent: () => import('@pages/admin/courses/courses').then(m => m.AdminCoursesComponent)
       },

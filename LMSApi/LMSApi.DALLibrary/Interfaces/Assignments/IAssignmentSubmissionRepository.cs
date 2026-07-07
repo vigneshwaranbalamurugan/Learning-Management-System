@@ -35,6 +35,6 @@ namespace LMSApi.DALLibrary.Interfaces
         Task<IEnumerable<AssignmentSubmissions>> GetSubmissionsForAssignmentsAsync(int studentId, List<int> assignmentIds);
 
         /// <summary>Returns paginated submissions globally for Admin.</summary>
-        Task<(IEnumerable<AssignmentSubmissions> Submissions, int TotalCount)> GetAllSubmissionsPagedAsync(int pageNumber, int pageSize, string? status);
+        Task<(IEnumerable<AssignmentSubmissions> Submissions, int TotalCount)> GetAllSubmissionsPagedAsync(int pageNumber, int pageSize, string? status, string? search = null);
     }
 }

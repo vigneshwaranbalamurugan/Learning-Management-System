@@ -360,9 +360,9 @@ namespace LMSApi.BALLibrary.Services
             return _mapper.Map<IEnumerable<AssignmentSubmissionResponse>>(submissions);
         }
 
-        public async Task<PagedAssignmentSubmissionResponse> GetAllSubmissionsPagedAsync(int pageNumber, int pageSize, string? status)
+        public async Task<PagedAssignmentSubmissionResponse> GetAllSubmissionsPagedAsync(int pageNumber, int pageSize, string? status, string? search = null)
         {
-            var (submissions, totalCount) = await _submissionRepository.GetAllSubmissionsPagedAsync(pageNumber, pageSize, status);
+            var (submissions, totalCount) = await _submissionRepository.GetAllSubmissionsPagedAsync(pageNumber, pageSize, status, search);
 
             var totalPages = (int)Math.Ceiling((double)totalCount / pageSize);
 

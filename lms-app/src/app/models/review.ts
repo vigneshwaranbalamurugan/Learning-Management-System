@@ -7,6 +7,8 @@ export interface ReviewResponse {
   reviewText: string;
   createdAt: string;
   updatedAt: string;
+  courseTitle?: string;
+  isDeleted?: boolean;
 }
 
 export interface CreateReviewRequest {

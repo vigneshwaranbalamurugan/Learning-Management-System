@@ -6,6 +6,7 @@ import { environment } from '../../../../environments/environment';
 import { PaginationComponent } from '../../../components/pagination/pagination.component';
 import { FormInput } from '../../../components/form-input/form-input';
 import { Dropdown } from '../../../components/dropdown/dropdown';
+import { ActivatedRoute, Router } from '@angular/router';
 
 @Component({
   selector: 'app-admin-logs',
@@ -18,6 +19,8 @@ export class AdminLogs implements OnInit {
   private http = inject(HttpClient);
   private destroyRef = inject(DestroyRef);
   private datePipe = inject(DatePipe);
+  private route = inject(ActivatedRoute);
+  private router = inject(Router);
 
   protected isLoading = signal(true);
   protected logs = signal<any[]>([]);
@@ -78,19 +81,45 @@ export class AdminLogs implements OnInit {
   constructor() {}
 
   ngOnInit() {
-    this.loadLogs();
+    this.route.queryParams.pipe(untilDestroyed(this.destroyRef)).subscribe(params => {
+      if (params['tab'] === 'audit' || params['tab'] === 'activity') {
+        this.activeTab.set(params['tab']);
+      }
+      if (params['page']) {
+        this.pageNumber.set(parseInt(params['page'], 10) || 1);
+      }
+      
+      this.filterUserId.set(params['userQuery'] || '');
+      this.filterActivityType.set(params['activityType'] || '');
+      this.filterTableName.set(params['tableName'] || '');
+      this.filterAction.set(params['action'] || '');
+
+      this.loadLogs();
+    });
   }
 
   protected switchTab(tab: 'activity' | 'audit') {
     if (this.activeTab() !== tab) {
-      this.activeTab.set(tab);
-      this.clearFilters();
+      this.router.navigate([], {
+        relativeTo: this.route,
+        queryParams: { tab: tab, page: 1, userQuery: null, activityType: null, tableName: null, action: null },
+        queryParamsHandling: 'merge'
+      });
     }
   }
 
   protected applyFilters() {
-    this.pageNumber.set(1);
-    this.loadLogs();
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: {
+        page: 1,
+        userQuery: this.filterUserId() || null,
+        activityType: this.activeTab() === 'activity' ? (this.filterActivityType() || null) : null,
+        tableName: this.activeTab() === 'audit' ? (this.filterTableName() || null) : null,
+        action: this.activeTab() === 'audit' ? (this.filterAction() || null) : null,
+      },
+      queryParamsHandling: 'merge'
+    });
   }
 
   protected onFilterChange() {
@@ -103,12 +132,17 @@ export class AdminLogs implements OnInit {
   }
 
   protected clearFilters() {
-    this.filterUserId.set('');
-    this.filterActivityType.set('');
-    this.filterTableName.set('');
-    this.filterAction.set('');
-    this.pageNumber.set(1);
-    this.loadLogs();
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: {
+        page: 1,
+        userQuery: null,
+        activityType: null,
+        tableName: null,
+        action: null
+      },
+      queryParamsHandling: 'merge'
+    });
   }
 
   private loadLogs() {
@@ -146,7 +180,16 @@ export class AdminLogs implements OnInit {
   }
 
   protected onPageChange(page: number) {
-    this.pageNumber.set(page);
-    this.loadLogs();
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { page: page },
+      queryParamsHandling: 'merge'
+    });
+  }
+  
+  protected viewAuditLog(id: number) {
+    if (this.activeTab() === 'audit') {
+      this.router.navigate(['/admin/logs/audit', id]);
+    }
   }
 }

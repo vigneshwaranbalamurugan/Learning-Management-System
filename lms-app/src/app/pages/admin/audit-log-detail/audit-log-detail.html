@@ -1,0 +1,79 @@
+<div class="flex flex-col gap-6 animate-[fadeInContent_400ms_ease]">
+  <div class="flex items-center gap-4">
+    <button (click)="goBack()" class="p-2 -ml-2 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition-colors">
+      <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+      </svg>
+    </button>
+    <div>
+      <h2 class="text-2xl font-bold text-gray-900 m-0">Audit Log Details</h2>
+      <p class="text-sm text-gray-500 m-0">Detailed view of system record changes.</p>
+    </div>
+  </div>
+
+  <div *ngIf="isLoading()" class="bg-white border border-gray-200 rounded-xl p-16 flex justify-center items-center">
+    <div class="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+  </div>
+
+  <ng-container *ngIf="!isLoading() && log()">
+    <!-- Header Details -->
+    <div class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div>
+          <h4 class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">User</h4>
+          <div class="font-medium text-slate-900">{{ log()!.userName || 'System' }}</div>
+          <div class="text-sm text-slate-500">{{ log()!.userEmail }}</div>
+        </div>
+        <div>
+          <h4 class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Action & Table</h4>
+          <div class="font-medium text-slate-900">
+            <span class="px-2 py-1 bg-blue-50 text-blue-700 rounded-md text-xs font-bold mr-2">{{ log()!.action }}</span>
+            {{ log()!.tableName }} (ID: {{ log()!.recordId }})
+          </div>
+        </div>
+        <div>
+          <h4 class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Timestamp</h4>
+          <div class="font-medium text-slate-900">{{ log()!.timestamp | date:'medium' }}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Comparison Table -->
+    <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+      <div class="px-6 py-4 border-b border-slate-200 bg-slate-50">
+        <h3 class="font-bold text-slate-900 m-0">Value Changes</h3>
+      </div>
+      <div class="overflow-x-auto overflow-y-auto max-h-[600px]">
+        <table class="w-full text-left border-collapse relative">
+          <thead class="sticky top-0 z-10 bg-white">
+            <tr class="border-b border-slate-200">
+              <th class="py-3 px-6 text-xs font-semibold text-slate-500 uppercase w-1/3 bg-white">Field</th>
+              <th class="py-3 px-6 text-xs font-semibold text-slate-500 uppercase w-1/3 border-l border-slate-200 bg-white">Old Value</th>
+              <th class="py-3 px-6 text-xs font-semibold text-slate-500 uppercase w-1/3 border-l border-slate-200 bg-white">New Value</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100">
+            <tr *ngIf="changedFields().length === 0">
+              <td colspan="3" class="p-8 text-center text-sm text-slate-500">No field changes recorded.</td>
+            </tr>
+            <tr *ngFor="let item of changedFields()" class="hover:bg-slate-50 transition-colors">
+              <td class="py-3 px-6 text-sm font-medium text-slate-700 font-mono">{{ item.field }}</td>
+              
+              <!-- Old Value -->
+              <td class="py-3 px-6 text-sm border-l border-slate-100 bg-red-50/30">
+                <span *ngIf="!item.old && item.old !== '0'" class="inline-block px-2 py-0.5 bg-slate-100 text-slate-400 text-xs rounded font-medium">N/A</span>
+                <span *ngIf="item.old || item.old === '0'" class="text-red-700 break-all">{{ item.old }}</span>
+              </td>
+              
+              <!-- New Value -->
+              <td class="py-3 px-6 text-sm border-l border-slate-100 bg-green-50/30">
+                <span *ngIf="!item.new && item.new !== '0'" class="inline-block px-2 py-0.5 bg-slate-100 text-slate-400 text-xs rounded font-medium">N/A</span>
+                <span *ngIf="item.new || item.new === '0'" class="text-green-700 font-medium break-all">{{ item.new }}</span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </ng-container>
+</div>

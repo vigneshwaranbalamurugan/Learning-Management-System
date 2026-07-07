@@ -1,4 +1,4 @@
-import { Component, OnInit, signal, inject, DestroyRef, effect, untracked } from '@angular/core';
+import { Component, OnInit, signal, inject, DestroyRef } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../../environments/environment';
@@ -8,6 +8,8 @@ import { ToastService } from '../../../services/toast.service';
 import { untilDestroyed } from '../../../rxjs/until-destroyed';
 import { AssignmentSubmissionResponse } from '../../../models/assignment';
 import { FormsModule } from '@angular/forms';
+import { Subject } from 'rxjs';
+import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 
 @Component({
   selector: 'app-admin-assignments',
@@ -31,6 +33,10 @@ export class AdminAssignmentsComponent implements OnInit {
   protected totalPages = signal(0);
   
   protected filterStatus = signal<string>('');
+  protected searchQuery = signal<string>('');
+  protected selectedSubmission = signal<AssignmentSubmissionResponse | null>(null);
+
+  private searchSubject = new Subject<string>();
 
   protected statusOptions = [
     { value: '', label: 'All Statuses' },
@@ -39,7 +45,17 @@ export class AdminAssignmentsComponent implements OnInit {
     { value: 'Graded', label: 'Graded' }
   ];
 
-  constructor() {}
+  constructor() {
+    this.searchSubject.pipe(
+      debounceTime(400),
+      distinctUntilChanged(),
+      untilDestroyed(this.destroyRef)
+    ).subscribe((query) => {
+      this.searchQuery.set(query);
+      this.pageNumber.set(1);
+      this.loadSubmissions();
+    });
+  }
 
   ngOnInit() {
     this.loadSubmissions();
@@ -51,6 +67,18 @@ export class AdminAssignmentsComponent implements OnInit {
     this.loadSubmissions();
   }
 
+  protected onSearchInput(event: any) {
+    this.searchSubject.next(event.target.value);
+  }
+
+  protected viewDetails(sub: AssignmentSubmissionResponse) {
+    this.selectedSubmission.set(sub);
+  }
+
+  protected closeDetails() {
+    this.selectedSubmission.set(null);
+  }
+
   private loadSubmissions() {
     this.isLoading.set(true);
     const params: any = {
@@ -60,6 +88,10 @@ export class AdminAssignmentsComponent implements OnInit {
 
     if (this.filterStatus()) {
       params.status = this.filterStatus();
+    }
+    
+    if (this.searchQuery()) {
+      params.search = this.searchQuery();
     }
 
     this.http.get<any>(`${environment.apiUrl}/AssignmentSubmissions/admin/all`, { params })

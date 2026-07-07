@@ -27,13 +27,22 @@ namespace LMSApi.DALLibrary.Repositories
                 .ToListAsync();
         }
 
-        public async Task<(IEnumerable<Reviews> Reviews, int TotalCount)> GetAllReviewsPagedAsync(int pageNumber, int pageSize, string? search)
+        public async Task<(IEnumerable<Reviews> Reviews, int TotalCount)> GetAllReviewsPagedAsync(int pageNumber, int pageSize, string? search, int? rating, bool? isDeleted)
         {
             var queryable = _context.Reviews
                 .Include(r => r.User)
                 .Include(r => r.Course)
-                .Where(r => !r.IsDeleted)
                 .AsQueryable();
+
+            if (isDeleted.HasValue)
+            {
+                queryable = queryable.Where(r => r.IsDeleted == isDeleted.Value);
+            }
+
+            if (rating.HasValue && rating.Value > 0)
+            {
+                queryable = queryable.Where(r => r.Rating == rating.Value);
+            }
 
             if (!string.IsNullOrWhiteSpace(search))
             {

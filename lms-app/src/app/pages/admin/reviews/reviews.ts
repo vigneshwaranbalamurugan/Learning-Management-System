@@ -30,6 +30,9 @@ export class AdminReviewsComponent implements OnInit {
   protected totalPages = signal(0);
   protected searchQuery = signal('');
 
+  protected filterStatus = signal<string>('All');
+  protected filterRating = signal<string>('All');
+
   constructor() {}
 
   ngOnInit() {
@@ -37,6 +40,11 @@ export class AdminReviewsComponent implements OnInit {
   }
 
   protected onSearch() {
+    this.pageNumber.set(1);
+    this.loadReviews();
+  }
+
+  protected onFilterChange() {
     this.pageNumber.set(1);
     this.loadReviews();
   }
@@ -50,6 +58,12 @@ export class AdminReviewsComponent implements OnInit {
 
     if (this.searchQuery().trim()) {
       params.search = this.searchQuery().trim();
+    }
+    if (this.filterStatus() !== 'All') {
+      params.status = this.filterStatus();
+    }
+    if (this.filterRating() !== 'All') {
+      params.rating = this.filterRating();
     }
 
     this.http.get<any>(`${environment.apiUrl}/Reviews/admin/all`, { params })
@@ -76,7 +90,7 @@ export class AdminReviewsComponent implements OnInit {
   }
 
   protected deleteReview(id: number) {
-    if (confirm('Are you sure you want to delete this review? This action cannot be undone.')) {
+    if (confirm('Are you sure you want to delete this review?')) {
       this.http.delete(`${environment.apiUrl}/Reviews/admin/${id}`)
         .subscribe({
           next: () => {
@@ -86,6 +100,22 @@ export class AdminReviewsComponent implements OnInit {
           error: (err) => {
             console.error(err);
             this.toast.showError('Failed to delete review');
+          }
+        });
+    }
+  }
+
+  protected restoreReview(id: number) {
+    if (confirm('Are you sure you want to restore this deleted review?')) {
+      this.http.put(`${environment.apiUrl}/Reviews/admin/${id}/restore`, {})
+        .subscribe({
+          next: () => {
+            this.toast.showSuccess('Review restored successfully');
+            this.loadReviews();
+          },
+          error: (err) => {
+            console.error(err);
+            this.toast.showError('Failed to restore review');
           }
         });
     }

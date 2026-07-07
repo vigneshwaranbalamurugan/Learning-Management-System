@@ -35,6 +35,8 @@ namespace LMSApi.ModelLibrary.DTOs
         public string ReviewText { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
+        public string? CourseTitle { get; set; }
+        public bool IsDeleted { get; set; }
     }
 
     public class PagedReviewResponse

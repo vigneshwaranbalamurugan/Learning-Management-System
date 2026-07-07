@@ -187,6 +187,9 @@ namespace LMSApi.ModelLibrary.DTOs
         public string? StudentEmail { get; set; }
         public bool IsLate { get; set; }
         public DateTime? StudentDeadline { get; set; }
+        public string? CourseTitle { get; set; }
+        public string? SectionTitle { get; set; }
+        public string? AssignmentTitle { get; set; }
     }
 
     public class AssignmentStatusResponse

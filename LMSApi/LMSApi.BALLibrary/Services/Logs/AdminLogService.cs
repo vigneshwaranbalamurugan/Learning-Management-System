@@ -42,5 +42,15 @@ namespace LMSApi.BALLibrary.Services
         {
             return await _auditLogsRepository.GetFilteredLogsCountAsync(userQuery, tableName, action);
         }
+
+        public async Task<AuditLogResponse> GetAuditLogByIdAsync(int id)
+        {
+            var log = await _auditLogsRepository.GetAuditLogByIdAsync(id);
+            if (log == null)
+            {
+                throw new KeyNotFoundException($"Audit log with ID {id} not found.");
+            }
+            return _mapper.Map<AuditLogResponse>(log);
+        }
     }
 }

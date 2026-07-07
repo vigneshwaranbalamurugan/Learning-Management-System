@@ -127,9 +127,25 @@ namespace LMSApi.BALLibrary.Services
             });
         }
 
-        public async Task<PagedReviewResponse> GetAllReviewsPagedAsync(int pageNumber, int pageSize, string? search)
+        public async Task RestoreReviewByAdminAsync(int reviewId)
         {
-            var (reviews, totalCount) = await _reviewRepository.GetAllReviewsPagedAsync(pageNumber, pageSize, search);
+            var review = await _reviewRepository.GetByIdAsync(reviewId);
+            if (review == null)
+                throw new KeyNotFoundException("Review not found.");
+
+            review.IsDeleted = false;
+            await _reviewRepository.UpdateAsync(review);
+        }
+
+        public async Task<PagedReviewResponse> GetAllReviewsPagedAsync(int pageNumber, int pageSize, string? search, int? rating, string? status)
+        {
+            bool? isDeleted = null;
+            if (!string.IsNullOrEmpty(status) && status.ToLower() != "all")
+            {
+                isDeleted = status.ToLower() == "deleted";
+            }
+
+            var (reviews, totalCount) = await _reviewRepository.GetAllReviewsPagedAsync(pageNumber, pageSize, search, rating, isDeleted);
 
             var totalPages = (int)Math.Ceiling((double)totalCount / pageSize);
 
@@ -144,7 +160,9 @@ namespace LMSApi.BALLibrary.Services
                     Rating = r.Rating,
                     ReviewText = r.Review,
                     CreatedAt = r.CreatedAt,
-                    UpdatedAt = r.UpdatedAt
+                    UpdatedAt = r.UpdatedAt,
+                    CourseTitle = r.Course?.Title,
+                    IsDeleted = r.IsDeleted
                 }).ToList(),
                 TotalCount = totalCount,
                 PageNumber = pageNumber,

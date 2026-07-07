@@ -15,7 +15,7 @@ namespace LMSApi.DALLibrary.Repositories
 
         public async Task<IEnumerable<AuditLogs>> GetFilteredLogsAsync(string? userQuery, string? tableName, string? action, int page, int pageSize)
         {
-            var query = _context.AuditLogs.Include(l => l.User).AsQueryable();
+            var query = _context.AuditLogs.Include(l => l.User).ThenInclude(u => u.UserProfile).AsQueryable();
 
             if (!string.IsNullOrEmpty(userQuery))
             {
@@ -46,7 +46,7 @@ namespace LMSApi.DALLibrary.Repositories
 
         public async Task<int> GetFilteredLogsCountAsync(string? userQuery, string? tableName, string? action)
         {
-            var query = _context.AuditLogs.Include(l => l.User).AsQueryable();
+            var query = _context.AuditLogs.Include(l => l.User).ThenInclude(u => u.UserProfile).AsQueryable();
 
             if (!string.IsNullOrEmpty(userQuery))
             {
@@ -69,6 +69,14 @@ namespace LMSApi.DALLibrary.Repositories
             }
 
             return await query.CountAsync();
+        }
+
+        public async Task<AuditLogs> GetAuditLogByIdAsync(int id)
+        {
+            return await _context.AuditLogs
+                .Include(l => l.User)
+                .ThenInclude(u => u.UserProfile)
+                .FirstOrDefaultAsync(l => l.Id == id);
         }
     }
 }

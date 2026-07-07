@@ -15,7 +15,7 @@ namespace LMSApi.DALLibrary.Repositories
 
         public async Task<IEnumerable<ActivityLogs>> GetFilteredLogsAsync(string? userQuery, string? activityType, int page, int pageSize)
         {
-            var query = _context.ActivityLogs.Include(l => l.User).AsQueryable();
+            var query = _context.ActivityLogs.Include(l => l.User).ThenInclude(u => u.UserProfile).AsQueryable();
 
             if (!string.IsNullOrEmpty(userQuery))
             {
@@ -41,7 +41,7 @@ namespace LMSApi.DALLibrary.Repositories
 
         public async Task<int> GetFilteredLogsCountAsync(string? userQuery, string? activityType)
         {
-            var query = _context.ActivityLogs.Include(l => l.User).AsQueryable();
+            var query = _context.ActivityLogs.Include(l => l.User).ThenInclude(u => u.UserProfile).AsQueryable();
 
             if (!string.IsNullOrEmpty(userQuery))
             {

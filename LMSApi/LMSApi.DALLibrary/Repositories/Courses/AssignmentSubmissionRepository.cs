@@ -102,17 +102,30 @@ namespace LMSApi.DALLibrary.Repositories
                 .ToListAsync();
         }
 
-        public async Task<(IEnumerable<AssignmentSubmissions> Submissions, int TotalCount)> GetAllSubmissionsPagedAsync(int pageNumber, int pageSize, string? status)
+        public async Task<(IEnumerable<AssignmentSubmissions> Submissions, int TotalCount)> GetAllSubmissionsPagedAsync(int pageNumber, int pageSize, string? status, string? search = null)
         {
             var queryable = _context.AssignmentSubmissions
                 .Include(s => s.Student)
                     .ThenInclude(u => u.UserProfile)
                 .Include(s => s.Assignment)
+                    .ThenInclude(a => a.CourseSection)
+                        .ThenInclude(cs => cs.Course)
                 .AsQueryable();
 
             if (!string.IsNullOrWhiteSpace(status) && Enum.TryParse<SubmissionStatus>(status, true, out var parsedStatus))
             {
                 queryable = queryable.Where(s => s.Status == parsedStatus);
+            }
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                var searchLower = search.ToLower();
+                queryable = queryable.Where(s => 
+                    s.Assignment.CourseSection.Course.Title.ToLower().Contains(searchLower) ||
+                    s.Student.UserProfile.FirstName.ToLower().Contains(searchLower) ||
+                    s.Student.UserProfile.LastName.ToLower().Contains(searchLower) ||
+                    s.Student.Email.ToLower().Contains(searchLower)
+                );
             }
 
             var totalCount = await queryable.CountAsync();

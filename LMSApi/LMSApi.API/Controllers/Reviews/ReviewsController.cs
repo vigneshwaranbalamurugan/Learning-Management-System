@@ -56,10 +56,18 @@ namespace LMSApi.API.Controllers
 
         [Authorize(Roles = "Admin")]
         [HttpGet("admin/all")]
-        public async Task<ActionResult<PagedReviewResponse>> GetAllAdmin([FromQuery] int page = 1, [FromQuery] int pageSize = 20, [FromQuery] string? search = null)
+        public async Task<ActionResult<PagedReviewResponse>> GetAllAdmin([FromQuery] int page = 1, [FromQuery] int pageSize = 20, [FromQuery] string? search = null, [FromQuery] int? rating = null, [FromQuery] string? status = "All")
         {
-            var result = await _reviewService.GetAllReviewsPagedAsync(page, pageSize, search);
+            var result = await _reviewService.GetAllReviewsPagedAsync(page, pageSize, search, rating, status);
             return Ok(result);
+        }
+
+        [Authorize(Roles = "Admin")]
+        [HttpPut("admin/{id}/restore")]
+        public async Task<IActionResult> RestoreReviewByAdmin(int id)
+        {
+            await _reviewService.RestoreReviewByAdminAsync(id);
+            return NoContent();
         }
 
         [Authorize(Roles = "Admin")]

@@ -5,6 +5,7 @@ namespace LMSApi.ModelLibrary.DTOs.Logs
         public int Id { get; set; }
         public int UserId { get; set; }
         public string UserEmail { get; set; } = string.Empty;
+        public string UserName { get; set; } = string.Empty;
         public string TableName { get; set; } = string.Empty;
         public int RecordId { get; set; }
         public string Action { get; set; } = string.Empty;

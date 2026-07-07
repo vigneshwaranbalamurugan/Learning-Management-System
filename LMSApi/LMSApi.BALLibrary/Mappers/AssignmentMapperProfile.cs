@@ -26,7 +26,10 @@ namespace LMSApi.BALLibrary.Mappers
                             ? (src.Student.UserProfile.FirstName + " " + src.Student.UserProfile.LastName).Trim() 
                             : LMSApi.BALLibrary.Utils.MaskingUtils.MaskEmail(src.Student.Email)) 
                         : null))
-                .ForMember(dest => dest.StudentEmail, opt => opt.MapFrom(src => src.Student != null ? LMSApi.BALLibrary.Utils.MaskingUtils.MaskEmail(src.Student.Email) : null));
+                .ForMember(dest => dest.StudentEmail, opt => opt.MapFrom(src => src.Student != null ? LMSApi.BALLibrary.Utils.MaskingUtils.MaskEmail(src.Student.Email) : null))
+                .ForMember(dest => dest.CourseTitle, opt => opt.MapFrom(src => src.Assignment != null && src.Assignment.CourseSection != null && src.Assignment.CourseSection.Course != null ? src.Assignment.CourseSection.Course.Title : null))
+                .ForMember(dest => dest.SectionTitle, opt => opt.MapFrom(src => src.Assignment != null && src.Assignment.CourseSection != null ? src.Assignment.CourseSection.Title : null))
+                .ForMember(dest => dest.AssignmentTitle, opt => opt.MapFrom(src => src.Assignment != null ? src.Assignment.Title : null));
 
             CreateMap<AssignmentSubmissionRequest, AssignmentSubmissions>()
                 .ForMember(dest => dest.SubmittedAt, opt => opt.Ignore())  // set in service

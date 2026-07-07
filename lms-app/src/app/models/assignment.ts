@@ -37,6 +37,9 @@ export interface AssignmentSubmissionResponse {
   studentEmail?: string;
   isLate?: boolean;
   studentDeadline?: string;
+  courseTitle?: string;
+  sectionTitle?: string;
+  assignmentTitle?: string;
 }
 
 export interface AssignmentStatusResponse {

@@ -10,10 +10,12 @@ namespace LMSApi.BALLibrary.Mappers
         {
             CreateMap<ActivityLogs, ActivityLogResponse>()
                 .ForMember(dest => dest.UserEmail, opt => opt.MapFrom(src => src.User != null ? src.User.Email : string.Empty))
+                .ForMember(dest => dest.UserName, opt => opt.MapFrom(src => src.User != null && src.User.UserProfile != null ? $"{src.User.UserProfile.FirstName} {src.User.UserProfile.LastName}".Trim() : string.Empty))
                 .ForMember(dest => dest.ActivityType, opt => opt.MapFrom(src => src.ActivityType.ToString()));
 
             CreateMap<AuditLogs, AuditLogResponse>()
                 .ForMember(dest => dest.UserEmail, opt => opt.MapFrom(src => src.User != null ? src.User.Email : string.Empty))
+                .ForMember(dest => dest.UserName, opt => opt.MapFrom(src => src.User != null && src.User.UserProfile != null ? $"{src.User.UserProfile.FirstName} {src.User.UserProfile.LastName}".Trim() : string.Empty))
                 .ForMember(dest => dest.Action, opt => opt.MapFrom(src => src.Action.ToString()));
         }
     }

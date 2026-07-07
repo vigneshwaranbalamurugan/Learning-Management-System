@@ -140,9 +140,10 @@ namespace LMSApi.API.Controllers
         public async Task<ActionResult<PagedAssignmentSubmissionResponse>> GetAllAdmin(
             [FromQuery] int page = 1,
             [FromQuery] int pageSize = 20,
-            [FromQuery] string? status = null)
+            [FromQuery] string? status = null,
+            [FromQuery] string? search = null)
         {
-            var result = await _assignmentSubmissionService.GetAllSubmissionsPagedAsync(page, pageSize, status);
+            var result = await _assignmentSubmissionService.GetAllSubmissionsPagedAsync(page, pageSize, status, search);
             return Ok(result);
         }
     }

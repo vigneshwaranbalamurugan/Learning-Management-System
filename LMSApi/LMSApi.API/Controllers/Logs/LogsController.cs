@@ -47,5 +47,19 @@ namespace LMSApi.API.Controllers
             var totalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
             return Ok(new { logs, totalCount, totalPages });
         }
+
+        [HttpGet("audit/{id}")]
+        public async Task<ActionResult<AuditLogResponse>> GetAuditLogById(int id)
+        {
+            try
+            {
+                var log = await _adminLogService.GetAuditLogByIdAsync(id);
+                return Ok(log);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(new { message = ex.Message });
+            }
+        }
     }
 }

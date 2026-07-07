@@ -6,5 +6,6 @@ namespace LMSApi.DALLibrary.Interfaces
     {
         Task<IEnumerable<AuditLogs>> GetFilteredLogsAsync(string? userQuery, string? tableName, string? action, int page, int pageSize);
         Task<int> GetFilteredLogsCountAsync(string? userQuery, string? tableName, string? action);
+        Task<AuditLogs> GetAuditLogByIdAsync(int id);
     }
 }

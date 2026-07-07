@@ -13,6 +13,6 @@ namespace LMSApi.BALLibrary.Interfaces
         Task<IEnumerable<AssignmentSubmissionResponse>> GetPendingReviewsAsync(int assignmentId);
         Task<IEnumerable<AssignmentSubmissionResponse>> GetGradedReviewsAsync(int assignmentId);
         Task<IEnumerable<AssignmentSubmissionResponse>> GetStudentSubmissionsAsync(int assignmentId, int studentId);
-        Task<PagedAssignmentSubmissionResponse> GetAllSubmissionsPagedAsync(int pageNumber, int pageSize, string? status);
+        Task<PagedAssignmentSubmissionResponse> GetAllSubmissionsPagedAsync(int pageNumber, int pageSize, string? status, string? search = null);
     }
 }
