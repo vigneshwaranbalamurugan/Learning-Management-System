@@ -99,3 +99,23 @@ The frontend is an Angular 21 Single Page Application (SPA).
 - **`LMSApi/`**: Backend API solution (.NET 10, C#).
 - **`lms-app/`**: Frontend web application (Angular 21, TypeScript, TailwindCSS).
 - **`docs/`**: Documentation and raw SQL scripts (`routines.sql`).
+
+---
+
+## 📦 External Libraries (Backend)
+
+The .NET 10 backend (`LMSApi`) utilizes several external libraries (NuGet packages) for various features:
+
+- **AutoMapper**: Simplifies object-to-object mapping (e.g., mapping entity models to DTOs).
+- **CloudinaryDotNet**: Integration with Cloudinary for managing and serving user uploads like images and videos.
+- **Hangfire**: Provides background job processing (used for sending emails, processing long-running tasks, etc.) with PostgreSQL storage support (`Hangfire.PostgreSql`).
+- **StackExchange.Redis**: Facilitates distributed caching to improve application performance and reduce database load.
+- **PdfSharpCore**: Used for generating PDF files programmatically (e.g., generating certificates).
+- **Razorpay**: Payment gateway integration to handle course purchases and transactions.
+- **SixLabors.ImageSharp / SixLabors.Fonts**: Cross-platform libraries for image manipulation and drawing (useful for dynamic graphic generation or image resizing).
+- **ClosedXML**: Simplifies creating, reading, and modifying Excel spreadsheets for data export features.
+- **System.IdentityModel.Tokens.Jwt / Microsoft.AspNetCore.Authentication.JwtBearer**: Handles generation and validation of JSON Web Tokens (JWT) for secure authentication and authorization.
+- **Entity Framework Core / Npgsql**: Provides Object-Relational Mapping (ORM) capabilities and PostgreSQL database provider support (`Npgsql.EntityFrameworkCore.PostgreSQL`).
+- **Asp.Versioning.Mvc**: Manages API versioning.
+- **Serilog**: Enables structured logging to the console and files.
+- **Swashbuckle.AspNetCore**: Automatically generates Swagger UI and OpenAPI specifications for interactive API documentation.
