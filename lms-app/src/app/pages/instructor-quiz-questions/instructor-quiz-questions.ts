@@ -54,6 +54,7 @@ export class InstructorQuizQuestions implements OnInit {
   protected isEditingQuestion = false;
   protected isSaving = signal(false);
   protected isLoading = signal(true);
+  protected isUploading = signal(false);
   protected currentQuestion: QuizQuestion = this.getEmptyQuestion();
 
   protected showUnsavedModal = signal(false);
@@ -371,6 +372,47 @@ export class InstructorQuizQuestions implements OnInit {
         }
       });
     }
+  }
+
+  protected onBulkUpload(event: Event) {
+    const input = event.target as HTMLInputElement;
+    if (!input.files || input.files.length === 0) return;
+
+    const file = input.files[0];
+    if (!file.name.toLowerCase().endsWith('.xlsx')) {
+      this.toastService.showError('Invalid file format. Please upload an .xlsx file.');
+      input.value = '';
+      return;
+    }
+
+    if (!this.quizId) return;
+
+    this.isUploading.set(true);
+    this.quizService.bulkUploadQuestions(this.quizId, file).subscribe({
+      next: (result: any) => {
+        this.isUploading.set(false);
+        if (result && result.totalImported > 0) {
+          this.toastService.showSuccess(`Successfully imported ${result.totalImported} questions.`);
+        } else if (result && result.totalImported === 0 && (!result.errors || result.errors.length === 0)) {
+           this.toastService.show('No questions were found to import.', 'info');
+        } else {
+          this.toastService.showSuccess('Questions imported successfully.');
+        }
+        
+        if (result && result.errors && result.errors.length > 0) {
+          // If the toast is too long, it might be truncated, but it's good to give feedback.
+          this.toastService.showError(`Found errors: ${result.errors.slice(0, 3).join(', ')}${result.errors.length > 3 ? '...' : ''}`);
+        }
+        
+        this.loadQuiz(this.quizId!);
+        input.value = ''; // reset
+      },
+      error: (err) => {
+        this.isUploading.set(false);
+        this.toastService.showApiError(err, 'Failed to bulk upload questions.');
+        input.value = ''; // reset
+      }
+    });
   }
 
   protected reorderQuestion(index: number, direction: 'up' | 'down') {

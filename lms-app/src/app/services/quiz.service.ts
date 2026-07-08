@@ -43,6 +43,12 @@ export class QuizService {
     return this.http.post<void>(`${this.baseUrl}/QuizQuestions/quiz/${quizId}/reorder`, { items });
   }
 
+  bulkUploadQuestions(quizId: number, file: File): Observable<any> {
+    const formData = new FormData();
+    formData.append('file', file);
+    return this.http.post<any>(`${this.baseUrl}/QuizQuestions/quiz/${quizId}/bulk`, formData);
+  }
+
   reorderQuizzes(quizOrders: { quizId: number; sortOrder: number }[]): Observable<void> {
     return this.http.put<void>(`${this.baseUrl}/Quizzes/reorder`, { quizOrders });
   }

@@ -9,12 +9,27 @@
       <h3 class="text-xl font-bold text-slate-900">Questions: {{ quizDetails.title }}</h3>
       <p class="text-sm text-gray-500 mt-0.5">Manage the questions, marks, and options for this quiz.</p>
     </div>
-    <button 
-      *ngIf="!isLocked()"
-      (click)="openAddQuestion()" 
-      class="px-5 py-2.5 w-full md:w-auto rounded-xl bg-[#1C1C7B] hover:bg-[#15155E] text-white text-sm font-bold shadow-sm transition cursor-pointer shrink-0">
-      + Add Question
-    </button>
+    <div class="flex items-center gap-2 w-full md:w-auto shrink-0">
+      <button 
+        *ngIf="!isLocked()"
+        (click)="bulkUploadInput.click()" 
+        [disabled]="isUploading()"
+        class="px-5 py-2.5 w-full md:w-auto rounded-xl bg-white border border-gray-200 hover:bg-gray-50 text-[#1C1C7B] text-sm font-bold shadow-sm transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
+        <span *ngIf="!isUploading()">Bulk Upload (.xlsx)</span>
+        <span *ngIf="isUploading()" class="flex items-center gap-2">
+          <svg class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+          Uploading...
+        </span>
+      </button>
+      <input type="file" accept=".xlsx" (change)="onBulkUpload($event)" #bulkUploadInput class="hidden" />
+
+      <button 
+        *ngIf="!isLocked()"
+        (click)="openAddQuestion()" 
+        class="px-5 py-2.5 w-full md:w-auto rounded-xl bg-[#1C1C7B] hover:bg-[#15155E] text-white text-sm font-bold shadow-sm transition cursor-pointer shrink-0">
+        + Add Question
+      </button>
+    </div>
   </div>
 
   <!-- Questions List -->
