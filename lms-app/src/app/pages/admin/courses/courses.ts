@@ -12,6 +12,7 @@ import { Dropdown } from '../../../components/dropdown/dropdown';
 import { Button } from '../../../components/button/button';
 import { FormsModule } from '@angular/forms';
 import { ConfirmModal } from '../../../components/confirm-modal/confirm-modal';
+import { forkJoin } from 'rxjs';
 
 @Component({
   selector: 'app-admin-courses',
@@ -32,6 +33,7 @@ export class AdminCoursesComponent implements OnInit {
   protected isLoading = signal(true);
   protected courses = signal<CourseResponse[]>([]);
   protected summaryStats = signal<CourseSummaryStatsResponse | null>(null);
+  protected CourseStatus = CourseStatus;
   
   // Drawer State
   protected isDrawerOpen = signal(false);
@@ -52,6 +54,8 @@ export class AdminCoursesComponent implements OnInit {
   protected showDeleteModal = signal(false);
   protected showRejectModal = signal(false);
   protected showBulkApproveModal = signal(false);
+  protected showBulkArchiveModal = signal(false);
+  protected showBulkDeleteModal = signal(false);
   protected rejectionReason = signal('');
   protected isArchivingAction = signal(true);
   protected courseToArchiveHasEnrollments = signal(false);
@@ -381,24 +385,66 @@ export class AdminCoursesComponent implements OnInit {
   protected confirmBulkApprove(): void {
     this.showBulkApproveModal.set(false);
     const ids = Array.from(this.selectedCourseIds());
-    // For simplicity, handle sequentially or in parallel, depending on API.
-    // Assuming we do it one by one for now or a new bulk endpoint.
-    let count = 0;
-    ids.forEach(id => {
-      this.http.patch(`${environment.apiUrl}/Courses/${id}/review`, { action: 'Approve' })
-        .pipe(untilDestroyed(this.destroyRef))
-        .subscribe({
-          next: () => {
-            count++;
-            if (count === ids.length) {
-              this.toast.showSuccess(`Approved ${count} courses`);
-              this.selectedCourseIds.set(new Set());
-              this.fetchSummaryStats();
-              this.fetchCourses(this.pageNumber(), this.activeTab(), this.filterStatus(), this.filterCategory());
-            }
-          }
-        });
-    });
+    
+    const requests = ids.map(id => this.http.patch(`${environment.apiUrl}/Courses/${id}/review`, { action: 'Approve' }));
+    
+    forkJoin(requests)
+      .pipe(untilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.toast.showSuccess(`Approved ${ids.length} courses`);
+          this.selectedCourseIds.set(new Set());
+          this.fetchSummaryStats();
+          this.fetchCourses(this.pageNumber(), this.activeTab(), this.filterStatus(), this.filterCategory());
+        },
+        error: () => this.toast.showError('Failed to approve some courses')
+      });
+  }
+
+  protected bulkArchive(): void {
+    this.showBulkArchiveModal.set(true);
+  }
+
+  protected confirmBulkArchive(): void {
+    this.showBulkArchiveModal.set(false);
+    const ids = Array.from(this.selectedCourseIds());
+    
+    const requests = ids.map(id => this.http.patch(`${environment.apiUrl}/Courses/${id}/archive`, { archive: true, reason: 'Admin bulk action' }));
+    
+    forkJoin(requests)
+      .pipe(untilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.toast.showSuccess(`Archived ${ids.length} courses`);
+          this.selectedCourseIds.set(new Set());
+          this.fetchSummaryStats();
+          this.fetchCourses(this.pageNumber(), this.activeTab(), this.filterStatus(), this.filterCategory());
+        },
+        error: () => this.toast.showError('Failed to archive some courses')
+      });
+  }
+
+  protected bulkDelete(): void {
+    this.showBulkDeleteModal.set(true);
+  }
+
+  protected confirmBulkDelete(): void {
+    this.showBulkDeleteModal.set(false);
+    const ids = Array.from(this.selectedCourseIds());
+    
+    const requests = ids.map(id => this.http.delete(`${environment.apiUrl}/Courses/${id}`));
+    
+    forkJoin(requests)
+      .pipe(untilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.toast.showSuccess(`Deleted ${ids.length} courses`);
+          this.selectedCourseIds.set(new Set());
+          this.fetchSummaryStats();
+          this.fetchCourses(this.pageNumber(), this.activeTab(), this.filterStatus(), this.filterCategory());
+        },
+        error: () => this.toast.showError('Failed to delete some courses')
+      });
   }
 
   // --- Helpers ---
