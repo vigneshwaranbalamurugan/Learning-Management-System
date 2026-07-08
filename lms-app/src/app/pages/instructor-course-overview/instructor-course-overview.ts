@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, effect,signal } from '@angular/core';
+import { Component, inject, OnInit, effect, signal, NgZone } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
@@ -22,6 +22,7 @@ export class InstructorCourseOverview implements OnInit {
   private courseService = inject(CourseService);
   private toastService = inject(ToastService);
   private sanitizer = inject(DomSanitizer);
+  private ngZone = inject(NgZone);
 
   protected isEditMode = false;
   protected isSaving = false;
@@ -85,7 +86,6 @@ export class InstructorCourseOverview implements OnInit {
     description: this.description,
     requirements: this.requirements,
     learningOutcomes: this.learningOutcomes,
-    thumbnailPreview: this.thumbnailPreview
   });
 }
 
@@ -115,6 +115,10 @@ export class InstructorCourseOverview implements OnInit {
   }
 
 protected hasUnsavedChanges(): boolean {
+  // thumbnailFile is checked separately because it's set synchronously
+  // and its change is reliably detectable without relying on the async FileReader result
+  if (this.thumbnailFile !== null) return true;
+
   const currentState = JSON.stringify({
     title: this.title,
     categoryIdStr: this.categoryIdStr,
@@ -125,10 +129,7 @@ protected hasUnsavedChanges(): boolean {
     description: this.description,
     requirements: this.requirements,
     learningOutcomes: this.learningOutcomes,
-    thumbnailPreview: this.thumbnailPreview
   });
-  console.log(currentState);
-  console.log(this.initialFormState);
   return currentState !== this.initialFormState;
 }
 
@@ -240,7 +241,10 @@ protected toggleEditMode() {
       this.thumbnailFile = file;
       const reader = new FileReader();
       reader.onload = (e: any) => {
-        this.thumbnailPreview = e.target.result;
+        // Run inside NgZone so Angular detects the change and re-evaluates [disabled] on the Save button
+        this.ngZone.run(() => {
+          this.thumbnailPreview = e.target.result;
+        });
       };
       reader.readAsDataURL(file);
     }

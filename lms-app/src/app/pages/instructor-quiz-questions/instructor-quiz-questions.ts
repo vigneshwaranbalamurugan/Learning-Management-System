@@ -400,8 +400,12 @@ export class InstructorQuizQuestions implements OnInit {
         }
         
         if (result && result.errors && result.errors.length > 0) {
-          // If the toast is too long, it might be truncated, but it's good to give feedback.
-          this.toastService.showError(`Found errors: ${result.errors.slice(0, 3).join(', ')}${result.errors.length > 3 ? '...' : ''}`);
+          const hasDuplicates = result.errors.some((e: string) => e.toLowerCase().includes('already exists') || e.toLowerCase().includes('duplicate'));
+          if (hasDuplicates) {
+            this.toastService.showError('Some questions were skipped because they already exist in this quiz.');
+          } else {
+            this.toastService.showError(`Found errors: ${result.errors.slice(0, 2).join(' | ')}${result.errors.length > 2 ? '...' : ''}`);
+          }
         }
         
         this.loadQuiz(this.quizId!);
@@ -409,7 +413,17 @@ export class InstructorQuizQuestions implements OnInit {
       },
       error: (err) => {
         this.isUploading.set(false);
-        this.toastService.showApiError(err, 'Failed to bulk upload questions.');
+        if (err.error && Array.isArray(err.error.errors) && err.error.errors.length > 0) {
+          const errs = err.error.errors;
+          const hasDuplicates = errs.some((e: string) => e.toLowerCase().includes('already exists') || e.toLowerCase().includes('duplicate'));
+          if (hasDuplicates) {
+            this.toastService.showError('Upload failed: The file contains duplicate questions.');
+          } else {
+            this.toastService.showError(`Upload failed: ${errs.slice(0, 2).join(' | ')}${errs.length > 2 ? '...' : ''}`);
+          }
+        } else {
+          this.toastService.showApiError(err, 'Failed to bulk upload questions.');
+        }
         input.value = ''; // reset
       }
     });

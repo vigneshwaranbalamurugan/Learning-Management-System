@@ -254,12 +254,21 @@ namespace LMSApi.BALLibrary.Services
 
                 int maxSortOrder = quiz.Questions.Any() ? quiz.Questions.Max(q => q.SortOrder) : 0;
 
+                var existingQuestionTexts = new HashSet<string>(quiz.Questions.Select(q => q.QuestionText.Trim()), StringComparer.OrdinalIgnoreCase);
+
                 foreach (var row in rows)
                 {
                     try
                     {
                         string questionText = row.Cell(1).GetString().Trim();
                         if (string.IsNullOrEmpty(questionText)) continue; // Skip empty rows silently
+
+                        if (!existingQuestionTexts.Add(questionText))
+                        {
+                            result.Errors.Add($"Row {rowIndex}: A question with text '{questionText}' already exists in this quiz.");
+                            rowIndex++;
+                            continue;
+                        }
 
                         string questionTypeStr = row.Cell(2).GetString().Trim();
                         if (!Enum.TryParse<QuestionType>(questionTypeStr, true, out var qType))
