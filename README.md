@@ -35,7 +35,7 @@ The backend is a .NET 10 Web API project using PostgreSQL and Entity Framework C
    ```
 
 2. **Configure Database Connection:**
-   Open `appsettings.Development.json` (or `appsettings.json`) and update the connection strings for PostgreSQL and Redis according to your local setup:
+   Open `appsettings.Development.json` (or `appsettings.json`) and update the connection strings for PostgreSQL and Redis according to your local setup (refer `appsettings.json` for format):
    ```json
    "ConnectionStrings": {
      "DefaultConnection": "Host=localhost;Database=LmsDb;Username=postgres;Password=your_password",
@@ -49,12 +49,7 @@ The backend is a .NET 10 Web API project using PostgreSQL and Entity Framework C
    docker run --name lms-redis -p 6379:6379 -d redis
    ```
 
-4. **Restore Dependencies:**
-   ```bash
-   dotnet restore
-   ```
-
-5. **Apply Database Migrations:**
+4. **Apply Database Migrations:**
    This will create the necessary tables and PostgreSQL functions used by the application.
    ```bash
    dotnet ef migrations add migrationname --project LMSApi.DALLibrary --startup-project LMSApi.API --context LMSApi.DALLibrary.Contexts.LMSDbContext
@@ -62,11 +57,11 @@ The backend is a .NET 10 Web API project using PostgreSQL and Entity Framework C
    ```
    *(Note: If you have manual SQL scripts like `docs/routines.sql`, execute them against your PostgreSQL database.)*
 
-6. **Run the API:**
+5. **Run the API:**
    ```bash
-   dotnet run
+   dotnet run --project LMSApi.API
    ```
-   The backend API will start running (typically on `https://localhost:7000` or similar).
+   The backend API will start running (typically on `https://localhost:5029` or similar).
 
 ---
 
