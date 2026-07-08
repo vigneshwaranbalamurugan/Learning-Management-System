@@ -171,20 +171,21 @@
             <td class="px-5 py-4 text-center align-middle">
               <span
                 class="inline-flex px-2.5 py-1 rounded-full text-[9px] font-extrabold tracking-wider uppercase whitespace-nowrap"
-                [class.bg-emerald-50]="assignment.isPassed === true"
-                [class.text-emerald-700]="assignment.isPassed === true"
-                [class.bg-red-50]="assignment.isPassed === false" [class.text-red-700]="assignment.isPassed === false"
-                [class.bg-amber-50]="assignment.status === 'Submitted' || assignment.status === 'UnderReview'"
-                [class.text-amber-700]="assignment.status === 'Submitted' || assignment.status === 'UnderReview'"
-                [class.bg-gray-100]="assignment.status === 'Pending'"
-                [class.text-gray-600]="assignment.status === 'Pending'">
-                @if (assignment.isPassed === true) {
+                [class.bg-emerald-50]="assignment.latestStatus === 'Passed' || assignment.isPassed === true"
+                [class.text-emerald-700]="assignment.latestStatus === 'Passed' || assignment.isPassed === true"
+                [class.bg-red-50]="assignment.latestStatus === 'Failed' || (assignment.latestStatus === 'Graded' && assignment.isPassed === false)"
+                [class.text-red-700]="assignment.latestStatus === 'Failed' || (assignment.latestStatus === 'Graded' && assignment.isPassed === false)"
+                [class.bg-amber-50]="assignment.latestStatus === 'Submitted' || assignment.latestStatus === 'UnderReview'"
+                [class.text-amber-700]="assignment.latestStatus === 'Submitted' || assignment.latestStatus === 'UnderReview'"
+                [class.bg-gray-100]="!assignment.latestStatus || assignment.latestStatus === 'Pending'"
+                [class.text-gray-600]="!assignment.latestStatus || assignment.latestStatus === 'Pending'">
+                @if (assignment.latestStatus === 'Passed' || assignment.isPassed === true) {
                 Passed
-                } @else if (assignment.isPassed === false) {
+                } @else if (assignment.latestStatus === 'Failed' || (assignment.latestStatus === 'Graded' && assignment.isPassed === false)) {
                 Failed
-                } @else if (assignment.status === 'UnderReview') {
+                } @else if (assignment.latestStatus === 'UnderReview') {
                 Under Review
-                } @else if (assignment.status === 'Submitted') {
+                } @else if (assignment.latestStatus === 'Submitted') {
                 Submitted
                 } @else {
                 Not Submitted
@@ -194,7 +195,7 @@
             <td class="px-5 py-4 text-right align-middle">
               <button (click)="viewAssignmentDetail(assignment.id)"
                 class="px-4 py-2 rounded-lg text-[11px] font-bold bg-primary text-white hover:bg-primary-hover cursor-pointer transition shadow-sm whitespace-nowrap inline-flex items-center gap-1.5 group-hover:shadow-md">
-                @if (assignment.status === 'Pending') {
+                @if (!assignment.latestStatus || assignment.latestStatus === 'Pending') {
                 <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                     d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />

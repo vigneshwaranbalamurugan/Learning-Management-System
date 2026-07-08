@@ -23,7 +23,8 @@ interface EnrichedAssignment {
   deadlineInDays: number;
   deadlineDate?: string;
   maxSubmissions: number;
-  status: string; // e.g. "Pending", "Submitted", "UnderReview", "Graded", "Passed", "Failed"
+  status: number; // PublishStatus
+  latestStatus?: string; // e.g. "Pending", "Submitted", "UnderReview", "Graded", "Passed", "Failed"
   isPassed: boolean | null;
   attemptsMade: number;
   remainingAttempts: number;
