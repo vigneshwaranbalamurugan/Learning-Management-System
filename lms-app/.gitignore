@@ -44,7 +44,7 @@ __screenshots__/
 Thumbs.db
 
 
-**/environments/*.ts
+**/environments/environment.ts
 
 .npm_cache/
 

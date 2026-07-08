@@ -349,18 +349,31 @@
               {{ canUnpublish(course) ? 'Unpublish' : 'Publish' }}
             </button>
 
-            <button (click)="confirmArchiveCourse(course.id, !isCourseArchived(course))"
-              class="w-full text-left px-4 py-2 text-xs font-semibold text-gray-700 hover:bg-slate-50 hover:cursor-pointer flex items-center gap-2">
-              <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <button (click)="!(isCourseArchived(course) && course.hasNonExpiredEnrollments) ? confirmArchiveCourse(course.id, !isCourseArchived(course), course.hasNonExpiredEnrollments) : null"
+              class="w-full text-left px-4 py-2 text-xs font-semibold flex items-center gap-2"
+              [class.text-gray-700]="!(isCourseArchived(course) && course.hasNonExpiredEnrollments)"
+              [class.hover:bg-slate-50]="!(isCourseArchived(course) && course.hasNonExpiredEnrollments)"
+              [class.hover:cursor-pointer]="!(isCourseArchived(course) && course.hasNonExpiredEnrollments)"
+              [class.text-gray-300]="isCourseArchived(course) && course.hasNonExpiredEnrollments"
+              [class.cursor-not-allowed]="isCourseArchived(course) && course.hasNonExpiredEnrollments"
+              [title]="isCourseArchived(course) && course.hasNonExpiredEnrollments ? 'Cannot unarchive a course with active enrollments.' : ''">
+              <svg class="w-4 h-4" [class.text-gray-400]="!(isCourseArchived(course) && course.hasNonExpiredEnrollments)" [class.text-gray-300]="isCourseArchived(course) && course.hasNonExpiredEnrollments" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                   d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
               </svg>
               {{ isCourseArchived(course) ? 'Unarchive Course' : 'Archive Course' }}
             </button>
 
-            <button *ngIf="!course.isDeleted" (click)="confirmSoftDeleteCourse(course)"
-              class="w-full text-left px-4 py-2 text-xs font-semibold text-red-600 hover:bg-red-50 hover:cursor-pointer flex items-center gap-2 border-t border-gray-100">
-              <svg class="w-4 h-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <button *ngIf="!course.isDeleted" (click)="!course.hasNonExpiredEnrollments ? confirmDeleteCourse(course) : null"
+              [disabled]="course.hasNonExpiredEnrollments"
+              [title]="course.hasNonExpiredEnrollments ? 'Cannot delete a course with active enrollments.' : ''"
+              [class.text-red-600]="!course.hasNonExpiredEnrollments"
+              [class.hover:bg-red-50]="!course.hasNonExpiredEnrollments"
+              [class.hover:cursor-pointer]="!course.hasNonExpiredEnrollments"
+              [class.text-gray-300]="course.hasNonExpiredEnrollments"
+              [class.cursor-not-allowed]="course.hasNonExpiredEnrollments"
+              class="w-full text-left px-4 py-2 text-xs font-semibold flex items-center gap-2 border-t border-gray-100">
+              <svg class="w-4 h-4" [class.text-red-500]="!course.hasNonExpiredEnrollments" [class.text-gray-300]="course.hasNonExpiredEnrollments" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
               </svg>
               Delete Course
@@ -444,7 +457,7 @@
   }
 
   <app-confirm-modal [isOpen]="showArchiveModal" [title]="isArchivingAction ? 'Archive Course' : 'Unarchive Course'"
-    [message]="isArchivingAction ? 'Are you sure you want to archive this course? This will hide it from active student listings.' : 'Are you sure you want to unarchive this course? This will restore it back to draft status.'"
+    [message]="isArchivingAction ? (courseToArchiveHasEnrollments ? 'Are you sure you want to archive this course? This course has active enrollments, so this action is irreversible and you will not be able to publish it again.' : 'Are you sure you want to archive this course? This will hide it from active student listings.') : 'Are you sure you want to unarchive this course? This will restore it back to draft status.'"
     [confirmText]="isArchivingAction ? 'Archive' : 'Unarchive'" cancelText="Cancel" [isDanger]="isArchivingAction"
     (confirm)="archiveCourse()" (cancel)="closeArchiveModal()">
   </app-confirm-modal>
@@ -467,7 +480,7 @@
     [confirmText]="'Delete'"
     [cancelText]="'Cancel'"
     [isDanger]="true"
-    (confirm)="executeSoftDelete()"
+    (confirm)="executeDeleteCourse()"
     (cancel)="closeDeleteModal()">
   </app-confirm-modal>
 

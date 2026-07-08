@@ -219,16 +219,28 @@ export class InstructorCourseQuizzes {
 
     if (!isValid) return;
 
-    const data = {
-      courseSectionId: this.quizSectionId,
-      title: this.quizTitle,
-      description: this.quizDescription,
-      timeLimit: this.quizTimeLimit,
-      passingPercentage: this.quizPassingPercentage,
-      maxAttempts: this.quizMaxAttempts,
-      order: 1,
-      deadlineInDays: this.quizDeadlineInDays
-    };
+    let data: any = {};
+    if (this.editingQuizId) {
+      const initialState = this.initialFormState ? JSON.parse(this.initialFormState) : {};
+      if (this.quizSectionId !== initialState.quizSectionId) data.courseSectionId = this.quizSectionId;
+      if (this.quizTitle !== initialState.quizTitle) data.title = this.quizTitle;
+      if (this.quizDescription !== initialState.quizDescription) data.description = this.quizDescription;
+      if (this.quizTimeLimit !== initialState.quizTimeLimit) data.timeLimit = this.quizTimeLimit;
+      if (this.quizPassingPercentage !== initialState.quizPassingPercentage) data.passingPercentage = this.quizPassingPercentage;
+      if (this.quizMaxAttempts !== initialState.quizMaxAttempts) data.maxAttempts = this.quizMaxAttempts;
+      if (this.quizDeadlineInDays !== initialState.quizDeadlineInDays) data.deadlineInDays = this.quizDeadlineInDays;
+    } else {
+      data = {
+        courseSectionId: this.quizSectionId,
+        title: this.quizTitle,
+        description: this.quizDescription,
+        timeLimit: this.quizTimeLimit,
+        passingPercentage: this.quizPassingPercentage,
+        maxAttempts: this.quizMaxAttempts,
+        order: 1,
+        deadlineInDays: this.quizDeadlineInDays
+      };
+    }
 
     if (this.editingQuizId) {
       this.isSaving.set(true);

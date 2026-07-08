@@ -11,11 +11,12 @@ import { RouterModule, Router, ActivatedRoute } from '@angular/router';
 import { Dropdown } from '../../../components/dropdown/dropdown';
 import { Button } from '../../../components/button/button';
 import { FormsModule } from '@angular/forms';
+import { ConfirmModal } from '../../../components/confirm-modal/confirm-modal';
 
 @Component({
   selector: 'app-admin-courses',
   standalone: true,
-  imports: [CommonModule, PaginationComponent, RouterModule, Dropdown, Button, FormsModule],
+  imports: [CommonModule, PaginationComponent, RouterModule, Dropdown, Button, FormsModule, ConfirmModal],
   templateUrl: './courses.html',
   providers: [DatePipe]
 })
@@ -43,6 +44,17 @@ export class AdminCoursesComponent implements OnInit {
     const courseList = this.courses();
     return courseList.length > 0 && ids.size === courseList.length;
   });
+
+  // Modal State
+  protected actionCourseId = signal<number | null>(null);
+  protected showApproveModal = signal(false);
+  protected showArchiveModal = signal(false);
+  protected showDeleteModal = signal(false);
+  protected showRejectModal = signal(false);
+  protected showBulkApproveModal = signal(false);
+  protected rejectionReason = signal('');
+  protected isArchivingAction = signal(true);
+  protected courseToArchiveHasEnrollments = signal(false);
 
   // Filters & Pagination
   protected activeTab = signal<'all' | 'pending'>('all');
@@ -256,6 +268,15 @@ export class AdminCoursesComponent implements OnInit {
   // --- Actions ---
   protected approveCourse(id: number, event?: Event): void {
     event?.stopPropagation();
+    this.actionCourseId.set(id);
+    this.showApproveModal.set(true);
+  }
+
+  protected confirmApproveCourse(): void {
+    const id = this.actionCourseId();
+    if (!id) return;
+    this.showApproveModal.set(false);
+    this.actionCourseId.set(null);
     this.http.patch(`${environment.apiUrl}/Courses/${id}/review`, { action: 'Approve' })
       .pipe(untilDestroyed(this.destroyRef))
       .subscribe({
@@ -275,21 +296,90 @@ export class AdminCoursesComponent implements OnInit {
     });
   }
 
-  protected archiveCourse(id: number, event?: Event): void {
+  protected rejectCourse(id: number, event?: Event): void {
     event?.stopPropagation();
-    this.http.patch(`${environment.apiUrl}/Courses/${id}/archive`, { reason: 'Admin archived' })
+    this.actionCourseId.set(id);
+    this.rejectionReason.set('');
+    this.showRejectModal.set(true);
+  }
+
+  protected confirmRejectCourse(): void {
+    const id = this.actionCourseId();
+    if (!id) return;
+    if (!this.rejectionReason().trim()) {
+        this.toast.showError('Rejection reason is required.');
+        return;
+    }
+    
+    this.http.patch(`${environment.apiUrl}/Courses/${id}/review`, { action: 'Reject', reason: this.rejectionReason().trim() })
       .pipe(untilDestroyed(this.destroyRef))
       .subscribe({
         next: () => {
-          this.toast.showSuccess('Course archived successfully');
+          this.showRejectModal.set(false);
+          this.actionCourseId.set(null);
+          this.toast.showSuccess('Course rejected successfully');
           this.fetchSummaryStats();
           this.fetchCourses(this.pageNumber(), this.activeTab(), this.filterStatus(), this.filterCategory());
         },
-        error: () => this.toast.showError('Failed to archive course')
+        error: () => this.toast.showError('Failed to reject course')
+      });
+  }
+
+  protected archiveCourse(id: number, isUnarchive: boolean, hasEnrollments: boolean | undefined, event?: Event): void {
+    event?.stopPropagation();
+    this.actionCourseId.set(id);
+    this.isArchivingAction.set(!isUnarchive);
+    this.courseToArchiveHasEnrollments.set(hasEnrollments ?? false);
+    this.showArchiveModal.set(true);
+  }
+
+  protected confirmArchiveCourse(): void {
+    const id = this.actionCourseId();
+    if (!id) return;
+    this.showArchiveModal.set(false);
+    this.actionCourseId.set(null);
+    const archive = this.isArchivingAction();
+    this.http.patch(`${environment.apiUrl}/Courses/${id}/archive`, { archive, reason: 'Admin action' })
+      .pipe(untilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.toast.showSuccess(`Course ${archive ? 'archived' : 'unarchived'} successfully`);
+          this.fetchSummaryStats();
+          this.fetchCourses(this.pageNumber(), this.activeTab(), this.filterStatus(), this.filterCategory());
+        },
+        error: () => this.toast.showError(`Failed to ${archive ? 'archive' : 'unarchive'} course`)
+      });
+  }
+
+  protected deleteCourse(id: number, event?: Event): void {
+    event?.stopPropagation();
+    this.actionCourseId.set(id);
+    this.showDeleteModal.set(true);
+  }
+
+  protected confirmDeleteCourse(): void {
+    const id = this.actionCourseId();
+    if (!id) return;
+    this.showDeleteModal.set(false);
+    this.actionCourseId.set(null);
+    this.http.delete(`${environment.apiUrl}/Courses/${id}`)
+      .pipe(untilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.toast.showSuccess('Course permanently deleted');
+          this.fetchSummaryStats();
+          this.fetchCourses(this.pageNumber(), this.activeTab(), this.filterStatus(), this.filterCategory());
+        },
+        error: () => this.toast.showError('Failed to delete course')
       });
   }
 
   protected bulkApprove(): void {
+    this.showBulkApproveModal.set(true);
+  }
+
+  protected confirmBulkApprove(): void {
+    this.showBulkApproveModal.set(false);
     const ids = Array.from(this.selectedCourseIds());
     // For simplicity, handle sequentially or in parallel, depending on API.
     // Assuming we do it one by one for now or a new bulk endpoint.

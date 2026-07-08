@@ -1,7 +1,7 @@
 import { Component, OnInit, signal, computed, inject, DestroyRef, HostListener, effect, untracked } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterModule, Router } from '@angular/router';
+import { RouterModule, Router, ActivatedRoute } from '@angular/router';
 import { ToastService } from '@services/toast.service';
 import { CourseResponse, CategoryResponse, InstructorCourseCardResponse } from '@models/course';
 import { CourseLevel } from '../../enums/course-level.enum';
@@ -24,6 +24,7 @@ export class InstructorCourses implements OnInit {
   private courseService = inject(CourseService);
   private toastService = inject(ToastService);
   private router = inject(Router);
+  private route = inject(ActivatedRoute);
   private destroyRef = inject(DestroyRef);
 
   // States
@@ -118,6 +119,17 @@ export class InstructorCourses implements OnInit {
   });
 
   constructor() {
+    const params = this.route.snapshot.queryParams;
+    if (params['search']) this.searchQuery.set(params['search']);
+    if (params['status']) this.selectedStatus.set(params['status']);
+    if (params['category']) this.selectedCategory.set(params['category']);
+    if (params['difficulty']) this.selectedDifficulty.set(params['difficulty']);
+    if (params['sort']) this.sortBy.set(params['sort']);
+    if (params['page']) this.pageNumber.set(Number(params['page']) || 1);
+    if (params['size']) this.pageSize.set(Number(params['size']) || 6);
+
+    let isInitializing = true;
+
     effect(() => {
       // Whenever filters change, reset pageNumber to 1
       this.searchQuery();
@@ -127,9 +139,11 @@ export class InstructorCourses implements OnInit {
       this.sortBy();
 
       untracked(() => {
-        this.pageNumber.set(1);
+        if (!isInitializing) {
+          this.pageNumber.set(1);
+        }
       });
-    });
+    }, { allowSignalWrites: true });
 
     effect(() => {
       // Trigger API fetch on filter/page changes
@@ -143,7 +157,29 @@ export class InstructorCourses implements OnInit {
 
       untracked(() => {
         this.loadPagedCourses();
+        if (!isInitializing) {
+          this.updateUrl();
+        }
       });
+    });
+
+    isInitializing = false;
+  }
+
+  private updateUrl() {
+    const queryParams: any = {};
+    if (this.searchQuery()) queryParams.search = this.searchQuery();
+    if (this.selectedStatus() !== 'all') queryParams.status = this.selectedStatus();
+    if (this.selectedCategory() !== 'all') queryParams.category = this.selectedCategory();
+    if (this.selectedDifficulty() !== 'all') queryParams.difficulty = this.selectedDifficulty();
+    if (this.sortBy() !== 'newest') queryParams.sort = this.sortBy();
+    if (this.pageNumber() > 1) queryParams.page = this.pageNumber();
+    if (this.pageSize() !== 6) queryParams.size = this.pageSize();
+
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams,
+      replaceUrl: true
     });
   }
 
@@ -347,10 +383,12 @@ export class InstructorCourses implements OnInit {
   }
 
   protected isArchivingAction = true;
+  protected courseToArchiveHasEnrollments = false;
 
-  protected confirmArchiveCourse(courseId: number, archive: boolean): void {
+  protected confirmArchiveCourse(courseId: number, archive: boolean, hasEnrollments: boolean | undefined = false): void {
     this.courseToArchive = courseId;
     this.isArchivingAction = archive;
+    this.courseToArchiveHasEnrollments = hasEnrollments ?? false;
     this.showArchiveModal = true;
   }
 
@@ -388,48 +426,28 @@ export class InstructorCourses implements OnInit {
     this.courseToPublish=null;
   }
 
-  protected confirmSoftDeleteCourse(course: InstructorCourseCardResponse): void {
+  protected confirmDeleteCourse(course: InstructorCourseCardResponse): void {
     this.courseToDelete = course;
     this.showDeleteModal = true;
   }
 
-  protected executeSoftDelete(): void {
+  protected executeDeleteCourse(): void {
     if (!this.courseToDelete) return;
     
-    // Determine if we should call soft delete or hard delete. Wait, the user said "only be soft deleted if enrollment active or completed... anything cannot be deleted".
-    // I will call softDeleteCourse if it has enrollments, else deleteCourse.
-    const hasEnrollments = this.courseToDelete.hasNonExpiredEnrollments;
-
-    if (hasEnrollments) {
-      this.courseService.softDeleteCourse(this.courseToDelete.id)
-        .pipe(untilDestroyed(this.destroyRef))
-        .subscribe({
-          next: () => {
-            this.toastService.showSuccess('Course soft-deleted successfully. It will remain accessible to completed learners.');
-            this.courses.update(list => list.map(c => c.id === this.courseToDelete!.id ? { ...c, isDeleted: true } : c));
-            this.closeDeleteModal();
-          },
-          error: (err) => {
-            this.toastService.showApiError(err, 'Failed to soft-delete course.');
-            this.closeDeleteModal();
-          }
-        });
-    } else {
-      this.courseService.deleteCourse(this.courseToDelete.id)
-        .pipe(untilDestroyed(this.destroyRef))
-        .subscribe({
-          next: () => {
-            this.toastService.showSuccess('Course permanently deleted.');
-            this.courses.update(list => list.filter(c => c.id !== this.courseToDelete!.id));
-            this.allCoursesForStats.update(list => list.filter(c => c.id !== this.courseToDelete!.id));
-            this.closeDeleteModal();
-          },
-          error: (err) => {
-            this.toastService.showApiError(err, 'Failed to delete course.');
-            this.closeDeleteModal();
-          }
-        });
-    }
+    this.courseService.deleteCourse(this.courseToDelete.id)
+      .pipe(untilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.toastService.showSuccess('Course deleted successfully.');
+          this.courses.update(list => list.filter(c => c.id !== this.courseToDelete!.id));
+          this.allCoursesForStats.update(list => list.filter(c => c.id !== this.courseToDelete!.id));
+          this.closeDeleteModal();
+        },
+        error: (err) => {
+          this.toastService.showApiError(err, 'Failed to delete course.');
+          this.closeDeleteModal();
+        }
+      });
   }
 
   protected closeDeleteModal(): void {

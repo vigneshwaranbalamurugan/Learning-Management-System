@@ -114,7 +114,7 @@
               [value]="attachmentTypeStr"
               (valueChange)="setAttachmentTypeStr($event)"
               [options]="attachmentTypeOptions"
-              [disabled]="course?.hasNonExpiredEnrollments === true"
+              [disabled]="isEditMode || course?.hasNonExpiredEnrollments === true"
               placeholder="Select Attachment Type" />
           </div>
 
@@ -124,9 +124,9 @@
               <label class="text-sm font-bold text-slate-700 block">Upload Reference File</label>
               <span class="text-[10px] font-bold text-indigo-700 bg-white px-2 py-0.5 rounded-md border border-indigo-100 uppercase tracking-wider">Max Size: {{ maxFileSizeMB }}MB</span>
             </div>
-            <input type="file" (change)="onFileSelected($event)" [disabled]="course?.hasNonExpiredEnrollments === true" class="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-white file:text-[#1C1C7B] file:shadow-sm hover:file:bg-gray-50 cursor-pointer" />
+            <input type="file" (change)="onFileSelected($event)" [disabled]="isEditMode || course?.hasNonExpiredEnrollments === true" class="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-white file:text-[#1C1C7B] file:shadow-sm hover:file:bg-gray-50 cursor-pointer" />
             <p *ngIf="errors['file']" class="text-xs text-red-500 mt-2 font-medium">{{ errors['file'] }}</p>
-            <p *ngIf="currentAttachmentPath" class="text-xs text-gray-500 mt-2">Current file attached.</p>
+            <p *ngIf="attachmentUrl" class="text-xs text-gray-500 mt-2">Current file attached.</p>
           </div>
           
           <div *ngIf="attachmentType == AssignmentAttachmentType.Link" class="p-4 bg-indigo-50/50 rounded-xl border border-indigo-100/50">
@@ -135,7 +135,7 @@
               [value]="attachmentUrl"
               (valueChange)="attachmentUrl = $event"
               [error]="errors['attachmentUrl']"
-              [disabled]="course?.hasNonExpiredEnrollments === true"
+              [disabled]="isEditMode || course?.hasNonExpiredEnrollments === true"
               placeholder="https://example.com/resource" />
           </div>
         </div>
@@ -156,7 +156,7 @@
         variant="primary"
         customClass="!px-5 !py-2.5 !w-auto text-sm font-bold shadow-sm"
         [loading]="isSaving()"
-        [disabled]="isSaving()">
+        [disabled]="isSaving() || !isDirty">
         {{ isEditMode ? 'Save Changes' : 'Create Assignment' }}
       </app-button>
     </div>

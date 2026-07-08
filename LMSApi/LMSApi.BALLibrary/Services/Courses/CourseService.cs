@@ -551,14 +551,43 @@ public async Task<CourseResponse> CreateCourseAsync(
             }
             else
             {
+                var hasNonExpired = await _enrollmentRepository.HasNonExpiredEnrollmentsByCourseAsync(id);
+                if (hasNonExpired)
+                    throw new InvalidOperationException($"Course '{course.Title}' cannot be unarchived because it has active enrollments.");
+
                 course.Status = CourseStatus.Draft;
                 _logger.LogInformation("Course Unarchived (reverted to Draft): Id={Id}", id);
             }
 
             await _courseRepository.UpdateAsync(course);
 
-            // Bug #2 + #4: Invalidate both cache keys
+            // Invalidate both cache keys
             await InvalidateCourseCache(id, course.slug);
+
+            if (request.Archive)
+            {
+                var instructor = await _userRepository.GetByIdAsync(course.InstructorId);
+                var reason = string.IsNullOrWhiteSpace(request.Reason) ? null : request.Reason;
+                var html = EmailTemplate.GetCourseStatusUpdatedTemplate(
+                    instructor.UserProfile?.FirstName ?? instructor.Email,
+                    course.Title, "Archived", reason);
+                Message msg = new EmailMessage(instructor.Email, $"Your course '{course.Title}' has been archived", html) { IsHtml = true };
+                await _notificationService.Send(msg);
+
+                try
+                {
+                    await _userNotificationsService.CreateAndSendNotificationAsync(
+                        userId: course.InstructorId,
+                        title: "Course Archived",
+                        message: reason != null ? $"Your course '{course.Title}' has been archived. Reason: {reason}" : $"Your course '{course.Title}' has been archived.",
+                        type: NotificationType.General,
+                        redirectUrl: $"/courses/{course.Id}");
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Failed to send course archived realtime notification to Instructor {InstructorId}", course.InstructorId);
+                }
+            }
 
             return _mapper.Map<CourseResponse>(course);
         }
@@ -575,6 +604,11 @@ public async Task<CourseResponse> CreateCourseAsync(
 
                 if (course.Status == CourseStatus.PendingApproval)
                     throw new InvalidOperationException($"Course with id '{id}' is already pending approval.");
+
+                // If course has active enrollments, it was previously published and then archived or unarchived. We don't allow republishing.
+                var hasNonExpired = await _enrollmentRepository.HasNonExpiredEnrollmentsByCourseAsync(id);
+                if (hasNonExpired)
+                    throw new InvalidOperationException($"Course '{course.Title}' has active enrollments and cannot be published again.");
 
                 // Validation: CohortBased courses must have at least one batch defined before publishing
                 if (course.CourseAccessType == CourseAccessType.CohortBased && !course.Batches.Any())

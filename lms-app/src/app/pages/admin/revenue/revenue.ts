@@ -23,20 +23,43 @@ export class AdminRevenue implements OnInit {
   protected userGrowth = signal<{ month: string; value: number; height: string }[]>([]);
   protected enrollmentTrend = signal<{ month: string; value: number; height: string }[]>([]);
   protected recentActivities = signal<RecentActivity[]>([]);
-  protected showAllActivities = signal(false);
+  protected currentPage = signal(1);
+  protected hasMoreActivities = signal(true);
+  protected isLoadingActivities = signal(false);
 
   ngOnInit() {
     this.loadAdminAnalytics();
+    this.loadActivitiesPage();
   }
 
   protected get visibleActivities(): RecentActivity[] {
-    return this.showAllActivities()
-      ? this.recentActivities()
-      : this.recentActivities().slice(0, 5);
+    return this.recentActivities();
   }
 
-  protected toggleActivities(): void {
-    this.showAllActivities.set(!this.showAllActivities());
+  protected loadMoreActivities(): void {
+    if (this.isLoadingActivities() || !this.hasMoreActivities() || this.recentActivities().length >= 30) return;
+    this.currentPage.update(p => p + 1);
+    this.loadActivitiesPage();
+  }
+
+  private loadActivitiesPage() {
+    this.isLoadingActivities.set(true);
+    this.analyticsService.getAdminRecentActivities(this.currentPage(), 5)
+      .pipe(untilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (activities) => {
+          const newActivities = [...this.recentActivities(), ...activities];
+          if (activities.length < 5 || newActivities.length >= 30) {
+            this.hasMoreActivities.set(false);
+          }
+          this.recentActivities.set(newActivities.slice(0, 30));
+          this.isLoadingActivities.set(false);
+        },
+        error: (err) => {
+          console.error('Failed to load activities', err);
+          this.isLoadingActivities.set(false);
+        }
+      });
   }
 
   private loadAdminAnalytics() {
@@ -86,8 +109,7 @@ export class AdminRevenue implements OnInit {
               this.enrollmentTrend.set([]);
             }
 
-            // 4. Recent Activities
-            this.recentActivities.set(data.recentActivities || []);
+            // 4. Recent Activities handled separately
           }
           
           this.isLoading.set(false);

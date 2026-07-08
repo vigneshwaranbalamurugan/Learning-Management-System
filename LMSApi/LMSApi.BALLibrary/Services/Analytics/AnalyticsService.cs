@@ -30,6 +30,11 @@ namespace LMSApi.BALLibrary.Services
             return analytics;
         }
 
+        public async Task<System.Collections.Generic.List<RecentActivityDto>> GetAdminRecentActivitiesAsync(int pageNumber, int pageSize)
+        {
+            return await _analyticsRepository.GetAdminRecentActivitiesAsync(pageNumber, pageSize);
+        }
+
         public async Task<InstructorAnalyticsResponse> GetInstructorAnalyticsAsync(int instructorId)
         {
             var analytics = await _analyticsRepository.GetInstructorAnalyticsAsync(instructorId);

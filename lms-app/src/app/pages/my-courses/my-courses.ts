@@ -1,4 +1,4 @@
-import { Component, OnInit, signal, computed, inject, DestroyRef } from '@angular/core';
+import { Component, OnInit, signal, computed, inject, DestroyRef, effect, untracked } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ToastService } from '@services/toast.service';
@@ -30,19 +30,44 @@ export class MyCourses implements OnInit {
 
   // Pagination State
   protected currentPage = signal(1);
-  protected pageSize = signal(12);
+  protected pageSize = signal(6);
   protected totalPages = signal(1);
   protected totalCount = signal(0);
   protected completedCount = signal(0);
   protected inProgressCount = signal(0);
   protected filteredEnrollments = computed(() => this.enrollments());
 
+  constructor() {
+    let isInitializing = true;
+    effect(() => {
+      this.searchQuery();
+      this.statusFilter();
+      this.typeFilter();
+
+      untracked(() => {
+        if (!isInitializing) {
+          this.currentPage.set(1);
+        }
+      });
+    }, { allowSignalWrites: true });
+
+    effect(() => {
+      this.searchQuery();
+      this.statusFilter();
+      this.typeFilter();
+      this.currentPage();
+
+      untracked(() => {
+        this.loadMyEnrollments();
+      });
+    });
+    isInitializing = false;
+  }
+
   ngOnInit(): void {
     // We need the overall counts for the stats cards.
     // It is best to call getAllMyEnrollments to compute stats, or just use paginated response totalCount
-    // Let's call loadStats first, then load paginated courses.
     this.loadStats();
-    this.loadMyEnrollments();
   }
 
   private loadStats(): void {

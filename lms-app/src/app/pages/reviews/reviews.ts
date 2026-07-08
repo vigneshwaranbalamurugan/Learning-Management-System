@@ -168,4 +168,11 @@ export class ReviewsPage implements OnInit {
     if (h > 0) return `${h}h`;
     return `${m}m`;
   }
+
+  protected hasChanges(state: CourseFeedbackState): boolean {
+    if (!state.myReview) {
+      return true;
+    }
+    return state.ratingForm !== state.myReview.rating || state.textForm.trim() !== state.myReview.reviewText;
+  }
 }

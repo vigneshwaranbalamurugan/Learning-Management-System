@@ -164,11 +164,11 @@
             <!-- Submit Button -->
             <div class="flex justify-end mt-1">
               <button (click)="submitFeedback(state)"
-                      [disabled]="state.isSubmitting() || state.ratingForm === 0 || !state.textForm"
+                      [disabled]="state.isSubmitting() || state.ratingForm === 0 || !state.textForm || !hasChanges(state)"
                       class="px-6 py-2.5 rounded-xl text-sm font-bold shadow-sm transition-all flex items-center justify-center gap-2"
                       [ngClass]="{
-                        'bg-[#1C1C7B] text-white hover:bg-[#14145a] hover:-translate-y-0.5 hover:shadow-md cursor-pointer': !state.isSubmitting() && state.ratingForm > 0 && state.textForm,
-                        'bg-gray-100 text-gray-400 cursor-not-allowed': state.isSubmitting() || state.ratingForm === 0 || !state.textForm
+                        'bg-[#1C1C7B] text-white hover:bg-[#14145a] hover:-translate-y-0.5 hover:shadow-md cursor-pointer': !state.isSubmitting() && state.ratingForm > 0 && state.textForm && hasChanges(state),
+                        'bg-gray-100 text-gray-400 cursor-not-allowed': state.isSubmitting() || state.ratingForm === 0 || !state.textForm || !hasChanges(state)
                       }">
                 
                 @if (state.isSubmitting()) {

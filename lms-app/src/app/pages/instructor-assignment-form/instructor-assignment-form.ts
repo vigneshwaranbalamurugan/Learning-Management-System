@@ -48,7 +48,6 @@ export class InstructorAssignmentForm implements OnInit {
   protected passingMarks = 50;
   protected attachmentType = AssignmentAttachmentType.None;
   protected attachmentUrl = '';
-  protected currentAttachmentPath = ''; // Holds existing filename/url when editing
   protected selectedFile: File | null = null;
   protected deadlineInDays = 7;
   protected maxSubmissions = 1;
@@ -226,7 +225,6 @@ export class InstructorAssignmentForm implements OnInit {
         this.passingMarks = assignment.passingMarks;
         this.attachmentType = assignment.attachmentType as AssignmentAttachmentType;
         this.attachmentUrl = assignment.attachmentUrl || '';
-        this.currentAttachmentPath = assignment.attachmentPath || '';
         this.deadlineInDays = assignment.deadlineInDays;
         this.maxSubmissions = assignment.maxSubmissions;
         this.isLateSubmissionAllowed = assignment.isLateSubmissionAllowed;
@@ -291,7 +289,7 @@ export class InstructorAssignmentForm implements OnInit {
     }
 
     if (this.attachmentType == AssignmentAttachmentType.File) {
-      if (!this.selectedFile && !this.currentAttachmentPath) {
+      if (!this.selectedFile && !this.attachmentUrl) {
         this.toastService.showError('Please select a file to upload.');
         this.errors['file'] = 'File is required.';
         isValid = false;
@@ -314,24 +312,40 @@ export class InstructorAssignmentForm implements OnInit {
     if (!isValid) return;
 
     const formData = new FormData();
-    formData.append('CourseSectionId', this.sectionId!.toString());
-    formData.append('Title', this.title);
-    formData.append('Description', this.description);
-    formData.append('Instructions', this.instructions);
-    formData.append('IsCompulsory', this.isCompulsory.toString());
-    formData.append('TotalMarks', this.totalMarks.toString());
-    formData.append('PassingMarks', this.passingMarks.toString());
-    formData.append('AttachmentType', this.attachmentType.toString());
-    formData.append('DeadlineInDays', this.deadlineInDays.toString());
-    formData.append('MaxSubmissions', this.maxSubmissions.toString());
-    formData.append('IsLateSubmissionAllowed', this.isLateSubmissionAllowed.toString());
+    const initialState = this.initialFormState ? JSON.parse(this.initialFormState) : {};
+
+    // Always send SectionId if it's a new assignment, or if it somehow changed (though UI doesn't allow changing it currently)
+    if (!this.isEditMode || this.sectionId !== initialState.sectionId) {
+      formData.append('CourseSectionId', this.sectionId!.toString());
+    }
+
+    if (!this.isEditMode || this.title !== initialState.title) formData.append('Title', this.title);
+    if (!this.isEditMode || this.description !== initialState.description) formData.append('Description', this.description);
+    if (!this.isEditMode || this.instructions !== initialState.instructions) formData.append('Instructions', this.instructions);
+    if (!this.isEditMode || this.isCompulsory !== initialState.isCompulsory) formData.append('IsCompulsory', this.isCompulsory.toString());
+    if (!this.isEditMode || this.totalMarks !== initialState.totalMarks) formData.append('TotalMarks', this.totalMarks.toString());
+    if (!this.isEditMode || this.passingMarks !== initialState.passingMarks) formData.append('PassingMarks', this.passingMarks.toString());
+    if (!this.isEditMode || this.deadlineInDays !== initialState.deadlineInDays) formData.append('DeadlineInDays', this.deadlineInDays.toString());
+    if (!this.isEditMode || this.maxSubmissions !== initialState.maxSubmissions) formData.append('MaxSubmissions', this.maxSubmissions.toString());
+    if (!this.isEditMode || this.isLateSubmissionAllowed !== initialState.isLateSubmissionAllowed) formData.append('IsLateSubmissionAllowed', this.isLateSubmissionAllowed.toString());
+
+    // For attachments, we need to send AttachmentType if the type changed, OR if a new file/url is provided
+    let attachmentChanged = !this.isEditMode || this.attachmentType !== initialState.attachmentType;
 
     if (this.attachmentType === AssignmentAttachmentType.File) {
       if (this.selectedFile) {
         formData.append('AttachmentFile', this.selectedFile);
+        attachmentChanged = true;
       }
     } else if (this.attachmentType === AssignmentAttachmentType.Link) {
-      formData.append('AttachmentUrl', this.attachmentUrl);
+      if (!this.isEditMode || this.attachmentUrl !== initialState.attachmentUrl) {
+        formData.append('AttachmentUrl', this.attachmentUrl);
+        attachmentChanged = true;
+      }
+    }
+
+    if (attachmentChanged) {
+      formData.append('AttachmentType', this.attachmentType.toString());
     }
 
     this.isSaving.set(true);

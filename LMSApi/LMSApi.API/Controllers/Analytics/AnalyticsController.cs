@@ -33,6 +33,16 @@ namespace LMSApi.API.Controllers
             return Ok(result);
         }
 
+        /// <summary>Get paginated recent activities. Admin only.</summary>
+        [Authorize(Roles = "Admin")]
+        [HttpGet("admin/activities")]
+        [EnableRateLimiting("AdminApis")]
+        public async Task<ActionResult<System.Collections.Generic.List<RecentActivityDto>>> GetAdminActivities([FromQuery] int page = 1, [FromQuery] int pageSize = 5)
+        {
+            var result = await _analyticsService.GetAdminRecentActivitiesAsync(page, pageSize);
+            return Ok(result);
+        }
+
         /// <summary>Get instructor dashboard analytics. Instructor only.</summary>
         [Authorize(Roles = "Instructor")]
         [HttpGet("instructor")]

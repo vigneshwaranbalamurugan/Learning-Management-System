@@ -77,6 +77,7 @@ namespace LMSApi.ModelLibrary.DTOs
     public class ArchiveCourseRequest
     {
         public bool Archive { get; set; }
+        public string? Reason { get; set; }
     }
 
     public class ReviewCourseRequest

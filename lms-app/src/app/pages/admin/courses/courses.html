@@ -328,9 +328,25 @@
                       <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
                       Approve Course
                     </button>
-                    <button *ngIf="course.status !== 4" class="w-full text-left px-4 py-2 hover:bg-slate-50 text-slate-700 flex items-center gap-2" (click)="archiveCourse(course.id, $event)">
+                    <button *ngIf="course.status === 3" class="w-full text-left px-4 py-2 hover:bg-red-50 text-red-700 flex items-center gap-2" (click)="rejectCourse(course.id, $event)">
+                      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                      Reject Course
+                    </button>
+                    <button [disabled]="course.status === 4 && course.hasNonExpiredEnrollments"
+                            [title]="(course.status === 4 && course.hasNonExpiredEnrollments) ? 'Cannot unarchive an archived course with active enrollments' : ''"
+                            [ngClass]="{'opacity-50 cursor-not-allowed': course.status === 4 && course.hasNonExpiredEnrollments}"
+                            (click)="!(course.status === 4 && course.hasNonExpiredEnrollments) && archiveCourse(course.id, course.status === 4, course.hasNonExpiredEnrollments, $event)"
+                            class="w-full text-left px-4 py-2 hover:bg-slate-50 text-slate-700 flex items-center gap-2">
                       <svg class="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" /></svg>
-                      Archive Course
+                      {{ course.status === 4 ? 'Unarchive Course' : 'Archive Course' }}
+                    </button>
+                    <button [disabled]="course.hasNonExpiredEnrollments"
+                            [title]="course.hasNonExpiredEnrollments ? 'Cannot delete a course with active enrollments' : ''"
+                            [ngClass]="{'opacity-50 cursor-not-allowed': course.hasNonExpiredEnrollments}"
+                            (click)="!course.hasNonExpiredEnrollments && deleteCourse(course.id, $event)"
+                            class="w-full text-left px-4 py-2 text-red-600 hover:bg-red-50 flex items-center gap-2 border-t border-slate-100">
+                      <svg class="w-4 h-4 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                      Delete Course
                     </button>
                   </div>
                 </div>
@@ -487,6 +503,87 @@
 
 </div>
 
+<!-- Approve Confirmation Modal -->
+<app-confirm-modal
+  [isOpen]="showApproveModal()"
+  title="Approve Course"
+  message="Are you sure you want to approve and publish this course?"
+  confirmText="Approve"
+  cancelText="Cancel"
+  (confirm)="confirmApproveCourse()"
+  (cancel)="showApproveModal.set(false)">
+</app-confirm-modal>
+
+<!-- Archive Confirmation Modal -->
+<app-confirm-modal
+  [isOpen]="showArchiveModal()"
+  [title]="isArchivingAction() ? 'Archive Course' : 'Unarchive Course'"
+  [message]="isArchivingAction() ? (courseToArchiveHasEnrollments() ? 'Are you sure you want to archive this course? This course has active enrollments, so this action is irreversible and you will not be able to publish it again.' : 'Are you sure you want to archive this course? It will no longer be visible to new learners.') : 'Are you sure you want to unarchive this course? This will restore it back to draft status.'"
+  [confirmText]="isArchivingAction() ? 'Archive' : 'Unarchive'"
+  cancelText="Cancel"
+  [isDanger]="isArchivingAction()"
+  (confirm)="confirmArchiveCourse()"
+  (cancel)="showArchiveModal.set(false)">
+</app-confirm-modal>
+
+<!-- Reject Modal -->
+<div *ngIf="showRejectModal()" class="fixed inset-0 z-[200] overflow-y-auto">
+  <!-- Backdrop -->
+  <div class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm transition-opacity" (click)="showRejectModal.set(false)"></div>
+
+  <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
+    <div class="relative transform overflow-hidden rounded-2xl bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg">
+      <div class="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
+        <div class="sm:flex sm:items-start">
+          <div class="mx-auto flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10">
+            <svg class="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+          </div>
+          <div class="mt-3 text-center sm:ml-4 sm:mt-0 sm:text-left w-full">
+            <h3 class="text-base font-semibold leading-6 text-slate-900">Reject Course</h3>
+            <div class="mt-2">
+              <p class="text-sm text-slate-500 mb-4">Please provide a reason for rejecting this course. The instructor will receive an email with this reason.</p>
+              <textarea 
+                [ngModel]="rejectionReason()" 
+                (ngModelChange)="rejectionReason.set($event)"
+                rows="4"
+                class="w-full rounded-xl border border-slate-200 p-3 text-sm focus:border-[#1C1C7B] focus:ring-1 focus:ring-[#1C1C7B] outline-none"
+                placeholder="Type rejection reason here..."></textarea>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="bg-slate-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
+        <button type="button" (click)="confirmRejectCourse()" class="inline-flex w-full justify-center rounded-xl bg-red-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-red-500 sm:ml-3 sm:w-auto">Reject Course</button>
+        <button type="button" (click)="showRejectModal.set(false)" class="mt-3 inline-flex w-full justify-center rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 hover:bg-slate-50 sm:mt-0 sm:w-auto">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Bulk Approve Confirmation Modal -->
+<app-confirm-modal
+  [isOpen]="showBulkApproveModal()"
+  title="Bulk Approve Courses"
+  message="Are you sure you want to approve and publish the selected courses?"
+  confirmText="Approve All"
+  cancelText="Cancel"
+  (confirm)="confirmBulkApprove()"
+  (cancel)="showBulkApproveModal.set(false)">
+</app-confirm-modal>
+
+<!-- Delete Confirmation Modal -->
+<app-confirm-modal
+  [isOpen]="showDeleteModal()"
+  title="Delete Course"
+  message="Are you sure you want to permanently delete this course?"
+  confirmText="Delete"
+  cancelText="Cancel"
+  [isDanger]="true"
+  (confirm)="confirmDeleteCourse()"
+  (cancel)="showDeleteModal.set(false)">
+</app-confirm-modal>
 <!-- Styles for animations -->
 <style>
   @keyframes slideUp {

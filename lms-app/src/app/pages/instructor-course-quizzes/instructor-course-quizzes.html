@@ -150,6 +150,8 @@
         <app-button 
           (click)="saveQuiz()" 
           variant="primary"
+          [disabled]="!isDirty || isSaving()"
+          [loading]="isSaving()"
           customClass="!px-4 !py-2 !w-auto text-xs font-bold shadow-xs">
           {{ editingQuizId ? 'Update Quiz' : 'Save Quiz' }}
         </app-button>

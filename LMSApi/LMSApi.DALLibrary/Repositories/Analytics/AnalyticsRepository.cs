@@ -106,26 +106,7 @@ namespace LMSApi.DALLibrary.Repositories
                 });
             }
 
-            // 4. Recent Activities
-            var targetTypes = new System.Collections.Generic.List<ActivityType> {
-                ActivityType.UserRegister,
-                ActivityType.CourseCreated,
-                ActivityType.CoursePublished,
-                ActivityType.CertificateIssued
-            };
-
-            var recentActivities = await _context.ActivityLogs
-                .Where(al => targetTypes.Contains(al.ActivityType))
-                .OrderByDescending(al => al.Timestamp)
-                .Take(20)
-                .Select(al => new RecentActivityDto
-                {
-                    ActivityType = al.ActivityType.ToString(),
-                    Description = al.Description,
-                    Timestamp = al.Timestamp,
-                    UserName = al.User.UserProfile != null ? (al.User.UserProfile.FirstName + " " + al.User.UserProfile.LastName) : al.User.Email
-                })
-                .ToListAsync();
+            // 4. Recent Activities (Removed, fetching in separate paginated endpoint)
 
             return new AdminAnalyticsResponse
             {
@@ -139,9 +120,41 @@ namespace LMSApi.DALLibrary.Repositories
                 TotalCertificatesIssued = totalCertificatesIssued,
                 MonthlyRevenue = monthlyRevenueList,
                 UserGrowth = userGrowthList,
-                EnrollmentTrend = enrollmentTrendList,
-                RecentActivities = recentActivities
+                EnrollmentTrend = enrollmentTrendList
             };
+        }
+
+        public async Task<System.Collections.Generic.List<RecentActivityDto>> GetAdminRecentActivitiesAsync(int pageNumber, int pageSize)
+        {
+            int maxTotalActivities = 30;
+            int skipCount = (pageNumber - 1) * pageSize;
+            
+            if (skipCount >= maxTotalActivities) return new System.Collections.Generic.List<RecentActivityDto>();
+
+            int takeCount = Math.Min(pageSize, maxTotalActivities - skipCount);
+
+            var targetTypes = new System.Collections.Generic.List<ActivityType> {
+                ActivityType.UserRegister,
+                ActivityType.CourseCreated,
+                ActivityType.CoursePublished,
+                ActivityType.CertificateIssued
+            };
+
+            var recentActivities = await _context.ActivityLogs
+                .Where(al => targetTypes.Contains(al.ActivityType))
+                .OrderByDescending(al => al.Timestamp)
+                .Skip(skipCount)
+                .Take(takeCount)
+                .Select(al => new RecentActivityDto
+                {
+                    ActivityType = al.ActivityType.ToString(),
+                    Description = al.Description,
+                    Timestamp = al.Timestamp,
+                    UserName = al.User.UserProfile != null ? (al.User.UserProfile.FirstName + " " + al.User.UserProfile.LastName) : al.User.Email
+                })
+                .ToListAsync();
+
+            return recentActivities;
         }
 
         public async Task<InstructorAnalyticsResponse> GetInstructorAnalyticsAsync(int instructorId)
