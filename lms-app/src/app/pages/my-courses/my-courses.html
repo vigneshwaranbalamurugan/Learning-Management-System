@@ -62,7 +62,7 @@
   }
 
   <!-- ═══════════ CONTROLS & FILTER BAR ═══════════ -->
-  @if (!isLoading() && enrollments().length > 0) {
+  @if (!isLoading() && totalCount() > 0) {
     <div class="flex flex-col md:flex-row gap-4 items-center justify-between bg-white border border-gray-200 rounded-xl p-3 shadow-xs">
       <!-- Search Input -->
       <div class="relative w-full md:max-w-xs">
@@ -75,10 +75,10 @@
           id="course-search"
           placeholder="Search by title, instructor..."
           [ngModel]="searchQuery()"
-          (ngModelChange)="searchQuery.set($event)"
+          (ngModelChange)="onSearchChange($event)"
           class="w-full pl-9 pr-9 py-2 border border-gray-200 rounded-lg text-xs bg-white text-gray-800 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition" />
         @if (searchQuery()) {
-          <button (click)="searchQuery.set('')"
+          <button (click)="onSearchChange('')"
             class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 cursor-pointer transition">
             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
@@ -91,7 +91,7 @@
       <div class="flex flex-wrap gap-3 items-center w-full md:w-auto justify-end">
         <!-- Status Filters -->
         <div class="flex bg-gray-100 rounded-lg p-0.5 border border-gray-200">
-          <button (click)="statusFilter.set('all')"
+          <button (click)="onStatusChange('all')"
             class="px-3 py-1.5 rounded-md text-[10px] font-extrabold uppercase tracking-wider transition cursor-pointer"
             [class.bg-white]="statusFilter() === 'all'"
             [class.text-gray-800]="statusFilter() === 'all'"
@@ -99,7 +99,7 @@
             [class.text-gray-500]="statusFilter() !== 'all'">
             All
           </button>
-          <button (click)="statusFilter.set('in-progress')"
+          <button (click)="onStatusChange('in-progress')"
             class="px-3 py-1.5 rounded-md text-[10px] font-extrabold uppercase tracking-wider transition cursor-pointer"
             [class.bg-white]="statusFilter() === 'in-progress'"
             [class.text-gray-800]="statusFilter() === 'in-progress'"
@@ -107,7 +107,7 @@
             [class.text-gray-500]="statusFilter() !== 'in-progress'">
             In Progress
           </button>
-          <button (click)="statusFilter.set('completed')"
+          <button (click)="onStatusChange('completed')"
             class="px-3 py-1.5 rounded-md text-[10px] font-extrabold uppercase tracking-wider transition cursor-pointer"
             [class.bg-white]="statusFilter() === 'completed'"
             [class.text-gray-800]="statusFilter() === 'completed'"
@@ -119,7 +119,7 @@
 
         <!-- Format Filters -->
         <div class="flex bg-gray-100 rounded-lg p-0.5 border border-gray-200">
-          <button (click)="typeFilter.set('all')"
+          <button (click)="onTypeChange('all')"
             class="px-3 py-1.5 rounded-md text-[10px] font-extrabold uppercase tracking-wider transition cursor-pointer"
             [class.bg-white]="typeFilter() === 'all'"
             [class.text-gray-800]="typeFilter() === 'all'"
@@ -127,7 +127,7 @@
             [class.text-gray-500]="typeFilter() !== 'all'">
             All Types
           </button>
-          <button (click)="typeFilter.set('self-paced')"
+          <button (click)="onTypeChange('self-paced')"
             class="px-3 py-1.5 rounded-md text-[10px] font-extrabold uppercase tracking-wider transition cursor-pointer"
             [class.bg-white]="typeFilter() === 'self-paced'"
             [class.text-gray-800]="typeFilter() === 'self-paced'"
@@ -135,7 +135,7 @@
             [class.text-gray-500]="typeFilter() !== 'self-paced'">
             Self Paced
           </button>
-          <button (click)="typeFilter.set('batch')"
+          <button (click)="onTypeChange('batch')"
             class="px-3 py-1.5 rounded-md text-[10px] font-extrabold uppercase tracking-wider transition cursor-pointer"
             [class.bg-white]="typeFilter() === 'batch'"
             [class.text-gray-800]="typeFilter() === 'batch'"
@@ -330,7 +330,7 @@
         <div class="text-center max-w-sm">
           <h4 class="text-sm font-bold text-gray-800 m-0 mb-1">No Courses Enrolled or Matching</h4>
           <p class="text-xs text-gray-400 mx-auto leading-relaxed">
-            @if (enrollments().length === 0) {
+            @if (totalCount() === 0) {
               You haven't enrolled in any courses yet. Get started by exploring our courses catalog!
             } @else {
               No enrolled courses match your search or filter options. Try adjusting the filter categories.
@@ -338,7 +338,7 @@
           </p>
         </div>
         
-        @if (enrollments().length === 0) {
+        @if (totalCount() === 0) {
           <button (click)="navigateToExplore()"
             class="mt-4 px-5 py-2.5 rounded-lg bg-primary text-white text-xs font-bold hover:bg-[#14145a] cursor-pointer transition shadow-sm hover:shadow-md">
             🔍 Browse Courses Catalog

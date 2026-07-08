@@ -1,4 +1,4 @@
-import { Component, OnInit, signal, computed, inject, DestroyRef, effect, untracked } from '@angular/core';
+import { Component, OnInit, signal, computed, inject, DestroyRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ToastService } from '@services/toast.service';
@@ -6,6 +6,8 @@ import { EnrollmentResponse } from '@models/enrollment';
 import { CourseLevel } from '../../enums/course-level.enum';
 import { untilDestroyed } from '../../rxjs/until-destroyed';
 import { Router, RouterModule } from '@angular/router';
+import { Subject } from 'rxjs';
+import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 
 import { Loader } from '@components/loader/loader';
 import { EnrollmentService } from '@services/enrollment.service';
@@ -37,37 +39,26 @@ export class MyCourses implements OnInit {
   protected inProgressCount = signal(0);
   protected filteredEnrollments = computed(() => this.enrollments());
 
-  constructor() {
-    let isInitializing = true;
-    effect(() => {
-      this.searchQuery();
-      this.statusFilter();
-      this.typeFilter();
+  private searchSubject = new Subject<string>();
 
-      untracked(() => {
-        if (!isInitializing) {
-          this.currentPage.set(1);
-        }
-      });
-    }, { allowSignalWrites: true });
-
-    effect(() => {
-      this.searchQuery();
-      this.statusFilter();
-      this.typeFilter();
-      this.currentPage();
-
-      untracked(() => {
-        this.loadMyEnrollments();
-      });
-    });
-    isInitializing = false;
-  }
+  constructor() {}
 
   ngOnInit(): void {
     // We need the overall counts for the stats cards.
     // It is best to call getAllMyEnrollments to compute stats, or just use paginated response totalCount
     this.loadStats();
+    
+    this.searchSubject.pipe(
+      debounceTime(300),
+      distinctUntilChanged(),
+      untilDestroyed(this.destroyRef)
+    ).subscribe(query => {
+      this.searchQuery.set(query);
+      this.currentPage.set(1);
+      this.loadMyEnrollments();
+    });
+
+    this.loadMyEnrollments();
   }
 
   private loadStats(): void {
@@ -106,12 +97,19 @@ export class MyCourses implements OnInit {
       });
   }
 
-  protected onSearch(): void {
+  protected onSearchChange(query: string): void {
+    this.searchQuery.set(query); // update signal immediately for UI
+    this.searchSubject.next(query);
+  }
+
+  protected onStatusChange(status: string): void {
+    this.statusFilter.set(status);
     this.currentPage.set(1);
     this.loadMyEnrollments();
   }
 
-  protected onFilterChange(): void {
+  protected onTypeChange(type: string): void {
+    this.typeFilter.set(type);
     this.currentPage.set(1);
     this.loadMyEnrollments();
   }
@@ -165,6 +163,8 @@ export class MyCourses implements OnInit {
     this.searchQuery.set('');
     this.statusFilter.set('all');
     this.typeFilter.set('all');
+    this.currentPage.set(1);
+    this.loadMyEnrollments();
   }
 
   protected navigateToExplore(): void {

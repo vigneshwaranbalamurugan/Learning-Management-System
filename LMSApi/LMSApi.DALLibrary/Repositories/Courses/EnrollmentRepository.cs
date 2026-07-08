@@ -77,7 +77,8 @@ namespace LMSApi.DALLibrary.Repositories
 
             if (!string.IsNullOrWhiteSpace(search))
             {
-                query = query.Where(e => e.Course.Title.Contains(search) || (e.Course.Instructor.UserProfile != null && e.Course.Instructor.UserProfile.FirstName.Contains(search)));
+                var lowerSearch = search.ToLower();
+                query = query.Where(e => e.Course.Title.ToLower().Contains(lowerSearch) || (e.Course.Instructor.UserProfile != null && e.Course.Instructor.UserProfile.FirstName.ToLower().Contains(lowerSearch)));
             }
 
             if (!string.IsNullOrWhiteSpace(status))
@@ -86,7 +87,7 @@ namespace LMSApi.DALLibrary.Repositories
                 {
                     query = query.Where(e => e.IsCompleted);
                 }
-                else if (status.Equals("in_progress", StringComparison.OrdinalIgnoreCase))
+                else if (status.Equals("in_progress", StringComparison.OrdinalIgnoreCase) || status.Equals("in-progress", StringComparison.OrdinalIgnoreCase))
                 {
                     query = query.Where(e => !e.IsCompleted);
                 }
