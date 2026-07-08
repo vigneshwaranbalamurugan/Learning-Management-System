@@ -119,3 +119,17 @@ The .NET 10 backend (`LMSApi`) utilizes several external libraries (NuGet packag
 - **Asp.Versioning.Mvc**: Manages API versioning.
 - **Serilog**: Enables structured logging to the console and files.
 - **Swashbuckle.AspNetCore**: Automatically generates Swagger UI and OpenAPI specifications for interactive API documentation.
+
+---
+
+## 📦 External Libraries (Frontend)
+
+The Angular 21 frontend (`lms-app`) relies on the following key external npm packages:
+
+- **@microsoft/signalr**: Used for enabling real-time web functionality (e.g., live notifications or real-time course updates).
+- **marked**: A markdown parser and compiler used for rendering rich text content, such as course descriptions or lesson notes.
+- **pdfjs-dist**: A web standards-based platform for parsing and rendering PDFs directly in the browser (ideal for displaying course materials or certificates).
+- **rxjs**: Reactive Extensions Library for JavaScript, heavily used within Angular for handling asynchronous operations and data streams.
+- **tailwindcss / @tailwindcss/postcss**: A utility-first CSS framework for rapidly building custom, responsive UI designs without leaving the HTML.
+- **vitest / jsdom**: A fast, modern testing framework and headless browser environment used for running unit tests.
+- **prettier**: An opinionated code formatter to maintain consistent code style across the frontend project.
