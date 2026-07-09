@@ -187,10 +187,17 @@ export class AdminCoursesComponent implements OnInit {
       });
   }
 
+  private searchTimeout: any;
+
   protected onSearch(event: Event): void {
     const input = event.target as HTMLInputElement;
-    this.searchQuery.set(input.value);
-    this.pageNumber.set(1);
+    if (this.searchTimeout) {
+      clearTimeout(this.searchTimeout);
+    }
+    this.searchTimeout = setTimeout(() => {
+      this.searchQuery.set(input.value);
+      this.pageNumber.set(1);
+    }, 300);
   }
 
   protected onTabChange(tab: 'all' | 'pending'): void {

@@ -75,7 +75,9 @@ namespace LMSApi.API.Controllers.Payments
             }
 
             var pdfBytes = await _invoiceService.GenerateInvoiceAsync(id);
-            return File(pdfBytes, "application/pdf", $"Invoice_INV-{id}.pdf");
+            var timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            var courseTitleSafe = new string(payment.Course.Title.Where(c => char.IsLetterOrDigit(c) || c == ' ' || c == '-').ToArray()).Replace(" ", "_");
+            return File(pdfBytes, "application/pdf", $"Invoice_{courseTitleSafe}_INV-{id}_{timestamp}.pdf");
         }
     }
 }

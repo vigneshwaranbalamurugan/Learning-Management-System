@@ -285,10 +285,12 @@ namespace LMSApi.BALLibrary.Services
                     var pdfBytes = await _invoiceService.GenerateInvoiceAsync(payment.Id);
                     var invoiceHtml = EmailTemplate.GetPaymentInvoiceTemplate(learnerName, course.Title, payment.Amount, payment.Currency, $"INV-{payment.Id}");
                     var invoiceMsg = new EmailMessage(learner.Email, $"Invoice for {course.Title}", invoiceHtml) { IsHtml = true };
+                    var timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+                    var courseTitleSafe = new string(course.Title.Where(c => char.IsLetterOrDigit(c) || c == ' ' || c == '-').ToArray()).Replace(" ", "_");
                     invoiceMsg.Attachments.Add(new EmailAttachment 
                     { 
                         Data = pdfBytes, 
-                        FileName = $"Invoice_INV-{payment.Id}.pdf", 
+                        FileName = $"Invoice_{courseTitleSafe}_INV-{payment.Id}_{timestamp}.pdf", 
                         ContentType = "application/pdf" 
                     });
                     await _notificationService.Send(invoiceMsg);
@@ -431,10 +433,12 @@ namespace LMSApi.BALLibrary.Services
                         var pdfBytes = await _invoiceService.GenerateInvoiceAsync(payment.Id);
                         var invoiceHtml = EmailTemplate.GetPaymentInvoiceTemplate(learnerName, course.Title, payment.Amount, payment.Currency, $"INV-{payment.Id}");
                         var invoiceMsg = new EmailMessage(learner.Email, $"Invoice for {course.Title}", invoiceHtml) { IsHtml = true };
+                        var timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+                        var courseTitleSafe = new string(course.Title.Where(c => char.IsLetterOrDigit(c) || c == ' ' || c == '-').ToArray()).Replace(" ", "_");
                         invoiceMsg.Attachments.Add(new EmailAttachment 
                         { 
                             Data = pdfBytes, 
-                            FileName = $"Invoice_INV-{payment.Id}.pdf", 
+                            FileName = $"Invoice_{courseTitleSafe}_INV-{payment.Id}_{timestamp}.pdf", 
                             ContentType = "application/pdf" 
                         });
                         await _notificationService.Send(invoiceMsg);

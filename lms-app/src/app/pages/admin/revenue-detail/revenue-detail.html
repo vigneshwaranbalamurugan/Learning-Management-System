@@ -1,12 +1,12 @@
 <div class="min-h-screen bg-[#F8FAFC] pb-10">
 
   <!-- PAGE HEADER -->
-  <header class="bg-white sticky top-0 z-20 border-b border-slate-200 px-6 py-4 flex items-center justify-between shadow-sm">
+  <header class="bg-white sticky top-0 z-20 border-b border-slate-200 px-4 sm:px-6 py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between shadow-sm gap-4 sm:gap-0">
     <div>
       <h1 class="text-2xl font-bold text-[#1C1C7B]">Revenue Overview</h1>
       <p class="text-sm text-slate-500 mt-0.5">All financial flows — incoming payments, instructor payouts, and platform earnings.</p>
     </div>
-    <div class="flex items-center gap-3">
+    <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
       <button *ngIf="activeTab() === 'transactions'" (click)="exportTransactionsCsv()"
               class="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 text-slate-600 text-sm font-semibold rounded-lg hover:bg-slate-50 transition-colors shadow-sm">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
@@ -20,10 +20,10 @@
     </div>
   </header>
 
-  <div class="max-w-screen-xl mx-auto px-6 mt-8 space-y-6">
+  <div class="max-w-screen-xl mx-auto px-4 sm:px-6 mt-4 sm:mt-8 space-y-4 sm:space-y-6">
 
     <!-- KPI SUMMARY CARDS -->
-    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
 
       <ng-container *ngIf="summaryLoading()">
         <div *ngFor="let i of [1,2,3,4]"
@@ -84,7 +84,7 @@
     <!-- TABS -->
     <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
 
-      <div class="border-b border-slate-200 px-6 flex items-center gap-0">
+      <div class="border-b border-slate-200 px-0 sm:px-6 flex items-center gap-0 overflow-x-auto whitespace-nowrap scrollbar-hide">
         <button (click)="switchTab('transactions')"
                 class="px-5 py-4 text-sm font-semibold border-b-2 transition-colors -mb-px flex items-center gap-2"
                 [class.border-[#1C1C7B]]="activeTab() === 'transactions'"
@@ -126,8 +126,8 @@
       <div *ngIf="activeTab() === 'transactions'" class="p-5">
 
         <!-- Filters -->
-        <div class="flex flex-wrap items-center gap-3 mb-5">
-          <div class="relative flex-1 min-w-[200px]">
+        <div class="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-3 mb-5">
+          <div class="relative flex-1 min-w-0 sm:min-w-[200px]">
             <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
             <input type="text" [(ngModel)]="txSearchInput" placeholder="Search learner, course, payment ID..." (keyup.enter)="applyTxFilters()"
                    class="w-full pl-9 pr-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1C1C7B] focus:border-transparent bg-white">
@@ -226,7 +226,7 @@
         </div>
 
         <!-- Pagination -->
-        <div *ngIf="txData() && txData()!.totalPages > 1" class="mt-5 flex items-center justify-between text-sm">
+        <div *ngIf="txData() && txData()!.totalPages > 1" class="mt-5 flex flex-col sm:flex-row items-center justify-between text-sm gap-4 sm:gap-0">
           <span class="text-slate-500 text-xs">
             Showing {{ (txFilters.page - 1) * txFilters.pageSize + 1 }}–{{ getMin(txFilters.page * txFilters.pageSize, txData()!.totalCount) }} of {{ txData()!.totalCount }}
           </span>
@@ -262,8 +262,8 @@
       <div *ngIf="activeTab() === 'payouts'" class="p-5">
 
         <!-- Filters -->
-        <div class="flex flex-wrap items-center gap-3 mb-5">
-          <div class="relative flex-1 min-w-[200px]">
+        <div class="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-3 mb-5">
+          <div class="relative flex-1 min-w-0 sm:min-w-[200px]">
             <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
             <input type="text" [(ngModel)]="payoutSearchInput" placeholder="Search instructor, course, transfer ID..." (keyup.enter)="applyPayoutFilters()"
                    class="w-full pl-9 pr-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1C1C7B] focus:border-transparent bg-white">
@@ -354,7 +354,7 @@
         </div>
 
         <!-- Pagination -->
-        <div *ngIf="payoutData() && payoutData()!.totalPages > 1" class="mt-5 flex items-center justify-between text-sm">
+        <div *ngIf="payoutData() && payoutData()!.totalPages > 1" class="mt-5 flex flex-col sm:flex-row items-center justify-between text-sm gap-4 sm:gap-0">
           <span class="text-slate-500 text-xs">
             Showing {{ (payoutFilters.page - 1) * payoutFilters.pageSize + 1 }}–{{ getMin(payoutFilters.page * payoutFilters.pageSize, payoutData()!.totalCount) }} of {{ payoutData()!.totalCount }}
           </span>

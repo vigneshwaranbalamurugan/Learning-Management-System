@@ -86,7 +86,8 @@ export class MyPaymentsPage implements OnInit {
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `${payment.invoiceNumber}.pdf`;
+        const timestamp = new Date().getTime();
+        a.download = `${payment.invoiceNumber}_${timestamp}.pdf`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
