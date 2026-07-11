@@ -7,7 +7,6 @@ namespace LMSApi.ModelLibrary.Models
         public int UserId { get; set; }
         public DateTime CreatedAt { get; set; }
 
-        // Navigation properties
         public Discussions Discussion { get; set; }
         public Users User { get; set; }
     }

@@ -7,7 +7,7 @@ using Microsoft.Extensions.Logging;
 
 namespace LMSApi.DALLibrary.Contexts
 {
-    public class LMSDbContext: DbContext
+    public class LMSDbContext : DbContext
     {
         public DbSet<Users> Users { get; set; }
         public DbSet<UserRoles> UserRoles { get; set; }
@@ -62,6 +62,11 @@ namespace LMSApi.DALLibrary.Contexts
         public DbSet<AuditLogs> AuditLogs { get; set; }
         public DbSet<WebhookEventLog> WebhookEventLogs { get; set; }
 
+        // Discussions module
+        public DbSet<Discussions> Discussions { get; set; }
+        public DbSet<DiscussionReplies> DiscussionReplies { get; set; }
+        public DbSet<DiscussionLikes> DiscussionLikes { get; set; }
+
         private readonly ICurrentUserProvider? _currentUserProvider;
         private readonly ILogger<LMSDbContext>? _logger;
 
@@ -72,18 +77,18 @@ namespace LMSApi.DALLibrary.Contexts
         {
             _currentUserProvider = currentUserProvider;
             _logger = logger;
-        }        
+        }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-          base.OnModelCreating(modelBuilder);
+            base.OnModelCreating(modelBuilder);
 
-          modelBuilder.Entity<Courses>().HasQueryFilter(c => !c.IsDeleted);
+            modelBuilder.Entity<Courses>().HasQueryFilter(c => !c.IsDeleted);
 
-          modelBuilder.Entity<Users>()
-                .HasIndex(u => u.Email);
+            modelBuilder.Entity<Users>()
+                  .HasIndex(u => u.Email);
 
-          modelBuilder.ApplyConfigurationsFromAssembly(typeof(LMSDbContext).Assembly);
+            modelBuilder.ApplyConfigurationsFromAssembly(typeof(LMSDbContext).Assembly);
         }
 
         public override int SaveChanges()
@@ -109,20 +114,20 @@ namespace LMSApi.DALLibrary.Contexts
         private void ApplyAuditTimestamps()
         {
             var utcNow = DateTime.UtcNow;
-            foreach(EntityEntry entry in ChangeTracker.Entries())
+            foreach (EntityEntry entry in ChangeTracker.Entries())
             {
-                if(entry.State == EntityState.Added)
+                if (entry.State == EntityState.Added)
                 {
-                    setAuditTimestamps(entry.Entity,utcNow,create:true);
+                    setAuditTimestamps(entry.Entity, utcNow, create: true);
                 }
-                else if(entry.State == EntityState.Modified)
+                else if (entry.State == EntityState.Modified)
                 {
-                    setAuditTimestamps(entry.Entity,utcNow,create:false);
+                    setAuditTimestamps(entry.Entity, utcNow, create: false);
                 }
             }
         }
 
-        private void setAuditTimestamps(object entity, DateTime utcNow,bool create)
+        private void setAuditTimestamps(object entity, DateTime utcNow, bool create)
         {
             switch (entity)
             {

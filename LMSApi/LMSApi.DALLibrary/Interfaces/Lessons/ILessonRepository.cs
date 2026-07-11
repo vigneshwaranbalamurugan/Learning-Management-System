@@ -8,5 +8,6 @@ namespace LMSApi.DALLibrary.Interfaces
 
         /// <summary>Returns a lesson with its Resources collection eagerly loaded.</summary>
         Task<Lessons> GetLessonWithResourcesAsync(int lessonId);
+        Task<int?> GetCourseIdByLessonIdAsync(int lessonId);
     }
 }
