@@ -88,7 +88,7 @@ namespace LMSApi.BALLibrary.Services
             await _discussionRepository.DeleteAsync(discussionId);
         }
 
-        public async Task<IEnumerable<DiscussionResponse>> GetLessonDiscussionsAsync(int lessonId)
+        public async Task<IEnumerable<DiscussionResponse>> GetLessonDiscussionsAsync(int lessonId, int userId)
         {
             var discussions = await _discussionRepository.GetByLessonAsync(lessonId);
 
@@ -98,12 +98,13 @@ namespace LMSApi.BALLibrary.Services
                 var response = _mapper.Map<DiscussionResponse>(d);
                 response.ReplyCount = (await _replyRepository.GetByDiscussionAsync(d.Id)).Count();
                 response.LikeCount = await _likeRepository.GetLikeCountAsync(d.Id);
+                response.IsLikedByUser = await _likeRepository.GetByDiscussionAndUserAsync(d.Id, userId) != null;
                 responses.Add(response);
             }
             return responses;
         }
 
-        public async Task<DiscussionDetailResponse> GetDiscussionDetailAsync(int discussionId)
+        public async Task<DiscussionDetailResponse> GetDiscussionDetailAsync(int discussionId, int userId)
         {
             var discussion = await _discussionRepository.GetByIdWithDetailsAsync(discussionId);
             if (discussion == null) throw new KeyNotFoundException("Discussion not found.");
@@ -118,6 +119,7 @@ namespace LMSApi.BALLibrary.Services
                 response.Title = "[deleted]";
                 response.Content = "[deleted]";
                 response.UserName = "[deleted]";
+                response.UserEmail = "[deleted]";
             }
 
             foreach (var r in response.Replies)
@@ -127,11 +129,13 @@ namespace LMSApi.BALLibrary.Services
                 {
                     r.ReplyText = "[deleted]";
                     r.UserName = "[deleted]";
+                    r.UserEmail = "[deleted]";
                 }
             }
 
             response.ReplyCount = response.Replies.Count;
             response.LikeCount = await _likeRepository.GetLikeCountAsync(discussionId);
+            response.IsLikedByUser = await _likeRepository.GetByDiscussionAndUserAsync(discussionId, userId) != null;
             return response;
         }
 

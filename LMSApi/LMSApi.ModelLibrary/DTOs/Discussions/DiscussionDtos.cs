@@ -37,6 +37,7 @@ namespace LMSApi.ModelLibrary.DTOs
         public int DiscussionId { get; set; }
         public int UserId { get; set; }
         public string UserName { get; set; }
+        public string UserEmail { get; set; }
         public string ReplyText { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
@@ -49,6 +50,7 @@ namespace LMSApi.ModelLibrary.DTOs
         public int LessonId { get; set; }
         public int UserId { get; set; }
         public string UserName { get; set; }
+        public string UserEmail { get; set; }
         public string Title { get; set; }
         public string Content { get; set; }
         public bool IsPinned { get; set; }
@@ -56,6 +58,7 @@ namespace LMSApi.ModelLibrary.DTOs
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
         public int ReplyCount { get; set; }
+        public bool IsLikedByUser { get; set; }
         public int LikeCount { get; set; }
     }
 

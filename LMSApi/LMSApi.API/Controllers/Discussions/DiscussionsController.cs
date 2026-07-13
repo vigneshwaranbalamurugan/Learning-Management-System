@@ -22,7 +22,8 @@ namespace LMSApi.API.Controllers
         [HttpGet("lesson/{lessonId}")]
         public async Task<ActionResult<IEnumerable<DiscussionResponse>>> GetLessonDiscussions(int lessonId)
         {
-            var result = await _discussionService.GetLessonDiscussionsAsync(lessonId);
+            var userId = User.GetUserId();
+            var result = await _discussionService.GetLessonDiscussionsAsync(lessonId, userId);
             return Ok(result);
         }
 
@@ -30,7 +31,8 @@ namespace LMSApi.API.Controllers
         [HttpGet("{id}")]
         public async Task<ActionResult<DiscussionDetailResponse>> GetDiscussionDetail(int id)
         {
-            var result = await _discussionService.GetDiscussionDetailAsync(id);
+            var userId = User.GetUserId();
+            var result = await _discussionService.GetDiscussionDetailAsync(id, userId);
             return Ok(result);
         }
 
