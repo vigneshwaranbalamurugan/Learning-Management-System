@@ -19,5 +19,8 @@ namespace LMSApi.BALLibrary.Interfaces
 		bool IsAllowedCertificateTemplateBackground(string fileName, string contentType);
 		Task<string> UploadCertificateTemplateBackgroundAsync(Stream fileStream, string fileName, string publicId);
 		Task<string> UploadCertificatePdfAsync(Stream fileStream, string fileName, string publicId);
+
+		Task DeleteBlobAsync(string blobPath);
+		Task DeletePublicBlobAsync(string blobUrl);
 	}
 }

@@ -307,6 +307,11 @@ namespace LMSApi.BALLibrary.Services
                 throw new InvalidOperationException("Cannot delete a resource from a course that has enrolled learners.");
             }
 
+            if (resource.ResourceType == ResourceType.Pdf && !string.IsNullOrWhiteSpace(resource.ResourceUrl))
+            {
+                await _uploadService.DeleteBlobAsync(resource.ResourceUrl);
+            }
+
             await _resourceRepository.DeleteAsync(id);
 
             _logger.LogInformation("Resource Deleted: Id={Id}", id);

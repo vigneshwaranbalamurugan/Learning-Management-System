@@ -12,6 +12,8 @@ import { VideoProgressSignalRService } from '@services/video-progress-signalr.se
 import { QuizProgressSignalRService } from '@services/quiz-progress-signalr.service';
 import { AssignmentService } from '@services/assignment.service';
 import { EnrollmentService } from '@services/enrollment.service';
+import { SecureMediaService } from '@services/secure-media.service';
+import { ToastService } from '@services/toast.service';
 
 import { CourseDetailResponse, LessonSummary } from '@models/course';
 import { CourseProgressResponse, LessonProgressResponse, QuizProgressResponse, AssignmentProgressResponse } from '@models/progress';
@@ -65,6 +67,8 @@ export class CourseLearning implements OnInit, OnDestroy {
   private quizSignalR = inject(QuizProgressSignalRService);
   private assignmentService = inject(AssignmentService);
   private enrollmentService = inject(EnrollmentService);
+  private secureMediaService = inject(SecureMediaService);
+  private toast = inject(ToastService);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
   private sanitizer = inject(DomSanitizer);
@@ -138,6 +142,7 @@ export class CourseLearning implements OnInit, OnDestroy {
   videoResumeSecond = signal(0);
   videoMaxWatchedSecond = signal(0);
   parsedVideoDescriptionHtml = signal<string>('');
+  secureVideoUrl = signal<string | null>(null);
   private lastSignalREmit = 0;
 
   // Accordion State
@@ -397,6 +402,9 @@ export class CourseLearning implements OnInit, OnDestroy {
     if (item.type === 'lesson') {
       const lesson = item.item as LessonSummary;
 
+      this.secureVideoUrl.set(null);
+      this.absolutePdfUrl.set(null);
+
       if (lesson.type === LessonType.Video || lesson.type === String(LessonType.Video)) { // Video
         const prog = this.progress()?.sections.flatMap(s => s.lessons).find(l => l.lessonId === lesson.id);
         if (prog) {
@@ -405,6 +413,13 @@ export class CourseLearning implements OnInit, OnDestroy {
         } else {
           this.videoResumeSecond.set(0);
           this.videoMaxWatchedSecond.set(0);
+        }
+
+        if (lesson.contentUrl) {
+          this.secureMediaService.getSecureUrl(lesson.contentUrl, this.courseId()!).subscribe({
+            next: (res) => this.secureVideoUrl.set(res.url),
+            error: () => this.toast.showError('Could not load secure video.')
+          });
         }
 
         await this.videoSignalR.connect();
@@ -418,13 +433,17 @@ export class CourseLearning implements OnInit, OnDestroy {
       }
 
       if ((lesson.type === LessonType.Pdf || lesson.type === String(LessonType.Pdf)) && lesson.contentUrl) { // PDF
-        const rawUrl = lesson.contentUrl;
-        // Resolve relative URLs to absolute using the API server base
-        const apiBase = environment.apiUrl.replace('/api/v1', '');
-        const absoluteUrl = rawUrl.startsWith('http://') || rawUrl.startsWith('https://')
-          ? rawUrl
-          : `${apiBase}${rawUrl.startsWith('/') ? '' : '/'}${rawUrl}`;
-        this.absolutePdfUrl.set(absoluteUrl);
+        this.secureMediaService.getSecureUrl(lesson.contentUrl, this.courseId()!).subscribe({
+          next: (res) => {
+            const rawUrl = res.url;
+            const apiBase = environment.apiUrl.replace('/api/v1', '');
+            const absoluteUrl = rawUrl.startsWith('http://') || rawUrl.startsWith('https://')
+              ? rawUrl
+              : `${apiBase}${rawUrl.startsWith('/') ? '' : '/'}${rawUrl}`;
+            this.absolutePdfUrl.set(absoluteUrl);
+          },
+          error: () => this.toast.showError('Could not load secure PDF.')
+        });
       } else if ((lesson.type === LessonType.Article || lesson.type === String(LessonType.Article)) && lesson.content) { // Article
         this.parsedArticleHtml.set(await marked(lesson.content));
       } else if ((lesson.type === LessonType.ExternalLink || lesson.type === String(LessonType.ExternalLink)) && lesson.contentUrl) { // ExternalLink

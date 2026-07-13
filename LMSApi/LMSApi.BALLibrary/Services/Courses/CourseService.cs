@@ -664,6 +664,15 @@ public async Task<CourseResponse> CreateCourseAsync(
             var courseForCache = await _courseRepository.GetByIdAsync(id);
             var slug = courseForCache?.slug;
 
+            if (courseForCache != null)
+            {
+                if (!string.IsNullOrWhiteSpace(courseForCache.ThumbnailUrl))
+                    await _uploadService.DeletePublicBlobAsync(courseForCache.ThumbnailUrl);
+                
+                if (!string.IsNullOrWhiteSpace(courseForCache.IntroVideoUrl))
+                    await _uploadService.DeleteBlobAsync(courseForCache.IntroVideoUrl);
+            }
+
             await _courseRepository.DeleteAsync(id);
             _logger.LogInformation("Course Deleted: Id={Id}", id);
 

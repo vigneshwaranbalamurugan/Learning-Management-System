@@ -105,8 +105,8 @@ namespace LMSApi.BALLibrary.Services.Upload
 
 			var webpFileName = Path.ChangeExtension(fileName, ".webp");
 
-			var url = await CloudinaryUtils.UploadProfileImageAsync(_configuration, outputStream, webpFileName, publicId);
-			_logger?.LogInformation("Profile image uploaded successfully to Cloudinary. URL: {Url}", url);
+			var url = await AzureBlobUtils.UploadProfileImageAsync(_configuration, outputStream, webpFileName, publicId);
+			_logger?.LogInformation("Profile image uploaded successfully. URL: {Url}", url);
 			return url;
 		}
 
@@ -130,7 +130,7 @@ namespace LMSApi.BALLibrary.Services.Upload
 			if (!IsAllowedCourseThumbnail(fileName, string.Empty))
 				throw new InvalidOperationException("Only JPG, JPEG, and PNG images are allowed as course thumbnails.");
 
-			return CloudinaryUtils.UploadCourseThumbnailAsync(_configuration, fileStream, fileName, publicId);
+			return AzureBlobUtils.UploadCourseThumbnailAsync(_configuration, fileStream, fileName, publicId);
 		}
 
 		// ─── Course intro video ───────────────────────────────────────────────────
@@ -151,7 +151,7 @@ namespace LMSApi.BALLibrary.Services.Upload
 			if (!IsAllowedCourseVideo(fileName, string.Empty))
 				throw new InvalidOperationException("Only MP4, MOV, AVI, and WEBM videos are allowed as course intro videos.");
 
-			return CloudinaryUtils.UploadCourseIntroVideoAsync(_configuration, fileStream, fileName, publicId);
+			return AzureBlobUtils.UploadCourseIntroVideoAsync(_configuration, fileStream, fileName, publicId);
 		}
 
 		// ─── Lesson uploads ───────────────────────────────────────────────────────
@@ -172,7 +172,7 @@ namespace LMSApi.BALLibrary.Services.Upload
 			if (!IsAllowedCourseVideo(fileName, string.Empty))
 				throw new InvalidOperationException("Only MP4, MOV, AVI, and WEBM videos are allowed as lesson videos.");
 
-			return CloudinaryUtils.UploadLessonVideoAsync(_configuration, fileStream, fileName, publicId);
+			return AzureBlobUtils.UploadLessonVideoAsync(_configuration, fileStream, fileName, publicId);
 		}
 
 		public Task<string> UploadLessonPdfAsync(Stream fileStream, string fileName, string publicId)
@@ -184,7 +184,7 @@ namespace LMSApi.BALLibrary.Services.Upload
 			if (!IsAllowedLessonPdf(fileName, string.Empty))
 				throw new InvalidOperationException("Only PDF files are allowed as lesson documents.");
 
-			return CloudinaryUtils.UploadLessonPdfAsync(_configuration, fileStream, fileName, publicId);
+			return AzureBlobUtils.UploadLessonPdfAsync(_configuration, fileStream, fileName, publicId);
 		}
 
 		// ─── Assignment Attachments ───────────────────────────────────────────────
@@ -204,7 +204,7 @@ namespace LMSApi.BALLibrary.Services.Upload
 			if (!IsAllowedAssignmentAttachment(fileName, string.Empty))
 				throw new InvalidOperationException("Invalid file type for assignment attachment.");
 
-			return CloudinaryUtils.UploadAssignmentAttachmentAsync(_configuration, fileStream, fileName, publicId);
+			return AzureBlobUtils.UploadAssignmentAttachmentAsync(_configuration, fileStream, fileName, publicId);
 		}
 
 		// ─── Certificates ─────────────────────────────────────────────────────────
@@ -227,13 +227,38 @@ namespace LMSApi.BALLibrary.Services.Upload
 			if (!IsAllowedCertificateTemplateBackground(fileName, string.Empty))
 				throw new InvalidOperationException("Only JPG, JPEG, and PNG images are allowed as certificate template backgrounds.");
 
-			return CloudinaryUtils.UploadCertificateTemplateBackgroundAsync(_configuration, fileStream, fileName, publicId);
+			return AzureBlobUtils.UploadCertificateTemplateBackgroundAsync(_configuration, fileStream, fileName, publicId);
 		}
 
 		public Task<string> UploadCertificatePdfAsync(Stream fileStream, string fileName, string publicId)
 		{
-			// Cloudinary needs to know the type for proper transformation, usually auto works, but for specific folder/naming we use utils
-			return CloudinaryUtils.UploadCertificatePdfAsync(_configuration, fileStream, fileName, publicId);
+			// Azure Blob Storage handles the PDF without special transformations.
+			return AzureBlobUtils.UploadCertificatePdfAsync(_configuration, fileStream, fileName, publicId);
+		}
+
+		// ─── Delete ───────────────────────────────────────────────────────────────
+		public Task DeleteBlobAsync(string blobPath)
+		{
+			if (string.IsNullOrWhiteSpace(blobPath)) return Task.CompletedTask;
+			return AzureBlobUtils.DeleteBlobAsync(_configuration, blobPath, isPublic: false);
+		}
+
+		public Task DeletePublicBlobAsync(string blobUrl)
+		{
+			if (string.IsNullOrWhiteSpace(blobUrl)) return Task.CompletedTask;
+			
+			// For public blobs, we might have stored the full URL or just the path depending on logic.
+			// Try to extract blob path from URL if needed, or pass it directly.
+			// AzureBlobUtils.DeleteBlobAsync can handle simple cases.
+			var uri = new Uri(blobUrl);
+			var path = uri.AbsolutePath.TrimStart('/');
+			// path will look like "lms-public/lms/profile-pictures/..."
+			// we just need the blob name, which is after the container name.
+			var containerName = _configuration["AzureBlob:PublicContainerName"] ?? "lms-public";
+			var prefix = $"{containerName}/";
+			var blobName = path.StartsWith(prefix) ? path.Substring(prefix.Length) : path;
+			
+			return AzureBlobUtils.DeleteBlobAsync(_configuration, blobName, isPublic: true);
 		}
 	}
 }

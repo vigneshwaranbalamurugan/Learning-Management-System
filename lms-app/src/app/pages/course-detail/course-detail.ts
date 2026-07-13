@@ -18,6 +18,7 @@ import { EnrollmentService } from '@services/enrollment.service';
 import { ReviewService } from '@services/review.service';
 import { ReviewResponse } from '@models/review';
 import { environment } from '@environments/environment';
+import { SecureMediaService } from '@services/secure-media.service';
 import { ConfirmModal } from '../../components/confirm-modal/confirm-modal';
 import { ConfettiComponent } from '../../components/confetti/confetti';
 import { Loader } from '../../components/loader/loader';
@@ -38,6 +39,8 @@ export class CourseDetail implements OnInit {
   private destroyRef       = inject(DestroyRef);
   private authService      = inject(AuthService);
   private reviewService    = inject(ReviewService);
+  private secureMediaService = inject(SecureMediaService);
+  // sanitizer is already injected below
 
   // ── Data ─────────────────────────────────────────────────────────────────
   protected course            = signal<CourseDetailResponse | CoursePreviewResponse | null>(null);
@@ -394,14 +397,36 @@ export class CourseDetail implements OnInit {
     this.previewTitle.set(title);
     
     if (typeStr === 'video') {
-      this.currentVideoUrl.set(url || null);
+      this.currentVideoUrl.set(null);
+      this.previewUrl.set(null);
+      if (url) {
+        this.secureMediaService.getSecureUrl(url, this.courseId!).subscribe({
+          next: (res) => {
+            this.currentVideoUrl.set(res.url);
+            this.previewUrl.set(this.sanitizer.bypassSecurityTrustResourceUrl(res.url));
+          },
+          error: () => this.toastService.showError('Could not load secure video preview.')
+        });
+      }
       const savedTime = url ? (this.videoProgressMap.get(url) || 0) : 0;
       this.currentVideoProgress.set(savedTime);
-      this.previewUrl.set(url ? this.sanitizer.bypassSecurityTrustResourceUrl(url) : null);
       this.previewContent.set(null);
       this.previewType.set('video');
     } else if (typeStr === 'pdf') {
-      this.previewUrl.set(url ? this.sanitizer.bypassSecurityTrustResourceUrl(url) : null);
+      this.previewUrl.set(null);
+      if (url) {
+        this.secureMediaService.getSecureUrl(url, this.courseId!).subscribe({
+          next: (res) => {
+            const rawUrl = res.url;
+            const apiBase = environment.apiUrl.replace('/api/v1', '');
+            const absoluteUrl = rawUrl.startsWith('http://') || rawUrl.startsWith('https://')
+              ? rawUrl
+              : `${apiBase}${rawUrl.startsWith('/') ? '' : '/'}${rawUrl}`;
+            this.previewUrl.set(this.sanitizer.bypassSecurityTrustResourceUrl(absoluteUrl));
+          },
+          error: () => this.toastService.showError('Could not load secure PDF preview.')
+        });
+      }
       this.previewContent.set(null);
       this.previewType.set('pdf');
     } else if (typeStr === 'article') {

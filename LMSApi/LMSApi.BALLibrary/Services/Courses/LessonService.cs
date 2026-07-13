@@ -327,6 +327,11 @@ namespace LMSApi.BALLibrary.Services
                 throw new InvalidOperationException("Use 'Start Course Update' to modify content of a published course with enrolled learners.");
             }
 
+            if (!string.IsNullOrWhiteSpace(lesson.ContentUrl))
+            {
+                await _uploadService.DeleteBlobAsync(lesson.ContentUrl);
+            }
+
             await _lessonRepository.DeleteAsync(id);
 
             await _courseRepository.UpdateCourseDurationAsync(course.Id);
