@@ -220,5 +220,12 @@ namespace LMSApi.DALLibrary.Repositories
                 .OrderBy(e => e.EnrolledAt)
                 .ToListAsync();
         }
+
+        public async Task SetIsOnLatestVersionForCourseAsync(int courseId, bool value)
+        {
+            await _context.Enrollments
+                .Where(e => e.CourseId == courseId && e.EnrollmentStatus == LMSApi.ModelLibrary.Enums.EnrollmentStatus.Active)
+                .ExecuteUpdateAsync(s => s.SetProperty(e => e.IsOnLatestVersion, value));
+        }
     }
 }

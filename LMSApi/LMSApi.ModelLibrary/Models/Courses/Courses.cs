@@ -28,6 +28,11 @@ namespace LMSApi.ModelLibrary.Models
         public CourseAccessType CourseAccessType { get; set; } = CourseAccessType.SelfPaced;
         public int? DefaultDeadlineDays { get; set; }
 
+        public string VersionNumber { get; set; } = "1.0";
+        public bool IsBeingUpdated { get; set; } = false;
+        public string? PublishedSnapshotJson { get; set; }
+        public string? PreviousPublishedSnapshotJson { get; set; }
+
         public bool IsDeleted { get; set; } = false;
         public DateTime? DeletedAt { get; set; }
 

@@ -24,7 +24,9 @@ export class InstructorCourseOverview implements OnInit {
   private sanitizer = inject(DomSanitizer);
   private ngZone = inject(NgZone);
 
-  protected isEditMode = false;
+  protected get isEditMode(): boolean { return this._isEditMode; }
+  protected set isEditMode(value: boolean) { this._isEditMode = value; }
+  private _isEditMode = false;
   protected isSaving = false;
 
   // Metadata
@@ -142,11 +144,11 @@ protected toggleEditMode() {
     this.requirements = course.requirements || '';
     this.learningOutcomes = course.learningOutcomes || '';
 
-    this.categoryIdStr = course.categoryId?.toString() || '';
-    this.languageIdStr = course.languageId?.toString() || '';
-    this.levelStr = course.level?.toString() || '';
+    this.categoryIdStr = (course.categoryId || '').toString();
+    this.languageIdStr = (course.languageId || '').toString();
+    this.levelStr = (course.level || '').toString();
     this.isPremium = course.isPremium || false;
-    this.priceStr = course.price?.toString() || '0';
+    this.priceStr = (course.price || '').toString();
 
     this.thumbnailFile = null;
     this.thumbnailPreview = course.thumbnailUrl || null;
@@ -159,6 +161,21 @@ protected toggleEditMode() {
   }
 
   this.isEditMode = !this.isEditMode;
+}
+
+protected submitUpdateForReview() {
+  const course = this.course;
+  if (!course) return;
+  if (confirm('Are you sure you want to submit this updated version for review?')) {
+    this.courseService.publishCourse(course.id, true).subscribe({
+      next: () => {
+        this.toastService.showSuccess('Updated version submitted for review!');
+      },
+      error: (err) => {
+        this.toastService.showApiError(err, 'Failed to submit for review');
+      }
+    });
+  }
 }
 
   protected validateField(field: string): void {

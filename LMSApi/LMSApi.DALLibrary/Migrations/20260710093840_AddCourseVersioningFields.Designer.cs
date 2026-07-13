@@ -3,6 +3,7 @@ using System;
 using LMSApi.DALLibrary.Contexts;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace LMSApi.DALLibrary.Migrations
 {
     [DbContext(typeof(LMSDbContext))]
-    partial class LMSDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260710093840_AddCourseVersioningFields")]
+    partial class AddCourseVersioningFields
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -642,131 +645,6 @@ namespace LMSApi.DALLibrary.Migrations
                         .IsUnique();
 
                     b.ToTable("Courses", (string)null);
-                });
-
-            modelBuilder.Entity("LMSApi.ModelLibrary.Models.DiscussionLikes", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp without time zone")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
-
-                    b.Property<int>("DiscussionId")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("UserId")
-                        .HasColumnType("integer");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("UserId");
-
-                    b.HasIndex("DiscussionId", "UserId")
-                        .IsUnique();
-
-                    b.ToTable("DiscussionLikes", (string)null);
-                });
-
-            modelBuilder.Entity("LMSApi.ModelLibrary.Models.DiscussionReplies", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp without time zone")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
-
-                    b.Property<int>("DiscussionId")
-                        .HasColumnType("integer");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("boolean");
-
-                    b.Property<string>("ReplyText")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp without time zone")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
-
-                    b.Property<int>("UserId")
-                        .HasColumnType("integer");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("DiscussionId");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("DiscussionReplies", (string)null);
-                });
-
-            modelBuilder.Entity("LMSApi.ModelLibrary.Models.Discussions", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Content")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<int>("CourseId")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp without time zone")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("IsLocked")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("IsPinned")
-                        .HasColumnType("boolean");
-
-                    b.Property<int>("LessonId")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("Title")
-                        .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp without time zone")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
-
-                    b.Property<int>("UserId")
-                        .HasColumnType("integer");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("CourseId");
-
-                    b.HasIndex("LessonId");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("Discussions", (string)null);
                 });
 
             modelBuilder.Entity("LMSApi.ModelLibrary.Models.Enrollments", b =>
@@ -1958,26 +1836,26 @@ namespace LMSApi.DALLibrary.Migrations
                         new
                         {
                             Id = 1,
-                            CreatedAt = new DateTime(2026, 7, 10, 10, 36, 8, 307, DateTimeKind.Utc).AddTicks(9600),
+                            CreatedAt = new DateTime(2026, 7, 10, 9, 38, 39, 519, DateTimeKind.Utc).AddTicks(2050),
                             Description = "Learner account",
                             RoleName = "Learner",
-                            UpdatedAt = new DateTime(2026, 7, 10, 10, 36, 8, 307, DateTimeKind.Utc).AddTicks(9610)
+                            UpdatedAt = new DateTime(2026, 7, 10, 9, 38, 39, 519, DateTimeKind.Utc).AddTicks(2050)
                         },
                         new
                         {
                             Id = 2,
-                            CreatedAt = new DateTime(2026, 7, 10, 10, 36, 8, 307, DateTimeKind.Utc).AddTicks(9610),
+                            CreatedAt = new DateTime(2026, 7, 10, 9, 38, 39, 519, DateTimeKind.Utc).AddTicks(2060),
                             Description = "Instructor account",
                             RoleName = "Instructor",
-                            UpdatedAt = new DateTime(2026, 7, 10, 10, 36, 8, 307, DateTimeKind.Utc).AddTicks(9610)
+                            UpdatedAt = new DateTime(2026, 7, 10, 9, 38, 39, 519, DateTimeKind.Utc).AddTicks(2060)
                         },
                         new
                         {
                             Id = 3,
-                            CreatedAt = new DateTime(2026, 7, 10, 10, 36, 8, 307, DateTimeKind.Utc).AddTicks(9610),
+                            CreatedAt = new DateTime(2026, 7, 10, 9, 38, 39, 519, DateTimeKind.Utc).AddTicks(2060),
                             Description = "Admin account",
                             RoleName = "Admin",
-                            UpdatedAt = new DateTime(2026, 7, 10, 10, 36, 8, 307, DateTimeKind.Utc).AddTicks(9610)
+                            UpdatedAt = new DateTime(2026, 7, 10, 9, 38, 39, 519, DateTimeKind.Utc).AddTicks(2060)
                         });
                 });
 
@@ -2060,7 +1938,7 @@ namespace LMSApi.DALLibrary.Migrations
                         new
                         {
                             Id = 1,
-                            CreatedAt = new DateTime(2026, 7, 10, 10, 36, 8, 307, DateTimeKind.Utc).AddTicks(5980),
+                            CreatedAt = new DateTime(2026, 7, 10, 9, 38, 39, 518, DateTimeKind.Utc).AddTicks(6600),
                             Email = "admin@gmail.com",
                             IsActive = true,
                             IsEmailVerified = true,
@@ -2069,7 +1947,7 @@ namespace LMSApi.DALLibrary.Migrations
                             PasswordHash = "TPZPlYPS43ldK8EYFX67pHzyMNFmt69wd9N2cUNObYs=",
                             PasswordSalt = "K5CamRmhDuuJEyr50OpNsA==",
                             RoleId = 3,
-                            UpdatedAt = new DateTime(2026, 7, 10, 10, 36, 8, 307, DateTimeKind.Utc).AddTicks(5980)
+                            UpdatedAt = new DateTime(2026, 7, 10, 9, 38, 39, 518, DateTimeKind.Utc).AddTicks(6600)
                         });
                 });
 
@@ -2266,71 +2144,6 @@ namespace LMSApi.DALLibrary.Migrations
                     b.Navigation("Instructor");
 
                     b.Navigation("Language");
-                });
-
-            modelBuilder.Entity("LMSApi.ModelLibrary.Models.DiscussionLikes", b =>
-                {
-                    b.HasOne("LMSApi.ModelLibrary.Models.Discussions", "Discussion")
-                        .WithMany()
-                        .HasForeignKey("DiscussionId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("LMSApi.ModelLibrary.Models.Users", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Discussion");
-
-                    b.Navigation("User");
-                });
-
-            modelBuilder.Entity("LMSApi.ModelLibrary.Models.DiscussionReplies", b =>
-                {
-                    b.HasOne("LMSApi.ModelLibrary.Models.Discussions", "Discussion")
-                        .WithMany()
-                        .HasForeignKey("DiscussionId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("LMSApi.ModelLibrary.Models.Users", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Discussion");
-
-                    b.Navigation("User");
-                });
-
-            modelBuilder.Entity("LMSApi.ModelLibrary.Models.Discussions", b =>
-                {
-                    b.HasOne("LMSApi.ModelLibrary.Models.Courses", "Course")
-                        .WithMany()
-                        .HasForeignKey("CourseId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("LMSApi.ModelLibrary.Models.Lessons", "Lesson")
-                        .WithMany("Discussions")
-                        .HasForeignKey("LessonId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("LMSApi.ModelLibrary.Models.Users", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Course");
-
-                    b.Navigation("Lesson");
-
-                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("LMSApi.ModelLibrary.Models.Enrollments", b =>
@@ -2717,8 +2530,6 @@ namespace LMSApi.DALLibrary.Migrations
 
             modelBuilder.Entity("LMSApi.ModelLibrary.Models.Lessons", b =>
                 {
-                    b.Navigation("Discussions");
-
                     b.Navigation("Resources");
                 });
 

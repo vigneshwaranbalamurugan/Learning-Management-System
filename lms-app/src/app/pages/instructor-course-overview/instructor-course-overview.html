@@ -48,13 +48,29 @@
   <div class="border-t border-gray-100 pt-6 space-y-4 relative">
     <div class="flex items-center justify-between">
       <h3 class="text-lg font-bold text-slate-900">Course Overview</h3>
-      <app-button 
-        *ngIf="!isEditMode"
-        (click)="toggleEditMode()" 
-        variant="outline" 
-        customClass="!px-3 !py-1.5 !w-auto text-xs font-semibold">
-        Edit Overview
-      </app-button>
+      <div class="flex gap-2">
+        <app-button 
+          *ngIf="course.isBeingUpdated && !isEditMode && layout.viewMode() === 'draft'"
+          (click)="submitUpdateForReview()" 
+          [disabled]="!course.hasDraftChanges"
+          [title]="!course.hasDraftChanges ? 'No changes made to course content' : 'Submit updated version for review'"
+          variant="outline" 
+          [customClass]="'!px-3 !py-1.5 !w-auto text-xs font-semibold ' + (!course.hasDraftChanges ? 'text-gray-400 border-gray-200' : 'text-emerald-600 border-emerald-200 hover:bg-emerald-50 hover:border-emerald-300')">
+          <span class="flex items-center gap-1.5">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            Submit Updated Version
+          </span>
+        </app-button>
+        <app-button 
+          *ngIf="!isEditMode"
+          (click)="toggleEditMode()" 
+          variant="outline" 
+          customClass="!px-3 !py-1.5 !w-auto text-xs font-semibold">
+          Edit Overview
+        </app-button>
+      </div>
     </div>
 
     <!-- Read-Only View -->
@@ -163,7 +179,7 @@
         <div>
           <label class="text-xs font-bold text-slate-700 block mb-1">Course Description (Markdown supported)</label>
           <textarea 
-            [(ngModel)]="description" 
+            [(ngModel)]="description" [disabled]="!!(layout.viewMode() === 'live' || layout.isLocked())" 
             (ngModelChange)="updateMarkdownPreview(); validateField('description')"
             rows="6" 
             maxlength="500"
@@ -188,7 +204,7 @@
         <div>
           <label class="text-xs font-bold text-slate-700 block mb-1">Requirements (Markdown supported)</label>
           <textarea 
-            [(ngModel)]="requirements" 
+            [(ngModel)]="requirements" [disabled]="!!(layout.viewMode() === 'live' || layout.isLocked())" 
             (ngModelChange)="updateMarkdownPreview(); validateField('requirements')"
             rows="6" 
             maxlength="1000"
@@ -213,7 +229,7 @@
         <div>
           <label class="text-xs font-bold text-slate-700 block mb-1">What Students Will Learn (Markdown supported)</label>
           <textarea 
-            [(ngModel)]="learningOutcomes" 
+            [(ngModel)]="learningOutcomes" [disabled]="!!(layout.viewMode() === 'live' || layout.isLocked())" 
             (ngModelChange)="updateMarkdownPreview(); validateField('learningOutcomes')"
             rows="6" 
             maxlength="1000"

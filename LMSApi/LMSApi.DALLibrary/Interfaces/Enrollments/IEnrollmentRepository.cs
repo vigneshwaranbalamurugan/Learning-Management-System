@@ -19,6 +19,8 @@ namespace LMSApi.DALLibrary.Interfaces
         /// <summary>Returns all active enrollments for a given course.</summary>
         Task<IEnumerable<Enrollments>> GetActiveEnrollmentsByCourseAsync(int courseId);
 
+        Task SetIsOnLatestVersionForCourseAsync(int courseId, bool value);
+
         /// <summary>Checks if a course has any enrollments.</summary>
         Task<bool> HasEnrollmentsByCourseAsync(int courseId);
 

@@ -61,7 +61,7 @@ export class AdminCoursesComponent implements OnInit {
   protected courseToArchiveHasEnrollments = signal(false);
 
   // Filters & Pagination
-  protected activeTab = signal<'all' | 'pending'>('all');
+  protected activeTab = signal<'all' | 'pending' | 'updates'>('all');
   protected pageNumber = signal(1);
   protected pageSize = signal(10);
   protected totalCount = signal(0);
@@ -158,6 +158,8 @@ export class AdminCoursesComponent implements OnInit {
     
     if (tab === 'pending') {
       url = `${environment.apiUrl}/Courses/pending?pageNumber=${page}&pageSize=${this.pageSize()}`;
+    } else if (tab === 'updates') {
+      url = `${environment.apiUrl}/Courses/updates-pending?pageNumber=${page}&pageSize=${this.pageSize()}`;
     }
 
     if (this.searchQuery().trim()) {
@@ -200,7 +202,7 @@ export class AdminCoursesComponent implements OnInit {
     }, 300);
   }
 
-  protected onTabChange(tab: 'all' | 'pending'): void {
+  protected onTabChange(tab: 'all' | 'pending' | 'updates'): void {
     this.activeTab.set(tab);
     this.pageNumber.set(1);
   }

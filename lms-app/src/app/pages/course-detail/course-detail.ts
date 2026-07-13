@@ -82,6 +82,7 @@ export class CourseDetail implements OnInit {
   // ── UI State ─────────────────────────────────────────────────────────────
   protected isLoading   = signal(true);
   protected isEnrolling = signal(false);
+  protected isUpdatingVersion = signal(false);
   protected expandedSections = signal<Set<number>>(new Set());
   protected showEnrollConfirmModal = signal(false);
   protected showConfetti = signal(false);
@@ -166,6 +167,33 @@ export class CourseDetail implements OnInit {
         this.toastService.showApiError(err, 'Failed to load course details.');
         this.isLoading.set(false);
         this.goBack();
+      }
+    });
+  }
+
+  protected showUpgradeModal = signal(false);
+
+  protected confirmVersionUpgrade(): void {
+    this.showUpgradeModal.set(true);
+  }
+
+  protected executeVersionUpgrade(): void {
+    const c = this.course();
+    if (!c) return;
+
+    this.isUpdatingVersion.set(true);
+    this.enrollmentService.updateToLatestVersion(c.id).pipe(untilDestroyed(this.destroyRef)).subscribe({
+      next: (enrollment) => {
+        this.isUpdatingVersion.set(false);
+        this.showUpgradeModal.set(false);
+        this.toastService.showSuccess('Successfully updated to the latest course version!');
+        // Reload course to reflect new version data
+        this.loadCourse(c.id);
+      },
+      error: (err) => {
+        this.isUpdatingVersion.set(false);
+        this.showUpgradeModal.set(false);
+        this.toastService.showApiError(err, 'Failed to update course version.');
       }
     });
   }

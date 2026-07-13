@@ -25,7 +25,7 @@ BEGIN
     -- Return true if marks awarded is greater than or equal to passing marks
     RETURN v_marks_awarded >= v_passing_marks;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.calculate_pass_status(p_attempt_id integer)
  RETURNS boolean
@@ -58,7 +58,7 @@ BEGIN
 
     RETURN (v_score / v_total_marks) * 100 >= v_passing_percentage;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.calculate_quiz_score(p_attempt_id integer)
  RETURNS double precision
@@ -79,7 +79,7 @@ BEGIN
 
     RETURN v_score;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.get_batch_available_seats(p_batch_id integer)
  RETURNS integer
@@ -105,7 +105,7 @@ BEGIN
 
     RETURN GREATEST(0, v_max_students - v_enrolled_count);
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.get_course_rating_stats(p_course_id integer)
  RETURNS TABLE(averagerating double precision, totalreviews integer)
@@ -119,7 +119,7 @@ BEGIN
     FROM "Reviews"
     WHERE "CourseId" = p_course_id;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.get_remaining_attempts(p_quiz_id integer, p_user_id integer)
  RETURNS integer
@@ -143,7 +143,7 @@ BEGIN
 
     RETURN GREATEST(0, v_max_attempts - v_attempt_count);
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.get_submission_attempt_count(p_assignment_id integer, p_student_id integer)
  RETURNS integer
@@ -160,7 +160,7 @@ BEGIN
 
     RETURN v_attempt_count;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.get_upcoming_deadlines(target_date date)
  RETURNS TABLE(userid integer, useremail character varying, username character varying, coursename character varying, itemtype character varying, itemtitle character varying, deadlinedate date)
@@ -219,5 +219,5 @@ ON up."UserId" = u."Id"
           WHERE qa."QuizId" = q."Id" AND qa."UserId" = u."Id" AND (qa."Status" = 'Submitted' OR qa."IsPassed" = true) -- Assuming 2 is Completed
       );
 END;
-$function$
+$function$;
 

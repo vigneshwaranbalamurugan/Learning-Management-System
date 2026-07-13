@@ -14,6 +14,7 @@ namespace LMSApi.ModelLibrary.Models
         public int? BatchId { get; set; }
         public DateTime? AccessExpiresAt { get; set; }
         public EnrollmentStatus EnrollmentStatus { get; set; } = EnrollmentStatus.Active;
+        public bool IsOnLatestVersion { get; set; } = true;
 
         // ─── Navigation properties ────────────────────────────────────────────
         public Users User { get; set; } = null!;

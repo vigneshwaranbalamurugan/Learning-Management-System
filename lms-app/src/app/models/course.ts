@@ -46,6 +46,10 @@ export interface CourseResponse {
   hasNonExpiredEnrollments?: boolean;
   hasActiveEnrollments?: boolean;
   isDeleted?: boolean;
+  versionNumber?: string;
+  isBeingUpdated?: boolean;
+  hasNewerVersion?: boolean;
+  hasDraftChanges?: boolean;
 }
 
 export interface CategoryResponse {
@@ -90,6 +94,8 @@ export interface InstructorCourseCardResponse {
   hasNonExpiredEnrollments?: boolean;
   hasActiveEnrollments?: boolean;
   isDeleted?: boolean;
+  versionNumber?: string;
+  isBeingUpdated?: boolean;
 }
 
 export interface PagedCourseResponse {
@@ -120,6 +126,7 @@ export interface CourseSummaryStatsResponse {
   totalCourses: number;
   publishedCourses: number;
   pendingApproval: number;
+  updatesPending: number;
   archivedCourses: number;
 }
 

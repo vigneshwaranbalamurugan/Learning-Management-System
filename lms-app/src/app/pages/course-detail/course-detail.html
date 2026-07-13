@@ -511,6 +511,25 @@
                 </svg>
                 Continue Learning
               </button>
+
+              @if (course()!.hasNewerVersion) {
+                <div class="mt-4 bg-blue-50 border border-blue-200 rounded-xl p-4 shadow-sm relative overflow-hidden">
+                  <div class="absolute -right-4 -top-4 w-16 h-16 bg-blue-100 rounded-full opacity-50"></div>
+                  <div class="flex items-start gap-3 relative z-10">
+                    <div class="bg-blue-600 text-white rounded-lg p-1.5 shrink-0">
+                      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                    </div>
+                    <div>
+                      <h4 class="text-sm font-bold text-slate-800">New version available!</h4>
+                      <p class="text-[11px] text-gray-600 leading-snug mt-1 mb-3">Your progress is preserved. Update to access the latest content and improvements.</p>
+                      <button (click)="confirmVersionUpgrade()"
+                        class="w-full text-xs font-bold bg-white text-blue-600 border border-blue-200 hover:bg-blue-50 py-2 rounded-lg transition-colors cursor-pointer text-center">
+                        Update Course Version
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              }
             } @else if (course()!.isPremium) {
               <button (click)="enroll()"
                 [disabled]="isEnrolling()"
@@ -714,3 +733,14 @@
   [message]="'Welcome to ' + course()?.title + '. Happy Learning!'"
   (close)="showConfetti.set(false)">
 </app-confetti>
+
+<!-- Version Upgrade Modal -->
+<app-confirm-modal
+  [isOpen]="showUpgradeModal()"
+  title="Update Course Version"
+  message="Are you sure you want to update to the latest version of this course? Your completed lessons will be preserved, but the course structure may have changed."
+  confirmText="Update Version"
+  cancelText="Cancel"
+  (confirm)="executeVersionUpgrade()"
+  (cancel)="showUpgradeModal.set(false)">
+</app-confirm-modal>

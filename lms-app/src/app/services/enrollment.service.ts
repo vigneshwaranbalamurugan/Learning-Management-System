@@ -21,6 +21,10 @@ export class EnrollmentService {
     return { headers: new HttpHeaders({ 'Idempotency-Key': key }) };
   }
 
+  updateToLatestVersion(courseId: number): Observable<EnrollmentResponse> {
+    return this.http.post<EnrollmentResponse>(`${this.baseUrl}/courses/${courseId}/update-version`, {});
+  }
+
   getMyEnrollments(
     page: number = 1,
     pageSize: number = 10,

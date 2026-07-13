@@ -178,6 +178,39 @@ namespace LMSApi.BALLibrary.Services
                             }).ToList();
 
                         var preview = _mapper.Map<CoursePreviewResponse>(c);
+                        
+                        if (c.IsBeingUpdated && !string.IsNullOrEmpty(c.PublishedSnapshotJson))
+                        {
+                            var sections = Newtonsoft.Json.JsonConvert.DeserializeObject<List<LMSApi.ModelLibrary.DTOs.SectionResponse>>(c.PublishedSnapshotJson);
+                            if (sections != null) 
+                            {
+                                preview.Sections = sections.Select(s => new LMSApi.ModelLibrary.DTOs.CourseSectionPreviewResponse
+                                {
+                                    Id = s.Id,
+                                    Title = s.Title ?? "",
+                                    Description = s.Description,
+                                    EstimatedDuration = s.EstimatedDuration,
+                                    SortOrder = s.SortOrder,
+                                    Lessons = s.Lessons?.Select(l => new LMSApi.ModelLibrary.DTOs.CourseLessonPreviewResponse
+                                    {
+                                        Id = l.Id,
+                                        CourseSectionId = l.CourseSectionId,
+                                        Title = l.Title ?? "",
+                                        Description = l.Description,
+                                        Type = l.Type,
+                                        DurationInMinutes = l.DurationInMinutes,
+                                        SortOrder = l.SortOrder,
+                                        IsPreview = l.IsPreview,
+                                        ContentUrl = l.IsPreview ? l.ContentUrl : null,
+                                        Content = l.IsPreview ? l.Content : null,
+                                        Resources = l.IsPreview ? l.Resources : new List<LMSApi.ModelLibrary.DTOs.ResourceResponse>()
+                                    }).ToList() ?? new List<LMSApi.ModelLibrary.DTOs.CourseLessonPreviewResponse>(),
+                                    Quizzes = s.Quizzes ?? new List<LMSApi.ModelLibrary.DTOs.QuizResponse>(),
+                                    Assignments = s.Assignments ?? new List<LMSApi.ModelLibrary.DTOs.AssignmentResponse>()
+                                }).ToList();
+                            }
+                        }
+
                         preview.EnrolledCount = c.Enrollments?.Count ?? 0;
 
                         var pStats = await _courseRepository.GetCourseRatingStatsAsync(c.Id);
@@ -229,6 +262,33 @@ namespace LMSApi.BALLibrary.Services
             {
                 response.EnrollmentId = enrollment.Id;
                 response.EnrollmentProgress = (double)enrollment.ProgressPercentage;
+                
+                if (!enrollment.IsOnLatestVersion)
+                {
+                    response.HasNewerVersion = true;
+                    if (!string.IsNullOrEmpty(course.PreviousPublishedSnapshotJson))
+                    {
+                        var sections = Newtonsoft.Json.JsonConvert.DeserializeObject<List<LMSApi.ModelLibrary.DTOs.SectionResponse>>(course.PreviousPublishedSnapshotJson);
+                        if (sections != null) response.Sections = sections;
+                    }
+                }
+                else if (course.IsBeingUpdated)
+                {
+                    response.IsBeingUpdated = true;
+                    if (!string.IsNullOrEmpty(course.PublishedSnapshotJson))
+                    {
+                        var sections = Newtonsoft.Json.JsonConvert.DeserializeObject<List<LMSApi.ModelLibrary.DTOs.SectionResponse>>(course.PublishedSnapshotJson);
+                        if (sections != null) response.Sections = sections;
+                    }
+                }
+                else if (enrollment.EnrollmentStatus == LMSApi.ModelLibrary.Enums.EnrollmentStatus.Completed)
+                {
+                    if (!string.IsNullOrEmpty(course.PublishedSnapshotJson))
+                    {
+                        var sections = Newtonsoft.Json.JsonConvert.DeserializeObject<List<LMSApi.ModelLibrary.DTOs.SectionResponse>>(course.PublishedSnapshotJson);
+                        if (sections != null) response.Sections = sections;
+                    }
+                }
             }
 
             var rData = await _reviewRepository.GetByCourseAsync(course.Id);
@@ -247,10 +307,17 @@ namespace LMSApi.BALLibrary.Services
             response.HasNonExpiredEnrollments = await _enrollmentRepository.HasNonExpiredEnrollmentsByCourseAsync(id);
             response.HasActiveEnrollments = await _enrollmentRepository.HasActiveOnlyEnrollmentsByCourseAsync(id);
 
+            if (course.IsBeingUpdated && !string.IsNullOrEmpty(course.PublishedSnapshotJson))
+            {
+                var previewForComparison = _mapper.Map<CoursePreviewResponse>(course);
+                var currentSectionsJson = Newtonsoft.Json.JsonConvert.SerializeObject(previewForComparison.Sections);
+                response.HasDraftChanges = currentSectionsJson != course.PublishedSnapshotJson;
+            }
+
             return response;
         }
 
-        public async Task<CourseResponse> GetCourseBySlugAsync(string slug, int? currentUserId = null, bool isAdmin = false)
+        public async Task<CourseResponse> GetCourseBySlugAsync(string slug, int? currentUserId = null, bool isAdmin = false, string? view = null)
         {
             async Task<CoursePreviewResponse> GetCachedPreviewAsync()
             {
@@ -285,6 +352,39 @@ namespace LMSApi.BALLibrary.Services
                             }).ToList();
 
                         var preview = _mapper.Map<CoursePreviewResponse>(c);
+                        
+                        if (c.IsBeingUpdated && !string.IsNullOrEmpty(c.PublishedSnapshotJson))
+                        {
+                            var sections = Newtonsoft.Json.JsonConvert.DeserializeObject<List<LMSApi.ModelLibrary.DTOs.SectionResponse>>(c.PublishedSnapshotJson);
+                            if (sections != null) 
+                            {
+                                preview.Sections = sections.Select(s => new LMSApi.ModelLibrary.DTOs.CourseSectionPreviewResponse
+                                {
+                                    Id = s.Id,
+                                    Title = s.Title ?? "",
+                                    Description = s.Description,
+                                    EstimatedDuration = s.EstimatedDuration,
+                                    SortOrder = s.SortOrder,
+                                    Lessons = s.Lessons?.Select(l => new LMSApi.ModelLibrary.DTOs.CourseLessonPreviewResponse
+                                    {
+                                        Id = l.Id,
+                                        CourseSectionId = l.CourseSectionId,
+                                        Title = l.Title ?? "",
+                                        Description = l.Description,
+                                        Type = l.Type,
+                                        DurationInMinutes = l.DurationInMinutes,
+                                        SortOrder = l.SortOrder,
+                                        IsPreview = l.IsPreview,
+                                        ContentUrl = l.IsPreview ? l.ContentUrl : null,
+                                        Content = l.IsPreview ? l.Content : null,
+                                        Resources = l.IsPreview ? l.Resources : new List<LMSApi.ModelLibrary.DTOs.ResourceResponse>()
+                                    }).ToList() ?? new List<LMSApi.ModelLibrary.DTOs.CourseLessonPreviewResponse>(),
+                                    Quizzes = s.Quizzes ?? new List<LMSApi.ModelLibrary.DTOs.QuizResponse>(),
+                                    Assignments = s.Assignments ?? new List<LMSApi.ModelLibrary.DTOs.AssignmentResponse>()
+                                }).ToList();
+                            }
+                        }
+
                         preview.EnrolledCount = c.Enrollments?.Count ?? 0;
 
                         var pStats = await _courseRepository.GetCourseRatingStatsAsync(c.Id);
@@ -336,6 +436,42 @@ namespace LMSApi.BALLibrary.Services
             {
                 response.EnrollmentId = enrollment.Id;
                 response.EnrollmentProgress = (double)enrollment.ProgressPercentage;
+                
+                if (!enrollment.IsOnLatestVersion)
+                {
+                    response.HasNewerVersion = true;
+                    if (!string.IsNullOrEmpty(course.PreviousPublishedSnapshotJson))
+                    {
+                        var sections = Newtonsoft.Json.JsonConvert.DeserializeObject<List<LMSApi.ModelLibrary.DTOs.SectionResponse>>(course.PreviousPublishedSnapshotJson);
+                        if (sections != null) response.Sections = sections;
+                    }
+                }
+                else if (course.IsBeingUpdated)
+                {
+                    response.IsBeingUpdated = true;
+                    if (!string.IsNullOrEmpty(course.PublishedSnapshotJson))
+                    {
+                        var sections = Newtonsoft.Json.JsonConvert.DeserializeObject<List<LMSApi.ModelLibrary.DTOs.SectionResponse>>(course.PublishedSnapshotJson);
+                        if (sections != null) response.Sections = sections;
+                    }
+                }
+                else if (enrollment.EnrollmentStatus == LMSApi.ModelLibrary.Enums.EnrollmentStatus.Completed)
+                {
+                    if (!string.IsNullOrEmpty(course.PublishedSnapshotJson))
+                    {
+                        var sections = Newtonsoft.Json.JsonConvert.DeserializeObject<List<LMSApi.ModelLibrary.DTOs.SectionResponse>>(course.PublishedSnapshotJson);
+                        if (sections != null) response.Sections = sections;
+                    }
+                }
+            }
+
+            if ((course.InstructorId == currentUserId || isAdmin) && view == "live" && course.IsBeingUpdated)
+            {
+                if (!string.IsNullOrEmpty(course.PublishedSnapshotJson))
+                {
+                    var sections = Newtonsoft.Json.JsonConvert.DeserializeObject<List<LMSApi.ModelLibrary.DTOs.SectionResponse>>(course.PublishedSnapshotJson);
+                    if (sections != null) response.Sections = sections;
+                }
             }
 
             var rData = await _reviewRepository.GetByCourseAsync(course.Id);
@@ -353,6 +489,13 @@ namespace LMSApi.BALLibrary.Services
 
             response.HasNonExpiredEnrollments = await _enrollmentRepository.HasNonExpiredEnrollmentsByCourseAsync(course.Id);
             response.HasActiveEnrollments = await _enrollmentRepository.HasActiveOnlyEnrollmentsByCourseAsync(course.Id);
+
+            if (course.IsBeingUpdated && !string.IsNullOrEmpty(course.PublishedSnapshotJson))
+            {
+                var previewForComparison = _mapper.Map<CoursePreviewResponse>(course);
+                var currentSectionsJson = Newtonsoft.Json.JsonConvert.SerializeObject(previewForComparison.Sections);
+                response.HasDraftChanges = currentSectionsJson != course.PublishedSnapshotJson;
+            }
 
             return response;
         }
@@ -599,7 +742,7 @@ public async Task<CourseResponse> CreateCourseAsync(
                 var course = await _courseRepository.GetCourseWithDetailsAsync(id)
                     ?? throw new KeyNotFoundException($"Course with id '{id}' not found.");
 
-                if (course.Status == CourseStatus.Published)
+                if (course.Status == CourseStatus.Published && !course.IsBeingUpdated)
                     throw new InvalidOperationException($"Course with id '{id}' is already published.");
 
                 if (course.Status == CourseStatus.PendingApproval)
@@ -607,7 +750,9 @@ public async Task<CourseResponse> CreateCourseAsync(
 
                 // If course has active enrollments, it was previously published and then archived or unarchived. We don't allow republishing.
                 var hasNonExpired = await _enrollmentRepository.HasNonExpiredEnrollmentsByCourseAsync(id);
-                if (hasNonExpired)
+                // If it's being updated, it's allowed to be republished (to go to pending approval). 
+                // First time republish after archive is still blocked if not IsBeingUpdated.
+                if (hasNonExpired && !course.IsBeingUpdated)
                     throw new InvalidOperationException($"Course '{course.Title}' has active enrollments and cannot be published again.");
 
                 // Validation: CohortBased courses must have at least one batch defined before publishing
@@ -619,6 +764,17 @@ public async Task<CourseResponse> CreateCourseAsync(
                 if (!course.Sections.Any())
                     throw new InvalidOperationException(
                         "Course must have at least one section before submitting for review.");
+
+                // Validation: If it's a version update, ensure changes were made
+                if (course.IsBeingUpdated && !string.IsNullOrEmpty(course.PublishedSnapshotJson))
+                {
+                    var currentPreview = _mapper.Map<CoursePreviewResponse>(course);
+                    var currentSectionsJson = Newtonsoft.Json.JsonConvert.SerializeObject(currentPreview.Sections);
+                    if (currentSectionsJson == course.PublishedSnapshotJson)
+                    {
+                        throw new InvalidOperationException("No changes were made to the course content. Cannot submit an updated version without any updates.");
+                    }
+                }
 
                 // Validation: Each section must have at least one lesson, and valid quizzes/assignments
                 foreach (var section in course.Sections)
@@ -733,6 +889,8 @@ public async Task<CourseResponse> CreateCourseAsync(
 
             if (string.Equals(request.Action, "Approve", StringComparison.OrdinalIgnoreCase))
             {
+                bool wasBeingUpdated = course.IsBeingUpdated;
+
                 course.Status = CourseStatus.Published;
                 course.PublishedAt = DateTime.UtcNow;
 
@@ -754,7 +912,25 @@ public async Task<CourseResponse> CreateCourseAsync(
                     }
                 }
 
+                if (wasBeingUpdated)
+                {
+                    if (decimal.TryParse(course.VersionNumber, out decimal v))
+                        course.VersionNumber = (v + 1.0m).ToString("0.0");
+                    else
+                        course.VersionNumber = "2.0";
+
+                    course.PreviousPublishedSnapshotJson = course.PublishedSnapshotJson;
+                    var preview = _mapper.Map<CoursePreviewResponse>(course);
+                    course.PublishedSnapshotJson = Newtonsoft.Json.JsonConvert.SerializeObject(preview.Sections);
+                    course.IsBeingUpdated = false;
+                }
+
                 await _courseRepository.UpdateAsync(course);
+
+                if (wasBeingUpdated)
+                {
+                    await _enrollmentRepository.SetIsOnLatestVersionForCourseAsync(course.Id, false);
+                }
 
                 // Bug #2 + #4 + #5: Invalidate both cache keys and global stats
                 await InvalidateCourseCache(id, course.slug);
@@ -835,6 +1011,34 @@ public async Task<CourseResponse> CreateCourseAsync(
             var responses = _mapper.Map<IEnumerable<CourseResponse>>(courses).ToList();
             await PopulateRatingStatsListAsync(responses);
             return responses;
+        }
+
+        
+        public async Task<PagedCourseListResponse> GetUpdatesPendingCoursesPagedAsync(CourseSearchQuery query)
+        {
+            var (courses, totalCount) = await _courseRepository.GetUpdatesPendingCoursesPagedAsync(query);
+            var courseList = _mapper.Map<IEnumerable<CourseListItemResponse>>(courses).ToList();
+            
+            var statsDict = await _courseRepository.GetRatingStatsBatchAsync(courseList.Select(c => c.Id));
+            foreach (var c in courseList)
+            {
+                if (statsDict.TryGetValue(c.Id, out var stats))
+                {
+                    c.AverageRating = stats.AverageRating;
+                    c.TotalReviews = stats.TotalReviews;
+                }
+            }
+
+            var totalPages = (int)System.Math.Ceiling((double)totalCount / query.PageSize);
+
+            return new PagedCourseListResponse
+            {
+                Courses = courseList,
+                TotalCount = totalCount,
+                PageNumber = query.PageNumber,
+                PageSize = query.PageSize,
+                TotalPages = totalPages
+            };
         }
 
         public async Task<PagedCourseListResponse> GetPendingCoursesPagedAsync(CourseSearchQuery query)
@@ -929,6 +1133,40 @@ public async Task<CourseResponse> CreateCourseAsync(
             return responses;
         }
 
+        
+        public async Task<CourseResponse> StartCourseUpdateAsync(int courseId, int instructorId, StartCourseUpdateRequest request)
+        {
+            var course = await _courseRepository.GetCourseWithDetailsAsync(courseId)
+                ?? throw new KeyNotFoundException($"Course with id '{courseId}' not found.");
+
+            if (course.InstructorId != instructorId)
+                throw new UnauthorizedAccessException("Only the instructor can start a course update.");
+
+            if (course.Status != CourseStatus.Published)
+                throw new InvalidOperationException($"Only published courses can be updated. Current status: {course.Status}");
+
+            if (course.CourseAccessType != CourseAccessType.SelfPaced)
+                throw new InvalidOperationException("Only SelfPaced courses support versioning.");
+
+            var hasActiveEnrollments = await _enrollmentRepository.HasEnrollmentsByCourseAsync(courseId);
+            if (!hasActiveEnrollments)
+                throw new InvalidOperationException("Course has no enrollments. You can edit it freely without starting an update.");
+
+            // Capture snapshot
+            var preview = _mapper.Map<CoursePreviewResponse>(course);
+            course.PublishedSnapshotJson = Newtonsoft.Json.JsonConvert.SerializeObject(preview.Sections);
+
+            // course.Status = CourseStatus.Draft; // KEEP PUBLISHED
+            course.IsBeingUpdated = true;
+
+            await _courseRepository.UpdateAsync(course);
+            
+            await InvalidateCourseCache(courseId, course.slug);
+            _logger.LogInformation("Course Update Started: Id={Id}, Note={Note}", courseId, request.UpdateNote);
+
+            return _mapper.Map<CourseResponse>(course);
+        }
+
         public async Task<CourseSummaryStatsResponse> GetCourseSummaryStatsAsync()
         {
             return await _cacheService.GetOrSetAsync(
@@ -967,7 +1205,8 @@ public async Task<CourseResponse> CreateCourseAsync(
         {
             var keysToInvalidate = new System.Collections.Generic.List<string>
             {
-                $"{CacheKeyDetailPrefix}{courseId}"
+                $"{CacheKeyDetailPrefix}{courseId}",
+                CacheKeyStatsPrefix + "global"
             };
             if (!string.IsNullOrEmpty(slug))
             {

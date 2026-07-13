@@ -146,9 +146,9 @@ namespace LMSApi.BALLibrary.Services
             var course = await _courseRepository.GetByIdAsync(section.CourseId);
             
             var hasNonExpired = await _enrollmentRepository.HasNonExpiredEnrollmentsByCourseAsync(course.Id);
-            if (hasNonExpired)
+            if (hasNonExpired && !course.IsBeingUpdated)
             {
-                throw new InvalidOperationException("Cannot add a lesson to a course that has enrolled learners.");
+                throw new InvalidOperationException("Use 'Start Course Update' to modify content of a published course with enrolled learners.");
             }
 
             var courseSections = await _sectionRepository.GetSectionsByCourseAsync(course.Id);
@@ -322,9 +322,9 @@ namespace LMSApi.BALLibrary.Services
             var course = await _courseRepository.GetByIdAsync(section.CourseId);
 
             var hasNonExpired = await _enrollmentRepository.HasNonExpiredEnrollmentsByCourseAsync(course.Id);
-            if (hasNonExpired)
+            if (hasNonExpired && !course.IsBeingUpdated)
             {
-                throw new InvalidOperationException("Cannot delete a lesson from a course that has enrolled learners.");
+                throw new InvalidOperationException("Use 'Start Course Update' to modify content of a published course with enrolled learners.");
             }
 
             await _lessonRepository.DeleteAsync(id);

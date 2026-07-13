@@ -85,8 +85,18 @@ namespace LMSApi.DALLibrary.Contexts
 
             modelBuilder.Entity<Courses>().HasQueryFilter(c => !c.IsDeleted);
 
-            modelBuilder.Entity<Users>()
-                  .HasIndex(u => u.Email);
+          modelBuilder.Entity<Users>()
+                .HasIndex(u => u.Email);
+          
+          modelBuilder.Entity<Enrollments>()
+                .HasIndex(e => e.IsOnLatestVersion);
+
+          modelBuilder.Entity<Courses>()
+                .Property(c => c.PublishedSnapshotJson)
+                .HasColumnType("text");
+          modelBuilder.Entity<Courses>()
+                .Property(c => c.PreviousPublishedSnapshotJson)
+                .HasColumnType("text");
 
             modelBuilder.ApplyConfigurationsFromAssembly(typeof(LMSDbContext).Assembly);
         }

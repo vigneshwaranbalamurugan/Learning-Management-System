@@ -89,6 +89,15 @@ namespace LMSApi.ModelLibrary.DTOs
         public string? Reason { get; set; }
     }
 
+    public class StartCourseUpdateRequest
+    {
+        public string? UpdateNote { get; set; }
+    }
+
+    public class UpgradeEnrollmentVersionRequest
+    {
+    }
+
     public class CourseResponse
     {
         public int Id { get; set; }
@@ -133,6 +142,11 @@ namespace LMSApi.ModelLibrary.DTOs
         public bool HasNonExpiredEnrollments { get; set; }
         public bool HasActiveEnrollments { get; set; }
         public bool IsDeleted { get; set; }
+        
+        public string VersionNumber { get; set; } = "1.0";
+        public bool IsBeingUpdated { get; set; }
+        public bool HasNewerVersion { get; set; }
+        public bool HasDraftChanges { get; set; }
     }
 
     public class CourseDetailsResponse : CourseResponse
@@ -180,6 +194,8 @@ namespace LMSApi.ModelLibrary.DTOs
         public bool HasNonExpiredEnrollments { get; set; }
         public bool HasActiveEnrollments { get; set; }
         public bool IsDeleted { get; set; }
+        public string VersionNumber { get; set; } = "1.0";
+        public bool IsBeingUpdated { get; set; }
     }
 
     /// <summary>Used by admin/public paged listing — course table/card without heavy navigation</summary>
@@ -212,6 +228,7 @@ namespace LMSApi.ModelLibrary.DTOs
         public int TotalCourses { get; set; }
         public int PublishedCourses { get; set; }
         public int PendingApproval { get; set; }
+        public int UpdatesPending { get; set; }
         public int ArchivedCourses { get; set; }
     }
 

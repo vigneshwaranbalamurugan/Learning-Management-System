@@ -14,6 +14,7 @@ namespace LMSApi.ModelLibrary.Models
         public DateTime LastAccessed { get; set; }
         public DateTime StartedAt { get; set; }
         public DateTime? CompletedAt { get; set; }
+        public bool IsArchived { get; set; } = false;
 
         // Navigation properties
         public Users Student { get; set; }

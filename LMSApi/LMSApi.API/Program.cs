@@ -5,6 +5,8 @@ using LMSApi.DALLibrary.Repositories;
 using LMSApi.BALLibrary.Interfaces;
 using LMSApi.BALLibrary.Services;
 using LMSApi.BALLibrary.Services.Upload;
+using LMSApi.BALLibrary.Interfaces.Quizzes;
+using LMSApi.BALLibrary.Services.Quizzes;
 using LMSApi.BALLibrary.Services.Notification;
 using LMSApi.BALLibrary.Mappers;
 using LMSApi.BALLibrary.Utils;
@@ -59,144 +61,139 @@ try
         client.DefaultRequestHeaders.Add("Accept", "application/json");
     });
 
-    #region Database
-    var connection = builder.Configuration.GetConnectionString("DefaultConnection");
-    if (string.IsNullOrWhiteSpace(connection))
-    {
-        throw new InvalidOperationException("Connection string 'DefaultConnection' is not configured. Set it in appsettings.json or environment variables.");
-    }
-    builder.Services.AddDbContext<LMSDbContext>(opts => opts.UseNpgsql(connection, npgsqlOptions =>
-    {
-        npgsqlOptions.MigrationsAssembly(typeof(LMSDbContext).Assembly.GetName().Name);
-    }));
-    #endregion
+#region Database
+var connection = builder.Configuration.GetConnectionString("DefaultConnection");
+if (string.IsNullOrWhiteSpace(connection))
+{
+    throw new InvalidOperationException("Connection string 'DefaultConnection' is not configured. Set it in appsettings.json or environment variables.");
+}
+builder.Services.AddDbContext<LMSDbContext>(opts => opts.UseNpgsql(connection, npgsqlOptions =>
+{
+    npgsqlOptions.MigrationsAssembly(typeof(LMSDbContext).Assembly.GetName().Name);
+}));
+#endregion
 
-    // Hangfire Configuration
-    builder.Services.AddHangfire(config => config
-        .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
-        .UseSimpleAssemblyNameTypeSerializer()
-        .UseRecommendedSerializerSettings()
-        .UsePostgreSqlStorage(c => c.UseNpgsqlConnection(connection)));
-    builder.Services.AddHangfireServer();
+// Hangfire Configuration
+builder.Services.AddHangfire(config => config
+    .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
+    .UseSimpleAssemblyNameTypeSerializer()
+    .UseRecommendedSerializerSettings()
+    .UsePostgreSqlStorage(c => c.UseNpgsqlConnection(connection)));
+builder.Services.AddHangfireServer();
 
-    #region Dependency Injection for Repositories
-    builder.Services.AddScoped<IUserRepository, UserRepository>();
-    builder.Services.AddScoped<IUserProfileRepository, UserProfileRepository>();
+#region Dependency Injection for Repositories
+builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IUserProfileRepository, UserProfileRepository>();
 
-    // Course module repositories
-    builder.Services.AddScoped<ICourseCategoryRepository, CourseCategoryRepository>();
-    builder.Services.AddScoped<ICourseRepository, CourseRepository>();
-    builder.Services.AddScoped<ICourseSectionRepository, CourseSectionRepository>();
-    builder.Services.AddScoped<ILessonRepository, LessonRepository>();
-    builder.Services.AddScoped<ILessonResourceRepository, LessonResourceRepository>();
-    builder.Services.AddScoped<IStudentProgressRepository, StudentProgressRepository>();
+// Course module repositories
+builder.Services.AddScoped<ICourseCategoryRepository, CourseCategoryRepository>();
+builder.Services.AddScoped<ICourseRepository, CourseRepository>();
+builder.Services.AddScoped<ICourseSectionRepository, CourseSectionRepository>();
+builder.Services.AddScoped<ILessonRepository, LessonRepository>();
+builder.Services.AddScoped<ILessonResourceRepository, LessonResourceRepository>();
+builder.Services.AddScoped<IStudentProgressRepository, StudentProgressRepository>();
 
-    // Hybrid Learning repositories
-    builder.Services.AddScoped<ICourseBatchRepository, CourseBatchRepository>();
-    builder.Services.AddScoped<IEnrollmentRepository, EnrollmentRepository>();
-    builder.Services.AddScoped<IPaymentRepository, PaymentRepository>();
+// Hybrid Learning repositories
+builder.Services.AddScoped<ICourseBatchRepository, CourseBatchRepository>();
+builder.Services.AddScoped<IEnrollmentRepository, EnrollmentRepository>();
+builder.Services.AddScoped<IPaymentRepository, PaymentRepository>();
 
-    // Platform Charges & Payout repositories
-    builder.Services.AddScoped<IPlatformFeeConfigRepository, PlatformFeeConfigRepository>();
-    builder.Services.AddScoped<IInstructorPayoutAccountRepository, InstructorPayoutAccountRepository>();
-    builder.Services.AddScoped<IInstructorPayoutRepository, InstructorPayoutRepository>();
-    builder.Services.AddScoped<IInstructorLinkedAccountRepository, InstructorLinkedAccountRepository>();
-    builder.Services.AddScoped<IInstructorStakeholderRepository, InstructorStakeholderRepository>();
-    builder.Services.AddScoped<IInstructorPayoutProductRepository, InstructorPayoutProductRepository>();
+// Platform Charges & Payout repositories
+builder.Services.AddScoped<IPlatformFeeConfigRepository, PlatformFeeConfigRepository>();
+builder.Services.AddScoped<IInstructorPayoutAccountRepository, InstructorPayoutAccountRepository>();
+builder.Services.AddScoped<IInstructorPayoutRepository, InstructorPayoutRepository>();
+builder.Services.AddScoped<IInstructorLinkedAccountRepository, InstructorLinkedAccountRepository>();
+builder.Services.AddScoped<IInstructorStakeholderRepository, InstructorStakeholderRepository>();
+builder.Services.AddScoped<IInstructorPayoutProductRepository, InstructorPayoutProductRepository>();
 
-    // Discussion module repositories
-    builder.Services.AddScoped<IDiscussionRepository, DiscussionRepository>();
-    builder.Services.AddScoped<IDiscussionReplyRepository, DiscussionReplyRepository>();
-    builder.Services.AddScoped<IDiscussionLikeRepository, DiscussionLikeRepository>();
+// Quiz module repositories
+builder.Services.AddScoped<IQuizRepository, QuizRepository>();
+builder.Services.AddScoped<IQuizAttemptRepository, QuizAttemptRepository>();
+builder.Services.AddScoped<IQuizQuestionRepository, QuizQuestionRepository>();
+builder.Services.AddScoped<IQuizOptionRepository, QuizOptionRepository>();
+builder.Services.AddScoped<IQuizAnswerRepository, QuizAnswerRepository>();
+builder.Services.AddScoped<IAssignmentRepository, AssignmentRepository>();
+builder.Services.AddScoped<IAssignmentSubmissionRepository, AssignmentSubmissionRepository>();
+builder.Services.AddScoped<IWishListRepository, WishListRepository>();
+builder.Services.AddScoped<IReviewRepository, ReviewRepository>();
+builder.Services.AddScoped<IAnalyticsRepository, AnalyticsRepository>();
+builder.Services.AddScoped<ICertificateRepository, CertificateRepository>();
+builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
+builder.Services.AddScoped<IUserNotificationsRepository, UserNotificationsRepository>();
+builder.Services.AddScoped<IActivityLogsRepository, ActivityLogsRepository>();
+builder.Services.AddScoped<IAuditLogsRepository, AuditLogsRepository>();
+builder.Services.AddScoped<IWebhookEventLogRepository, WebhookEventLogRepository>();
+#endregion
 
-    // Quiz module repositories
-    builder.Services.AddScoped<IQuizRepository, QuizRepository>();
-    builder.Services.AddScoped<IQuizAttemptRepository, QuizAttemptRepository>();
-    builder.Services.AddScoped<IQuizQuestionRepository, QuizQuestionRepository>();
-    builder.Services.AddScoped<IQuizOptionRepository, QuizOptionRepository>();
-    builder.Services.AddScoped<IQuizAnswerRepository, QuizAnswerRepository>();
-    builder.Services.AddScoped<IAssignmentRepository, AssignmentRepository>();
-    builder.Services.AddScoped<IAssignmentSubmissionRepository, AssignmentSubmissionRepository>();
-    builder.Services.AddScoped<IWishListRepository, WishListRepository>();
-    builder.Services.AddScoped<IReviewRepository, ReviewRepository>();
-    builder.Services.AddScoped<IAnalyticsRepository, AnalyticsRepository>();
-    builder.Services.AddScoped<ICertificateRepository, CertificateRepository>();
-    builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
-    builder.Services.AddScoped<IUserNotificationsRepository, UserNotificationsRepository>();
-    builder.Services.AddScoped<IActivityLogsRepository, ActivityLogsRepository>();
-    builder.Services.AddScoped<IAuditLogsRepository, AuditLogsRepository>();
-    builder.Services.AddScoped<IWebhookEventLogRepository, WebhookEventLogRepository>();
-    #endregion
+#region Dependency Injection for Services
+builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IProfileService, ProfileService>();
+builder.Services.AddScoped<IAdminUserService, LMSApi.BALLibrary.Services.Users.AdminUserService>();
+builder.Services.AddScoped<IUploadService, UploadService>();
+builder.Services.AddScoped<INotificationService, NotificationService>();
+builder.Services.AddScoped<INotificationHandler, EmailNotificationHandler>();
+builder.Services.AddScoped<INotificationHandler, SmsNotificationHandler>();
+builder.Services.AddScoped<IEmailJob, EmailJob>();
+builder.Services.AddScoped<ICertificateEmailJob, CertificateEmailJob>();
+builder.Services.AddScoped<IRegenerateCertificatesJob, RegenerateCertificatesJob>();
+builder.Services.AddSingleton<ITokenService, TokenService>();
+builder.Services.AddSingleton<ITokenRevocationService, TokenRevocationService>();
+builder.Services.AddScoped<IAssignmentService, AssignmentService>();
 
-    #region Dependency Injection for Services
-    builder.Services.AddScoped<IAuthService, AuthService>();
-    builder.Services.AddScoped<IProfileService, ProfileService>();
-    builder.Services.AddScoped<IAdminUserService, LMSApi.BALLibrary.Services.Users.AdminUserService>();
-    builder.Services.AddScoped<IUploadService, UploadService>();
-    builder.Services.AddScoped<INotificationService, NotificationService>();
-    builder.Services.AddScoped<INotificationHandler, EmailNotificationHandler>();
-    builder.Services.AddScoped<INotificationHandler, SmsNotificationHandler>();
-    builder.Services.AddScoped<IEmailJob, EmailJob>();
-    builder.Services.AddScoped<ICertificateEmailJob, CertificateEmailJob>();
-    builder.Services.AddScoped<IRegenerateCertificatesJob, RegenerateCertificatesJob>();
-    builder.Services.AddSingleton<ITokenService, TokenService>();
-    builder.Services.AddSingleton<ITokenRevocationService, TokenRevocationService>();
-    builder.Services.AddScoped<IAssignmentService, AssignmentService>();
+// Course module services
+builder.Services.AddScoped<ICourseCategoryService, CourseCategoryService>();
+builder.Services.AddScoped<ICourseService, CourseService>();
+builder.Services.AddScoped<ICourseSectionService, CourseSectionService>();
+builder.Services.AddScoped<ILessonService, LessonService>();
+builder.Services.AddScoped<ILessonResourceService, LessonResourceService>();
+builder.Services.AddScoped<IStudentProgressService, StudentProgressService>();
+builder.Services.AddScoped<IAssignmentSubmissionService, AssignmentSubmissionService>();
 
-    // Course module services
-    builder.Services.AddScoped<ICourseCategoryService, CourseCategoryService>();
-    builder.Services.AddScoped<ICourseService, CourseService>();
-    builder.Services.AddScoped<ICourseSectionService, CourseSectionService>();
-    builder.Services.AddScoped<ILessonService, LessonService>();
-    builder.Services.AddScoped<ILessonResourceService, LessonResourceService>();
-    builder.Services.AddScoped<IStudentProgressService, StudentProgressService>();
-    builder.Services.AddScoped<IAssignmentSubmissionService, AssignmentSubmissionService>();
+// Hybrid Learning services
+builder.Services.AddScoped<IBatchService, BatchService>();
+builder.Services.AddScoped<IEnrollmentService, EnrollmentService>();
 
-    // Hybrid Learning services
-    builder.Services.AddScoped<IBatchService, BatchService>();
-    builder.Services.AddScoped<IEnrollmentService, EnrollmentService>();
+// Payment Services
+builder.Services.AddScoped<IPaymentProvider, RazorpayPaymentProvider>();
+builder.Services.AddScoped<IPaymentProvider, StripePaymentProvider>();
+builder.Services.AddScoped<IPaymentService, PaymentService>();
+builder.Services.AddScoped<IInvoiceService, InvoiceService>();
 
-    // Payment Services
-    builder.Services.AddScoped<IPaymentProvider, RazorpayPaymentProvider>();
-    builder.Services.AddScoped<IPaymentProvider, StripePaymentProvider>();
-    builder.Services.AddScoped<IPaymentService, PaymentService>();
-    builder.Services.AddScoped<IInvoiceService, InvoiceService>();
+// Platform Charges & Payout services
+builder.Services.AddScoped<IPlatformFeeService, PlatformFeeService>();
+builder.Services.AddScoped<IInstructorPayoutService, InstructorPayoutService>();
+builder.Services.AddScoped<IInstructorOnboardingService, InstructorOnboardingService>();
+builder.Services.AddScoped<IRevenueService, RevenueService>();
 
-    // Platform Charges & Payout services
-    builder.Services.AddScoped<IPlatformFeeService, PlatformFeeService>();
-    builder.Services.AddScoped<IInstructorPayoutService, InstructorPayoutService>();
-    builder.Services.AddScoped<IInstructorOnboardingService, InstructorOnboardingService>();
-    builder.Services.AddScoped<IRevenueService, RevenueService>();
+// Quiz module services
+builder.Services.AddScoped<IQuizService, QuizService>();
+builder.Services.AddScoped<IQuizAttemptService, QuizAttemptService>();
+builder.Services.AddScoped<IQuizQuestionService, QuizQuestionService>();
+builder.Services.AddScoped<IQuizExpirationService, QuizExpirationService>();
 
-    // Quiz module services
-    builder.Services.AddScoped<IQuizService, QuizService>();
-    builder.Services.AddScoped<IQuizAttemptService, QuizAttemptService>();
-    builder.Services.AddScoped<IQuizQuestionService, QuizQuestionService>();
+// Ownership Service
+builder.Services.AddScoped<IOwnershipService, OwnershipService>();
 
-    // Ownership Service
-    builder.Services.AddScoped<IOwnershipService, OwnershipService>();
+// Wishlist and Reviews
+builder.Services.AddScoped<IWishListService, WishListService>();
+builder.Services.AddScoped<IReviewService, ReviewService>();
+builder.Services.AddScoped<IAnalyticsService, AnalyticsService>();
+builder.Services.AddScoped<ICertificateService, CertificateService>();
+builder.Services.AddScoped<IDeadlineNotificationJob, DeadlineNotificationJob>();
+builder.Services.AddScoped<IUserNotificationsService, UserNotificationsService>();
+builder.Services.AddScoped<INotificationRealtimeService, NotificationRealtimeService>();
+builder.Services.AddScoped<IActivityLogService, ActivityLogService>();
+builder.Services.AddScoped<IAdminLogService, AdminLogService>();
+builder.Services.AddScoped<ICurrentUserProvider, CurrentUserProvider>();
+builder.Services.AddScoped<IWebhookEventService, WebhookEventService>();
+builder.Services.AddScoped<ICacheService, CacheService>();
+#endregion
 
-    // Wishlist and Reviews
-    builder.Services.AddScoped<IWishListService, WishListService>();
-    builder.Services.AddScoped<IReviewService, ReviewService>();
-    builder.Services.AddScoped<IAnalyticsService, AnalyticsService>();
-    builder.Services.AddScoped<ICertificateService, CertificateService>();
-    builder.Services.AddScoped<IDeadlineNotificationJob, DeadlineNotificationJob>();
-    builder.Services.AddScoped<IUserNotificationsService, UserNotificationsService>();
-    builder.Services.AddScoped<INotificationRealtimeService, NotificationRealtimeService>();
-    builder.Services.AddScoped<IActivityLogService, ActivityLogService>();
-    builder.Services.AddScoped<IAdminLogService, AdminLogService>();
-    builder.Services.AddScoped<ICurrentUserProvider, CurrentUserProvider>();
-    builder.Services.AddScoped<IWebhookEventService, WebhookEventService>();
-    builder.Services.AddScoped<ICacheService, CacheService>();
-    builder.Services.AddScoped<IDiscussionService, DiscussionService>();
-    #endregion
-
-    builder.Services.AddStackExchangeRedisCache(options =>
-    {
-        options.Configuration = builder.Configuration["Redis:ConnectionString"];
-        options.InstanceName = builder.Configuration["Redis:InstanceName"];
-    });
+builder.Services.AddStackExchangeRedisCache(options =>
+{
+    options.Configuration = builder.Configuration["Redis:ConnectionString"];
+    options.InstanceName = builder.Configuration["Redis:InstanceName"];
+});
 
     // Register raw IConnectionMultiplexer for direct Redis access
     builder.Services.AddSingleton<StackExchange.Redis.IConnectionMultiplexer>(sp =>
@@ -302,16 +299,22 @@ try
         Authorization = new[] { new HangfireAuthorizationFilter() }
     });
 
-    app.MapHub<NotificationHub>("/hubs/notification").RequireRateLimiting("SignalRHubConnectNotification");
-    app.MapHub<VideoProgressHub>("/hubs/video-progress").RequireRateLimiting("SignalRHubConnectVideoProgress");
-    app.MapControllers();
+app.MapHub<NotificationHub>("/hubs/notification").RequireRateLimiting("SignalRHubConnectNotification");
+app.MapHub<VideoProgressHub>("/hubs/video-progress").RequireRateLimiting("SignalRHubConnectVideoProgress");
+app.MapHub<QuizProgressHub>("/hubs/quiz-progress");
+app.MapControllers();
 
-    var recurringJobManager = app.Services.GetRequiredService<IRecurringJobManager>();
-    recurringJobManager.AddOrUpdate<IDeadlineNotificationJob>(
-        "DailyDeadlineNotifications",
-        job => job.ExecuteAsync(),
-        Cron.Daily
-    );
+var recurringJobManager = app.Services.GetRequiredService<IRecurringJobManager>();
+recurringJobManager.AddOrUpdate<IDeadlineNotificationJob>(
+    "DailyDeadlineNotifications",
+    job => job.ExecuteAsync(),
+    Cron.Daily
+);
+recurringJobManager.AddOrUpdate<IQuizExpirationService>(
+    "QuizExpirationBackgroundJob",
+    job => job.ProcessExpiredQuizzesAsync(),
+    "*/30 * * * *"
+);
 
     Log.Information("Checking database and Redis connections...");
     using (var scope = app.Services.CreateScope())

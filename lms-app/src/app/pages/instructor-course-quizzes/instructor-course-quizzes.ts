@@ -301,7 +301,7 @@ export class InstructorCourseQuizzes {
   protected editQuiz(quizId: number) {
     if (!this.course) return;
     this.router.navigate([`/${this.routePrefix}/courses`, this.course.slug, 'quizzes', quizId, 'questions'], {
-      queryParams: { locked: this.course.hasNonExpiredEnrollments ? 'true' : 'false' }
+      queryParams: { locked: (this.layout.viewMode() === 'live' || this.layout.isLocked()) ? 'true' : 'false' }
     });
   }
 }

@@ -236,10 +236,10 @@
     </div>
     
     <div class="p-5 border-t border-gray-100 bg-slate-50/50 flex justify-end gap-3">
-      <button (click)="closeQuestionModal()" class="px-5 py-2.5 rounded-xl border border-gray-250 text-gray-600 hover:bg-gray-100 hover:cursor-pointer text-sm font-bold transition" [disabled]="isSaving()">
+      <button (click)="closeQuestionModal()" class="px-5 py-2.5 rounded-xl border border-gray-250 text-gray-600 hover:bg-gray-100 hover:cursor-pointer text-sm font-bold transition" [disabled]="isSaving() || isLocked()">
         Cancel
       </button>
-      <button (click)="saveQuestion()" class="px-5 py-2.5 rounded-xl bg-[#1C1C7B] hover:bg-[#15155E] hover:cursor-pointer text-white text-sm font-bold transition shadow-sm flex items-center justify-center min-w-[140px] disabled:opacity-70 disabled:cursor-not-allowed" [disabled]="isSaving()">
+      <button (click)="saveQuestion()" class="px-5 py-2.5 rounded-xl bg-[#1C1C7B] hover:bg-[#15155E] hover:cursor-pointer text-white text-sm font-bold transition shadow-sm flex items-center justify-center min-w-[140px] disabled:opacity-70 disabled:cursor-not-allowed" [disabled]="isSaving() || isLocked()">
         <span *ngIf="!isSaving()">Save Question</span>
         <span *ngIf="isSaving()" class="flex items-center gap-2">
           <svg class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>

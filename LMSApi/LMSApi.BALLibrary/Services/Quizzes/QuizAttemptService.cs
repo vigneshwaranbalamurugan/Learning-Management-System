@@ -151,6 +151,46 @@ namespace LMSApi.BALLibrary.Services
             };
         }
 
+        public async Task SavePartialAnswerAsync(int attemptId, int questionId, int selectedOptionId, int userId)
+        {
+            var attempt = await _attemptRepository.GetAttemptWithAnswersAsync(attemptId);
+            if (attempt == null || attempt.UserId != userId || attempt.Status != AttemptStatus.InProgress)
+            {
+                return;
+            }
+
+            var question = attempt.Quiz.Questions.FirstOrDefault(q => q.Id == questionId);
+            if (question == null) return;
+
+            var selectedOption = question.Answers.FirstOrDefault(o => o.Id == selectedOptionId);
+            if (selectedOption == null) return;
+
+            var existingAnswer = attempt.Answers.FirstOrDefault(a => a.QuestionId == questionId);
+            
+            if (existingAnswer != null)
+            {
+                var updatedAnswer = new QuizAnswers
+                {
+                    Id = existingAnswer.Id,
+                    AttemptId = existingAnswer.AttemptId,
+                    QuestionId = existingAnswer.QuestionId,
+                    SelectedOptionId = selectedOptionId,
+                    IsCorrect = selectedOption.IsCorrect
+                };
+                await _answerRepository.UpdateAsync(updatedAnswer);
+            }
+            else
+            {
+                await _answerRepository.AddAsync(new QuizAnswers
+                {
+                    AttemptId = attemptId,
+                    QuestionId = questionId,
+                    SelectedOptionId = selectedOptionId,
+                    IsCorrect = selectedOption.IsCorrect
+                });
+            }
+        }
+
         public async Task<QuizAttemptResponse> SubmitQuizAsync(int quizId, int userId, SubmitQuizRequest request)
         {
             if (request == null) throw new ArgumentNullException(nameof(request));
@@ -201,6 +241,16 @@ namespace LMSApi.BALLibrary.Services
                         await _attemptRepository.UpdateAsync(attempt);
                         throw new InvalidOperationException("This quiz is no longer available.");
                     }
+                }
+            }
+
+            // Clear existing partial answers to avoid duplication
+            if (attempt.Answers != null && attempt.Answers.Any())
+            {
+                var answersToDelete = attempt.Answers.ToList();
+                foreach (var existingAns in answersToDelete)
+                {
+                    await _answerRepository.DeleteAsync(existingAns.Id);
                 }
             }
 

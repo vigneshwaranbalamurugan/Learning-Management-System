@@ -123,15 +123,47 @@ namespace LMSApi.BALLibrary.Services
             return _mapper.Map<LessonProgressResponse>(progress);
         }
 
-        public async Task<CourseProgressResponse> GetCourseProgressAsync(int userId, int courseId)
+                public async Task<CourseProgressResponse> GetCourseProgressAsync(int userId, int courseId)
         {
             var course = await _courseRepository.GetCourseWithDetailsAsync(courseId);
             if (course == null) throw new KeyNotFoundException($"Course with id '{courseId}' not found.");
 
-            // Get all published items
-            var publishedLessonIds = course.Sections.SelectMany(s => s.Lessons).Where(l => l.Status == PublishStatus.Published).Select(l => l.Id).ToList();
-            var publishedQuizIds = course.Sections.SelectMany(s => s.Quizzes).Where(q => q.Status == PublishStatus.Published).Select(q => q.Id).ToList();
-            var publishedAssignmentIds = course.Sections.SelectMany(s => s.Assignments).Where(a => a.Status == PublishStatus.Published).Select(a => a.Id).ToList();
+            var enrollment = await _enrollmentRepository.GetByUserAndCourseAsync(userId, courseId);
+            bool isOnLatest = enrollment?.IsOnLatestVersion ?? true;
+
+            var sectionData = new List<(int Id, string Title, List<(int Id, string Title)> Lessons, List<(int Id, string Title)> Quizzes, List<(int Id, string Title)> Assignments)>();
+
+            if (!isOnLatest && !string.IsNullOrEmpty(course.PreviousPublishedSnapshotJson))
+            {
+                var snapshotSections = Newtonsoft.Json.JsonConvert.DeserializeObject<List<LMSApi.ModelLibrary.DTOs.SectionResponse>>(course.PreviousPublishedSnapshotJson) ?? new List<LMSApi.ModelLibrary.DTOs.SectionResponse>();
+                foreach (var s in snapshotSections)
+                {
+                    sectionData.Add((
+                        s.Id, 
+                        s.Title ?? "", 
+                        s.Lessons?.Select(l => (l.Id, l.Title ?? "")).ToList() ?? new List<(int, string)>(),
+                        s.Quizzes?.Select(q => (q.Id, q.Title ?? "")).ToList() ?? new List<(int, string)>(),
+                        s.Assignments?.Select(a => (a.Id, a.Title ?? "")).ToList() ?? new List<(int, string)>()
+                    ));
+                }
+            }
+            else
+            {
+                foreach (var s in course.Sections)
+                {
+                    sectionData.Add((
+                        s.Id,
+                        s.Title,
+                        s.Lessons.Where(l => l.Status == PublishStatus.Published).Select(l => (l.Id, l.Title)).ToList(),
+                        s.Quizzes.Where(q => q.Status == PublishStatus.Published).Select(q => (q.Id, q.Title)).ToList(),
+                        s.Assignments.Where(a => a.Status == PublishStatus.Published).Select(a => (a.Id, a.Title)).ToList()
+                    ));
+                }
+            }
+
+            var publishedLessonIds = sectionData.SelectMany(s => s.Lessons).Select(l => l.Id).ToList();
+            var publishedQuizIds = sectionData.SelectMany(s => s.Quizzes).Select(q => q.Id).ToList();
+            var publishedAssignmentIds = sectionData.SelectMany(s => s.Assignments).Select(a => a.Id).ToList();
 
             var totalItems = publishedLessonIds.Count + publishedQuizIds.Count + publishedAssignmentIds.Count;
 
@@ -146,18 +178,14 @@ namespace LMSApi.BALLibrary.Services
 
             var sectionProgressList = new List<SectionProgressResponse>();
 
-            foreach (var section in course.Sections)
+            foreach (var section in sectionData)
             {
-                var secLessons = section.Lessons.Where(l => l.Status == PublishStatus.Published).ToList();
-                var secQuizzes = section.Quizzes.Where(q => q.Status == PublishStatus.Published).ToList();
-                var secAssignments = section.Assignments.Where(a => a.Status == PublishStatus.Published).ToList();
-
-                int secTotalItems = secLessons.Count + secQuizzes.Count + secAssignments.Count;
+                int secTotalItems = section.Lessons.Count + section.Quizzes.Count + section.Assignments.Count;
                 int secCompletedItems = 0;
 
                 // Lessons
                 var lessonProgresses = new List<LessonProgressResponse>();
-                foreach (var lesson in secLessons)
+                foreach (var lesson in section.Lessons)
                 {
                     var prog = allStudentProgress.FirstOrDefault(p => p.LessonId == lesson.Id);
                     bool isCompleted = prog?.IsCompleted ?? false;
@@ -184,7 +212,7 @@ namespace LMSApi.BALLibrary.Services
 
                 // Quizzes
                 var quizProgresses = new List<QuizProgressResponse>();
-                foreach (var quiz in secQuizzes)
+                foreach (var quiz in section.Quizzes)
                 {
                     var attempts = allQuizAttempts.Where(a => a.QuizId == quiz.Id).ToList();
                     bool isPassed = attempts.Any(a => a.IsPassed);
@@ -205,7 +233,7 @@ namespace LMSApi.BALLibrary.Services
 
                 // Assignments
                 var assignmentProgresses = new List<AssignmentProgressResponse>();
-                foreach (var assignment in secAssignments)
+                foreach (var assignment in section.Assignments)
                 {
                     var submissions = allSubmissions.Where(s => s.AssignmentId == assignment.Id).ToList();
                     bool isPassed = submissions.Any(s => s.IsPassed == true);
@@ -350,9 +378,24 @@ namespace LMSApi.BALLibrary.Services
             var course = await _courseRepository.GetCourseWithDetailsAsync(courseId);
             if (course == null) return;
 
-            var publishedLessonIds = course.Sections.SelectMany(s => s.Lessons).Where(l => l.Status == PublishStatus.Published).Select(l => l.Id).ToList();
-            var publishedQuizIds = course.Sections.SelectMany(s => s.Quizzes).Where(q => q.Status == PublishStatus.Published).Select(q => q.Id).ToList();
-            var publishedAssignmentIds = course.Sections.SelectMany(s => s.Assignments).Where(a => a.Status == PublishStatus.Published).Select(a => a.Id).ToList();
+            List<int> publishedLessonIds;
+            List<int> publishedQuizIds;
+            List<int> publishedAssignmentIds;
+
+            if (!enrollment.IsOnLatestVersion && !string.IsNullOrEmpty(course.PreviousPublishedSnapshotJson))
+            {
+                var snapshotSections = Newtonsoft.Json.JsonConvert.DeserializeObject<List<LMSApi.ModelLibrary.DTOs.SectionResponse>>(course.PreviousPublishedSnapshotJson) ?? new List<LMSApi.ModelLibrary.DTOs.SectionResponse>();
+                
+                publishedLessonIds = snapshotSections.SelectMany(s => s.Lessons ?? Enumerable.Empty<LMSApi.ModelLibrary.DTOs.LessonResponse>()).Select(l => l.Id).ToList();
+                publishedQuizIds = snapshotSections.SelectMany(s => s.Quizzes ?? Enumerable.Empty<LMSApi.ModelLibrary.DTOs.QuizResponse>()).Select(q => q.Id).ToList();
+                publishedAssignmentIds = snapshotSections.SelectMany(s => s.Assignments ?? Enumerable.Empty<LMSApi.ModelLibrary.DTOs.AssignmentResponse>()).Select(a => a.Id).ToList();
+            }
+            else
+            {
+                publishedLessonIds = course.Sections.SelectMany(s => s.Lessons).Where(l => l.Status == PublishStatus.Published).Select(l => l.Id).ToList();
+                publishedQuizIds = course.Sections.SelectMany(s => s.Quizzes).Where(q => q.Status == PublishStatus.Published).Select(q => q.Id).ToList();
+                publishedAssignmentIds = course.Sections.SelectMany(s => s.Assignments).Where(a => a.Status == PublishStatus.Published).Select(a => a.Id).ToList();
+            }
 
             var totalItems = publishedLessonIds.Count + publishedQuizIds.Count + publishedAssignmentIds.Count;
             if (totalItems == 0) return;

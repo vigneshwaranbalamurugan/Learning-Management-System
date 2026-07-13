@@ -5,7 +5,7 @@
       <p class="text-xs text-gray-500 mt-0.5">Assess student knowledge by creating quizzes and editing questions.</p>
     </div>
     <app-button 
-      *ngIf="!course.hasNonExpiredEnrollments"
+      *ngIf="layout.viewMode() !== 'live' && !layout.isLocked()"
       (click)="openAddQuiz()" 
       variant="primary"
       customClass="!px-4 !py-2 w-full sm:!w-auto text-xs font-semibold shadow-sm transition">
@@ -40,16 +40,16 @@
                 (click)="openEditQuiz(quiz, section.id)" 
                 variant="outline"
                 customClass="!px-3.5 !py-1.5 !w-auto text-xs font-semibold !h-auto">
-                Edit Details
+                {{ (layout.isLocked() || layout.viewMode() === 'live') ? 'Edit Title & Description' : 'Edit Details' }}
               </app-button>
               <app-button 
                 (click)="editQuiz(quiz.id)" 
                 variant="outline"
                 customClass="!px-3.5 !py-1.5 !w-auto text-xs font-semibold !h-auto">
-                {{ course.hasNonExpiredEnrollments ? 'View Questions' : 'Manage Questions' }}
+                {{ !!(layout.viewMode() === 'live' || layout.isLocked()) ? 'View Questions' : 'Manage Questions' }}
               </app-button>
               <app-button 
-                *ngIf="!course.hasNonExpiredEnrollments"
+                *ngIf="layout.viewMode() !== 'live' && !layout.isLocked()"
                 (click)="confirmDeleteQuiz(quiz.id)" 
                 variant="danger"
                 customClass="!px-3 !py-1.5 !w-auto text-xs font-semibold !h-auto">
@@ -75,9 +75,10 @@
     <div class="bg-white rounded-2xl border border-gray-150 p-6 w-full max-w-2xl shadow-xl space-y-4 max-h-[90vh] overflow-y-auto">
       <h3 class="text-base font-bold text-slate-900">{{ editingQuizId ? 'Edit Quiz' : 'Create New Quiz' }}</h3>
       
-      <div *ngIf="course.hasNonExpiredEnrollments" class="bg-red-50 text-red-600 p-3 rounded-lg text-xs font-semibold border border-red-100 flex items-center gap-2">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
-        Course has active learners. Only Title and Description can be updated.
+      <!-- Partial edit banner (locked or live view) -->
+      <div *ngIf="layout.isLocked() || layout.viewMode() === 'live'" class="bg-blue-50 text-blue-700 p-3 rounded-lg text-xs font-semibold border border-blue-200 flex items-start gap-2">
+        <svg class="w-4 h-4 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+        <span>Course is live with active learners. You can update the <strong>Title</strong> and <strong>Description</strong>. Grading settings (time limit, passing %, attempts) are locked &mdash; create a new version to change those.</span>
       </div>
       
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
@@ -87,7 +88,7 @@
             [value]="quizSectionIdStr"
             (valueChange)="setQuizSectionIdStr($event)"
             [options]="sectionOptions"
-            [disabled]="course.hasNonExpiredEnrollments === true"
+            [disabled]="!!(layout.viewMode() === 'live' || layout.isLocked())"
             [error]="errors['sectionId']"
             placeholder="Select Section" />
         </div>
@@ -108,7 +109,7 @@
             label="Time Limit (HH:MM:SS)"
             [value]="quizTimeLimit"
             (valueChange)="quizTimeLimit = $event"
-            [disabled]="course.hasNonExpiredEnrollments === true"
+            [disabled]="!!(layout.viewMode() === 'live' || layout.isLocked())"
             [error]="errors['timeLimit']"
             placeholder="00:30:00" />
         </div>
@@ -119,7 +120,7 @@
             [value]="quizPassingPercentageStr"
             (valueChange)="quizPassingPercentageStr = $event"
             [error]="errors['passingPercentage']"
-            [disabled]="course.hasNonExpiredEnrollments === true" />
+            [disabled]="!!(layout.viewMode() === 'live' || layout.isLocked())" />
         </div>
         <div>
           <app-form-input
@@ -128,7 +129,7 @@
             [value]="quizMaxAttemptsStr"
             (valueChange)="quizMaxAttemptsStr = $event"
             [error]="errors['maxAttempts']"
-            [disabled]="course.hasNonExpiredEnrollments === true" />
+            [disabled]="!!(layout.viewMode() === 'live' || layout.isLocked())" />
         </div>
         <div>
           <app-form-input
@@ -137,7 +138,7 @@
             [value]="quizDeadlineInDaysStr"
             (valueChange)="quizDeadlineInDaysStr = $event"
             [error]="errors['deadlineInDays']"
-            [disabled]="course.hasNonExpiredEnrollments === true" />
+            [disabled]="!!(layout.viewMode() === 'live' || layout.isLocked())" />
         </div>
       </div>
       <div class="flex justify-end gap-2 pt-2">

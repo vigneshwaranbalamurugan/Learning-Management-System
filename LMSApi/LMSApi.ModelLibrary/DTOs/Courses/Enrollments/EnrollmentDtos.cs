@@ -67,6 +67,8 @@ namespace LMSApi.ModelLibrary.DTOs
         public TimeSpan EstimatedDuration { get; set; }
         public bool HasCertificate { get; set; } = true;
         public CourseAccessType CourseAccessType { get; set; }
+        
+        public bool IsOnLatestVersion { get; set; } = true;
     }
 
     public class StudentProgressSummaryDto

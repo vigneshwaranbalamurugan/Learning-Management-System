@@ -15,5 +15,6 @@ namespace LMSApi.DALLibrary.Interfaces
         Task<QuizAttempts?> GetInProgressAttemptAsync(int quizId, int userId);
         Task<IEnumerable<QuizAttempts>> GetAttemptsByUserAsync(int userId);
         Task<(IEnumerable<QuizAttempts> Attempts, int TotalCount)> GetAttemptsByUserPagedAsync(int userId, int pageNumber, int pageSize);
+        Task<IEnumerable<QuizAttempts>> GetAllInProgressAttemptsAsync();
     }
 }

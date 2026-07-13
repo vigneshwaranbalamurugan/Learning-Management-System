@@ -542,14 +542,14 @@ export class InstructorCourseBuilder {
 
   protected openLessonDetail(lesson: any) {
     if (!this.course) return;
-    const queryParams = this.course.hasNonExpiredEnrollments ? { locked: 'true' } : {};
+    const queryParams = this.layout.viewMode() === 'live' ? { locked: 'true' } : {};
     this.router.navigate([`/${this.routePrefix}/courses`, this.course.slug, 'lessons', lesson.id, 'detail'], { queryParams });
   }
 
   protected openEditLesson(lesson: any, event?: Event) {
     event?.stopPropagation();
     if (!this.course) return;
-    const queryParams = this.course.hasNonExpiredEnrollments ? { locked: 'true' } : {};
+    const queryParams = this.layout.viewMode() === 'live' ? { locked: 'true' } : {};
     this.router.navigate([`/${this.routePrefix}/courses`, this.course.slug, 'lessons', lesson.id, 'edit'], { queryParams });
   }
 
@@ -632,7 +632,7 @@ export class InstructorCourseBuilder {
   protected openEditQuiz(quizId: number, event?: Event) {
     event?.stopPropagation();
     if (!this.course) return;
-    const queryParams = this.course.hasNonExpiredEnrollments ? { locked: 'true' } : {};
+    const queryParams = this.layout.viewMode() === 'live' ? { locked: 'true' } : {};
     this.router.navigate([`/${this.routePrefix}/courses`, this.course.slug, 'quizzes', quizId, 'questions'], { queryParams });
   }
 
@@ -646,7 +646,7 @@ export class InstructorCourseBuilder {
   protected openEditAssignment(assignmentId: number, event?: Event) {
     event?.stopPropagation();
     if (!this.course) return;
-    const queryParams = this.course.hasNonExpiredEnrollments ? { locked: 'true' } : {};
+    const queryParams = this.layout.viewMode() === 'live' ? { locked: 'true' } : {};
     this.router.navigate([`/${this.routePrefix}/courses`, this.course.slug, 'assignments', assignmentId, 'edit'], { queryParams });
   }
 
@@ -664,7 +664,7 @@ export class InstructorCourseBuilder {
 
   protected openEditResource(resource: any) {
     if (!this.course) return;
-    const queryParams = this.course.hasNonExpiredEnrollments ? { locked: 'true' } : {};
+    const queryParams = this.layout.viewMode() === 'live' ? { locked: 'true' } : {};
     this.router.navigate([`/${this.routePrefix}/courses`, this.course.slug, 'resources', resource.id, 'edit'], { queryParams });
   }
 

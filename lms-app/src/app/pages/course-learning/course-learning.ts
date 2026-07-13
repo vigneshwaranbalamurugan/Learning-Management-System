@@ -9,7 +9,9 @@ import { CourseService } from '@services/course.service';
 import { ProgressService } from '@services/progress.service';
 import { LearningService } from '@services/learning.service';
 import { VideoProgressSignalRService } from '@services/video-progress-signalr.service';
+import { QuizProgressSignalRService } from '@services/quiz-progress-signalr.service';
 import { AssignmentService } from '@services/assignment.service';
+import { EnrollmentService } from '@services/enrollment.service';
 
 import { CourseDetailResponse, LessonSummary } from '@models/course';
 import { CourseProgressResponse, LessonProgressResponse, QuizProgressResponse, AssignmentProgressResponse } from '@models/progress';
@@ -60,7 +62,9 @@ export class CourseLearning implements OnInit, OnDestroy {
   private progressService = inject(ProgressService);
   private learningService = inject(LearningService);
   private videoSignalR = inject(VideoProgressSignalRService);
+  private quizSignalR = inject(QuizProgressSignalRService);
   private assignmentService = inject(AssignmentService);
+  private enrollmentService = inject(EnrollmentService);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
   private sanitizer = inject(DomSanitizer);
@@ -88,6 +92,8 @@ export class CourseLearning implements OnInit, OnDestroy {
   // Action State
   isMarkingComplete = signal<boolean>(false);
   showExitModal = signal(false);
+  showUpdateModal = signal(false);
+  isUpdatingVersion = signal(false);
 
   // ─── Computed Progress ────────────────────────────────────────────────────
 
@@ -162,6 +168,7 @@ export class CourseLearning implements OnInit, OnDestroy {
 
   constructor() {
     this.assignmentForm = this.fb.group({
+      submissionType: ['none'],
       submissionText: [''],
       attachmentUrl: ['']
     });
@@ -192,6 +199,7 @@ export class CourseLearning implements OnInit, OnDestroy {
 
   async ngOnDestroy() {
     await this.videoSignalR.disconnect();
+    await this.quizSignalR.disconnect();
     this.stopQuizTimer();
   }
 
@@ -303,6 +311,38 @@ export class CourseLearning implements OnInit, OnDestroy {
 
   // ─── Navigation ───────────────────────────────────────────────────────────
 
+
+
+  openUpdateModal() {
+    this.showUpdateModal.set(true);
+  }
+
+  closeUpdateModal() {
+    this.showUpdateModal.set(false);
+  }
+
+  updateVersion() {
+    if (!this.courseId() || this.isUpdatingVersion()) return;
+    
+    this.isUpdatingVersion.set(true);
+    this.enrollmentService.updateToLatestVersion(this.courseId()).subscribe({
+      next: () => {
+        this.isUpdatingVersion.set(false);
+        this.closeUpdateModal();
+        // Reload course details to get the new version
+        this.loadCourseData();
+      },
+      error: (err) => {
+        console.error('Failed to update version:', err);
+        this.isUpdatingVersion.set(false);
+        this.closeUpdateModal();
+        alert('Failed to update to the latest version. Please try again.');
+      }
+    });
+  }
+
+  // ─── Quiz Navigation ───────────────────────────────────────────────────────────
+
   navigateToItem(index: number) {
     const items = this.flatCurriculum();
     if (index < 0 || index >= items.length) return;
@@ -349,6 +389,10 @@ export class CourseLearning implements OnInit, OnDestroy {
     this.quizAttemptId.set(null);
     this.quizResult.set(null);
     this.stopQuizTimer();
+    
+    if (item.type !== 'quiz') {
+      await this.quizSignalR.disconnect();
+    }
 
     if (item.type === 'lesson') {
       const lesson = item.item as LessonSummary;
@@ -493,6 +537,7 @@ export class CourseLearning implements OnInit, OnDestroy {
       const detail = await this.learningService.getQuizForStudent(qId).toPromise();
       this.quizDetail.set(detail!);
 
+      await this.quizSignalR.connect();
       this.startQuizTimer();
     } catch (err) {
       console.error('Failed to start quiz', err);
@@ -503,6 +548,11 @@ export class CourseLearning implements OnInit, OnDestroy {
     const map = new Map(this.selectedAnswers());
     map.set(questionId, optionId);
     this.selectedAnswers.set(map);
+    
+    const attemptId = this.quizAttemptId();
+    if (attemptId) {
+      this.quizSignalR.updateAnswer(attemptId, questionId, optionId);
+    }
   }
 
   async submitQuiz() {
@@ -511,6 +561,7 @@ export class CourseLearning implements OnInit, OnDestroy {
 
     this.isSubmittingQuiz.set(true);
     this.stopQuizTimer();
+    await this.quizSignalR.disconnect();
 
     const answers = Array.from(this.selectedAnswers().entries()).map(([qId, oId]) => ({
       questionId: qId,
@@ -586,15 +637,16 @@ export class CourseLearning implements OnInit, OnDestroy {
       formData.append('assignmentId', a.id.toString());
       formData.append('submissionText', this.assignmentForm.value.submissionText || '');
 
-      let attType = 0; // File
-      if (a.attachmentType === AssignmentAttachmentType.Link) {
-        attType = 1; // Link
+      const type = this.assignmentForm.value.submissionType;
+      
+      if (type === 'link') {
+        formData.append('attachmentType', '1'); // Link
         formData.append('submittedAssignmentUrl', this.assignmentForm.value.attachmentUrl || '');
-      }
-      formData.append('attachmentType', attType.toString());
-
-      if (this.selectedAssignmentFile && attType === 0) {
-        formData.append('attachmentFile', this.selectedAssignmentFile);
+      } else if (type === 'file') {
+        formData.append('attachmentType', '0'); // File
+        if (this.selectedAssignmentFile) {
+          formData.append('attachmentFile', this.selectedAssignmentFile);
+        }
       }
 
       await this.assignmentService.submitAssignment(formData).toPromise();
@@ -603,7 +655,7 @@ export class CourseLearning implements OnInit, OnDestroy {
       await this.loadAssignmentDetails(a.id);
       await this.fetchLatestProgress(); // locally mark submitted
 
-      this.assignmentForm.reset();
+      this.assignmentForm.reset({ submissionType: 'none', submissionText: '', attachmentUrl: '' });
       this.selectedAssignmentFile = null;
     } catch (err) {
       console.error('Failed to submit assignment', err);
