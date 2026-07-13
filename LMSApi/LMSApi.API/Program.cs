@@ -41,25 +41,25 @@ try
         .ReadFrom.Services(services)
         .Enrich.FromLogContext());
 
-// Required to resolve PostgreSQL EF Core timezone mismatch errors when storing DateTime.Now
-AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
+    // Required to resolve PostgreSQL EF Core timezone mismatch errors when storing DateTime.Now
+    AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
 
-// Add services to the container.
-builder.Services.AddControllers();
-builder.Services.AddHttpContextAccessor();
-builder.Services.AddSignalR();
-builder.Services.AddSingleton<IUserIdProvider, NotificationUserIdProvider>();
-builder.Services.AddCustomValidation();
-builder.Services.AddOpenApi();
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+    // Add services to the container.
+    builder.Services.AddControllers();
+    builder.Services.AddHttpContextAccessor();
+    builder.Services.AddSignalR();
+    builder.Services.AddSingleton<IUserIdProvider, NotificationUserIdProvider>();
+    builder.Services.AddCustomValidation();
+    builder.Services.AddOpenApi();
+    builder.Services.AddEndpointsApiExplorer();
+    builder.Services.AddSwaggerGen();
 
-// HttpClient for Razorpay Route API
-builder.Services.AddHttpClient("RazorpayRoute", client =>
-{
-    client.BaseAddress = new Uri("https://api.razorpay.com/v1/");
-    client.DefaultRequestHeaders.Add("Accept", "application/json");
-});
+    // HttpClient for Razorpay Route API
+    builder.Services.AddHttpClient("RazorpayRoute", client =>
+    {
+        client.BaseAddress = new Uri("https://api.razorpay.com/v1/");
+        client.DefaultRequestHeaders.Add("Accept", "application/json");
+    });
 
 #region Database
 var connection = builder.Configuration.GetConnectionString("DefaultConnection");
@@ -195,109 +195,109 @@ builder.Services.AddStackExchangeRedisCache(options =>
     options.InstanceName = builder.Configuration["Redis:InstanceName"];
 });
 
-// Register raw IConnectionMultiplexer for direct Redis access
-builder.Services.AddSingleton<StackExchange.Redis.IConnectionMultiplexer>(sp => 
-    StackExchange.Redis.ConnectionMultiplexer.Connect(builder.Configuration["Redis:ConnectionString"]!)
-);
+    // Register raw IConnectionMultiplexer for direct Redis access
+    builder.Services.AddSingleton<StackExchange.Redis.IConnectionMultiplexer>(sp =>
+        StackExchange.Redis.ConnectionMultiplexer.Connect(builder.Configuration["Redis:ConnectionString"]!)
+    );
 
-builder.Services.AddAutoMapper(typeof(ApplicationAssemblyReference).Assembly);
+    builder.Services.AddAutoMapper(typeof(ApplicationAssemblyReference).Assembly);
 
-builder.Services.AddScoped<ProfileImageUploadHandler>();
-builder.Services.AddScoped<CourseUploadHandler>();
-builder.Services.AddScoped<AssignmentUploadHandler>();
-builder.Services.AddScoped<LessonUploadHandler>();
+    builder.Services.AddScoped<ProfileImageUploadHandler>();
+    builder.Services.AddScoped<CourseUploadHandler>();
+    builder.Services.AddScoped<AssignmentUploadHandler>();
+    builder.Services.AddScoped<LessonUploadHandler>();
 
-builder.Services.AddJwtAuthentication(builder.Configuration);
+    builder.Services.AddJwtAuthentication(builder.Configuration);
 
-// API Versioning
-builder.Services.AddApiVersioning(options =>
-{
-    options.DefaultApiVersion = new ApiVersion(1, 0);
-
-    // If version not specified → use default
-    options.AssumeDefaultVersionWhenUnspecified = true;
-
-    // Adds supported/deprecated versions in response headers
-    options.ReportApiVersions = true;
-
-    // Read version from URL
-    options.ApiVersionReader = new UrlSegmentApiVersionReader();
-})
-.AddApiExplorer(options =>
-{
-    options.GroupNameFormat = "'v'VVV";
-
-    options.SubstituteApiVersionInUrl = true;
-});
-
-// Rate Limiting Configuration
-builder.Services.AddCustomRateLimiting(builder.Configuration);
-
-builder.Services.AddRoleAuthorization();
-
-// CORS configuration — supports multiple comma-separated origins from config
-var frontendUrl = builder.Configuration["ApplicationUrls:Frontend"] ?? "http://localhost:4200";
-var allowedOrigins = frontendUrl
-    .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-
-builder.Services.AddCors(options =>
-{
-    options.AddPolicy("AllowFrontend", policy =>
+    // API Versioning
+    builder.Services.AddApiVersioning(options =>
     {
-        policy.WithOrigins(allowedOrigins)
-              .AllowAnyMethod()
-              .AllowAnyHeader()
-              .AllowCredentials();
+        options.DefaultApiVersion = new ApiVersion(1, 0);
+
+        // If version not specified → use default
+        options.AssumeDefaultVersionWhenUnspecified = true;
+
+        // Adds supported/deprecated versions in response headers
+        options.ReportApiVersions = true;
+
+        // Read version from URL
+        options.ApiVersionReader = new UrlSegmentApiVersionReader();
+    })
+    .AddApiExplorer(options =>
+    {
+        options.GroupNameFormat = "'v'VVV";
+
+        options.SubstituteApiVersionInUrl = true;
     });
-});
 
-builder.Services.AddRequestTimeouts(options =>
-{
-    options.AddPolicy("Quick",  TimeSpan.FromSeconds(10));
-    options.AddPolicy("Normal", TimeSpan.FromSeconds(15));
-    options.AddPolicy("Heavy",  TimeSpan.FromSeconds(20));
-});
+    // Rate Limiting Configuration
+    builder.Services.AddCustomRateLimiting(builder.Configuration);
 
-var app = builder.Build();
+    builder.Services.AddRoleAuthorization();
 
-// app.Use(async (context, next) =>
-// {
-//     await Task.Delay(3000);
+    // CORS configuration — supports multiple comma-separated origins from config
+    var frontendUrl = builder.Configuration["ApplicationUrls:Frontend"] ?? "http://localhost:4200";
+    var allowedOrigins = frontendUrl
+        .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 
-//     await next();
-// });
+    builder.Services.AddCors(options =>
+    {
+        options.AddPolicy("AllowFrontend", policy =>
+        {
+            policy.WithOrigins(allowedOrigins)
+                  .AllowAnyMethod()
+                  .AllowAnyHeader()
+                  .AllowCredentials();
+        });
+    });
 
-// ── Exception handling must be FIRST so it wraps every middleware below ──
-app.UseMiddleware<ExceptionHandlingMiddleware>();
-app.UseMiddleware<ForgotPasswordEmailExtractorMiddleware>();
+    builder.Services.AddRequestTimeouts(options =>
+    {
+        options.AddPolicy("Quick", TimeSpan.FromSeconds(10));
+        options.AddPolicy("Normal", TimeSpan.FromSeconds(15));
+        options.AddPolicy("Heavy", TimeSpan.FromSeconds(20));
+    });
 
-app.UseSerilogRequestLogging();
+    var app = builder.Build();
 
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-    app.MapOpenApi();
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+    // app.Use(async (context, next) =>
+    // {
+    //     await Task.Delay(3000);
 
-// Note: HTTPS redirection is disabled for HTTP LAN dev access.
-// Re-enable when deploying with TLS/HTTPS.
-// app.UseHttpsRedirection();
+    //     await next();
+    // });
 
-app.UseCors("AllowFrontend");
+    // ── Exception handling must be FIRST so it wraps every middleware below ──
+    app.UseMiddleware<ExceptionHandlingMiddleware>();
+    app.UseMiddleware<ForgotPasswordEmailExtractorMiddleware>();
 
-app.UseRequestTimeouts();
+    app.UseSerilogRequestLogging();
 
-app.UseAuthentication();
-app.UseMiddleware<TokenRevocationMiddleware>();
-app.UseAuthorization();
-app.UseRateLimiter();
+    // Configure the HTTP request pipeline.
+    if (app.Environment.IsDevelopment())
+    {
+        app.MapOpenApi();
+        app.UseSwagger();
+        app.UseSwaggerUI();
+    }
 
-app.UseHangfireDashboard("/hangfire", new DashboardOptions
-{
-    Authorization = new[] { new HangfireAuthorizationFilter() }
-});
+    // Note: HTTPS redirection is disabled for HTTP LAN dev access.
+    // Re-enable when deploying with TLS/HTTPS.
+    // app.UseHttpsRedirection();
+
+    app.UseCors("AllowFrontend");
+
+    app.UseRequestTimeouts();
+
+    app.UseAuthentication();
+    app.UseMiddleware<TokenRevocationMiddleware>();
+    app.UseAuthorization();
+    app.UseRateLimiter();
+
+    app.UseHangfireDashboard("/hangfire", new DashboardOptions
+    {
+        Authorization = new[] { new HangfireAuthorizationFilter() }
+    });
 
 app.MapHub<NotificationHub>("/hubs/notification").RequireRateLimiting("SignalRHubConnectNotification");
 app.MapHub<VideoProgressHub>("/hubs/video-progress").RequireRateLimiting("SignalRHubConnectVideoProgress");
@@ -337,7 +337,7 @@ recurringJobManager.AddOrUpdate<IQuizExpirationService>(
             {
                 // Set short timeout for quick fail during startup
                 var redisConfig = StackExchange.Redis.ConfigurationOptions.Parse(redisConnectionString);
-                redisConfig.ConnectTimeout = 3000; 
+                redisConfig.ConnectTimeout = 3000;
                 using var redis = await StackExchange.Redis.ConnectionMultiplexer.ConnectAsync(redisConfig);
                 Log.Information("Redis connection successful.");
             }

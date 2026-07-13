@@ -1,0 +1,198 @@
+<div class="p-6 md:p-10 border-t border-slate-200 bg-slate-50/30">
+  <div class="flex items-center justify-between mb-6">
+    <h3 class="text-xl font-bold text-slate-900 flex items-center gap-2">
+      <svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+      Doubts &amp; Discussions
+    </h3>
+    <app-button variant="primary" customClass="!w-auto px-4 py-2 text-sm rounded-lg shadow-sm" (click)="toggleNewForm()">
+      {{ showNewForm() ? 'Cancel' : 'Ask a Question' }}
+    </app-button>
+  </div>
+
+  <!-- New Discussion Form -->
+  @if (showNewForm()) {
+    <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-sm mb-6">
+      <app-form-input
+        label="Title"
+        placeholder="What's your question about?"
+        [value]="newTitle()"
+        (valueChange)="newTitle.set($event)">
+      </app-form-input>
+      <div class="flex flex-col gap-1.5 mt-4">
+        <label class="text-sm font-semibold text-slate-700">Details</label>
+        <textarea
+          [value]="newContent()"
+          (input)="newContent.set($any($event.target).value)"
+          placeholder="Describe your doubt in detail..."
+          class="w-full border border-slate-200 rounded-lg p-3 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all resize-y min-h-[100px] text-sm shadow-sm"
+        ></textarea>
+      </div>
+      <div class="flex justify-end mt-4">
+        <app-button variant="primary" customClass="!w-auto px-5 py-2.5 text-sm rounded-lg shadow-sm" [loading]="isPosting()" (click)="submitNewDiscussion()">
+          Post Question
+        </app-button>
+      </div>
+    </div>
+  }
+
+  <!-- Loading -->
+  @if (isLoading()) {
+    <div class="flex justify-center py-6"><app-loader></app-loader></div>
+  } @else {
+
+    <!-- Empty State -->
+    @if (discussions().length === 0) {
+      <div class="text-center py-10 bg-white rounded-xl border border-slate-100">
+        <p class="text-sm text-slate-500">No questions yet. Be the first to ask!</p>
+      </div>
+    }
+
+    <!-- Discussion List -->
+    <div class="space-y-3">
+      @for (d of discussions(); track d.id) {
+        <button
+          class="w-full text-left bg-white rounded-xl p-4 border border-slate-200 hover:border-blue-300 hover:shadow-sm transition-all cursor-pointer"
+          (click)="openDiscussion(d.id)">
+          <div class="flex items-start justify-between gap-3">
+            <div class="min-w-0">
+              <h4 class="font-bold text-slate-900 text-sm truncate">{{ d.title }}</h4>
+              <p class="text-xs text-slate-500 mt-1 line-clamp-2">{{ d.content }}</p>
+            </div>
+            @if (d.isLocked) {
+              <svg class="w-4 h-4 text-slate-300 shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd"/></svg>
+            }
+          </div>
+          <div class="flex items-center gap-4 mt-3 text-[11px] font-semibold text-slate-400">
+            <span>{{ d.userName }}</span>
+            <span class="flex items-center gap-1">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+              {{ d.replyCount }}
+            </span>
+            <span class="flex items-center gap-1" [class.text-red-500]="d.isLikedByUser">
+              <svg class="w-3.5 h-3.5" [attr.fill]="d.isLikedByUser ? 'currentColor' : 'none'" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
+              {{ d.likeCount }}
+            </span>
+          </div>
+        </button>
+      }
+    </div>
+  }
+
+  <!-- Detail Slide-over / Section -->
+  @if (selectedId()) {
+    <div class="mt-6 bg-white rounded-xl border border-slate-200 shadow-sm p-5">
+      @if (isLoadingDetail()) {
+        <div class="flex justify-center py-6"><app-loader></app-loader></div>
+      } @else if (detail(); as d) {
+        <div class="flex items-center justify-between mb-4">
+          <button class="flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-blue-600 bg-transparent border-none cursor-pointer" (click)="closeDetail()">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+            Back to all questions
+          </button>
+
+          @if (isOwner(d.userEmail) && !editingDiscussion()) {
+            <div class="flex items-center gap-3">
+              <button class="text-xs font-bold text-blue-600 hover:text-blue-800 bg-transparent border-none cursor-pointer" (click)="startEditDiscussion()">Edit</button>
+              <button class="text-xs font-bold text-red-600 hover:text-red-800 bg-transparent border-none cursor-pointer" (click)="requestDeleteDiscussion(d.id)">Delete</button>
+            </div>
+          }
+        </div>
+
+        <!-- Discussion Body / Edit Form -->
+        @if (!editingDiscussion()) {
+          <h2 class="text-xl font-bold text-slate-900 mb-2">{{ d.title }}</h2>
+          <p class="text-sm text-slate-600 whitespace-pre-wrap mb-4">{{ d.content }}</p>
+          <div class="flex items-center gap-4 text-[11px] font-semibold text-slate-400 mb-6 pb-6 border-b border-slate-100">
+            <span>{{ d.userName }}</span>
+            <span>{{ d.createdAt | date:'medium' }}</span>
+            <button class="flex items-center gap-1 bg-transparent border-none cursor-pointer transition-colors"
+                    [class.text-red-500]="d.isLikedByUser"
+                    [class.text-slate-500]="!d.isLikedByUser"
+                    [class.hover:text-red-500]="!d.isLikedByUser"
+                    (click)="toggleLike(d.id)">
+              <svg class="w-4 h-4" [attr.fill]="d.isLikedByUser ? 'currentColor' : 'none'" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
+              {{ d.likeCount }} Likes
+            </button>
+          </div>
+        } @else {
+          <app-form-input label="Title" [value]="editTitle()" (valueChange)="editTitle.set($event)"></app-form-input>
+          <div class="flex flex-col gap-1.5 mt-4 mb-4">
+            <label class="text-sm font-semibold text-slate-700">Details</label>
+            <textarea
+              [value]="editContent()"
+              (input)="editContent.set($any($event.target).value)"
+              class="w-full border border-slate-200 rounded-lg p-3 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all resize-y min-h-[100px] text-sm shadow-sm"
+            ></textarea>
+          </div>
+          <div class="flex justify-end gap-2 mb-6 pb-6 border-b border-slate-100">
+            <app-button variant="outline" customClass="!w-auto px-4 py-2 text-sm rounded-lg" (click)="cancelEditDiscussion()">Cancel</app-button>
+            <app-button variant="primary" customClass="!w-auto px-4 py-2 text-sm rounded-lg" (click)="saveEditDiscussion()">Save</app-button>
+          </div>
+        }
+
+        <!-- Replies -->
+        <h3 class="text-sm font-bold text-slate-900 mb-3">{{ d.replies.length }} {{ d.replies.length === 1 ? 'Reply' : 'Replies' }}</h3>
+        <div class="space-y-3 mb-6">
+          @for (r of d.replies; track r.id) {
+            <div class="bg-slate-50/60 rounded-lg p-3.5 border border-slate-100">
+              @if (editingReplyId() === r.id) {
+                <textarea
+                  [value]="editReplyText()"
+                  (input)="editReplyText.set($any($event.target).value)"
+                  class="w-full border border-slate-200 rounded-lg p-2.5 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all resize-y min-h-[70px] text-sm shadow-sm mb-2"
+                ></textarea>
+                <div class="flex justify-end gap-2">
+                  <app-button variant="outline" customClass="!w-auto px-3 py-1.5 text-xs rounded-md" (click)="cancelEditReply()">Cancel</app-button>
+                  <app-button variant="primary" customClass="!w-auto px-3 py-1.5 text-xs rounded-md" (click)="saveEditReply(r.id)">Save</app-button>
+                </div>
+              } @else {
+                <p class="text-sm text-slate-700 whitespace-pre-wrap">{{ r.replyText }}</p>
+                <div class="flex items-center justify-between mt-2">
+                  <div class="flex items-center gap-3 text-[10px] font-semibold text-slate-400">
+                    <span>{{ r.userName }}</span>
+                    <span>{{ r.createdAt | date:'short' }}</span>
+                  </div>
+                  @if (isOwner(r.userEmail)) {
+                    <div class="flex items-center gap-2.5">
+                      <button class="text-[11px] font-bold text-blue-600 hover:text-blue-800 bg-transparent border-none cursor-pointer" (click)="startEditReply(r)">Edit</button>
+                      <button class="text-[11px] font-bold text-red-600 hover:text-red-800 bg-transparent border-none cursor-pointer" (click)="requestDeleteReply(r.id)">Delete</button>
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+          }
+        </div>
+
+        <!-- Reply Form -->
+        @if (d.isLocked) {
+          <p class="text-xs font-semibold text-slate-400 text-center py-3 bg-slate-50 rounded-lg">This discussion is locked. No new replies can be added.</p>
+        } @else {
+          <div class="flex flex-col gap-1.5">
+            <textarea
+              [value]="replyText()"
+              (input)="replyText.set($any($event.target).value)"
+              placeholder="Write a reply..."
+              class="w-full border border-slate-200 rounded-lg p-3 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all resize-y min-h-[80px] text-sm shadow-sm"
+            ></textarea>
+            <div class="flex justify-end mt-2">
+              <app-button variant="primary" customClass="!w-auto px-5 py-2 text-sm rounded-lg shadow-sm" [loading]="isReplying()" (click)="submitReply()">
+                Post Reply
+              </app-button>
+            </div>
+          </div>
+        }
+      }
+    </div>
+  }
+</div>
+
+<app-confirm-modal
+  [isOpen]="!!deleteTarget()"
+  title="Delete this post?"
+  message="This action cannot be undone."
+  confirmText="Delete"
+  cancelText="Cancel"
+  (confirm)="confirmDelete()"
+  (cancel)="cancelDelete()">
+</app-confirm-modal>
