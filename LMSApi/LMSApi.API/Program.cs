@@ -123,6 +123,12 @@ builder.Services.AddScoped<IUserNotificationsRepository, UserNotificationsReposi
 builder.Services.AddScoped<IActivityLogsRepository, ActivityLogsRepository>();
 builder.Services.AddScoped<IAuditLogsRepository, AuditLogsRepository>();
 builder.Services.AddScoped<IWebhookEventLogRepository, WebhookEventLogRepository>();
+
+// Discussion
+builder.Services.AddScoped<IDiscussionRepository,DiscussionRepository>();
+builder.Services.AddScoped<IDiscussionReplyRepository,DiscussionReplyRepository>();
+builder.Services.AddScoped<IDiscussionLikeRepository,DiscussionLikeRepository>();
+
 #endregion
 
 #region Dependency Injection for Services
@@ -187,6 +193,10 @@ builder.Services.AddScoped<IAdminLogService, AdminLogService>();
 builder.Services.AddScoped<ICurrentUserProvider, CurrentUserProvider>();
 builder.Services.AddScoped<IWebhookEventService, WebhookEventService>();
 builder.Services.AddScoped<ICacheService, CacheService>();
+
+// Discussion Service
+builder.Services.AddScoped<IDiscussionService,DiscussionService>();
+
 #endregion
 
 builder.Services.AddStackExchangeRedisCache(options =>
