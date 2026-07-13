@@ -124,11 +124,11 @@ namespace LMSApi.API.Controllers
         [Authorize(Roles = "Instructor,Admin")]
         [HttpGet("instructor/slug/{slug}")]
         [RequestTimeout("Quick")]
-        public async Task<ActionResult<CourseResponse>> GetInstructorCourseBySlug(string slug)
+        public async Task<ActionResult<CourseResponse>> GetInstructorCourseBySlug(string slug, [FromQuery] string? view = null)
         {
             var userId = User.GetUserId();
             var isAdmin = User.IsAdmin();
-            var result = await _courseService.GetCourseBySlugAsync(slug, userId, isAdmin);
+            var result = await _courseService.GetCourseBySlugAsync(slug, userId, isAdmin, view);
             
             // Enforce ownership: Instructor must be the owner of the course
             await _ownershipService.EnforceCourseOwnershipAsync(result.Id, userId, isAdmin);
@@ -273,6 +273,16 @@ namespace LMSApi.API.Controllers
             return Ok(result);
         }
 
+        /// <summary>Get all course updates pending approval with pagination. Admin only.</summary>
+        [Authorize(Roles = "Admin")]
+        [HttpGet("updates-pending")]
+        [EnableRateLimiting("AdminApis")]
+        public async Task<ActionResult<PagedCourseListResponse>> GetUpdatesPending([FromQuery] CourseSearchQuery query)
+        {
+            var result = await _courseService.GetUpdatesPendingCoursesPagedAsync(query);
+            return Ok(result);
+        }
+
         /// <summary>Get all courses pending approval with pagination. Admin only.</summary>
         [Authorize(Roles = "Admin")]
         [HttpGet("pending")]
@@ -298,6 +308,16 @@ namespace LMSApi.API.Controllers
         public async Task<ActionResult<CourseSummaryStatsResponse>> GetSummaryStats()
         {
             var result = await _courseService.GetCourseSummaryStatsAsync();
+            return Ok(result);
+        }
+
+        [HttpPost("{id}/start-update")]
+        [Authorize(Roles = "Instructor,Admin")]
+        [EnableRateLimiting("AdminApis")]
+        public async Task<ActionResult<CourseResponse>> StartCourseUpdate(int id, [FromBody] StartCourseUpdateRequest request)
+        {
+            var userId = User.GetUserId();
+            var result = await _courseService.StartCourseUpdateAsync(id, userId, request);
             return Ok(result);
         }
 

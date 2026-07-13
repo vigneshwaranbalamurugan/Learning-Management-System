@@ -5,7 +5,7 @@
       <p class="text-xs text-gray-500 mt-0.5">Define learner projects, specify total marks, and evaluate submissions.</p>
     </div>
     <app-button 
-      *ngIf="!course.hasNonExpiredEnrollments"
+      *ngIf="layout.viewMode() !== 'live' && !layout.isLocked()"
       (click)="openAddAssignment()" 
       variant="primary"
       customClass="!px-4 !py-2 w-full sm:!w-auto text-xs font-semibold shadow-sm transition">
@@ -40,10 +40,10 @@
                 (click)="editAssignment(assignment.id)" 
                 variant="outline"
                 customClass="!px-3.5 !py-1.5 !w-auto text-xs font-semibold transition">
-                Edit Assignment
+                {{ (layout.isLocked() || layout.viewMode() === 'live') ? 'Edit Title & Instructions' : 'Edit Assignment' }}
               </app-button>
               <app-button 
-                *ngIf="!course.hasNonExpiredEnrollments"
+                *ngIf="layout.viewMode() !== 'live' && !layout.isLocked()"
                 (click)="confirmDeleteAssignment(assignment.id)" 
                 variant="danger"
                 customClass="!px-3 !py-1.5 !w-auto text-xs font-semibold transition">

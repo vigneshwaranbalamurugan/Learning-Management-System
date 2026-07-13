@@ -14,6 +14,8 @@ namespace LMSApi.DALLibrary.Interfaces
         Task<IEnumerable<Courses>> GetPendingCoursesAsync();
         Task<(IEnumerable<Courses> Courses, int TotalCount)> GetPendingCoursesPagedAsync(
             LMSApi.ModelLibrary.DTOs.CourseSearchQuery query);
+        Task<(IEnumerable<Courses> Courses, int TotalCount)> GetUpdatesPendingCoursesPagedAsync(
+            LMSApi.ModelLibrary.DTOs.CourseSearchQuery query);
         Task<(IEnumerable<Courses> Courses, int TotalCount)> GetAllCoursesPagedAsync(
             LMSApi.ModelLibrary.DTOs.CourseSearchQuery query);
         Task<Courses?> GetCourseWithDetailsAsync(int id);

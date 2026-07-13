@@ -21,6 +21,7 @@ export interface EnrollmentResponse {
   estimatedDuration: string;
   hasCertificate: boolean;
   courseAccessType: number | string;
+  isOnLatestVersion?: boolean;
 }
 
 export interface PagedEnrollmentResponse {

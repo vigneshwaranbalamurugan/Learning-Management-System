@@ -119,15 +119,53 @@ namespace LMSApi.DALLibrary.Repositories
         public async Task<PagedLearnerAssignmentResponse> GetLearnerAssignmentsAsync(int userId, int pageNumber, int pageSize, string? searchQuery = null)
         {
             var enrollments = await _context.Enrollments
+                .Include(e => e.Course)
                 .Where(e => e.UserId == userId && e.EnrollmentStatus == LMSApi.ModelLibrary.Enums.EnrollmentStatus.Active)
                 .ToListAsync();
             var enrolledCourseIds = enrollments.Select(e => e.CourseId).Distinct().ToList();
             var courseEnrollmentDates = enrollments.ToDictionary(e => e.CourseId, e => e.EnrolledAt);
 
+            var validAssignmentIds = new HashSet<int>();
+            var coursesOnLatest = new HashSet<int>();
+
+            foreach (var e in enrollments)
+            {
+                if (e.IsOnLatestVersion)
+                {
+                    coursesOnLatest.Add(e.CourseId);
+                }
+                else
+                {
+                    if (!string.IsNullOrEmpty(e.Course?.PreviousPublishedSnapshotJson))
+                    {
+                        try
+                        {
+                            var options = new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+                            var sections = System.Text.Json.JsonSerializer.Deserialize<List<LMSApi.ModelLibrary.DTOs.SectionResponse>>(e.Course.PreviousPublishedSnapshotJson, options);
+                            if (sections != null)
+                            {
+                                foreach (var sec in sections)
+                                {
+                                    if (sec.Assignments != null)
+                                    {
+                                        foreach (var a in sec.Assignments)
+                                        {
+                                            validAssignmentIds.Add(a.Id);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        catch { /* Ignore parse errors */ }
+                    }
+                }
+            }
+
             var query = _context.Assignments
                 .Include(a => a.CourseSection)
                     .ThenInclude(cs => cs.Course)
-                .Where(a => enrolledCourseIds.Contains(a.CourseSection.CourseId) && a.Status == LMSApi.ModelLibrary.Enums.PublishStatus.Published);
+                .Where(a => enrolledCourseIds.Contains(a.CourseSection.CourseId) && a.Status == LMSApi.ModelLibrary.Enums.PublishStatus.Published)
+                .Where(a => coursesOnLatest.Contains(a.CourseSection.CourseId) || validAssignmentIds.Contains(a.Id));
 
             if (!string.IsNullOrWhiteSpace(searchQuery))
             {
@@ -159,7 +197,9 @@ namespace LMSApi.DALLibrary.Repositories
             int passedCount = 0;
             int failedCount = 0;
             
-            var allQuery = _context.Assignments.Where(a => enrolledCourseIds.Contains(a.CourseSection.CourseId) && a.Status == LMSApi.ModelLibrary.Enums.PublishStatus.Published);
+            var allQuery = _context.Assignments
+                .Where(a => enrolledCourseIds.Contains(a.CourseSection.CourseId) && a.Status == LMSApi.ModelLibrary.Enums.PublishStatus.Published)
+                .Where(a => coursesOnLatest.Contains(a.CourseSection.CourseId) || validAssignmentIds.Contains(a.Id));
             var allAssignmentsIds = await allQuery.Select(a => a.Id).ToListAsync();
             var allAssignmentsPassingMarks = await allQuery.ToDictionaryAsync(a => a.Id, a => a.PassingMarks);
 

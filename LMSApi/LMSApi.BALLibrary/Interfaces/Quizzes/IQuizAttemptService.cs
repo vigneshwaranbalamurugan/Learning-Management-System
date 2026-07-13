@@ -8,6 +8,7 @@ namespace LMSApi.BALLibrary.Interfaces
         // ─── Student Quiz-Taking ────────────────────────────────────────────
         Task<QuizStudentDetailResponse> GetQuizForStudentAsync(int quizId, int userId);
         Task<StartAttemptResponse> StartAttemptAsync(int quizId, int userId);
+        Task SavePartialAnswerAsync(int attemptId, int questionId, int selectedOptionId, int userId);
         Task<QuizAttemptResponse> SubmitQuizAsync(int quizId, int userId, SubmitQuizRequest request);
         Task<IEnumerable<QuizAttemptResponse>> GetUserAttemptsAsync(int quizId, int userId);
         Task<QuizAttemptDetailResponse> GetAttemptDetailAsync(int attemptId);

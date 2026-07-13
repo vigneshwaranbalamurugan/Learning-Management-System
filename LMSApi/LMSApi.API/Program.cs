@@ -5,6 +5,8 @@ using LMSApi.DALLibrary.Repositories;
 using LMSApi.BALLibrary.Interfaces;
 using LMSApi.BALLibrary.Services;
 using LMSApi.BALLibrary.Services.Upload;
+using LMSApi.BALLibrary.Interfaces.Quizzes;
+using LMSApi.BALLibrary.Services.Quizzes;
 using LMSApi.BALLibrary.Services.Notification;
 using LMSApi.BALLibrary.Mappers;
 using LMSApi.BALLibrary.Utils;
@@ -167,6 +169,7 @@ builder.Services.AddScoped<IRevenueService, RevenueService>();
 builder.Services.AddScoped<IQuizService, QuizService>();
 builder.Services.AddScoped<IQuizAttemptService, QuizAttemptService>();
 builder.Services.AddScoped<IQuizQuestionService, QuizQuestionService>();
+builder.Services.AddScoped<IQuizExpirationService, QuizExpirationService>();
 
 // Ownership Service
 builder.Services.AddScoped<IOwnershipService, OwnershipService>();
@@ -298,6 +301,7 @@ app.UseHangfireDashboard("/hangfire", new DashboardOptions
 
 app.MapHub<NotificationHub>("/hubs/notification").RequireRateLimiting("SignalRHubConnectNotification");
 app.MapHub<VideoProgressHub>("/hubs/video-progress").RequireRateLimiting("SignalRHubConnectVideoProgress");
+app.MapHub<QuizProgressHub>("/hubs/quiz-progress");
 app.MapControllers();
 
 var recurringJobManager = app.Services.GetRequiredService<IRecurringJobManager>();
@@ -305,6 +309,11 @@ recurringJobManager.AddOrUpdate<IDeadlineNotificationJob>(
     "DailyDeadlineNotifications",
     job => job.ExecuteAsync(),
     Cron.Daily
+);
+recurringJobManager.AddOrUpdate<IQuizExpirationService>(
+    "QuizExpirationBackgroundJob",
+    job => job.ProcessExpiredQuizzesAsync(),
+    "*/30 * * * *"
 );
 
     Log.Information("Checking database and Redis connections...");

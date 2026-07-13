@@ -17,10 +17,12 @@ namespace LMSApi.API.Controllers
     public class EnrollmentsController : ControllerBase
     {
         private readonly IEnrollmentService _enrollmentService;
+        private readonly IStudentProgressService _progressService;
 
-        public EnrollmentsController(IEnrollmentService enrollmentService)
+        public EnrollmentsController(IEnrollmentService enrollmentService, IStudentProgressService progressService)
         {
             _enrollmentService = enrollmentService;
+            _progressService = progressService;
         }
         
         [HttpPost("courses/{courseId:int}/enroll/free")]
@@ -64,6 +66,19 @@ namespace LMSApi.API.Controllers
                 courseId, 
                 request);
             return CreatedAtAction(nameof(GetMyEnrollments), null, result);
+        }
+
+
+        [HttpPost("courses/{courseId:int}/update-version")]
+        [RequestTimeout("Normal")]
+        public async Task<ActionResult<EnrollmentResponse>> UpdateToLatestVersion(int courseId)
+        {
+            var userId = User.GetUserId();
+            var result = await _enrollmentService.UpdateToLatestVersionAsync(userId, courseId);
+            await _progressService.RecalculateCourseProgressAsync(userId, courseId);
+            // Refresh the result since progress might have changed
+            result.ProgressPercentage = (await _progressService.GetCourseProgressAsync(userId, courseId)).ProgressPercentage;
+            return Ok(result);
         }
 
 

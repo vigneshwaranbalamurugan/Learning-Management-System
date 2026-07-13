@@ -767,6 +767,28 @@ namespace LMSApi.BALLibrary.Services
             return _mapper.Map<IEnumerable<EnrollmentResponse>>(enrollments);
         }
 
+        
+        public async Task<EnrollmentResponse> UpdateToLatestVersionAsync(int userId, int courseId)
+        {
+            var enrollment = await _enrollmentRepository.GetByUserAndCourseAsync(userId, courseId)
+                ?? throw new KeyNotFoundException($"Enrollment for course '{courseId}' not found.");
+
+            if (enrollment.EnrollmentStatus == EnrollmentStatus.Completed)
+            {
+                throw new InvalidOperationException("Completed courses cannot be updated.");
+            }
+
+            if (enrollment.IsOnLatestVersion)
+            {
+                throw new InvalidOperationException("You are already on the latest version of this course.");
+            }
+
+            enrollment.IsOnLatestVersion = true;
+            await _enrollmentRepository.UpdateAsync(enrollment);
+
+            return _mapper.Map<EnrollmentResponse>(enrollment);
+        }
+
         public async Task<PagedEnrollmentResponse> GetMyEnrollmentsPagedAsync(int userId, int pageNumber, int pageSize, string? search = null, string? status = null, string? accessType = null)
         {
             var (enrollments, totalCount) = await _enrollmentRepository.GetEnrollmentsByUserPagedAsync(userId, pageNumber, pageSize, search, status, accessType);

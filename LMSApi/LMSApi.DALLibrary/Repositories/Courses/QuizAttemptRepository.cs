@@ -129,5 +129,17 @@ namespace LMSApi.DALLibrary.Repositories
 
             return (attempts, totalCount);
         }
+
+        public async Task<IEnumerable<QuizAttempts>> GetAllInProgressAttemptsAsync()
+        {
+            return await _context.QuizAttempts
+                .Include(a => a.Quiz)
+                    .ThenInclude(q => q.CourseSection)
+                .Include(a => a.Quiz)
+                    .ThenInclude(q => q.Questions)
+                .Include(a => a.Answers)
+                .Where(a => a.Status == AttemptStatus.InProgress)
+                .ToListAsync();
+        }
     }
 }

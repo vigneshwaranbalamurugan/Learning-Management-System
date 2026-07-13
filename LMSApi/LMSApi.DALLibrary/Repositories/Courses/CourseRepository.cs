@@ -119,7 +119,7 @@ namespace LMSApi.DALLibrary.Repositories
             return await _context.Courses
                 .Include(c => c.Category)
                 .Include(c => c.Language)
-                .Where(c => c.Status == CourseStatus.Published)
+                .Where(c => c.Status == CourseStatus.Published || (c.Status == CourseStatus.PendingApproval && c.PublishedSnapshotJson != null))
                 .ToListAsync();
         }
 
@@ -131,7 +131,7 @@ namespace LMSApi.DALLibrary.Repositories
                 .Include(c => c.Language)
                 .Include(c => c.Instructor)
                     .ThenInclude(i => i.UserProfile)
-                .Where(c => c.Status == CourseStatus.Published)
+                .Where(c => c.Status == CourseStatus.Published || (c.Status == CourseStatus.PendingApproval && c.PublishedSnapshotJson != null))
                 .AsQueryable();
 
             // 1. Categories (Multi-select)
@@ -270,7 +270,7 @@ namespace LMSApi.DALLibrary.Repositories
             return await _context.Courses
                 .Include(c => c.Category)
                 .Include(c => c.Language)
-                .Where(c => c.Status == CourseStatus.PendingApproval)
+                .Where(c => c.Status == CourseStatus.PendingApproval && !c.IsBeingUpdated)
                 .ToListAsync();
         }
 
@@ -282,7 +282,7 @@ namespace LMSApi.DALLibrary.Repositories
                 .Include(c => c.Language)
                 .Include(c => c.Instructor)
                     .ThenInclude(i => i.UserProfile)
-                .Where(c => c.Status == CourseStatus.PendingApproval)
+                .Where(c => c.Status == CourseStatus.PendingApproval && !c.IsBeingUpdated)
                 .AsQueryable();
 
             if (!string.IsNullOrWhiteSpace(query.Search))
@@ -294,6 +294,50 @@ namespace LMSApi.DALLibrary.Repositories
 
             var totalCount = await queryable.CountAsync();
             queryable = queryable.OrderByDescending(c => c.CreatedAt);
+
+            var projected = await queryable
+                .Skip((query.PageNumber - 1) * query.PageSize)
+                .Take(query.PageSize)
+                .Select(c => new 
+                {
+                    Course = c,
+                    EnrolledCount = c.Enrollments.Count(),
+                    CompletedCount = c.Enrollments.Count(e => e.IsCompleted),
+                    LessonsCount = c.Sections.SelectMany(s => s.Lessons).Count()
+                })
+                .ToListAsync();
+
+            var courses = projected.Select(p => {
+                p.Course.ProjectedEnrolledCount = p.EnrolledCount;
+                p.Course.ProjectedLessonsCount = p.LessonsCount;
+                p.Course.ProjectedCompletionRate = p.EnrolledCount > 0 ? (double)p.CompletedCount / p.EnrolledCount * 100 : 0;
+                return p.Course;
+            }).ToList();
+
+            return (courses, totalCount);
+        }
+
+        
+        public async Task<(IEnumerable<Courses> Courses, int TotalCount)> GetUpdatesPendingCoursesPagedAsync(
+            LMSApi.ModelLibrary.DTOs.CourseSearchQuery query)
+        {
+            var queryable = _context.Courses
+                .Include(c => c.Category)
+                .Include(c => c.Language)
+                .Include(c => c.Instructor)
+                    .ThenInclude(i => i.UserProfile)
+                .Where(c => c.Status == CourseStatus.PendingApproval && c.IsBeingUpdated)
+                .AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(query.Search))
+            {
+                var s = query.Search.Trim().ToLower();
+                queryable = queryable.Where(c => c.Title.ToLower().Contains(s) || 
+                                                (c.Description != null && c.Description.ToLower().Contains(s)));
+            }
+
+            var totalCount = await queryable.CountAsync();
+            queryable = queryable.OrderByDescending(c => c.UpdatedAt);
 
             var projected = await queryable
                 .Skip((query.PageNumber - 1) * query.PageSize)
@@ -508,7 +552,8 @@ namespace LMSApi.DALLibrary.Repositories
             {
                 TotalCourses = courses.Count,
                 PublishedCourses = courses.Count(c => c.Status == CourseStatus.Published),
-                PendingApproval = courses.Count(c => c.Status == CourseStatus.PendingApproval),
+                PendingApproval = courses.Count(c => c.Status == CourseStatus.PendingApproval && !c.IsBeingUpdated),
+                UpdatesPending = courses.Count(c => c.Status == CourseStatus.PendingApproval && c.IsBeingUpdated),
                 ArchivedCourses = courses.Count(c => c.Status == CourseStatus.Archived)
             };
         }

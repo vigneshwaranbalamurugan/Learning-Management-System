@@ -45,7 +45,7 @@ export class InstructorCourses implements OnInit {
   protected showPublishModal=false;
   protected courseToArchive: number | null = null;
   protected courseToPublish:InstructorCourseCardResponse|null=null;
-  protected isPublishing=false;
+  protected publishActionType: 'publish' | 'unpublish' | 'review' = 'publish';
   protected showDeleteModal = false;
   protected courseToDelete: InstructorCourseCardResponse | null = null;
   
@@ -353,6 +353,21 @@ export class InstructorCourses implements OnInit {
     this.router.navigate([`/instructor/courses/preview/${slug}`], { state: { courseId } });
   }
 
+  protected startUpdate(course: InstructorCourseCardResponse): void {
+    if (confirm('Are you sure you want to start a new update for this course? This will allow you to edit content again.')) {
+      this.courseService.startCourseUpdate(course.id).pipe(untilDestroyed(this.destroyRef)).subscribe({
+        next: (updatedCourse) => {
+          this.toastService.showSuccess('Course is now open for updates!');
+          // Redirect to builder
+          this.router.navigate([`/instructor/courses/${updatedCourse.slug}/overview`]);
+        },
+        error: (err) => {
+          this.toastService.showApiError(err, 'Failed to start course update.');
+        }
+      });
+    }
+  }
+
   protected duplicateCourse(courseId: number): void {
     this.toastService.showSuccess('Course duplicated successfully (Mocked).');
   }
@@ -360,16 +375,17 @@ export class InstructorCourses implements OnInit {
   protected togglePublishStatus(course: InstructorCourseCardResponse|null): void {
     if(course==null)
       return
-    const shouldUnpublish = this.canUnpublish(course);
-    const nextPublishState = !shouldUnpublish;
+    const nextPublishState = this.publishActionType === 'publish' || this.publishActionType === 'review';
     
     this.courseService.publishCourse(course.id, nextPublishState)
       .pipe(untilDestroyed(this.destroyRef))
       .subscribe({
         next: (updatedCourse) => {
-          this.toastService.showSuccess(
-            nextPublishState ? 'Course submitted for approval successfully!' : 'Course unpublished successfully!'
-          );
+          let successMessage = 'Course published successfully!';
+          if (this.publishActionType === 'review') successMessage = 'Course update submitted for review successfully!';
+          if (this.publishActionType === 'unpublish') successMessage = 'Course unpublished successfully!';
+          
+          this.toastService.showSuccess(successMessage);
           // Update local signals
           this.courses.update(list => list.map(c => c.id === course.id ? { ...c, status: updatedCourse.status } : c));
           this.allCoursesForStats.update(list => list.map(c => c.id === course.id ? { ...c, status: updatedCourse.status } : c));
@@ -392,9 +408,9 @@ export class InstructorCourses implements OnInit {
     this.showArchiveModal = true;
   }
 
-  protected ConfirmTogglePublishStatus(course:InstructorCourseCardResponse,shouldUnpublish:boolean):void{
+  protected ConfirmTogglePublishStatus(course:InstructorCourseCardResponse, action: 'publish' | 'unpublish' | 'review'):void{
     this.courseToPublish=course;
-    this.isPublishing=shouldUnpublish;
+    this.publishActionType=action;
     this.showPublishModal=true;
   }
 

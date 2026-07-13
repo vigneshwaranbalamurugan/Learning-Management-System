@@ -1,4 +1,4 @@
-import { Component, OnInit, signal, inject, DestroyRef } from '@angular/core';
+import { Component, OnInit, signal, inject, DestroyRef, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, ActivatedRoute, Router } from '@angular/router';
 import { CourseDetailResponse } from '@models/course';
@@ -7,11 +7,12 @@ import { Loader } from '@components/loader/loader';
 import { ToastService } from '@services/toast.service';
 import { CourseService } from '@services/course.service';
 import { AuthService } from '@services/auth.service';
+import { ConfirmModal } from '@components/confirm-modal/confirm-modal';
 
 @Component({
   selector: 'app-instructor-course-layout',
   standalone: true,
-  imports: [CommonModule, RouterModule, Loader],
+  imports: [CommonModule, RouterModule, Loader, ConfirmModal],
   templateUrl: './instructor-course-layout.html'
 })
 export class InstructorCourseLayout implements OnInit {
@@ -31,6 +32,41 @@ export class InstructorCourseLayout implements OnInit {
   public course = signal<CourseDetailResponse | null>(null);
   protected isLoading = signal(true);
   protected activePath = signal<string>('');
+
+  public isLocked = computed(() => {
+    const c = this.course();
+    if (!c) return false;
+    return !!(c.hasActiveEnrollments && !c.isBeingUpdated);
+  });
+
+  protected showCreateVersionModal = false;
+
+  protected confirmCreateVersion() {
+    this.showCreateVersionModal = true;
+  }
+
+  protected cancelCreateVersion() {
+    this.showCreateVersionModal = false;
+  }
+
+  protected startUpdate() {
+    this.showCreateVersionModal = false;
+    const c = this.course();
+    if (!c) return;
+    this.isLoading.set(true);
+    this.courseService.startCourseUpdate(c.id).subscribe({
+      next: (res) => {
+        this.toastService.showSuccess('Draft version created! You can now make changes.');
+        if (this.slug()) {
+          this.loadCourse(this.slug()!);
+        }
+      },
+      error: (err) => {
+        this.toastService.showApiError(err, 'Failed to start course update.');
+        this.isLoading.set(false);
+      }
+    });
+  }
 
   protected tabs = [
     { label: 'Overview', path: 'overview', icon: 'M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253' },
@@ -82,11 +118,13 @@ export class InstructorCourseLayout implements OnInit {
     return false;
   }
 
-  public loadCourse(slugOrId: string | number) {
+  public viewMode = signal<'draft' | 'live'>('draft');
+
+  public loadCourse(slugOrId: string | number, view?: string) {
     this.isLoading.set(true);
     const request$ = typeof slugOrId === 'number'
       ? this.courseService.getCourseById(slugOrId)
-      : this.courseService.getInstructorCourseBySlug(slugOrId);
+      : this.courseService.getInstructorCourseBySlug(slugOrId, view);
 
     request$.subscribe({
       next: (data) => {
@@ -128,5 +166,14 @@ export class InstructorCourseLayout implements OnInit {
 
   protected navigateBack(): void {
     this.router.navigate([`/${this.routePrefix}/courses`]);
+  }
+
+  public toggleViewMode(mode: 'draft' | 'live') {
+    if (this.viewMode() === mode) return;
+    this.viewMode.set(mode);
+    const slug = this.slug();
+    if (slug) {
+      this.loadCourse(slug, mode === 'live' ? 'live' : undefined);
+    }
   }
 }

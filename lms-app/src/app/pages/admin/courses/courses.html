@@ -131,6 +131,17 @@
             {{ summaryStats()?.pendingApproval }}
           </span>
         </button>
+        <button 
+          (click)="onTabChange('updates')"
+          [class.bg-white]="activeTab() === 'updates'"
+          [class.shadow-sm]="activeTab() === 'updates'"
+          [class.text-[#10B981]]="activeTab() === 'updates'"
+          class="px-4 py-2 rounded-md text-sm font-medium text-slate-600 transition-colors flex items-center gap-2 whitespace-nowrap flex-shrink-0">
+          Updates Pending
+          <span *ngIf="summaryStats()?.updatesPending" class="bg-[#10B981] text-white text-xs px-2 py-0.5 rounded-full">
+            {{ summaryStats()?.updatesPending }}
+          </span>
+        </button>
       </div>
 
       <!-- Filters -->
@@ -482,7 +493,7 @@
           variant="primary" 
           class="flex-1"
           (click)="approveCourse(course.id)">
-          Approve Course
+          Approve
         </app-button>
         <app-button 
           variant="primary" 

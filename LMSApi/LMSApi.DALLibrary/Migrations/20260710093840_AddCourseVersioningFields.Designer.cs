@@ -3,6 +3,7 @@ using System;
 using LMSApi.DALLibrary.Contexts;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace LMSApi.DALLibrary.Migrations
 {
     [DbContext(typeof(LMSDbContext))]
-    partial class LMSDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260710093840_AddCourseVersioningFields")]
+    partial class AddCourseVersioningFields
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1833,26 +1836,26 @@ namespace LMSApi.DALLibrary.Migrations
                         new
                         {
                             Id = 1,
-                            CreatedAt = new DateTime(2026, 7, 10, 10, 36, 8, 307, DateTimeKind.Utc).AddTicks(9600),
+                            CreatedAt = new DateTime(2026, 7, 10, 9, 38, 39, 519, DateTimeKind.Utc).AddTicks(2050),
                             Description = "Learner account",
                             RoleName = "Learner",
-                            UpdatedAt = new DateTime(2026, 7, 10, 10, 36, 8, 307, DateTimeKind.Utc).AddTicks(9610)
+                            UpdatedAt = new DateTime(2026, 7, 10, 9, 38, 39, 519, DateTimeKind.Utc).AddTicks(2050)
                         },
                         new
                         {
                             Id = 2,
-                            CreatedAt = new DateTime(2026, 7, 10, 10, 36, 8, 307, DateTimeKind.Utc).AddTicks(9610),
+                            CreatedAt = new DateTime(2026, 7, 10, 9, 38, 39, 519, DateTimeKind.Utc).AddTicks(2060),
                             Description = "Instructor account",
                             RoleName = "Instructor",
-                            UpdatedAt = new DateTime(2026, 7, 10, 10, 36, 8, 307, DateTimeKind.Utc).AddTicks(9610)
+                            UpdatedAt = new DateTime(2026, 7, 10, 9, 38, 39, 519, DateTimeKind.Utc).AddTicks(2060)
                         },
                         new
                         {
                             Id = 3,
-                            CreatedAt = new DateTime(2026, 7, 10, 10, 36, 8, 307, DateTimeKind.Utc).AddTicks(9610),
+                            CreatedAt = new DateTime(2026, 7, 10, 9, 38, 39, 519, DateTimeKind.Utc).AddTicks(2060),
                             Description = "Admin account",
                             RoleName = "Admin",
-                            UpdatedAt = new DateTime(2026, 7, 10, 10, 36, 8, 307, DateTimeKind.Utc).AddTicks(9610)
+                            UpdatedAt = new DateTime(2026, 7, 10, 9, 38, 39, 519, DateTimeKind.Utc).AddTicks(2060)
                         });
                 });
 
@@ -1935,7 +1938,7 @@ namespace LMSApi.DALLibrary.Migrations
                         new
                         {
                             Id = 1,
-                            CreatedAt = new DateTime(2026, 7, 10, 10, 36, 8, 307, DateTimeKind.Utc).AddTicks(5980),
+                            CreatedAt = new DateTime(2026, 7, 10, 9, 38, 39, 518, DateTimeKind.Utc).AddTicks(6600),
                             Email = "admin@gmail.com",
                             IsActive = true,
                             IsEmailVerified = true,
@@ -1944,7 +1947,7 @@ namespace LMSApi.DALLibrary.Migrations
                             PasswordHash = "TPZPlYPS43ldK8EYFX67pHzyMNFmt69wd9N2cUNObYs=",
                             PasswordSalt = "K5CamRmhDuuJEyr50OpNsA==",
                             RoleId = 3,
-                            UpdatedAt = new DateTime(2026, 7, 10, 10, 36, 8, 307, DateTimeKind.Utc).AddTicks(5980)
+                            UpdatedAt = new DateTime(2026, 7, 10, 9, 38, 39, 518, DateTimeKind.Utc).AddTicks(6600)
                         });
                 });
 

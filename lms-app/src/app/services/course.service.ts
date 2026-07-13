@@ -83,12 +83,18 @@ export class CourseService {
     return this.http.get<CourseDetailResponse | CoursePreviewResponse>(`${this.baseUrl}/Courses/${courseId}`);
   }
 
+  startCourseUpdate(id: number): Observable<CourseResponse> {
+    return this.http.post<CourseResponse>(`${this.baseUrl}/Courses/${id}/start-update`, {});
+  }
+
   getCourseBySlug(slug: string): Observable<CourseDetailResponse | CoursePreviewResponse> {
     return this.http.get<CourseDetailResponse | CoursePreviewResponse>(`${this.baseUrl}/Courses/slug/${slug}`);
   }
 
-  getInstructorCourseBySlug(slug: string): Observable<CourseDetailResponse> {
-    return this.http.get<CourseDetailResponse>(`${this.baseUrl}/Courses/instructor/slug/${slug}`);
+  getInstructorCourseBySlug(slug: string, view?: string): Observable<CourseDetailResponse> {
+    let params = new HttpParams();
+    if (view) params = params.set('view', view);
+    return this.http.get<CourseDetailResponse>(`${this.baseUrl}/Courses/instructor/slug/${slug}`, { params });
   }
 
   updateCourse(courseId: number, formData: FormData): Observable<CourseResponse> {
