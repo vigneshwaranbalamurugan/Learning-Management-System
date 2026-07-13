@@ -26,6 +26,8 @@ import { ConfettiComponent } from '@components/confetti/confetti';
 import { VideoPlayer } from '@components/video-player/video-player';
 import { PdfViewer } from '@components/pdf-viewer/pdf-viewer';
 
+import { LessonDiscussions } from '@components/lesson-discussions/lesson-discussions';
+
 // Marked for markdown
 import { marked } from 'marked';
 
@@ -47,7 +49,8 @@ interface FlatItem {
   standalone: true,
   imports: [
     CommonModule, ReactiveFormsModule,
-    Button, Loader, FormInput, ConfirmModal, ConfettiComponent, VideoPlayer, PdfViewer
+    Button, Loader, FormInput, ConfirmModal, ConfettiComponent, VideoPlayer, PdfViewer,
+    LessonDiscussions
   ],
   templateUrl: './course-learning.html',
   styleUrl: './course-learning.css'

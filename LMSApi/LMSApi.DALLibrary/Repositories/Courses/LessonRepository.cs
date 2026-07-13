@@ -26,5 +26,13 @@ namespace LMSApi.DALLibrary.Repositories
                 .FirstOrDefaultAsync(l => l.Id == lessonId)
                 ?? throw new KeyNotFoundException($"Lesson with id '{lessonId}' not found.");
         }
+
+        public async Task<int?> GetCourseIdByLessonIdAsync(int lessonId)
+        {
+            return await _context.Lessons
+                .Where(l => l.Id == lessonId)
+                .Select(l => (int?)l.CourseSection.CourseId)
+                .FirstOrDefaultAsync();
+        }
     }
 }

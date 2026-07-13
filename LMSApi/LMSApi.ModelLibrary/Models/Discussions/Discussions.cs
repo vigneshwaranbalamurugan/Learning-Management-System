@@ -4,14 +4,18 @@ namespace LMSApi.ModelLibrary.Models
     {
         public int Id { get; set; }
         public int CourseId { get; set; }
+        public int LessonId { get; set; }
         public int UserId { get; set; }
         public string Title { get; set; }
         public string Content { get; set; }
         public bool IsPinned { get; set; }
         public bool IsLocked { get; set; }
+        public bool IsDeleted { get; set; }
         public DateTime CreatedAt { get; set; }
-        // Navigation properties
+        public DateTime UpdatedAt { get; set; }
+
         public Courses Course { get; set; }
+        public Lessons Lesson { get; set; }
         public Users User { get; set; }
     }
 }
