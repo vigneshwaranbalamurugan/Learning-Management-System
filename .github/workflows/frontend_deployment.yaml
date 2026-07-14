@@ -3,7 +3,7 @@ name: Deploy Angular App
 on:
   push:
     branches:
-      - main
+      - feature/azure_storage
 
 jobs:
   build:
