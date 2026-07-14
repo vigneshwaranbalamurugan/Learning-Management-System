@@ -24,6 +24,7 @@ namespace LMSApi.BALLibrary.Services
         private readonly INotificationService _notificationService;
         private readonly IUserNotificationsService _userNotificationsService;
         private readonly IInvoiceService _invoiceService;
+        private readonly IUploadService _uploadService;
 
         public EnrollmentService(
             IEnrollmentRepository enrollmentRepository,
@@ -38,7 +39,8 @@ namespace LMSApi.BALLibrary.Services
             IUserRepository userRepository,
             INotificationService notificationService,
             IUserNotificationsService userNotificationsService,
-            IInvoiceService invoiceService)
+            IInvoiceService invoiceService,
+            IUploadService uploadService)
         {
             _enrollmentRepository = enrollmentRepository;
             _courseRepository = courseRepository;
@@ -53,6 +55,7 @@ namespace LMSApi.BALLibrary.Services
             _notificationService = notificationService;
             _userNotificationsService = userNotificationsService;
             _invoiceService = invoiceService;
+            _uploadService = uploadService;
         }
 
         public async Task<EnrollmentResponse> EnrollInFreeCourseAsync(int userId, int courseId, int? batchId)
@@ -764,7 +767,17 @@ namespace LMSApi.BALLibrary.Services
         public async Task<IEnumerable<EnrollmentResponse>> GetMyEnrollmentsAsync(int userId)
         {
             var enrollments = await _enrollmentRepository.GetEnrollmentsByUserAsync(userId);
-            return _mapper.Map<IEnumerable<EnrollmentResponse>>(enrollments);
+            var responses = _mapper.Map<IEnumerable<EnrollmentResponse>>(enrollments).ToList();
+            
+            foreach (var r in responses)
+            {
+                if (!string.IsNullOrWhiteSpace(r.ThumbnailUrl) && !r.ThumbnailUrl.StartsWith("http", StringComparison.OrdinalIgnoreCase))
+                {
+                    r.ThumbnailUrl = _uploadService.GeneratePublicSasUrl(r.ThumbnailUrl);
+                }
+            }
+            
+            return responses;
         }
 
         
@@ -793,7 +806,15 @@ namespace LMSApi.BALLibrary.Services
         {
             var (enrollments, totalCount) = await _enrollmentRepository.GetEnrollmentsByUserPagedAsync(userId, pageNumber, pageSize, search, status, accessType);
             
-            var enrollmentResponses = _mapper.Map<IEnumerable<EnrollmentResponse>>(enrollments);
+            var enrollmentResponses = _mapper.Map<IEnumerable<EnrollmentResponse>>(enrollments).ToList();
+
+            foreach (var r in enrollmentResponses)
+            {
+                if (!string.IsNullOrWhiteSpace(r.ThumbnailUrl) && !r.ThumbnailUrl.StartsWith("http", StringComparison.OrdinalIgnoreCase))
+                {
+                    r.ThumbnailUrl = _uploadService.GeneratePublicSasUrl(r.ThumbnailUrl);
+                }
+            }
 
             return new PagedEnrollmentResponse
             {

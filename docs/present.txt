@@ -1,0 +1,22 @@
+The third part is other questions. For that, you keep one minute.
+So they strictly said only 5 minutes. So 2 minutes presentation, 2 minutes live demo, one minute questions. That's all.
+Can all of you turn on your camera? And be camera ready, be ready to share your screen. Don't go and say, one minute, my mic is not working, my camera is not working.
+A non-technical person saying that is acceptable.
+Let's say somebody from the finance team is unable to share screen.
+or does not know why the mic is working is completely acceptable.
+A developer saying my screen, I'm not able to share screen, I'm not able to join the meeting link is completely unacceptable.
+Get that. So if you don't know what is your bank balance or what is your account statement, whether something is debit or credit for you, that is acceptable.
+I hope you understand what I'm saying. So there should be no issues in sharing the screen. There should be no issues in.
+Your mic, there should be no issue in.
+The presentation or the PPT open. I guess all of you are not proficient in PPT.
+Have a good day. If you want to do the presentation, I can give you some basic tips for doing the presentation. OK, I will show you.
+
+
+Do a screen recording, either with Teams or any software, and then you can explain it later.
+I hope you have taken some screenshots of your issues also. It would be great to show you error, how you debugged with the log.
+These are some things that they are expecting you to do. I hope all of you included logging. Mallya would have insisted, surely.
+So did you ever see your logs for errors?
+Right, so.
+You could go ahead and...
+Show them. I had a trouble, so I viewed the log to make this error, to solve this error. This shows that you are a mature programmer who knows how to use the log.
+Instead of using trial and error method to solve your issues.

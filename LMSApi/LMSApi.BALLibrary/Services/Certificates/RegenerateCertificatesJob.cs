@@ -77,9 +77,9 @@ namespace LMSApi.BALLibrary.Services
                             activeTemplate, course.Title, learnerName, instructorName, cert.CertificateId.ToString(), issuedDate);
 
                         var fileName = $"cert_{cert.CertificateId}.pdf";
-                        var cloudinaryUrl = await _uploadService.UploadCertificatePdfAsync(memoryStream, fileName, cert.CertificateId.ToString());
+                        var certBlobPath = await _uploadService.UploadCertificatePdfAsync(memoryStream, fileName, cert.CertificateId.ToString());
 
-                        cert.CertificateImageUrl = cloudinaryUrl;
+                        cert.CertificateImageUrl = certBlobPath;   // store blob path; served via GenerateSasUrl at access time
                         cert.CertificateTemplateId = activeTemplate.Id;
                         
                         // We keep the original IssuedAt, but update the repository

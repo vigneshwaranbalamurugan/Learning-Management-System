@@ -402,8 +402,9 @@ export class CourseDetail implements OnInit {
       if (url) {
         this.secureMediaService.getSecureUrl(url, this.courseId!).subscribe({
           next: (res) => {
-            this.currentVideoUrl.set(res.url);
-            this.previewUrl.set(this.sanitizer.bypassSecurityTrustResourceUrl(res.url));
+            const absoluteUrl = this.getFullUrl(res.url);
+            this.currentVideoUrl.set(absoluteUrl);
+            this.previewUrl.set(this.sanitizer.bypassSecurityTrustResourceUrl(absoluteUrl));
           },
           error: () => this.toastService.showError('Could not load secure video preview.')
         });
@@ -417,11 +418,7 @@ export class CourseDetail implements OnInit {
       if (url) {
         this.secureMediaService.getSecureUrl(url, this.courseId!).subscribe({
           next: (res) => {
-            const rawUrl = res.url;
-            const apiBase = environment.apiUrl.replace('/api/v1', '');
-            const absoluteUrl = rawUrl.startsWith('http://') || rawUrl.startsWith('https://')
-              ? rawUrl
-              : `${apiBase}${rawUrl.startsWith('/') ? '' : '/'}${rawUrl}`;
+            const absoluteUrl = this.getFullUrl(res.url);
             this.previewUrl.set(this.sanitizer.bypassSecurityTrustResourceUrl(absoluteUrl));
           },
           error: () => this.toastService.showError('Could not load secure PDF preview.')
@@ -540,5 +537,12 @@ export class CourseDetail implements OnInit {
 
   protected starsArray(rating: number): boolean[] {
     return [1, 2, 3, 4, 5].map(s => s <= Math.round(rating));
+  }
+
+  protected getFullUrl(url: string | null | undefined): string {
+    if (!url) return '';
+    if (url.startsWith('http://') || url.startsWith('https://')) return url;
+    const apiBase = environment.apiUrl.replace('/api/v1', '');
+    return `${apiBase}${url.startsWith('/') ? '' : '/'}${url}`;
   }
 }

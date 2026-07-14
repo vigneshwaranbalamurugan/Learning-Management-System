@@ -68,6 +68,7 @@ namespace LMSApi.BALLibrary.Services
             var courses = await _courseRepository.GetPublishedCoursesAsync();
             var responses = _mapper.Map<IEnumerable<CourseResponse>>(courses).ToList();
             await PopulateRatingStatsListAsync(responses);
+            ResolveCourseUrlsList(responses);
             return responses;
         }
 
@@ -85,6 +86,9 @@ namespace LMSApi.BALLibrary.Services
                     c.AverageRating = stats.AverageRating;
                     c.TotalReviews = stats.TotalReviews;
                 }
+                if (!string.IsNullOrWhiteSpace(c.ThumbnailUrl)
+                    && !c.ThumbnailUrl.StartsWith("http", StringComparison.OrdinalIgnoreCase))
+                    c.ThumbnailUrl = _uploadService.GeneratePublicSasUrl(c.ThumbnailUrl);
             }
 
             var totalPages = (int)System.Math.Ceiling((double)totalCount / query.PageSize);
@@ -129,6 +133,9 @@ namespace LMSApi.BALLibrary.Services
                     c.AverageRating = stats.AverageRating;
                     c.TotalReviews = stats.TotalReviews;
                 }
+                if (!string.IsNullOrWhiteSpace(c.ThumbnailUrl)
+                    && !c.ThumbnailUrl.StartsWith("http", StringComparison.OrdinalIgnoreCase))
+                    c.ThumbnailUrl = _uploadService.GeneratePublicSasUrl(c.ThumbnailUrl);
             }
 
             var totalPages = (int)System.Math.Ceiling((double)totalCount / query.PageSize);
@@ -226,7 +233,9 @@ namespace LMSApi.BALLibrary.Services
 
             if (currentUserId == null)
             {
-                return await GetCachedPreviewAsync();
+                var preview = await GetCachedPreviewAsync();
+                ResolveCourseUrls(preview);
+                return preview;
             }
 
             var course = await _courseRepository.GetCourseWithDetailsAsync(id)
@@ -243,8 +252,10 @@ namespace LMSApi.BALLibrary.Services
                 if (preview != null)
                 {
                     preview.IsWishlisted = await _wishListRepository.CheckExistsAsync(currentUserId.Value, course.Id);
+                    ResolveCourseUrls(preview);
                     return preview;
                 }
+                ResolveCourseUrls(cachedPreview);
                 return cachedPreview;
             }
 
@@ -314,6 +325,7 @@ namespace LMSApi.BALLibrary.Services
                 response.HasDraftChanges = currentSectionsJson != course.PublishedSnapshotJson;
             }
 
+            ResolveCourseUrls(response);
             return response;
         }
 
@@ -393,6 +405,8 @@ namespace LMSApi.BALLibrary.Services
                         preview.IsEnrolled = false;
                         preview.Reviews = reviewResponses;
                         
+                        ResolveCourseUrls(preview);
+                        
                         return preview;
                     },
                     TimeSpan.FromMinutes(_detailTtlMinutes));
@@ -417,8 +431,10 @@ namespace LMSApi.BALLibrary.Services
                 if (preview != null)
                 {
                     preview.IsWishlisted = await _wishListRepository.CheckExistsAsync(currentUserId.Value, course.Id);
+                    ResolveCourseUrls(preview);
                     return preview;
                 }
+                ResolveCourseUrls(cachedPreview);
                 return cachedPreview;
             }
 
@@ -474,8 +490,8 @@ namespace LMSApi.BALLibrary.Services
                 }
             }
 
-            var rData = await _reviewRepository.GetByCourseAsync(course.Id);
-            response.Reviews = rData.Select(r => new ReviewResponse
+            var rData2 = await _reviewRepository.GetByCourseAsync(course.Id);
+            response.Reviews = rData2.Select(r => new ReviewResponse
             {
                 Id = r.Id,
                 CourseId = r.CourseId,
@@ -497,6 +513,7 @@ namespace LMSApi.BALLibrary.Services
                 response.HasDraftChanges = currentSectionsJson != course.PublishedSnapshotJson;
             }
 
+            ResolveCourseUrls(response);
             return response;
         }
 
@@ -568,7 +585,9 @@ public async Task<CourseResponse> CreateCourseAsync(
             // Bug #5: Invalidate global stats cache when a new course is created
             await _cacheService.InvalidateAsync(CacheKeyStatsPrefix + "global");
 
-            return _mapper.Map<CourseResponse>(course);
+            var createResponse = _mapper.Map<CourseResponse>(course);
+            ResolveCourseUrls(createResponse);
+            return createResponse;
         }
 
         /// <summary>
@@ -648,7 +667,9 @@ public async Task<CourseResponse> CreateCourseAsync(
             // Bug #2 + #4: Invalidate both ID-based and slug-based cache entries
             await InvalidateCourseCache(id, course.slug);
 
-            return _mapper.Map<CourseResponse>(course);
+            var updateResponse = _mapper.Map<CourseResponse>(course);
+            ResolveCourseUrls(updateResponse);
+            return updateResponse;
         }
 
         public async Task DeleteCourseAsync(int id)
@@ -818,7 +839,9 @@ public async Task<CourseResponse> CreateCourseAsync(
                 await _cacheService.InvalidateAsync(CacheKeyStatsPrefix + "global");
 
                 _logger.LogInformation("Course submitted for approval: Id={Id}", id);
-                return _mapper.Map<CourseResponse>(course);
+                var pendingResponse = _mapper.Map<CourseResponse>(course);
+                ResolveCourseUrls(pendingResponse);
+                return pendingResponse;
             }
             else
             {
@@ -860,12 +883,12 @@ public async Task<CourseResponse> CreateCourseAsync(
 
                 _logger.LogInformation("Course unpublished/cancelled: Id={Id}", id);
                 
-                var instructor = await _userRepository.GetByIdAsync(course.InstructorId);
-                var html = EmailTemplate.GetCourseStatusUpdatedTemplate(
-                    instructor.UserProfile?.FirstName ?? instructor.Email,
+                var instructor2 = await _userRepository.GetByIdAsync(course.InstructorId);
+                var html2 = EmailTemplate.GetCourseStatusUpdatedTemplate(
+                    instructor2.UserProfile?.FirstName ?? instructor2.Email,
                     course.Title, "Unpublished", null);
-                Message msg = new EmailMessage(instructor.Email, $"Your course '{course.Title}' has been unpublished", html) { IsHtml = true };
-                await _notificationService.Send(msg);
+                Message msg2 = new EmailMessage(instructor2.Email, $"Your course '{course.Title}' has been unpublished", html2) { IsHtml = true };
+                await _notificationService.Send(msg2);
 
                 try
                 {
@@ -881,7 +904,9 @@ public async Task<CourseResponse> CreateCourseAsync(
                     _logger.LogError(ex, "Failed to send course unpublished realtime notification to Instructor {InstructorId}", course.InstructorId);
                 }
 
-                return _mapper.Map<CourseResponse>(course);
+                var unpublishResponse = _mapper.Map<CourseResponse>(course);
+                ResolveCourseUrls(unpublishResponse);
+                return unpublishResponse;
             }
         }
 
@@ -947,12 +972,12 @@ public async Task<CourseResponse> CreateCourseAsync(
 
                 _logger.LogInformation("Course approved and published: Id={Id}", id);
 
-                var instructor = await _userRepository.GetByIdAsync(course.InstructorId);
-                var html = EmailTemplate.GetCourseStatusUpdatedTemplate(
-                    instructor.UserProfile?.FirstName ?? instructor.Email,
+                var instructor3 = await _userRepository.GetByIdAsync(course.InstructorId);
+                var html3 = EmailTemplate.GetCourseStatusUpdatedTemplate(
+                    instructor3.UserProfile?.FirstName ?? instructor3.Email,
                     course.Title, "Published", null);
-                Message msg = new EmailMessage(instructor.Email, $"Your course '{course.Title}' has been published!", html) { IsHtml = true };
-                await _notificationService.Send(msg);
+                Message msg3 = new EmailMessage(instructor3.Email, $"Your course '{course.Title}' has been published!", html3) { IsHtml = true };
+                await _notificationService.Send(msg3);
 
                 try
                 {
@@ -968,7 +993,9 @@ public async Task<CourseResponse> CreateCourseAsync(
                     _logger.LogError(ex, "Failed to send course published realtime notification to Instructor {InstructorId}", course.InstructorId);
                 }
 
-                return _mapper.Map<CourseResponse>(course);
+                var approveResponse = _mapper.Map<CourseResponse>(course);
+                ResolveCourseUrls(approveResponse);
+                return approveResponse;
             }
             else if (string.Equals(request.Action, "Reject", StringComparison.OrdinalIgnoreCase))
             {
@@ -985,12 +1012,12 @@ public async Task<CourseResponse> CreateCourseAsync(
 
                 _logger.LogInformation("Course rejected: Id={Id}, Reason={Reason}", id, request.Reason);
 
-                var instructor = await _userRepository.GetByIdAsync(course.InstructorId);
-                var html = EmailTemplate.GetCourseStatusUpdatedTemplate(
-                    instructor.UserProfile?.FirstName ?? instructor.Email,
+                var instructor4 = await _userRepository.GetByIdAsync(course.InstructorId);
+                var html4 = EmailTemplate.GetCourseStatusUpdatedTemplate(
+                    instructor4.UserProfile?.FirstName ?? instructor4.Email,
                     course.Title, "Rejected", request.Reason);
-                Message msg = new EmailMessage(instructor.Email, $"Your course '{course.Title}' was not approved", html) { IsHtml = true };
-                await _notificationService.Send(msg);
+                Message msg4 = new EmailMessage(instructor4.Email, $"Your course '{course.Title}' was not approved", html4) { IsHtml = true };
+                await _notificationService.Send(msg4);
 
                 try
                 {
@@ -1006,7 +1033,9 @@ public async Task<CourseResponse> CreateCourseAsync(
                     _logger.LogError(ex, "Failed to send course rejected realtime notification to Instructor {InstructorId}", course.InstructorId);
                 }
 
-                return _mapper.Map<CourseResponse>(course);
+                var rejectResponse = _mapper.Map<CourseResponse>(course);
+                ResolveCourseUrls(rejectResponse);
+                return rejectResponse;
             }
             else
             {
@@ -1019,6 +1048,7 @@ public async Task<CourseResponse> CreateCourseAsync(
             var courses = await _courseRepository.GetPendingCoursesAsync();
             var responses = _mapper.Map<IEnumerable<CourseResponse>>(courses).ToList();
             await PopulateRatingStatsListAsync(responses);
+            ResolveCourseUrlsList(responses);
             return responses;
         }
 
@@ -1036,6 +1066,9 @@ public async Task<CourseResponse> CreateCourseAsync(
                     c.AverageRating = stats.AverageRating;
                     c.TotalReviews = stats.TotalReviews;
                 }
+                if (!string.IsNullOrWhiteSpace(c.ThumbnailUrl)
+                    && !c.ThumbnailUrl.StartsWith("http", StringComparison.OrdinalIgnoreCase))
+                    c.ThumbnailUrl = _uploadService.GeneratePublicSasUrl(c.ThumbnailUrl);
             }
 
             var totalPages = (int)System.Math.Ceiling((double)totalCount / query.PageSize);
@@ -1064,6 +1097,9 @@ public async Task<CourseResponse> CreateCourseAsync(
                     c.AverageRating = stats.AverageRating;
                     c.TotalReviews = stats.TotalReviews;
                 }
+                if (!string.IsNullOrWhiteSpace(c.ThumbnailUrl)
+                    && !c.ThumbnailUrl.StartsWith("http", StringComparison.OrdinalIgnoreCase))
+                    c.ThumbnailUrl = _uploadService.GeneratePublicSasUrl(c.ThumbnailUrl);
             }
 
             var totalPages = (int)System.Math.Ceiling((double)totalCount / query.PageSize);
@@ -1099,6 +1135,7 @@ public async Task<CourseResponse> CreateCourseAsync(
             }
 
             await PopulateRatingStatsListAsync(responses);
+            ResolveCourseUrlsList(responses);
             return responses;
         }
 
@@ -1119,6 +1156,9 @@ public async Task<CourseResponse> CreateCourseAsync(
                     }
                     c.HasNonExpiredEnrollments = await _enrollmentRepository.HasNonExpiredEnrollmentsByCourseAsync(c.Id);
                     c.HasActiveEnrollments = await _enrollmentRepository.HasActiveOnlyEnrollmentsByCourseAsync(c.Id);
+                    if (!string.IsNullOrWhiteSpace(c.ThumbnailUrl)
+                        && !c.ThumbnailUrl.StartsWith("http", StringComparison.OrdinalIgnoreCase))
+                        c.ThumbnailUrl = _uploadService.GeneratePublicSasUrl(c.ThumbnailUrl);
                 }
             }
 
@@ -1139,6 +1179,7 @@ public async Task<CourseResponse> CreateCourseAsync(
             var courses = await _courseRepository.GetCoursesByCategoryAsync(categoryId);
             var responses = courses == null ? new List<CourseResponse>() : _mapper.Map<IEnumerable<CourseResponse>>(courses).ToList();
             await PopulateRatingStatsListAsync(responses);
+            ResolveCourseUrlsList(responses);
             return responses;
         }
 
@@ -1173,7 +1214,9 @@ public async Task<CourseResponse> CreateCourseAsync(
             await InvalidateCourseCache(courseId, course.slug);
             _logger.LogInformation("Course Update Started: Id={Id}, Note={Note}", courseId, request.UpdateNote);
 
-            return _mapper.Map<CourseResponse>(course);
+            var startUpdateResponse = _mapper.Map<CourseResponse>(course);
+            ResolveCourseUrls(startUpdateResponse);
+            return startUpdateResponse;
         }
 
         public async Task<CourseSummaryStatsResponse> GetCourseSummaryStatsAsync()
@@ -1252,6 +1295,24 @@ public async Task<CourseResponse> CreateCourseAsync(
             {
                 await PopulateRatingStatsAsync(response);
             }
+        }
+
+        /// <summary>
+        /// Resolves blob paths in a <see cref="CourseResponse"/> to public SAS URLs.
+        /// Backwards-compatible: leaves values that already start with "http" unchanged.
+        /// </summary>
+        private void ResolveCourseUrls(CourseResponse response)
+        {
+            if (response == null) return;
+            if (!string.IsNullOrWhiteSpace(response.ThumbnailUrl)
+                && !response.ThumbnailUrl.StartsWith("http", StringComparison.OrdinalIgnoreCase))
+                response.ThumbnailUrl = _uploadService.GeneratePublicSasUrl(response.ThumbnailUrl);
+        }
+
+        /// <summary>Resolves ThumbnailUrl on every item in a <see cref="CourseResponse"/> collection.</summary>
+        private void ResolveCourseUrlsList(IEnumerable<CourseResponse> responses)
+        {
+            foreach (var r in responses) ResolveCourseUrls(r);
         }
 
         private static string GenerateSlug(string title)

@@ -243,22 +243,24 @@ namespace LMSApi.BALLibrary.Services.Upload
 			return AzureBlobUtils.DeleteBlobAsync(_configuration, blobPath, isPublic: false);
 		}
 
-		public Task DeletePublicBlobAsync(string blobUrl)
+		public Task DeletePublicBlobAsync(string blobPath)
 		{
-			if (string.IsNullOrWhiteSpace(blobUrl)) return Task.CompletedTask;
-			
-			// For public blobs, we might have stored the full URL or just the path depending on logic.
-			// Try to extract blob path from URL if needed, or pass it directly.
-			// AzureBlobUtils.DeleteBlobAsync can handle simple cases.
-			var uri = new Uri(blobUrl);
-			var path = uri.AbsolutePath.TrimStart('/');
-			// path will look like "lms-public/lms/profile-pictures/..."
-			// we just need the blob name, which is after the container name.
-			var containerName = _configuration["AzureBlob:PublicContainerName"] ?? "lms-public";
-			var prefix = $"{containerName}/";
-			var blobName = path.StartsWith(prefix) ? path.Substring(prefix.Length) : path;
-			
-			return AzureBlobUtils.DeleteBlobAsync(_configuration, blobName, isPublic: true);
+			if (string.IsNullOrWhiteSpace(blobPath)) return Task.CompletedTask;
+			// blobPath is always a blob path now (not a full URL) — pass directly.
+			return AzureBlobUtils.DeleteBlobAsync(_configuration, blobPath, isPublic: true);
+		}
+
+		// ─── SAS URL generation ───────────────────────────────────────────────────
+		public string GeneratePublicSasUrl(string blobPath, int expiryMinutes = 60)
+		{
+			if (string.IsNullOrWhiteSpace(blobPath)) return blobPath;
+			return AzureBlobUtils.GeneratePublicSasUrl(_configuration, blobPath, expiryMinutes);
+		}
+
+		public string GenerateSasUrl(string blobPath, int expiryMinutes = 60)
+		{
+			if (string.IsNullOrWhiteSpace(blobPath)) return blobPath;
+			return AzureBlobUtils.GenerateSasUrl(_configuration, blobPath, expiryMinutes);
 		}
 	}
 }

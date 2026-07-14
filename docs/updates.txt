@@ -13,3 +13,46 @@ network erros and custom error pages
 
 
 validation,notification,30min,security feature,auth,extra features,testing,test reports,new user(for anyone),
+
+
+AI feature
+
+1. Ai course assistant
+
+Student asks:
+
+What is dependency injection?
+Explain this lesson in simple terms.
+Give me examples.
+
+AI answers based on course content.
+
+Implementation
+Lesson Content
+      ↓
+Vector Database
+      ↓
+RAG
+      ↓
+OpenAI / Azure OpenAI
+      ↓
+AI Tutor
+
+
+2. Ai video summary
+
+For uploaded videos:
+
+Video
+    ↓
+Transcription
+    ↓
+AI Summary
+
+Generate:
+
+Key Points
+Notes
+Flash Cards
+
+3. Rag based ai tutor

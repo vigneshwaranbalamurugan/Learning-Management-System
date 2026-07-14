@@ -74,7 +74,12 @@ namespace LMSApi.BALLibrary.Services
                 resources = resources.Where(r => r.Status == PublishStatus.Published);
             }
 
-            return _mapper.Map<IEnumerable<ResourceResponse>>(resources);
+            var mapped = _mapper.Map<IEnumerable<ResourceResponse>>(resources);
+            foreach (var r in mapped)
+            {
+                ResolveResourceUrl(r);
+            }
+            return mapped;
         }
 
         public async Task<ResourceResponse> GetResourceByIdAsync(int id, int? currentUserId = null, bool isAdmin = false)
@@ -110,7 +115,9 @@ namespace LMSApi.BALLibrary.Services
                 }
             }
 
-            return _mapper.Map<ResourceResponse>(resource);
+            var mapped = _mapper.Map<ResourceResponse>(resource);
+            ResolveResourceUrl(mapped);
+            return mapped;
         }
 
         public async Task<ResourceResponse> AddResourceAsync(CreateResourceRequest request, System.IO.Stream? fileStream = null, string? fileName = null)
@@ -194,7 +201,9 @@ namespace LMSApi.BALLibrary.Services
 
             _logger.LogInformation("Resource Uploaded: '{Title}' for LessonId={LessonId}", request.ResourceTitle, request.LessonId);
 
-            return _mapper.Map<ResourceResponse>(resource);
+            var mapped = _mapper.Map<ResourceResponse>(resource);
+            ResolveResourceUrl(mapped);
+            return mapped;
         }
 
         public async Task<ResourceResponse> UpdateResourceAsync(int id, UpdateResourceRequest request, System.IO.Stream? fileStream = null, string? fileName = null)
@@ -291,7 +300,9 @@ namespace LMSApi.BALLibrary.Services
 
             _logger.LogInformation("Resource Updated: Id={Id}", id);
 
-            return _mapper.Map<ResourceResponse>(resource);
+            var mapped = _mapper.Map<ResourceResponse>(resource);
+            ResolveResourceUrl(mapped);
+            return mapped;
         }
 
         public async Task DeleteResourceAsync(int id)
@@ -381,7 +392,9 @@ namespace LMSApi.BALLibrary.Services
                 });
             }
 
-            return _mapper.Map<ResourceResponse>(resource);
+            var mapped = _mapper.Map<ResourceResponse>(resource);
+            ResolveResourceUrl(mapped);
+            return mapped;
         }
 
         public async Task ReorderResourcesAsync(int lessonId, ReorderResourcesRequest request)
@@ -402,6 +415,15 @@ namespace LMSApi.BALLibrary.Services
             }
 
             _logger.LogInformation("Resources reordered for LessonId={LessonId}", lessonId);
+        }
+
+        private void ResolveResourceUrl(ResourceResponse response)
+        {
+            if (response != null && response.ResourceType == ResourceType.Pdf && !string.IsNullOrWhiteSpace(response.ResourceUrl)
+                && !response.ResourceUrl.StartsWith("http", StringComparison.OrdinalIgnoreCase))
+            {
+                response.ResourceUrl = _uploadService.GenerateSasUrl(response.ResourceUrl);
+            }
         }
     }
 }

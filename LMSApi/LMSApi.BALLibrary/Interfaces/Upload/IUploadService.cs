@@ -21,6 +21,23 @@ namespace LMSApi.BALLibrary.Interfaces
 		Task<string> UploadCertificatePdfAsync(Stream fileStream, string fileName, string publicId);
 
 		Task DeleteBlobAsync(string blobPath);
-		Task DeletePublicBlobAsync(string blobUrl);
+		/// <summary>
+		/// Deletes a blob from the public container. Pass the blob path (not a full URL).
+		/// </summary>
+		Task DeletePublicBlobAsync(string blobPath);
+
+		/// <summary>
+		/// Generates a time-limited SAS URL for blobs in the <b>public</b> container
+		/// (profile images, course thumbnails, certificate template backgrounds).
+		/// Backwards-compatible: returns the input unchanged when it already starts with "http".
+		/// </summary>
+		string GeneratePublicSasUrl(string blobPath, int expiryMinutes = 60);
+
+		/// <summary>
+		/// Generates a time-limited SAS URL for blobs in the <b>private</b> container
+		/// (lesson videos, lesson PDFs, assignment attachments, certificate PDFs).
+		/// Backwards-compatible: returns the input unchanged when it already starts with "http".
+		/// </summary>
+		string GenerateSasUrl(string blobPath, int expiryMinutes = 60);
 	}
 }

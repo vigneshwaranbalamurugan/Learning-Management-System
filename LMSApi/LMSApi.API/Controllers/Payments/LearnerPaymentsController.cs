@@ -17,11 +17,13 @@ namespace LMSApi.API.Controllers.Payments
     {
         private readonly IPaymentRepository _paymentRepo;
         private readonly IInvoiceService _invoiceService;
+        private readonly IUploadService _uploadService;
 
-        public LearnerPaymentsController(IPaymentRepository paymentRepo, IInvoiceService invoiceService)
+        public LearnerPaymentsController(IPaymentRepository paymentRepo, IInvoiceService invoiceService, IUploadService uploadService)
         {
             _paymentRepo = paymentRepo;
             _invoiceService = invoiceService;
+            _uploadService = uploadService;
         }
 
         [HttpGet]
@@ -36,14 +38,16 @@ namespace LMSApi.API.Controllers.Payments
             {
                 Id = p.Id,
                 CourseTitle = p.Course.Title,
-                CourseThumbnailUrl = p.Course.ThumbnailUrl,
+                CourseThumbnailUrl = string.IsNullOrWhiteSpace(p.Course.ThumbnailUrl) || p.Course.ThumbnailUrl.StartsWith("http", StringComparison.OrdinalIgnoreCase) 
+                    ? p.Course.ThumbnailUrl 
+                    : _uploadService.GeneratePublicSasUrl(p.Course.ThumbnailUrl),
                 Amount = p.Amount,
                 Currency = p.Currency,
                 Status = p.Status.ToString(),
                 PaidAt = p.PaidAt,
                 CreatedAt = p.CreatedAt,
                 ProviderPaymentId = p.ProviderPaymentId
-            });
+            }).ToList();
 
             var totalPages = totalCount == 0 ? 1 : (int)System.Math.Ceiling((double)totalCount / pageSize);
 

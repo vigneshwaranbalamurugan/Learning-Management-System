@@ -49,7 +49,12 @@ namespace LMSApi.BALLibrary.Services
 
         public async Task<PagedLearnerAssignmentResponse> GetLearnerAssignmentsAsync(int userId, int pageNumber, int pageSize, string? searchQuery = null)
         {
-            return await _assignmentRepository.GetLearnerAssignmentsAsync(userId, pageNumber, pageSize, searchQuery);
+            var result = await _assignmentRepository.GetLearnerAssignmentsAsync(userId, pageNumber, pageSize, searchQuery);
+            foreach (var a in result.Assignments)
+            {
+                ResolveAssignmentUrl(a);
+            }
+            return result;
         }
 
         public async Task<IEnumerable<AssignmentResponse>> GetAssignmentsBySectionAsync(int sectionId, int? currentUserId = null, bool isAdmin = false)
@@ -67,7 +72,12 @@ namespace LMSApi.BALLibrary.Services
                 assignments = assignments.Where(a => a.Status == PublishStatus.Published);
             }
 
-            return _mapper.Map<IEnumerable<AssignmentResponse>>(assignments);
+            var mapped = _mapper.Map<IEnumerable<AssignmentResponse>>(assignments);
+            foreach (var a in mapped)
+            {
+                ResolveAssignmentUrl(a);
+            }
+            return mapped;
         }
 
         public async Task<IEnumerable<InstructorAssignmentSummaryDto>> GetInstructorAssignmentsAsync(int instructorId)
@@ -99,7 +109,9 @@ namespace LMSApi.BALLibrary.Services
                 }
             }
 
-            return _mapper.Map<AssignmentResponse>(assignment);
+            var mapped = _mapper.Map<AssignmentResponse>(assignment);
+            ResolveAssignmentUrl(mapped);
+            return mapped;
         }
 
         public async Task<AssignmentResponse> CreateAssignmentAsync(CreateAssignmentRequest request, Stream? attachmentStream = null, string? attachmentFileName = null)
@@ -191,7 +203,9 @@ namespace LMSApi.BALLibrary.Services
             _logger.LogInformation("Assignment Created: '{Title}' for SectionId={SectionId}",
                 request.Title, request.CourseSectionId);
 
-            return _mapper.Map<AssignmentResponse>(assignment);
+            var mapped = _mapper.Map<AssignmentResponse>(assignment);
+            ResolveAssignmentUrl(mapped);
+            return mapped;
         }
 
         public async Task<AssignmentResponse> UpdateAssignmentAsync(int id, UpdateAssignmentRequest request, Stream? attachmentStream = null, string? attachmentFileName = null)
@@ -316,7 +330,9 @@ namespace LMSApi.BALLibrary.Services
 
             _logger.LogInformation("Assignment Updated: Id={Id}", id);
 
-            return _mapper.Map<AssignmentResponse>(assignment);
+            var mapped = _mapper.Map<AssignmentResponse>(assignment);
+            ResolveAssignmentUrl(mapped);
+            return mapped;
         }
 
         public async Task DeleteAssignmentAsync(int id)
@@ -413,7 +429,9 @@ namespace LMSApi.BALLibrary.Services
                 });
             }
 
-            return _mapper.Map<AssignmentResponse>(assignment);
+            var mapped = _mapper.Map<AssignmentResponse>(assignment);
+            ResolveAssignmentUrl(mapped);
+            return mapped;
         }
         
         // ─── Private Helpers ────────────────────────────────────────────────
@@ -426,6 +444,15 @@ namespace LMSApi.BALLibrary.Services
                 throw new ArgumentException("PassingMarks must be >= 0.");
             if (passingMarks > totalMarks)
                 throw new ArgumentException($"PassingMarks ({passingMarks}) cannot exceed TotalMarks ({totalMarks}).");
+        }
+
+        private void ResolveAssignmentUrl(AssignmentResponse response)
+        {
+            if (response != null && !string.IsNullOrWhiteSpace(response.AttachmentUrl)
+                && !response.AttachmentUrl.StartsWith("http", StringComparison.OrdinalIgnoreCase))
+            {
+                response.AttachmentUrl = _uploadService.GenerateSasUrl(response.AttachmentUrl);
+            }
         }
     }
 }

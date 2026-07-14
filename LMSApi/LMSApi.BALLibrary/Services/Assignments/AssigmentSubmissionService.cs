@@ -154,7 +154,9 @@ namespace LMSApi.BALLibrary.Services
             _logger.LogInformation("Assignment Submitted: AssignmentId={AssignmentId}, StudentId={StudentId}, Attempt={AttemptNumber}",
                 request.AssignmentId, studentId, submission.AttemptNumber);
 
-            return _mapper.Map<AssignmentSubmissionResponse>(submission);
+            var mapped = _mapper.Map<AssignmentSubmissionResponse>(submission);
+            ResolveSubmissionUrl(mapped);
+            return mapped;
         }
 
         public async Task<AssignmentSubmissionResponse> GradeAssignmentAsync(int submissionId, GradeSubmissionRequest request)
@@ -242,7 +244,9 @@ namespace LMSApi.BALLibrary.Services
                 _logger.LogError(ex, "Failed to send real-time grading notification to Student {StudentId}", submission.StudentId);
             }
 
-            return _mapper.Map<AssignmentSubmissionResponse>(submission);
+            var mapped = _mapper.Map<AssignmentSubmissionResponse>(submission);
+            ResolveSubmissionUrl(mapped);
+            return mapped;
         }
 
                 // ─── Queries ────────────────────────────────────────────────────────
@@ -312,6 +316,7 @@ namespace LMSApi.BALLibrary.Services
                 res.StudentDeadline = studentDeadline;
                 res.IsLate = studentDeadline.HasValue && sub.SubmittedAt > studentDeadline.Value;
 
+                ResolveSubmissionUrl(res);
                 responseList.Add(res);
             }
 
@@ -348,6 +353,7 @@ namespace LMSApi.BALLibrary.Services
                 res.StudentDeadline = studentDeadline;
                 res.IsLate = studentDeadline.HasValue && sub.SubmittedAt > studentDeadline.Value;
 
+                ResolveSubmissionUrl(res);
                 responseList.Add(res);
             }
 
@@ -357,7 +363,12 @@ namespace LMSApi.BALLibrary.Services
         public async Task<IEnumerable<AssignmentSubmissionResponse>> GetStudentSubmissionsAsync(int assignmentId, int studentId)
         {
             var submissions = await _submissionRepository.GetStudentSubmissionsAsync(assignmentId, studentId);
-            return _mapper.Map<IEnumerable<AssignmentSubmissionResponse>>(submissions);
+            var mapped = _mapper.Map<IEnumerable<AssignmentSubmissionResponse>>(submissions);
+            foreach (var m in mapped)
+            {
+                ResolveSubmissionUrl(m);
+            }
+            return mapped;
         }
 
         public async Task<PagedAssignmentSubmissionResponse> GetAllSubmissionsPagedAsync(int pageNumber, int pageSize, string? status, string? search = null)
@@ -366,9 +377,15 @@ namespace LMSApi.BALLibrary.Services
 
             var totalPages = (int)Math.Ceiling((double)totalCount / pageSize);
 
+            var mapped = _mapper.Map<IEnumerable<AssignmentSubmissionResponse>>(submissions);
+            foreach (var m in mapped)
+            {
+                ResolveSubmissionUrl(m);
+            }
+
             return new PagedAssignmentSubmissionResponse
             {
-                Submissions = _mapper.Map<IEnumerable<AssignmentSubmissionResponse>>(submissions),
+                Submissions = mapped,
                 TotalCount = totalCount,
                 PageNumber = pageNumber,
                 PageSize = pageSize,
@@ -376,5 +393,13 @@ namespace LMSApi.BALLibrary.Services
             };
         }
 
+        private void ResolveSubmissionUrl(AssignmentSubmissionResponse response)
+        {
+            if (response != null && !string.IsNullOrWhiteSpace(response.SubmittedAssignmentUrl)
+                && !response.SubmittedAssignmentUrl.StartsWith("http", StringComparison.OrdinalIgnoreCase))
+            {
+                response.SubmittedAssignmentUrl = _uploadService.GenerateSasUrl(response.SubmittedAssignmentUrl);
+            }
+        }
     }
 }

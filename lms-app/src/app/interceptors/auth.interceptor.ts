@@ -3,9 +3,10 @@ import { inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { ToastService } from '@services/toast.service';
 import { AuthService } from '@services/auth.service';
-import { catchError, switchMap, throwError } from 'rxjs';
+import { catchError, switchMap, filter, take, throwError, BehaviorSubject } from 'rxjs';
 
 let isRefreshing = false;
+let refreshTokenSubject = new BehaviorSubject<any>(null);
 
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const router = inject(Router);
@@ -26,9 +27,12 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
       if (error.status === 401 && !isAuthEndpoint) {
         if (!isRefreshing) {
           isRefreshing = true;
+          refreshTokenSubject.next(null);
+
           return authService.refreshToken().pipe(
             switchMap(() => {
               isRefreshing = false;
+              refreshTokenSubject.next(true);
               return next(req);
             }),
             catchError((refreshErr) => {
@@ -48,6 +52,12 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
               }
               return throwError(() => refreshErr);
             })
+          );
+        } else {
+          return refreshTokenSubject.pipe(
+            filter((result) => result !== null),
+            take(1),
+            switchMap(() => next(req))
           );
         }
       }

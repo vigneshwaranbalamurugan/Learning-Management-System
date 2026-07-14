@@ -47,9 +47,9 @@ namespace LMSApi.BALLibrary.Services
 			var user = await _userRepository.GetByEmailAsync(email);
 			var cacheKey = $"{CacheKeyPrefix}{user.Id}";
 
-			return await _cacheService.GetOrSetAsync(
+			var response = await _cacheService.GetOrSetAsync(
 				cacheKey,
-				async () => 
+				async () =>
 				{
 					var profile = await _userProfileRepository.GetByUserIdAsync(user.Id);
 					if (profile is null)
@@ -58,12 +58,22 @@ namespace LMSApi.BALLibrary.Services
 						profile = CreateDefaultProfile(user.Id);
 						await _userProfileRepository.AddAsync(profile);
 					}
-					var response = _mapper.Map<ProfileResponse>(profile);
-					response.Email = user.Email;
-					response.Role = user.Role?.RoleName;
-					return response;
+					var r = _mapper.Map<ProfileResponse>(profile);
+					r.Email = user.Email;
+					r.Role = user.Role?.RoleName;
+					return r;
 				},
 				TimeSpan.FromMinutes(_ttlMinutes));
+
+			// Resolve SAS URL outside the cache factory so the cached value stays as a blob path
+			// (SAS URLs expire; cache TTL < SAS expiry so this is safe).
+			if (!string.IsNullOrWhiteSpace(response.ProfilePictureUrl)
+			    && !response.ProfilePictureUrl.StartsWith("http", StringComparison.OrdinalIgnoreCase))
+			{
+				response.ProfilePictureUrl = _uploadService.GeneratePublicSasUrl(response.ProfilePictureUrl);
+			}
+
+			return response;
 		}
 
 		public async Task<ProfileResponse> UpdateProfileAsync(string email, ProfileUpdateRequest request)
@@ -138,14 +148,18 @@ namespace LMSApi.BALLibrary.Services
 			}
 
 			var publicId = $"profiles/{user.Id}/profile-picture";
-			profile.ProfilePictureUrl = await _uploadService.UploadProfileImageAsync(fileStream, fileName, publicId);
+			// Upload returns a blob path; store the path in the DB.
+			var blobPath = await _uploadService.UploadProfileImageAsync(fileStream, fileName, publicId);
+			profile.ProfilePictureUrl = blobPath;
 			await _userProfileRepository.UpdateAsync(profile);
 
-			_logger?.LogInformation("Profile image updated successfully for user ID: {UserId}. Image URL: {Url}", user.Id, profile.ProfilePictureUrl);
+			_logger?.LogInformation("Profile image updated successfully for user ID: {UserId}. BlobPath: {BlobPath}", user.Id, blobPath);
 			
 			await _cacheService.InvalidateAsync($"{CacheKeyPrefix}{user.Id}");
 
 			var response = _mapper.Map<ProfileResponse>(profile);
+			// Serve the caller a ready-to-use SAS URL.
+			response.ProfilePictureUrl = _uploadService.GeneratePublicSasUrl(blobPath);
 			response.Email = user.Email;
 			response.Role = user.Role?.RoleName;
 			return response;

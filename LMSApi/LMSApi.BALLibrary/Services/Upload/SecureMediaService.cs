@@ -45,6 +45,12 @@ namespace LMSApi.BALLibrary.Services.Upload
                 .SelectMany(s => s.Lessons ?? Enumerable.Empty<LMSApi.ModelLibrary.Models.Lessons>())
                 .Any(l => l.IsPreview && l.ContentUrl == blobPath) ?? false;
 
+            // Allow if it's the course intro video
+            if (!string.IsNullOrEmpty(course.IntroVideoUrl) && course.IntroVideoUrl == blobPath)
+            {
+                isPreview = true;
+            }
+
             if (!isPreview)
             {
                 if (userId == null)

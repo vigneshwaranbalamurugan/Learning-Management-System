@@ -54,7 +54,7 @@
         <!-- ── Hero Banner ── -->
         <div class="relative overflow-hidden rounded-2xl bg-gradient-to-br from-indigo-950 via-[#1C1C7B] to-slate-900 min-h-[200px] flex flex-col justify-between shadow-lg">
           @if (course()!.thumbnailUrl) {
-            <img [src]="course()!.thumbnailUrl" [alt]="course()!.title"
+            <img [src]="getFullUrl(course()!.thumbnailUrl)" [alt]="course()!.title"
               class="absolute inset-0 w-full h-full object-cover opacity-40" />
           }
           <div class="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-900/40 to-transparent"></div>
@@ -436,7 +436,7 @@
           <!-- Thumbnail -->
           <div class="relative h-44 bg-gradient-to-br from-indigo-900 via-[#1C1C7B] to-slate-900 flex items-center justify-center overflow-hidden">
             @if (course()!.thumbnailUrl) {
-              <img [src]="course()!.thumbnailUrl" [alt]="course()!.title"
+              <img [src]="getFullUrl(course()!.thumbnailUrl)" [alt]="course()!.title"
                 class="absolute inset-0 w-full h-full object-cover" />
               <div class="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent"></div>
             } @else {

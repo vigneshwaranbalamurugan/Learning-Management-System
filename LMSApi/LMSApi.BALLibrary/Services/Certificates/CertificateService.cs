@@ -84,11 +84,11 @@ namespace LMSApi.BALLibrary.Services
             var issuedDate = DateTime.UtcNow.ToString("MMMM dd, yyyy");
 
             // 4. Generate the pdf
-            string cloudinaryUrl;
+            string certBlobPath;
             using (var memoryStream = await GenerateCertificatePdfAsync(template, course.Title, learnerName, instructorName, certificateId.ToString(), issuedDate))
             {
                 var fileName = $"cert_{certificateId}.pdf";
-                cloudinaryUrl = await _uploadService.UploadCertificatePdfAsync(memoryStream, fileName, certificateId.ToString());
+                certBlobPath = await _uploadService.UploadCertificatePdfAsync(memoryStream, fileName, certificateId.ToString());
             }
 
             // 5. Persist record
@@ -98,14 +98,15 @@ namespace LMSApi.BALLibrary.Services
                 CourseId = courseId,
                 UserId = userId,
                 CertificateTemplateId = template.Id,
-                CertificateImageUrl = cloudinaryUrl,
+                CertificateImageUrl = certBlobPath,   // store blob path
                 IssuedAt = DateTime.UtcNow
             };
 
             await _certificateRepository.AddCertificateAsync(newCert);
 
-            // 6. Queue email
-            _backgroundJobClient.Enqueue<ICertificateEmailJob>(job => job.ExecuteAsync(userId, course.Title, cloudinaryUrl, certificateId));
+            // 6. Queue email — provide a long-lived SAS URL (1 year) so the link in the email stays valid
+            var certSasUrl = _uploadService.GenerateSasUrl(certBlobPath, expiryMinutes: 60 * 24 * 365);
+            _backgroundJobClient.Enqueue<ICertificateEmailJob>(job => job.ExecuteAsync(userId, course.Title, certSasUrl, certificateId));
 
             try
             {
@@ -114,7 +115,7 @@ namespace LMSApi.BALLibrary.Services
                     title: "Certificate Issued",
                     message: $"Congratulations! Your certificate for '{course.Title}' has been issued.",
                     type: NotificationType.CertificateIssued,
-                    redirectUrl: cloudinaryUrl);
+                    redirectUrl: certSasUrl);
             }
             catch (Exception ex)
             {
@@ -132,7 +133,10 @@ namespace LMSApi.BALLibrary.Services
                 UserId = userId,
                 LearnerName = learnerName,
                 InstructorName = instructorName,
-                CertificateImageUrl = cloudinaryUrl,
+                CertificateImageUrl = certSasUrl,   // return the SAS URL in the response
+                CourseThumbnailUrl = string.IsNullOrWhiteSpace(course.ThumbnailUrl) || course.ThumbnailUrl.StartsWith("http", StringComparison.OrdinalIgnoreCase) 
+                    ? course.ThumbnailUrl 
+                    : _uploadService.GeneratePublicSasUrl(course.ThumbnailUrl),
                 IssuedAt = newCert.IssuedAt
             };
         }
@@ -140,14 +144,36 @@ namespace LMSApi.BALLibrary.Services
         public async Task<IEnumerable<CertificateResponse>> GetMyCertificatesAsync(int userId)
         {
             var certs = await _certificateRepository.GetCertificatesByUserAsync(userId);
-            return _mapper.Map<IEnumerable<CertificateResponse>>(certs);
+            var responses = _mapper.Map<IEnumerable<CertificateResponse>>(certs).ToList();
+            foreach (var c in responses)
+            {
+                if (!string.IsNullOrWhiteSpace(c.CertificateImageUrl) && !c.CertificateImageUrl.StartsWith("http", StringComparison.OrdinalIgnoreCase))
+                {
+                    c.CertificateImageUrl = _uploadService.GenerateSasUrl(c.CertificateImageUrl, expiryMinutes: 60);
+                }
+                if (!string.IsNullOrWhiteSpace(c.CourseThumbnailUrl) && !c.CourseThumbnailUrl.StartsWith("http", StringComparison.OrdinalIgnoreCase))
+                {
+                    c.CourseThumbnailUrl = _uploadService.GeneratePublicSasUrl(c.CourseThumbnailUrl);
+                }
+            }
+            return responses;
         }
 
         public async Task<PagedCertificateResponse> GetMyCertificatesPagedAsync(int userId, int pageNumber, int pageSize)
         {
             var (certs, totalCount) = await _certificateRepository.GetCertificatesByUserPagedAsync(userId, pageNumber, pageSize);
-            
             var certificateResponses = _mapper.Map<IEnumerable<CertificateResponse>>(certs);
+            foreach (var c in certificateResponses)
+            {
+                if (!string.IsNullOrWhiteSpace(c.CertificateImageUrl) && !c.CertificateImageUrl.StartsWith("http", StringComparison.OrdinalIgnoreCase))
+                {
+                    c.CertificateImageUrl = _uploadService.GenerateSasUrl(c.CertificateImageUrl, expiryMinutes: 60);
+                }
+                if (!string.IsNullOrWhiteSpace(c.CourseThumbnailUrl) && !c.CourseThumbnailUrl.StartsWith("http", StringComparison.OrdinalIgnoreCase))
+                {
+                    c.CourseThumbnailUrl = _uploadService.GeneratePublicSasUrl(c.CourseThumbnailUrl);
+                }
+            }
 
             return new PagedCertificateResponse
             {
@@ -187,7 +213,12 @@ namespace LMSApi.BALLibrary.Services
                     UserId = cert.UserId,
                     LearnerName = learnerName,
                     InstructorName = instructorName,
-                    CertificateImageUrl = cert.CertificateImageUrl,
+                    CertificateImageUrl = string.IsNullOrWhiteSpace(cert.CertificateImageUrl) || cert.CertificateImageUrl.StartsWith("http", StringComparison.OrdinalIgnoreCase) 
+                        ? cert.CertificateImageUrl 
+                        : _uploadService.GenerateSasUrl(cert.CertificateImageUrl, expiryMinutes: 60),
+                    CourseThumbnailUrl = string.IsNullOrWhiteSpace(cert.Course?.ThumbnailUrl) || cert.Course.ThumbnailUrl.StartsWith("http", StringComparison.OrdinalIgnoreCase)
+                        ? cert.Course?.ThumbnailUrl ?? string.Empty
+                        : _uploadService.GeneratePublicSasUrl(cert.Course.ThumbnailUrl),
                     IssuedAt = cert.IssuedAt
                 }
             };
@@ -195,9 +226,9 @@ namespace LMSApi.BALLibrary.Services
 
         public async Task<CertificateTemplateResponse> CreateTemplateAsync(CreateCertificateTemplateRequest request, Stream backgroundStream, string backgroundFileName)
         {
-            // Upload background
+            // Upload background — returns blob path (not a URL)
             var publicId = $"template_{Guid.NewGuid()}";
-            var bgUrl = await _uploadService.UploadCertificateTemplateBackgroundAsync(backgroundStream, backgroundFileName, publicId);
+            var blobPath = await _uploadService.UploadCertificateTemplateBackgroundAsync(backgroundStream, backgroundFileName, publicId);
 
             await _certificateRepository.DeactivateAllTemplatesAsync();
 
@@ -208,18 +239,31 @@ namespace LMSApi.BALLibrary.Services
 
                 AspectRatioWidth = request.AspectRatioWidth,
                 AspectRatioHeight = request.AspectRatioHeight,
-                TemplateBackgroundUrl = bgUrl,
+                TemplateBackgroundUrl = blobPath,   // store blob path; resolve SAS at render time
                 IsActive = true
             };
 
             await _certificateRepository.AddTemplateAsync(template);
-            return _mapper.Map<CertificateTemplateResponse>(template);
+            var response = _mapper.Map<CertificateTemplateResponse>(template);
+            if (!string.IsNullOrWhiteSpace(response.TemplateBackgroundUrl) && !response.TemplateBackgroundUrl.StartsWith("http", StringComparison.OrdinalIgnoreCase))
+            {
+                response.TemplateBackgroundUrl = _uploadService.GeneratePublicSasUrl(response.TemplateBackgroundUrl);
+            }
+            return response;
         }
 
         public async Task<IEnumerable<CertificateTemplateResponse>> GetTemplatesAsync()
         {
             var templates = await _certificateRepository.GetAllTemplatesAsync();
-            return _mapper.Map<IEnumerable<CertificateTemplateResponse>>(templates);
+            var responses = _mapper.Map<IEnumerable<CertificateTemplateResponse>>(templates).ToList();
+            foreach (var response in responses)
+            {
+                if (!string.IsNullOrWhiteSpace(response.TemplateBackgroundUrl) && !response.TemplateBackgroundUrl.StartsWith("http", StringComparison.OrdinalIgnoreCase))
+                {
+                    response.TemplateBackgroundUrl = _uploadService.GeneratePublicSasUrl(response.TemplateBackgroundUrl);
+                }
+            }
+            return responses;
         }
 
         public async Task<CertificateTemplateResponse> UpdateTemplateAsync(int templateId, UpdateCertificateTemplateRequest request)
@@ -240,7 +284,12 @@ namespace LMSApi.BALLibrary.Services
             }
 
             await _certificateRepository.UpdateTemplateAsync(template);
-            return _mapper.Map<CertificateTemplateResponse>(template);
+            var response = _mapper.Map<CertificateTemplateResponse>(template);
+            if (!string.IsNullOrWhiteSpace(response.TemplateBackgroundUrl) && !response.TemplateBackgroundUrl.StartsWith("http", StringComparison.OrdinalIgnoreCase))
+            {
+                response.TemplateBackgroundUrl = _uploadService.GeneratePublicSasUrl(response.TemplateBackgroundUrl);
+            }
+            return response;
         }
 
         public async Task<CertificateRegenerationStatusResponse> GetRegenerationStatusAsync(int userId)
@@ -315,7 +364,9 @@ namespace LMSApi.BALLibrary.Services
             string issuedDate)
         {
             var client = _httpClientFactory.CreateClient();
-            var bgBytes = await client.GetByteArrayAsync(template.TemplateBackgroundUrl);
+            // TemplateBackgroundUrl is stored as a blob path; generate a short-lived SAS URL for the HTTP download.
+            var bgDownloadUrl = _uploadService.GeneratePublicSasUrl(template.TemplateBackgroundUrl, expiryMinutes: 5);
+            var bgBytes = await client.GetByteArrayAsync(bgDownloadUrl);
 
             using var bgStream = new MemoryStream(bgBytes);
             using var bgImage = XImage.FromStream(() => bgStream);

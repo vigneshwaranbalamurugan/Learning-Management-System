@@ -23,21 +23,14 @@ namespace LMSApi.BALLibrary.Utils
         private static async Task<BlobContainerClient> GetContainerClientAsync(IConfiguration configuration, bool isPublic)
         {
             var blobServiceClient = CreateClient(configuration);
-            var containerName = isPublic 
+            var containerName = isPublic
                 ? (configuration["AzureBlob:PublicContainerName"] ?? "lms-public")
                 : (configuration["AzureBlob:ContainerName"] ?? "lms-media");
 
             var containerClient = blobServiceClient.GetBlobContainerClient(containerName);
-            await containerClient.CreateIfNotExistsAsync(
-                PublicAccessType.None // For Azure, even public container files can be accessed via SAS or we can set it to Blob if we really want public URL without SAS
-                // We'll set it to Blob if public so the URL is directly accessible
-            );
-
-            if (isPublic)
-            {
-                // Ensure public access is enabled for the public container
-                await containerClient.SetAccessPolicyAsync(PublicAccessType.Blob);
-            }
+            // Always use PublicAccessType.None — "Allow Blob anonymous access" is disabled
+            // on modern Azure Storage Accounts. Serve all blobs via SAS URLs instead.
+            await containerClient.CreateIfNotExistsAsync(PublicAccessType.None);
 
             return containerClient;
         }
@@ -47,12 +40,14 @@ namespace LMSApi.BALLibrary.Utils
             return configuration[$"Cloudinary:{folderKey}"] ?? defaultFolder;
         }
 
-        private static double GetVideoDuration(Stream stream)
+        private static double GetVideoDuration(Stream stream, string fileName)
         {
             try
             {
-                // Write stream to a temp file because TagLibSharp needs a file path or an IFileAbstraction
-                var tempFile = Path.GetTempFileName();
+                // Write stream to a temp file with the correct extension because TagLibSharp needs it to determine format
+                var extension = Path.GetExtension(fileName);
+                if (string.IsNullOrEmpty(extension)) extension = ".mp4"; // fallback
+                var tempFile = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString() + extension);
                 using (var fileStream = File.Create(tempFile))
                 {
                     stream.Position = 0;
@@ -90,7 +85,8 @@ namespace LMSApi.BALLibrary.Utils
                 HttpHeaders = new BlobHttpHeaders { ContentType = GetContentType(fileName) }
             });
 
-            return blobClient.Uri.ToString();
+            // Return blob path; serve via GeneratePublicSasUrl when displaying to users.
+            return blobPath;
         }
 
         public static async Task<string> UploadCourseThumbnailAsync(IConfiguration configuration, Stream fileStream, string fileName, string publicId)
@@ -110,7 +106,8 @@ namespace LMSApi.BALLibrary.Utils
                 HttpHeaders = new BlobHttpHeaders { ContentType = GetContentType(fileName) }
             });
 
-            return blobClient.Uri.ToString();
+            // Return blob path; serve via GeneratePublicSasUrl when displaying to users.
+            return blobPath;
         }
 
         public static async Task<(string Url, double DurationSeconds)> UploadCourseIntroVideoAsync(IConfiguration configuration, Stream fileStream, string fileName, string publicId)
@@ -122,7 +119,7 @@ namespace LMSApi.BALLibrary.Utils
             await fileStream.CopyToAsync(memoryStream);
             memoryStream.Position = 0;
 
-            var duration = GetVideoDuration(memoryStream);
+            var duration = GetVideoDuration(memoryStream, fileName);
             memoryStream.Position = 0;
 
             var containerClient = await GetContainerClientAsync(configuration, false);
@@ -143,7 +140,7 @@ namespace LMSApi.BALLibrary.Utils
             await fileStream.CopyToAsync(memoryStream);
             memoryStream.Position = 0;
 
-            var duration = GetVideoDuration(memoryStream);
+            var duration = GetVideoDuration(memoryStream, fileName);
             memoryStream.Position = 0;
 
             var containerClient = await GetContainerClientAsync(configuration, false);
@@ -226,7 +223,8 @@ namespace LMSApi.BALLibrary.Utils
                 HttpHeaders = new BlobHttpHeaders { ContentType = GetContentType(fileName) }
             });
 
-            return blobClient.Uri.ToString();
+            // Return blob path; serve via GeneratePublicSasUrl when displaying to users.
+            return blobPath;
         }
 
         public static async Task<string> UploadCertificatePdfAsync(IConfiguration configuration, Stream fileStream, string fileName, string publicId)
@@ -266,12 +264,32 @@ namespace LMSApi.BALLibrary.Utils
 
         public static string GenerateSasUrl(IConfiguration configuration, string blobPath, int expiryMinutes)
         {
-            // Backward compatibility
+            // Backward compatibility: pass-through for pre-existing absolute URLs
             if (blobPath.StartsWith("http", StringComparison.OrdinalIgnoreCase))
                 return blobPath;
 
-            var blobServiceClient = CreateClient(configuration);
             var containerName = configuration["AzureBlob:ContainerName"] ?? "lms-media";
+            return GenerateSasUrlInternal(configuration, containerName, blobPath, expiryMinutes);
+        }
+
+        /// <summary>
+        /// Generates a time-limited SAS URL for blobs stored in the public container
+        /// (profile images, course thumbnails, certificate template backgrounds).
+        /// Use this instead of the raw blob URI since anonymous public access is disabled.
+        /// </summary>
+        public static string GeneratePublicSasUrl(IConfiguration configuration, string blobPath, int expiryMinutes = 60)
+        {
+            // Backward compatibility: pass-through for pre-existing absolute URLs
+            if (blobPath.StartsWith("http", StringComparison.OrdinalIgnoreCase))
+                return blobPath;
+
+            var containerName = configuration["AzureBlob:PublicContainerName"] ?? "lms-public";
+            return GenerateSasUrlInternal(configuration, containerName, blobPath, expiryMinutes);
+        }
+
+        private static string GenerateSasUrlInternal(IConfiguration configuration, string containerName, string blobPath, int expiryMinutes)
+        {
+            var blobServiceClient = CreateClient(configuration);
             var containerClient = blobServiceClient.GetBlobContainerClient(containerName);
             var blobClient = containerClient.GetBlobClient(blobPath);
 
@@ -290,8 +308,7 @@ namespace LMSApi.BALLibrary.Utils
 
             sasBuilder.SetPermissions(BlobSasPermissions.Read);
 
-            var sasUri = blobClient.GenerateSasUri(sasBuilder);
-            return sasUri.ToString();
+            return blobClient.GenerateSasUri(sasBuilder).ToString();
         }
 
         private static string GetContentType(string fileName)
