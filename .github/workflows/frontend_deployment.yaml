@@ -45,15 +45,12 @@ jobs:
           cat > src/environments/environment.ts << EOF
           export const environment = {
             production: true,
-            apiUrl: '${{ vars.API_URL }}',
-            hubUrl: '${{ vars.HUB_URL }}',
-            hangfireUrl: '${{ vars.HANGFIRE_URL }}',
-            razorpayKey: '${{ secrets.RAZORPAY_KEY }}'
+            apiUrl: '${{ vars.APIURL }}',
+            hubUrl: '${{ vars.HUBURL }}',
+            hangfireUrl: '${{ vars.HANGFIREURL }}',
+            razorpayKey: '${{ secrets.RAZORPAYKEY }}'
           };
           EOF
-      - name: Verify Environment File
-        run: |
-          cat src/environments/environment.ts
 
       - name: Build Angular App
         run: npm run build -- --configuration production --base-href /Learning-Management-System/
