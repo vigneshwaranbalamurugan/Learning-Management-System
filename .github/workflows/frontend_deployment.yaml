@@ -51,6 +51,9 @@ jobs:
             razorpayKey: '${{ secrets.RAZORPAY_KEY }}'
           };
           EOF
+      - name: Verify Environment File
+        run: |
+          cat src/environments/environment.ts
 
       - name: Build Angular App
         run: npm run build -- --configuration production --base-href /Learning-Management-System/
