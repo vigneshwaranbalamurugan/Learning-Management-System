@@ -352,6 +352,27 @@ recurringJobManager.AddOrUpdate<IQuizExpirationService>(
         await dbContext.Database.MigrateAsync();
         Log.Information("Database migrations applied successfully.");
 
+        // Automatically run SQL routines
+        Log.Information("Applying custom SQL routines...");
+        var assembly = typeof(LMSApi.DALLibrary.Contexts.LMSDbContext).Assembly;
+        var resourceName = "LMSApi.DALLibrary.routines.sql";
+        using (var stream = assembly.GetManifestResourceStream(resourceName))
+        {
+            if (stream != null)
+            {
+                using (var reader = new System.IO.StreamReader(stream))
+                {
+                    var sql = await reader.ReadToEndAsync();
+                    await Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions.ExecuteSqlRawAsync(dbContext.Database, sql);
+                    Log.Information("Custom SQL routines applied successfully.");
+                }
+            }
+            else
+            {
+                Log.Warning("Custom SQL routines file (routines.sql) was not found in the embedded resources.");
+            }
+        }
+
         // 2. Check Redis connection
         var redisConnectionString = builder.Configuration["Redis:ConnectionString"];
         if (!string.IsNullOrEmpty(redisConnectionString))
