@@ -10,6 +10,7 @@ COPY LMSApi.API/LMSApi.API.csproj                       LMSApi.API/
 COPY LMSApi.BALLibrary/LMSApi.BALLibrary.csproj         LMSApi.BALLibrary/
 COPY LMSApi.DALLibrary/LMSApi.DALLibrary.csproj         LMSApi.DALLibrary/
 COPY LMSApi.ModelLibrary/LMSApi.ModelLibrary.csproj     LMSApi.ModelLibrary/
+COPY LMSApi.Tests/LMSApi.Tests.csproj                   LMSApi.Tests/
 
 # Restore NuGet packages
 RUN dotnet restore LMSApi.slnx
