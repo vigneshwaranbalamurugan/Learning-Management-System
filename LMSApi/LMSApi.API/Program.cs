@@ -245,6 +245,9 @@ builder.Services.AddStackExchangeRedisCache(options =>
     // Rate Limiting Configuration
     builder.Services.AddCustomRateLimiting(builder.Configuration);
 
+    // Health Checks for Kubernetes Probes
+    builder.Services.AddHealthChecks();
+
     builder.Services.AddRoleAuthorization();
 
     // CORS configuration — supports multiple comma-separated origins from config
@@ -315,6 +318,7 @@ app.MapHub<NotificationHub>("/hubs/notification").RequireRateLimiting("SignalRHu
 app.MapHub<VideoProgressHub>("/hubs/video-progress").RequireRateLimiting("SignalRHubConnectVideoProgress");
 app.MapHub<QuizProgressHub>("/hubs/quiz-progress");
 app.MapControllers();
+app.MapHealthChecks("/health");
 
 var recurringJobManager = app.Services.GetRequiredService<IRecurringJobManager>();
 recurringJobManager.AddOrUpdate<IDeadlineNotificationJob>(
