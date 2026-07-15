@@ -33,6 +33,7 @@ jobs:
   build-and-push:
     name: Build & Push to Docker Hub
     runs-on: ubuntu-latest
+    environment: Development
 
     outputs:
       image_tag: ${{ steps.meta.outputs.image_tag }}
