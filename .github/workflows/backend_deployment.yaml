@@ -90,7 +90,7 @@ jobs:
     name: Deploy to AKS
     runs-on: ubuntu-latest
     needs: build-and-push
-    environment: Production
+    environment: Development
 
     steps:
       - name: Checkout

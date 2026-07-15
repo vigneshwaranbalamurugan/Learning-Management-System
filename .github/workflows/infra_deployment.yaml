@@ -24,6 +24,7 @@ jobs:
   setup-k8s:
     name: Setup AKS (CSI Driver + Docker Hub Secret)
     runs-on: ubuntu-latest
+    environment: Development
 
     steps:
       # ── Checkout ──────────────────────────────────────────────────────────
