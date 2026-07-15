@@ -345,6 +345,11 @@ recurringJobManager.AddOrUpdate<IQuizExpirationService>(
         }
         Log.Information("Database connection successful.");
 
+        // Automatically apply any pending Entity Framework Core migrations to the database.
+        Log.Information("Applying Entity Framework Core migrations...");
+        await dbContext.Database.MigrateAsync();
+        Log.Information("Database migrations applied successfully.");
+
         // 2. Check Redis connection
         var redisConnectionString = builder.Configuration["Redis:ConnectionString"];
         if (!string.IsNullOrEmpty(redisConnectionString))
