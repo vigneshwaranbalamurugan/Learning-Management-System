@@ -124,6 +124,10 @@ jobs:
           sed -i "s|<AZURE_TENANT_ID>|${{ secrets.AZURE_TENANT_ID }}|g"  azure/k8s/secretproviderclass.yaml
           sed -i "s|<KEY_VAULT_NAME>|${{ secrets.KEY_VAULT_NAME }}|g"    azure/k8s/secretproviderclass.yaml
 
+          # Get NGINX IP and inject it into ingress
+          NGINX_IP=$(kubectl get svc -n ingress-nginx ingress-nginx-controller -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+          sed -i "s|<NGINX_IP>|$NGINX_IP|g" azure/k8s/ingress.yaml
+
       # ── Apply all K8s manifests ────────────────────────────────────────────
       - name: Apply K8s Manifests
         run: kubectl apply -k azure/k8s/

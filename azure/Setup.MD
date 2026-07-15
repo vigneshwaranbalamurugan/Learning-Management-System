@@ -239,16 +239,17 @@ Push any change to `LMSApi/` on `main`, **or**:
 
 After it completes:
 ```bash
-kubectl get svc lms-api-svc -n lms
+# Get the new NGINX Ingress Controller IP
+kubectl get svc -n ingress-nginx ingress-nginx-controller
 # Wait until EXTERNAL-IP column shows an IP (not <pending>)
 ```
 
-Copy the IP, then set these GitHub Variables:
+Copy the IP, then set these GitHub Variables (Note the `https` and `.nip.io`):
 ```
 AKS_EXTERNAL_IP = <the IP>
-APIURL          = http://<the IP>/api/v1
-HUBURL          = http://<the IP>/hubs
-HANGFIREURL     = http://<the IP>/hangfire
+APIURL          = https://lms-api.<the IP>.nip.io/api/v1
+HUBURL          = https://lms-api.<the IP>.nip.io/hubs
+HANGFIREURL     = https://lms-api.<the IP>.nip.io/hangfire
 ```
 
 Re-run the backend workflow once more so pods pick up the correct URLs.

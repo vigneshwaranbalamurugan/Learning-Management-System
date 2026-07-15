@@ -6,7 +6,7 @@ metadata:
   labels:
     app: lms-api
 spec:
-  type: LoadBalancer
+  type: ClusterIP
   selector:
     app: lms-api
   ports:
