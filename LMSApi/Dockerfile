@@ -28,16 +28,16 @@ RUN dotnet publish LMSApi.API/LMSApi.API.csproj \
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
 WORKDIR /app
 
-# Create a non-root user for security
-RUN addgroup --system appgroup && adduser --system --ingroup appgroup appuser
+# .NET 8+ images have a built-in non-root user named 'app'
+# We don't need to manually create one.
 
 # Copy only the published output from the build stage
 COPY --from=build /app/publish .
 
-# Ensure the logs directory exists and is writable by appuser
-RUN mkdir -p /app/logs && chown -R appuser:appgroup /app
+# Ensure the logs directory exists and is writable by the built-in 'app' user
+RUN mkdir -p /app/logs && chown -R app:app /app
 
-USER appuser
+USER app
 
 # ASP.NET Core listens on port 8080 by default in containers
 ENV ASPNETCORE_URLS=http://+:8080
