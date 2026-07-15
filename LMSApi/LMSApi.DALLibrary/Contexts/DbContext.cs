@@ -67,6 +67,9 @@ namespace LMSApi.DALLibrary.Contexts
         public DbSet<DiscussionReplies> DiscussionReplies { get; set; }
         public DbSet<DiscussionLikes> DiscussionLikes { get; set; }
 
+        // AI module
+        public DbSet<LessonAiSummary> LessonAiSummaries { get; set; }
+
         private readonly ICurrentUserProvider? _currentUserProvider;
         private readonly ILogger<LMSDbContext>? _logger;
 

@@ -1,0 +1,148 @@
+<!-- AI Tutor Chat Panel -->
+
+<!-- Floating Toggle Button -->
+<button
+  id="ai-tutor-toggle-btn"
+  class="ai-tutor-fab"
+  [class.ai-tutor-fab--open]="isOpen()"
+  [class.ai-tutor-fab--unsupported]="!isSupported()"
+  (click)="togglePanel()"
+  [title]="isSupported() ? 'Ask AI Tutor' : 'AI Tutor not available for this lesson type'"
+  [attr.aria-expanded]="isOpen()"
+  aria-label="Toggle AI Tutor"
+>
+  @if (!isOpen()) {
+    <!-- Spark icon -->
+    <svg class="ai-fab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path stroke-linecap="round" stroke-linejoin="round"
+        d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+    </svg>
+    <span class="ai-fab-label">AI Tutor</span>
+  } @else {
+    <!-- Close icon -->
+    <svg class="ai-fab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+    </svg>
+  }
+</button>
+
+<!-- Chat Panel -->
+@if (isOpen()) {
+  <div class="ai-chat-panel" id="ai-tutor-panel" role="dialog" aria-label="AI Tutor Chat">
+
+    <!-- Header -->
+    <div class="ai-chat-header">
+      <div class="ai-chat-header-info">
+        <div class="ai-avatar">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round"
+              d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+          </svg>
+        </div>
+        <div>
+          <h3 class="ai-chat-title">AI Tutor</h3>
+          <p class="ai-chat-subtitle">Ask anything about this lesson</p>
+        </div>
+      </div>
+      <button class="ai-chat-close" (click)="togglePanel()" aria-label="Close AI Tutor">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+      </button>
+    </div>
+
+    @if (!isSupported()) {
+      <!-- Not supported state -->
+      <div class="ai-unsupported">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path stroke-linecap="round" stroke-linejoin="round"
+            d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/>
+        </svg>
+        <p>AI Tutor is not available for external link lessons.</p>
+      </div>
+    } @else {
+      <!-- Messages Area -->
+      <div class="ai-messages" id="ai-messages-list" role="log" aria-live="polite">
+
+        <!-- Empty state with suggestions -->
+        @if (messages().length === 0) {
+          <div class="ai-empty-state">
+            <p class="ai-empty-title">👋 Hi! I'm your AI Tutor.</p>
+            <p class="ai-empty-subtitle">Ask me anything about this lesson.</p>
+            <div class="ai-suggestions">
+              @for (q of suggestedQuestions; track q) {
+                <button class="ai-suggestion-chip" (click)="askSuggested(q)">{{ q }}</button>
+              }
+            </div>
+          </div>
+        }
+
+        <!-- Chat messages -->
+        @for (msg of messages(); track $index) {
+          <div class="ai-message" [class.ai-message--user]="msg.role === 'user'" [class.ai-message--assistant]="msg.role === 'assistant'">
+            @if (msg.role === 'assistant') {
+              <div class="ai-message-avatar">
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 2a2 2 0 012 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 017 7h1a1 1 0 010 2h-1v1a2 2 0 01-2 2H5a2 2 0 01-2-2v-1H2a1 1 0 010-2h1a7 7 0 017-7h1V5.73A2 2 0 0110 4a2 2 0 012-2zm-3 9a2 2 0 100 4 2 2 0 000-4zm6 0a2 2 0 100 4 2 2 0 000-4z"/>
+                </svg>
+              </div>
+            }
+            <div class="ai-message-bubble">
+              @if (msg.isLoading) {
+                <div class="ai-typing-indicator" aria-label="AI is thinking">
+                  <span></span><span></span><span></span>
+                </div>
+              } @else {
+                <p [innerHTML]="msg.content"></p>
+              }
+            </div>
+          </div>
+        }
+
+        <div #messagesEnd></div>
+      </div>
+
+      <!-- Error message -->
+      @if (errorMsg()) {
+        <div class="ai-error" role="alert">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+          </svg>
+          {{ errorMsg() }}
+        </div>
+      }
+
+      <!-- Input Area -->
+      <div class="ai-input-area">
+        <textarea
+          id="ai-tutor-input"
+          class="ai-input"
+          [(ngModel)]="userInput"
+          (keydown)="onKeyDown($event)"
+          placeholder="Ask a question about this lesson…"
+          rows="2"
+          [disabled]="isLoading()"
+          aria-label="Type your question"
+        ></textarea>
+        <button
+          id="ai-tutor-send-btn"
+          class="ai-send-btn"
+          (click)="sendMessage()"
+          [disabled]="!userInput().trim() || isLoading()"
+          aria-label="Send message"
+        >
+          @if (isLoading()) {
+            <svg class="ai-send-spinner" viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" stroke-dasharray="31.4" stroke-dashoffset="10"/>
+            </svg>
+          } @else {
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
+            </svg>
+          }
+        </button>
+      </div>
+      <p class="ai-disclaimer">Answers are based on this lesson's content only.</p>
+    }
+  </div>
+}

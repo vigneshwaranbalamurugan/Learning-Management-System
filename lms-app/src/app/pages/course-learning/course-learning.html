@@ -355,6 +355,15 @@
                   </div>
                 </div>
               }
+              <!-- AI Lesson Summary -->
+              @if (activeItem()!.type === 'lesson') {
+                <div class="px-6 mt-6 mb-6 md:px-10 pb-2">
+                  <app-ai-lesson-summary
+                    [lessonId]="activeItem()!.id"
+                    [lessonType]="activeItem()!.lessonType ?? 0"
+                  ></app-ai-lesson-summary>
+                </div>
+              }
               <!-- Discussions -->
               @if (activeItem()!.type === 'lesson') {
                 <app-lesson-discussions [lessonId]="activeItem()!.id"></app-lesson-discussions>
@@ -760,3 +769,11 @@
   [message]="confettiMessage()"
   (close)="onConfettiClose()">
 </app-confetti>
+
+<!-- AI Tutor Chat Floating Panel (visible only when a lesson is active) -->
+@if (activeItem()?.type === 'lesson') {
+  <app-ai-tutor-chat
+    [lessonId]="activeItem()!.id"
+    [lessonType]="activeItem()!.lessonType ?? 0"
+  ></app-ai-tutor-chat>
+}

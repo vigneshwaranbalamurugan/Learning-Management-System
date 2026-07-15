@@ -1,0 +1,232 @@
+/* ─── AI Lesson Summary Card ──────────────────────────────────── */
+
+.ai-summary-card {
+  background: #fff;
+  border-radius: 16px;
+  border: 1px solid #e2e8f0;
+  overflow: hidden;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+  animation: summary-fade-in 0.4s ease-out;
+}
+
+@keyframes summary-fade-in {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Header */
+.ai-summary-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 18px 20px 16px;
+  background: var(--color-primary-light);
+  border-bottom: 1px solid var(--color-border-default);
+}
+
+.ai-summary-header-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: var(--color-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.ai-summary-header-icon svg {
+  width: 20px;
+  height: 20px;
+  stroke: white;
+}
+
+.ai-summary-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0;
+}
+
+.ai-summary-subtitle {
+  font-size: 11.5px;
+  color: #64748b;
+  margin: 2px 0 0;
+}
+
+/* Sections */
+.ai-summary-section {
+  padding: 16px 20px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.ai-summary-section:last-of-type {
+  border-bottom: none;
+}
+
+.ai-summary-section--notes {
+  background: var(--color-secondary-light);
+  border-top: 1px solid var(--color-secondary);
+  border-bottom: none;
+}
+
+.ai-section-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-primary);
+  margin: 0 0 10px;
+}
+
+.ai-section-label svg {
+  width: 14px;
+  height: 14px;
+  stroke: currentColor;
+  flex-shrink: 0;
+}
+
+.ai-summary-text {
+  font-size: 14px;
+  line-height: 1.65;
+  color: #374151;
+  margin: 0;
+}
+
+.ai-notes-text {
+  color: var(--color-secondary-hover);
+}
+
+/* Key Points */
+.ai-key-points {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.ai-key-point {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: #374151;
+}
+
+.ai-key-point-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  flex-shrink: 0;
+  margin-top: 6px;
+}
+
+/* Footer */
+.ai-summary-footer {
+  padding: 10px 20px;
+  font-size: 11px;
+  color: #94a3b8;
+  text-align: right;
+  background: #f8fafc;
+  border-top: 1px solid #f1f5f9;
+}
+
+/* Generating / Skeleton */
+.ai-summary-generating {
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ai-generating-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 12px;
+  border-radius: 50px;
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+  font-size: 12px;
+  font-weight: 600;
+  width: fit-content;
+  margin-bottom: 4px;
+}
+
+.ai-generating-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  animation: pulse-dot 1.2s infinite ease-in-out;
+}
+
+@keyframes pulse-dot {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50%       { transform: scale(1.4); opacity: 0.6; }
+}
+
+/* Skeleton blocks */
+.ai-skeleton-block {
+  height: 14px;
+  border-radius: 6px;
+  background: var(--color-border-default);
+  animation: pulse-dot 1.2s infinite ease-in-out;
+}
+
+.ai-skeleton-block--wide   { width: 100%; }
+.ai-skeleton-block--medium { width: 75%; }
+.ai-skeleton-block--narrow { width: 55%; }
+
+.ai-skeleton-subheader {
+  height: 10px;
+  width: 30%;
+  border-radius: 4px;
+  background: #e2e8f0;
+  margin-top: 8px;
+}
+
+@keyframes skeleton-shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* Unsupported */
+.ai-summary-unsupported {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 20px;
+  color: #64748b;
+  font-size: 13.5px;
+}
+
+.ai-summary-unsupported svg {
+  width: 20px;
+  height: 20px;
+  stroke: #94a3b8;
+  flex-shrink: 0;
+}
+
+/* Error */
+.ai-summary-error {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 20px;
+  color: #dc2626;
+  font-size: 13.5px;
+}
+
+.ai-summary-error svg {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}

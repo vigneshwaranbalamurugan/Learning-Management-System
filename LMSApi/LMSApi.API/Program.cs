@@ -2,6 +2,7 @@ using LMSApi.DALLibrary.Contexts;
 using LMSApi.API.Extensions;
 using LMSApi.DALLibrary.Interfaces;
 using LMSApi.DALLibrary.Repositories;
+using LMSApi.DALLibrary.Repositories.AI;
 using LMSApi.BALLibrary.Interfaces;
 using LMSApi.BALLibrary.Services;
 using LMSApi.BALLibrary.Services.Upload;
@@ -60,6 +61,16 @@ try
     {
         client.BaseAddress = new Uri("https://api.razorpay.com/v1/");
         client.DefaultRequestHeaders.Add("Accept", "application/json");
+    });
+
+    // HttpClient for internal Python AI Engine
+    var aiEngineBaseUrl = builder.Configuration["AiEngine:BaseUrl"] ?? "http://localhost:8001";
+    var aiEngineApiKey = builder.Configuration["AiEngine:InternalApiKey"] ?? "";
+    builder.Services.AddHttpClient("AiEngine", client =>
+    {
+        client.BaseAddress = new Uri(aiEngineBaseUrl);
+        client.DefaultRequestHeaders.Add("X-Internal-Api-Key", aiEngineApiKey);
+        client.Timeout = TimeSpan.FromMinutes(10); // transcription can take time
     });
 
 #region Database
@@ -130,6 +141,9 @@ builder.Services.AddScoped<IDiscussionRepository,DiscussionRepository>();
 builder.Services.AddScoped<IDiscussionReplyRepository,DiscussionReplyRepository>();
 builder.Services.AddScoped<IDiscussionLikeRepository,DiscussionLikeRepository>();
 
+// AI module
+builder.Services.AddScoped<ILessonAiSummaryRepository, LessonAiSummaryRepository>();
+
 #endregion
 
 #region Dependency Injection for Services
@@ -198,6 +212,10 @@ builder.Services.AddScoped<ICacheService, CacheService>();
 
 // Discussion Service
 builder.Services.AddScoped<IDiscussionService,DiscussionService>();
+
+// AI Engine Services
+builder.Services.AddScoped<LMSApi.BALLibrary.Interfaces.IAiEngineService, LMSApi.BALLibrary.Services.AI.AiEngineService>();
+builder.Services.AddScoped<LMSApi.BALLibrary.Services.AI.AiLessonJobService>();
 
 #endregion
 

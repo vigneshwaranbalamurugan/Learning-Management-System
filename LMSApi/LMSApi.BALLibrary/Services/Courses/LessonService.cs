@@ -1,5 +1,7 @@
 using AutoMapper;
+using Hangfire;
 using LMSApi.BALLibrary.Interfaces;
+using LMSApi.BALLibrary.Services.AI;
 using LMSApi.DALLibrary.Interfaces;
 using LMSApi.ModelLibrary.DTOs;
 using LMSApi.ModelLibrary.Models;
@@ -213,6 +215,13 @@ namespace LMSApi.BALLibrary.Services
 
             await _courseRepository.UpdateCourseDurationAsync(course.Id);
 
+            // Enqueue AI background jobs (indexing for tutor + summary generation)
+            if (lesson.Type != LessonType.ExternalLink)
+            {
+                BackgroundJob.Enqueue<AiLessonJobService>(j => j.IndexLessonForAiAsync(lesson.Id));
+                BackgroundJob.Enqueue<AiLessonJobService>(j => j.GenerateLessonSummaryAsync(lesson.Id));
+            }
+
             return _mapper.Map<LessonResponse>(lesson);
         }
 
@@ -310,6 +319,13 @@ namespace LMSApi.BALLibrary.Services
             await _courseRepository.UpdateCourseDurationAsync(course.Id);
 
             _logger.LogInformation("Lesson Updated: Id={Id}", id);
+
+            // Re-index and re-generate summary when content changes
+            if (lesson.Type != LessonType.ExternalLink)
+            {
+                BackgroundJob.Enqueue<AiLessonJobService>(j => j.IndexLessonForAiAsync(lesson.Id));
+                BackgroundJob.Enqueue<AiLessonJobService>(j => j.GenerateLessonSummaryAsync(lesson.Id));
+            }
 
             return _mapper.Map<LessonResponse>(lesson);
         }

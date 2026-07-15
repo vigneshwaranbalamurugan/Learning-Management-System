@@ -31,6 +31,8 @@ import { VideoPlayer } from '@components/video-player/video-player';
 import { PdfViewer } from '@components/pdf-viewer/pdf-viewer';
 
 import { LessonDiscussions } from '@components/lesson-discussions/lesson-discussions';
+import { AiTutorChat } from '@components/ai-tutor-chat/ai-tutor-chat';
+import { AiLessonSummary } from '@components/ai-lesson-summary/ai-lesson-summary';
 
 // Marked for markdown
 import { marked } from 'marked';
@@ -54,7 +56,7 @@ interface FlatItem {
   imports: [
     CommonModule, ReactiveFormsModule,
     Button, Loader, FormInput, ConfirmModal, ConfettiComponent, VideoPlayer, PdfViewer,
-    LessonDiscussions
+    LessonDiscussions, AiTutorChat, AiLessonSummary
   ],
   templateUrl: './course-learning.html',
   styleUrl: './course-learning.css'
