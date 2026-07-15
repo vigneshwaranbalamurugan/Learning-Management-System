@@ -21,7 +21,6 @@ COPY . .
 # Publish the API project in Release mode to /app/publish
 RUN dotnet publish LMSApi.API/LMSApi.API.csproj \
       --configuration Release \
-      --no-restore \
       --output /app/publish
 
 # ─── Stage 2: Runtime ─────────────────────────────────────────────────────────
