@@ -74,6 +74,10 @@ export const instructorRoutes: Routes = [
             loadComponent: () => import('@pages/instructor-lesson-detail/instructor-lesson-detail').then(m => m.InstructorLessonDetail)
           },
           {
+            path: 'lessons/:lessonId/preview',
+            loadComponent: () => import('@pages/instructor-lesson-preview/instructor-lesson-preview').then(m => m.InstructorLessonPreview)
+          },
+          {
             path: 'lessons/:lessonId/resources/new',
             loadComponent: () => import('@pages/instructor-resource-form/instructor-resource-form').then(m => m.InstructorResourceForm),
             canDeactivate: [(component: any) => component.canDeactivate ? component.canDeactivate() : true]

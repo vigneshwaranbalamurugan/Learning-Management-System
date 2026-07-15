@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '@environments/environment';
-import { CertificateResponse, PagedCertificateResponse, CertificateRegenerationStatus, RegenerateCertificatesResponse } from '@models/certificate';
+import { CertificateResponse, PagedCertificateResponse, CertificateRegenerationStatus, RegenerateCertificatesResponse, ShareCertificateRequest, ShareCertificateResponse } from '@models/certificate';
 
 @Injectable({
   providedIn: 'root',
@@ -25,5 +25,13 @@ export class CertificateService {
 
   regenerateAllCertificates(): Observable<RegenerateCertificatesResponse> {
     return this.http.post<RegenerateCertificatesResponse>(`${this.baseUrl}/certificates/regenerate-all`, {});
+  }
+
+  shareCertificate(certificateId: string, request: ShareCertificateRequest): Observable<ShareCertificateResponse> {
+    return this.http.post<ShareCertificateResponse>(`${this.baseUrl}/certificates/${certificateId}/share`, request);
+  }
+
+  getSharedCertificate(token: string): Observable<CertificateResponse> {
+    return this.http.get<CertificateResponse>(`${this.baseUrl}/certificates/shared/${token}`);
   }
 }

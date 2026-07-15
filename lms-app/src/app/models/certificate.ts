@@ -67,3 +67,13 @@ export interface CertificateRegenerationStatus {
   canRegenerate: boolean;
   nameHasChanged: boolean;
 }
+
+export interface ShareCertificateRequest {
+  minutes: number;
+}
+
+export interface ShareCertificateResponse {
+  token: string;
+  shareUrl: string;
+  expiresAt: string;
+}

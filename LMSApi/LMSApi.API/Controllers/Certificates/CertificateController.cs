@@ -103,5 +103,48 @@ namespace LMSApi.API.Controllers
                 return BadRequest(new { message = ex.Message });
             }
         }
+
+        [HttpPost("{certificateId:guid}/share")]
+        [Authorize]
+        [EnableRateLimiting("CertificateDownload")]
+        public async Task<ActionResult<ShareCertificateResponse>> ShareCertificate(Guid certificateId, [FromBody] ShareCertificateRequest request, [FromServices] Microsoft.Extensions.Configuration.IConfiguration configuration)
+        {
+            var userId = User.GetUserId();
+            var frontendUrl = configuration["ApplicationUrls:Frontend"] ?? "http://localhost:4200";
+
+            try
+            {
+                var result = await _certificateService.GenerateShareLinkAsync(userId, certificateId, request.Minutes, frontendUrl);
+                return Ok(result);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Forbid(ex.Message);
+            }
+        }
+
+        [HttpGet("shared/{token}")]
+        [AllowAnonymous]
+        [EnableRateLimiting("CertificateDownload")]
+        public async Task<IActionResult> GetSharedCertificate(string token)
+        {
+            try
+            {
+                var result = await _certificateService.GetSharedCertificateAsync(token);
+                if (!result.IsValid)
+                {
+                    return NotFound(new { message = "Certificate not found or invalid." });
+                }
+                return Ok(result.Certificate);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(new { message = ex.Message });
+            }
+        }
     }
 }

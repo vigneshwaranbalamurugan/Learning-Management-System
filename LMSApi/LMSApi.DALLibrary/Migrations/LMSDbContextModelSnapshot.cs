@@ -51,7 +51,7 @@ namespace LMSApi.DALLibrary.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("ActivityLogs");
+                    b.ToTable("ActivityLogs", (string)null);
                 });
 
             modelBuilder.Entity("LMSApi.ModelLibrary.Models.AssignmentSubmissions", b =>
@@ -235,7 +235,7 @@ namespace LMSApi.DALLibrary.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("AuditLogs");
+                    b.ToTable("AuditLogs", (string)null);
                 });
 
             modelBuilder.Entity("LMSApi.ModelLibrary.Models.CertificateTemplates", b =>
@@ -1420,7 +1420,7 @@ namespace LMSApi.DALLibrary.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("Notifications");
+                    b.ToTable("Notifications", (string)null);
                 });
 
             modelBuilder.Entity("LMSApi.ModelLibrary.Models.Payments", b =>
@@ -1929,7 +1929,7 @@ namespace LMSApi.DALLibrary.Migrations
                     b.HasIndex("UserId")
                         .IsUnique();
 
-                    b.ToTable("UserProfiles");
+                    b.ToTable("UserProfiles", (string)null);
                 });
 
             modelBuilder.Entity("LMSApi.ModelLibrary.Models.UserRoles", b =>
@@ -1962,7 +1962,7 @@ namespace LMSApi.DALLibrary.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("UserRoles");
+                    b.ToTable("UserRoles", (string)null);
 
                     b.HasData(
                         new
@@ -2064,7 +2064,7 @@ namespace LMSApi.DALLibrary.Migrations
 
                     b.HasIndex("RoleId");
 
-                    b.ToTable("Users");
+                    b.ToTable("Users", (string)null);
 
                     b.HasData(
                         new
@@ -2113,7 +2113,7 @@ namespace LMSApi.DALLibrary.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("WebhookEventLogs");
+                    b.ToTable("WebhookEventLogs", (string)null);
                 });
 
             modelBuilder.Entity("LMSApi.ModelLibrary.Models.WishList", b =>

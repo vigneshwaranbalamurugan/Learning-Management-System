@@ -11,7 +11,7 @@ namespace LMSApi.BALLibrary.Interfaces
         Task<CertificateResponse> IssueCertificateAsync(int userId, int courseId);
 
         /// <summary>Public certificate lookup by the unique Guid.</summary>
-        Task<CertificateVerificationResponse> VerifyCertificateAsync(Guid certificateId);
+        Task<CertificateVerificationResponse> VerifyCertificateAsync(Guid certificateId, int expiryMinutes = 60, bool includeUrl = false);
 
         /// <summary>Get all certificates issued to the student.</summary>
         Task<IEnumerable<CertificateResponse>> GetMyCertificatesAsync(int userId);
@@ -42,5 +42,11 @@ namespace LMSApi.BALLibrary.Interfaces
             string instructorName,
             string certificateId,
             string issuedDate);
+
+        /// <summary>Generates a temporary share link for a certificate.</summary>
+        Task<ShareCertificateResponse> GenerateShareLinkAsync(int userId, Guid certificateId, int minutes, string frontendUrl);
+
+        /// <summary>Retrieves a shared certificate via the temporary token.</summary>
+        Task<CertificateVerificationResponse> GetSharedCertificateAsync(string token);
     }
 }

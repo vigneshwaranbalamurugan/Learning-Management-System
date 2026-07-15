@@ -10,6 +10,7 @@ using PdfSharpCore.Drawing;
 using PdfSharpCore.Pdf;
 using System.IO;
 using System.Text.RegularExpressions;
+using Microsoft.Extensions.Caching.Distributed;
 
 namespace LMSApi.BALLibrary.Services
 {
@@ -25,6 +26,7 @@ namespace LMSApi.BALLibrary.Services
         private readonly ILogger<CertificateService> _logger;
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly IUserNotificationsService _userNotificationsService;
+        private readonly Microsoft.Extensions.Caching.Distributed.IDistributedCache _cache;
 
         public CertificateService(
             ICertificateRepository certificateRepository,
@@ -36,7 +38,8 @@ namespace LMSApi.BALLibrary.Services
             IMapper mapper,
             ILogger<CertificateService> logger,
             IHttpClientFactory httpClientFactory,
-            IUserNotificationsService userNotificationsService)
+            IUserNotificationsService userNotificationsService,
+            Microsoft.Extensions.Caching.Distributed.IDistributedCache cache)
         {
             _certificateRepository = certificateRepository;
             _courseRepository = courseRepository;
@@ -48,6 +51,7 @@ namespace LMSApi.BALLibrary.Services
             _logger = logger;
             _httpClientFactory = httpClientFactory;
             _userNotificationsService = userNotificationsService;
+            _cache = cache;
         }
 
         public async Task<CertificateResponse> IssueCertificateAsync(int userId, int courseId)
@@ -185,7 +189,7 @@ namespace LMSApi.BALLibrary.Services
             };
         }
 
-        public async Task<CertificateVerificationResponse> VerifyCertificateAsync(Guid certificateId)
+        public async Task<CertificateVerificationResponse> VerifyCertificateAsync(Guid certificateId, int expiryMinutes = 60, bool includeUrl = false)
         {
             var cert = await _certificateRepository.GetByGuidAsync(certificateId);
             if (cert == null)
@@ -213,9 +217,11 @@ namespace LMSApi.BALLibrary.Services
                     UserId = cert.UserId,
                     LearnerName = learnerName,
                     InstructorName = instructorName,
-                    CertificateImageUrl = string.IsNullOrWhiteSpace(cert.CertificateImageUrl) || cert.CertificateImageUrl.StartsWith("http", StringComparison.OrdinalIgnoreCase) 
-                        ? cert.CertificateImageUrl 
-                        : _uploadService.GenerateSasUrl(cert.CertificateImageUrl, expiryMinutes: 60),
+                    CertificateImageUrl = !includeUrl 
+                        ? string.Empty 
+                        : (string.IsNullOrWhiteSpace(cert.CertificateImageUrl) || cert.CertificateImageUrl.StartsWith("http", StringComparison.OrdinalIgnoreCase) 
+                            ? cert.CertificateImageUrl 
+                            : _uploadService.GenerateSasUrl(cert.CertificateImageUrl, expiryMinutes: expiryMinutes)),
                     CourseThumbnailUrl = string.IsNullOrWhiteSpace(cert.Course?.ThumbnailUrl) || cert.Course.ThumbnailUrl.StartsWith("http", StringComparison.OrdinalIgnoreCase)
                         ? cert.Course?.ThumbnailUrl ?? string.Empty
                         : _uploadService.GeneratePublicSasUrl(cert.Course.ThumbnailUrl),
@@ -449,6 +455,59 @@ namespace LMSApi.BALLibrary.Services
             }
             
             return font;
+        }
+
+        public async Task<ShareCertificateResponse> GenerateShareLinkAsync(int userId, Guid certificateId, int minutes, string frontendUrl)
+        {
+            if (minutes < 5 || minutes > 60)
+                throw new ArgumentException("Minutes must be between 5 and 60.");
+
+            var cert = await _certificateRepository.GetByGuidAsync(certificateId);
+            if (cert == null || cert.UserId != userId)
+                throw new UnauthorizedAccessException("Certificate not found or does not belong to you.");
+
+            var token = Guid.NewGuid().ToString("N");
+            var cacheKey = $"cert_share_{token}";
+
+            var expiresAt = DateTime.UtcNow.AddMinutes(minutes);
+            var cacheValue = $"{certificateId}|{expiresAt:O}";
+
+            var options = new DistributedCacheEntryOptions
+            {
+                AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(minutes)
+            };
+
+            await _cache.SetStringAsync(cacheKey, cacheValue, options);
+
+            var shareUrl = $"{frontendUrl.TrimEnd('/')}/shared-certificate/{token}";
+
+            return new ShareCertificateResponse
+            {
+                Token = token,
+                ShareUrl = shareUrl,
+                ExpiresAt = DateTime.UtcNow.AddMinutes(minutes)
+            };
+        }
+
+        public async Task<CertificateVerificationResponse> GetSharedCertificateAsync(string token)
+        {
+            var cacheKey = $"cert_share_{token}";
+            var cacheValue = await _cache.GetStringAsync(cacheKey);
+
+            if (string.IsNullOrEmpty(cacheValue))
+            {
+                throw new KeyNotFoundException("Share link has expired or is invalid.");
+            }
+
+            var parts = cacheValue.Split('|');
+            if (parts.Length != 2 || !Guid.TryParse(parts[0], out var certId) || !DateTime.TryParse(parts[1], out var expiresAt))
+            {
+                throw new KeyNotFoundException("Share link has expired or is invalid.");
+            }
+
+            var remainingMinutes = (int)Math.Max(1, (expiresAt.ToUniversalTime() - DateTime.UtcNow).TotalMinutes);
+
+            return await VerifyCertificateAsync(certId, remainingMinutes, includeUrl: true);
         }
     }
 }

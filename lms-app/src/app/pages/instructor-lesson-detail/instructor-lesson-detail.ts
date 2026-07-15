@@ -13,6 +13,7 @@ import { LessonResourcesService } from '@services/lesson-resources.service';
 import { CourseBuilderService } from '@services/course-builder.service';
 import { LessonType } from '../../enums/lesson-types.enum';
 import { PublishStatus } from '../../enums/publish-status.enum';
+import { SecureMediaService } from '@services/secure-media.service';
 
 @Component({
   selector: 'app-instructor-lesson-detail',
@@ -27,6 +28,7 @@ export class InstructorLessonDetail implements OnInit, OnDestroy {
   private router = inject(Router);
   private route = inject(ActivatedRoute);
   private authService = inject(AuthService);
+  private secureMediaService = inject(SecureMediaService);
 
   protected get routePrefix(): string {
     return this.authService.userRole()?.toLowerCase() || 'instructor';
@@ -116,7 +118,19 @@ export class InstructorLessonDetail implements OnInit, OnDestroy {
 
         // Sanitize URL for iframe/video if it exists
         if (this.lesson.contentUrl) {
-           this.safeMediaUrl = this.sanitizer.bypassSecurityTrustResourceUrl(this.lesson.contentUrl);
+          if (normalized === 'Video' || normalized === 'Pdf') {
+            this.secureMediaService.getSecureUrl(this.lesson.contentUrl, this.layout.course()?.id || 0).subscribe({
+              next: (res) => {
+                this.safeMediaUrl = this.sanitizer.bypassSecurityTrustResourceUrl(res.url);
+              },
+              error: () => {
+                this.toastService.showError('Could not load secure media.');
+                this.safeMediaUrl = null;
+              }
+            });
+          } else {
+             this.safeMediaUrl = this.sanitizer.bypassSecurityTrustResourceUrl(this.lesson.contentUrl);
+          }
         } else {
            this.safeMediaUrl = null;
         }

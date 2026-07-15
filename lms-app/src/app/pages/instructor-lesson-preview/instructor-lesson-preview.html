@@ -1,0 +1,103 @@
+<div class="max-w-4xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+  <div *ngIf="isLoading()" class="flex justify-center py-16">
+    <app-loader></app-loader>
+  </div>
+
+  <div *ngIf="!isLoading() && lesson" class="space-y-6">
+    
+    <!-- Header -->
+    <div class="flex items-center gap-4 border-b border-border-light pb-4">
+      <button (click)="navigateBack()"
+        class="p-2 text-text-muted hover:text-primary hover:bg-primary-light rounded-lg transition border border-border-default bg-white shadow-sm flex items-center justify-center shrink-0">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+        </svg>
+      </button>
+      <div>
+        <p class="text-xs font-bold text-text-muted uppercase tracking-wide mb-1">Preview Lesson</p>
+        <h1 class="text-xl sm:text-2xl font-extrabold text-text-primary">{{ lesson.title }}</h1>
+      </div>
+    </div>
+
+    <!-- Media Area (Video on top) -->
+    <div class="bg-white rounded-xl shadow-sm border border-border-default p-4 sm:p-5">
+      <div *ngIf="lesson.type === 'Article' && parsedMarkdown" #articleContainer
+        class="relative w-full max-h-[70vh] bg-white rounded-lg group overflow-hidden flex flex-col border border-border-default shadow-sm"
+        [ngClass]="{'fixed inset-0 z-[100] !max-h-screen w-screen h-screen !rounded-none': isNativeFullscreen}">
+        <div class="absolute top-3 right-3 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity z-50">
+          <button (click)="toggleNativeFullscreen(articleContainer)"
+            class="p-2 bg-black/60 hover:bg-black/80 text-white rounded-lg backdrop-blur-sm transition-all shadow-lg border border-white/10"
+            [title]="isNativeFullscreen ? 'Exit Fullscreen' : 'Fullscreen'">
+            <svg *ngIf="!isNativeFullscreen" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" />
+            </svg>
+            <svg *ngIf="isNativeFullscreen" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M4 14h6v-6M20 14h-6v-6M4 10h6V4M20 10h-6V4" />
+            </svg>
+          </button>
+        </div>
+        <div class="prose prose-slate max-w-none prose-headings:font-bold prose-a:text-primary hover:prose-a:text-primary-hover prose-img:rounded-lg overflow-y-auto w-full p-4 md:p-8"
+          [ngClass]="{'max-w-4xl mx-auto h-full': isNativeFullscreen}" [innerHTML]="parsedMarkdown">
+        </div>
+      </div>
+
+      <div *ngIf="lesson.type === 'ExternalLink' && lesson.contentUrl"
+        class="p-6 bg-bg-surface rounded-lg border border-border-default flex items-center gap-4">
+        <div class="w-12 h-12 bg-white rounded-xl flex items-center justify-center text-primary shadow-sm border border-border-light shrink-0">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+          </svg>
+        </div>
+        <div>
+          <p class="text-sm font-bold text-text-primary mb-1">External Resource Link</p>
+          <a [href]="lesson.contentUrl" target="_blank"
+            class="text-sm text-primary font-semibold underline break-all hover:text-primary-hover transition">
+            {{ lesson.contentUrl }}
+          </a>
+        </div>
+      </div>
+
+      <div *ngIf="(lesson.type === 'Video' || lesson.type === 'Pdf') && safeMediaUrl"
+        class="bg-bg-surface rounded-lg border border-border-default overflow-hidden shadow-sm">
+        
+        <div *ngIf="lesson.type === 'Video'" #videoContainer class="relative w-full aspect-video bg-black group">
+          <video class="w-full h-full object-contain rounded-lg" controls [src]="safeMediaUrl"></video>
+          <div class="absolute top-3 right-3 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity z-50">
+            <button (click)="toggleNativeFullscreen(videoContainer)"
+              class="p-2 bg-black/60 hover:bg-black/80 text-white rounded-lg backdrop-blur-sm transition-all shadow-lg border border-white/10"
+              [title]="isNativeFullscreen ? 'Exit Fullscreen' : 'Fullscreen'">
+              <svg *ngIf="!isNativeFullscreen" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" />
+              </svg>
+              <svg *ngIf="isNativeFullscreen" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M4 14h6v-6M20 14h-6v-6M4 10h6V4M20 10h-6V4" />
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <div *ngIf="lesson.type === 'Pdf'" #pdfContainer class="relative w-full h-[60vh] bg-gray-100 group">
+          <iframe class="w-full h-full border-none rounded-lg" [src]="safeMediaUrl"></iframe>
+          <div class="absolute top-3 right-3 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity z-50">
+            <button (click)="toggleNativeFullscreen(pdfContainer)"
+              class="p-2 bg-black/60 hover:bg-black/80 text-white rounded-lg backdrop-blur-sm transition-all shadow-lg border border-white/10"
+              [title]="isNativeFullscreen ? 'Exit Fullscreen' : 'Fullscreen'">
+              <svg *ngIf="!isNativeFullscreen" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" />
+              </svg>
+              <svg *ngIf="isNativeFullscreen" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M4 14h6v-6M20 14h-6v-6M4 10h6V4M20 10h-6V4" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Discussion Area (below) -->
+    <div class="bg-white rounded-xl shadow-sm border border-border-default p-4 sm:p-5 mt-6">
+      <app-lesson-discussions *ngIf="lessonId" [lessonId]="lessonId"></app-lesson-discussions>
+    </div>
+
+  </div>
+</div>

@@ -6,6 +6,7 @@ import { NetworkErrorPage } from '@pages/network-error/network-error';
 import { ServerTimeoutPage } from '@pages/server-timeout/server-timeout';
 import { ResetPasswordPage } from '@pages/reset-password/reset-password';
 import { VerifyEmailPage } from '@pages/login/verify-email/verify-email';
+import { SharedCertificatePage } from '@pages/shared-certificate/shared-certificate';
 import { guestGuard } from '../guards/guest.guard';
 
 export const publicRoutes: Routes = [
@@ -16,5 +17,6 @@ export const publicRoutes: Routes = [
   { path: 'verify-certificate/:id', component: VerifyCertificatePage },
   { path: 'network-error', component: NetworkErrorPage },
   { path: 'timeout', component: ServerTimeoutPage },
-  { path: 'reset-password', component: ResetPasswordPage }
+  { path: 'reset-password', component: ResetPasswordPage },
+  { path: 'shared-certificate/:token', component: SharedCertificatePage }
 ];

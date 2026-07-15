@@ -34,7 +34,7 @@ Vector Database
       ↓
 RAG
       ↓
-OpenAI / Azure OpenAI
+GroqAI
       ↓
 AI Tutor
 

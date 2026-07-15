@@ -45,6 +45,13 @@ export class CertificatesPage implements OnInit {
   protected totalItems = signal(0);
   protected totalPages = signal(0);
 
+  // Sharing state
+  protected showShareModal = signal(false);
+  protected selectedCertForShare = signal<CertificateResponse | null>(null);
+  protected shareMinutes = signal(30);
+  protected generatedShareUrl = signal<string | null>(null);
+  protected isGeneratingShare = signal(false);
+
   // Client-side search filtering (only applies to current page now)
   protected filteredCertificates = computed(() => {
     let list = this.certificates();
@@ -160,5 +167,52 @@ export class CertificatesPage implements OnInit {
 
   protected cancelRegeneration(): void {
     this.showRegenerateModal.set(false);
+  }
+
+  // Sharing logic
+  protected openShareModal(cert: CertificateResponse): void {
+    this.selectedCertForShare.set(cert);
+    this.shareMinutes.set(30); // reset to default
+    this.generatedShareUrl.set(null);
+    this.showShareModal.set(true);
+  }
+
+  protected closeShareModal(): void {
+    this.showShareModal.set(false);
+    this.selectedCertForShare.set(null);
+    this.generatedShareUrl.set(null);
+  }
+
+  protected generateShareLink(): void {
+    const cert = this.selectedCertForShare();
+    if (!cert) return;
+
+    if (this.shareMinutes() < 5 || this.shareMinutes() > 60) {
+      this.toastService.showError('Minutes must be between 5 and 60');
+      return;
+    }
+
+    this.isGeneratingShare.set(true);
+    this.certificateService.shareCertificate(cert.certificateId, { minutes: this.shareMinutes() })
+      .pipe(untilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (res) => {
+          this.generatedShareUrl.set(res.shareUrl);
+          this.isGeneratingShare.set(false);
+        },
+        error: (err) => {
+          this.toastService.showApiError(err, 'Failed to generate share link');
+          this.isGeneratingShare.set(false);
+        }
+      });
+  }
+
+  protected copyShareLink(): void {
+    const url = this.generatedShareUrl();
+    if (url) {
+      navigator.clipboard.writeText(url).then(() => {
+        this.toastService.showSuccess('Link copied to clipboard!');
+      });
+    }
   }
 }
