@@ -158,9 +158,9 @@ namespace LMSApi.BALLibrary.Utils
           </html>";
         }
 
-        public static string GetCertificateIssuedTemplate(string learnerName, string courseName, string certificateImageUrl, Guid certificateId)
+        public static string GetCertificateIssuedTemplate(string learnerName, string courseName, string certificateImageUrl, Guid certificateId, string frontendUrl)
         {
-            var verifyUrl = $"https://yourfrontend.com/verify-certificate/{certificateId}";
+            var verifyUrl = $"{frontendUrl.TrimEnd('/')}/verify-certificate/{certificateId}";
             return $@"<html>
             <body>
               <h2>Congratulations on Completing Your Course!</h2>

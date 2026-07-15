@@ -136,9 +136,8 @@ namespace LMSApi.BALLibrary.Services
             _logger?.LogInformation("User entity created for {Email} with ID: {UserId}.", user.Email, user.Id);
 
             var relative = $"/auth/verify?email={Uri.EscapeDataString(request.Email)}&token={user.VerificationToken}";
-            var baseUrl = _configuration["App:BaseUrl"] ?? string.Empty;
-            var basePath = _configuration["App:BasePath"] ?? string.Empty;
-            var link = string.IsNullOrEmpty(baseUrl) ? relative : (baseUrl.TrimEnd('/') + basePath + relative);
+            var frontendUrl = _configuration["ApplicationUrls:Frontend"] ?? string.Empty;
+            var link = string.IsNullOrEmpty(frontendUrl) ? relative : (frontendUrl.TrimEnd('/') + relative);
 
             var html = EmailTemplate.GetVerificationTemplate(request.Email, link);
             Message msg = new EmailMessage(request.Email, "Please verify your email", html) { IsHtml = true };
@@ -215,9 +214,8 @@ namespace LMSApi.BALLibrary.Services
             await _userRepository.UpdateAsync(user);
 
             var relative = $"/auth/verify?email={Uri.EscapeDataString(request.Email)}&token={user.VerificationToken}";
-            var baseUrl = _configuration["App:BaseUrl"] ?? string.Empty;
-            var basePath = _configuration["App:BasePath"] ?? string.Empty;
-            var link = string.IsNullOrEmpty(baseUrl) ? relative : (baseUrl.TrimEnd('/') + basePath + relative);
+            var frontendUrl = _configuration["ApplicationUrls:Frontend"] ?? string.Empty;
+            var link = string.IsNullOrEmpty(frontendUrl) ? relative : (frontendUrl.TrimEnd('/') + relative);
             var html = EmailTemplate.GetVerificationTemplate(request.Email, link);
             Message msg = new EmailMessage(request.Email, "Your verification link", html) { IsHtml = true };
             await _notificationService.Send(msg);
@@ -243,9 +241,8 @@ namespace LMSApi.BALLibrary.Services
             await _userRepository.UpdateAsync(user);
 
             var relative = $"/auth/reset-password?email={Uri.EscapeDataString(request.Email)}&token={user.VerificationToken}";
-            var baseUrl = _configuration["App:BaseUrl"] ?? string.Empty;
-            var basePath = _configuration["App:BasePath"] ?? string.Empty;
-            var link = string.IsNullOrEmpty(baseUrl) ? relative : (baseUrl.TrimEnd('/') + basePath + relative);
+            var frontendUrl = _configuration["ApplicationUrls:Frontend"] ?? string.Empty;
+            var link = string.IsNullOrEmpty(frontendUrl) ? relative : (frontendUrl.TrimEnd('/') + relative);
             var html = EmailTemplate.GetPasswordResetTemplate(request.Email, link);
             
             Message msg = new EmailMessage(request.Email, "Reset Your Password", html) { IsHtml = true };

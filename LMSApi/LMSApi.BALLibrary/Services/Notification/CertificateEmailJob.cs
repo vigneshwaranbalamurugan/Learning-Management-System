@@ -12,17 +12,20 @@ namespace LMSApi.BALLibrary.Services.Notification
         private readonly IUserRepository _userRepository;
         private readonly IUserProfileRepository _userProfileRepository;
         private readonly ILogger<CertificateEmailJob> _logger;
+        private readonly Microsoft.Extensions.Configuration.IConfiguration _configuration;
 
         public CertificateEmailJob(
             INotificationService notificationService,
             IUserRepository userRepository,
             IUserProfileRepository userProfileRepository,
-            ILogger<CertificateEmailJob> logger)
+            ILogger<CertificateEmailJob> logger,
+            Microsoft.Extensions.Configuration.IConfiguration configuration)
         {
             _notificationService = notificationService;
             _userRepository = userRepository;
             _userProfileRepository = userProfileRepository;
             _logger = logger;
+            _configuration = configuration;
         }
 
         public async Task ExecuteAsync(int userId, string courseName, string certificateImageUrl, Guid certificateId)
@@ -39,7 +42,8 @@ namespace LMSApi.BALLibrary.Services.Notification
                 var profile = await _userProfileRepository.GetByUserIdAsync(userId);
                 var learnerName = profile != null ? $"{profile.FirstName} {profile.LastName}".Trim() : user.Email;
 
-                var body = EmailTemplate.GetCertificateIssuedTemplate(learnerName, courseName, certificateImageUrl, certificateId);
+                var frontendUrl = _configuration["ApplicationUrls:Frontend"] ?? "http://localhost:4200";
+                var body = EmailTemplate.GetCertificateIssuedTemplate(learnerName, courseName, certificateImageUrl, certificateId, frontendUrl);
                 var subject = $"Your Certificate for {courseName} is Ready!";
 
                 var msg = new EmailMessage(user.Email, subject, body) { IsHtml = true };
