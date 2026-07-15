@@ -122,6 +122,7 @@ jobs:
           sed -i "s|<UAMI_CLIENT_ID>|${{ secrets.UAMI_CLIENT_ID }}|g"    azure/k8s/serviceaccount.yaml
           sed -i "s|<UAMI_CLIENT_ID>|${{ secrets.UAMI_CLIENT_ID }}|g"    azure/k8s/secretproviderclass.yaml
           sed -i "s|<AZURE_TENANT_ID>|${{ secrets.AZURE_TENANT_ID }}|g"  azure/k8s/secretproviderclass.yaml
+          sed -i "s|<KEY_VAULT_NAME>|${{ secrets.KEY_VAULT_NAME }}|g"    azure/k8s/secretproviderclass.yaml
 
       # ── Apply all K8s manifests ────────────────────────────────────────────
       - name: Apply K8s Manifests

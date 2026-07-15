@@ -58,8 +58,8 @@ az deployment group create \
 ```
 
 Save the output — you'll need these values shortly:
-- `keyVaultName.value`
-- `uamiClientId.value`
+- `keyVaultName.value` → save as GitHub Secret **`KEY_VAULT_NAME`**
+- `uamiClientId.value` → save as GitHub Secret **`UAMI_CLIENT_ID`**
 - `uamiPrincipalId.value` *(printed for reference, already used by Bicep internally)*
 - `postgresHost.value`
 - `redisHost.value`

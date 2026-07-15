@@ -76,6 +76,7 @@ jobs:
             azure-key-vault-provider/csi-secrets-store-provider-azure \
             --namespace kube-system \
             --set secrets-store-csi-driver.install=false \
+            --set linux.workloadIdentity.enabled=true \
             --wait
 
           echo "✅ Azure Key Vault CSI Provider installed." >> "$GITHUB_STEP_SUMMARY"
