@@ -85,6 +85,5 @@ jobs:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           action: ${{ github.event_name == 'pull_request' && github.event.action == 'closed' && 'close' || 'upload' }}
-          app_location: "lms-app"
-          output_location: "dist/lms-app/browser"
+          app_location: "lms-app/dist/lms-app/browser"
           skip_app_build: true   # We already built above with correct Node version
