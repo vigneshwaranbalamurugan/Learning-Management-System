@@ -26,6 +26,18 @@ namespace LMSApi.DALLibrary.Contexts.Configurations
 
             builder.Property(c => c.UpdatedAt)
                 .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+            // Seed initial data
+            builder.HasData(
+                new CourseCategories
+                {
+                    Id = 1,
+                    Name = "Technology",
+                    Description = "Learn programming, networking, and all things tech.",
+                    CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc),
+                    UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc)
+                }
+            );
         }
     }
 }
