@@ -304,6 +304,8 @@ builder.Services.AddStackExchangeRedisCache(options =>
 
     app.UseRequestTimeouts();
 
+    app.UseWebSockets(); // MUST be called before UseAuthentication and MapHub
+
     app.UseAuthentication();
     app.UseMiddleware<TokenRevocationMiddleware>();
     app.UseAuthorization();

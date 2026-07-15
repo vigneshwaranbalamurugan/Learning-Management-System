@@ -27,7 +27,7 @@ namespace LMSApi.BALLibrary.Utils
 
 			var fromAddress = string.IsNullOrWhiteSpace(fromDomain)
 				? userName ?? string.Empty
-				: "Noreply@" + fromDomain;
+				: fromDomain.Contains("@") ? fromDomain : "Noreply@" + fromDomain;
 
 			using var smtp = new SmtpClient(host, port)
 			{
