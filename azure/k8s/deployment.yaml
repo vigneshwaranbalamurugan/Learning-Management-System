@@ -1,0 +1,92 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: lms-api
+  namespace: lms
+  labels:
+    app: lms-api
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: lms-api
+  template:
+    metadata:
+      labels:
+        app: lms-api
+        # Required label for AKS Workload Identity token injection
+        azure.workload.identity/use: "true"
+    spec:
+      serviceAccountName: lms-workload-sa
+
+      # ── imagePullSecrets: Docker Hub credentials ────────────────────────────
+      # 'dockerhub-pull-secret' is created once by the infra workflow using
+      # your DOCKERHUB_USERNAME + DOCKERHUB_TOKEN GitHub Secrets.
+      # No ACR, no Azure role assignment needed.
+      imagePullSecrets:
+        - name: dockerhub-pull-secret
+
+      # ── CSI Volume: pulls secrets from Key Vault → K8s Secret lms-kv-secrets
+      volumes:
+        - name: secrets-store
+          csi:
+            driver: secrets-store.csi.k8s.io
+            readOnly: true
+            volumeAttributes:
+              secretProviderClass: lms-keyvault-secrets
+
+      containers:
+        - name: lms-api
+          # Image on Docker Hub — substituted at deploy time by backend workflow.
+          # Format: <DOCKERHUB_USERNAME>/lms-api:<sha-TAG>
+          image: <DOCKERHUB_USERNAME>/lms-api:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+
+          # ── Resource limits ──────────────────────────────────────────────
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "256Mi"
+            limits:
+              cpu: "1000m"
+              memory: "512Mi"
+
+          # ── CSI volume mount (triggers secret sync into lms-kv-secrets) ──
+          volumeMounts:
+            - name: secrets-store
+              mountPath: "/mnt/secrets-store"
+              readOnly: true
+
+          # ── Non-secret config from ConfigMap ─────────────────────────────
+          envFrom:
+            - configMapRef:
+                name: lms-config
+            # Secrets from Key Vault (synced via CSI Driver → K8s Secret)
+            - secretRef:
+                name: lms-kv-secrets
+
+          # ── Dynamic env vars (substituted by backend workflow) ────────────
+          env:
+            - name: App__BaseUrl
+              value: "http://<AKS_EXTERNAL_IP>"
+            - name: ApplicationUrls__Frontend
+              value: "https://<SWA_HOSTNAME>"
+
+          # ── Health probes ────────────────────────────────────────────────
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 15
+            failureThreshold: 3
+
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            failureThreshold: 3

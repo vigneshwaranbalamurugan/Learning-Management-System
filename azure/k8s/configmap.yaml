@@ -1,0 +1,73 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: lms-config
+  namespace: lms
+data:
+  # ── App ──────────────────────────────────────────────────────────────────
+  App__Name: "CourseHub"
+  App__BasePath: "api/v1"
+
+  # ── Jwt (non-secret metadata only) ───────────────────────────────────────
+  Jwt__Issuer: "LMSApiProd"
+  Jwt__Audience: "LMSApiUsersProd"
+  Jwt__ExpiresMinutes: "30"
+  Jwt__RefreshTokenExpiresDays: "7"
+  Jwt__SessionRefreshTokenExpiresDays: "1"
+
+  # ── Cloudinary (non-secret folder config) ────────────────────────────────
+  Cloudinary__Folder: "lms/profile-pictures"
+  Cloudinary__CourseThumbnailFolder: "lms/course-thumbnails"
+  Cloudinary__CourseVideoFolder: "lms/course-videos"
+
+  # ── Azure Blob (non-secret config) ───────────────────────────────────────
+  AzureBlob__ContainerName: "lms-media"
+  AzureBlob__PublicContainerName: "lms-public"
+  AzureBlob__VideoSasTokenExpiryMinutes: "15"
+  AzureBlob__PdfSasTokenExpiryMinutes: "5"
+
+  # ── Redis (non-secret config) ─────────────────────────────────────────────
+  Redis__InstanceName: "lms:"
+
+  # ── Smtp (non-secret config) ──────────────────────────────────────────────
+  Smtp__Host: "smtp.gmail.com"
+  Smtp__Port: "587"
+  Smtp__From: "noreply@lms.com"
+
+  # ── Cache TTLs ────────────────────────────────────────────────────────────
+  Cache__CategoriesTtlMinutes: "1440"
+  Cache__ProfileTtlMinutes: "15"
+  Cache__CourseDetailTtlMinutes: "30"
+  Cache__CourseStatsTtlMinutes: "10"
+
+  # ── File Size Limits ──────────────────────────────────────────────────────
+  FileSizeLimits__ProfileImageinMB: "5"
+  FileSizeLimits__CourseThumbnailInMB: "5"
+  FileSizeLimits__CourseVideoInMB: "50"
+  FileSizeLimits__AssignmentAttachmentInMB: "5"
+  FileSizeLimits__LessonVideoInMB: "50"
+  FileSizeLimits__LessonPdfInMB: "10"
+
+  # ── Rate Limiting ─────────────────────────────────────────────────────────
+  RateLimiting__LoginPermitLimit: "5"
+  RateLimiting__ForgotPasswordPermitLimit: "3"
+  RateLimiting__OtpSendPermitLimit: "3"
+  RateLimiting__OtpVerifyPermitLimit: "3"
+  RateLimiting__RegisterPermitLimit: "5"
+  RateLimiting__PublicCourseListingPermitLimit: "100"
+  RateLimiting__SearchCoursesPermitLimit: "60"
+  RateLimiting__EnrollCoursePermitLimit: "10"
+  RateLimiting__PaymentInitializationPermitLimit: "3"
+  RateLimiting__QuizSubmitPermitLimit: "20"
+  RateLimiting__AssignmentSubmitPermitLimit: "10"
+  RateLimiting__FileUploadPermitLimit: "20"
+  RateLimiting__CertificateDownloadPermitLimit: "30"
+  RateLimiting__NotificationApisPermitLimit: "60"
+  RateLimiting__AdminApisPermitLimit: "200"
+  RateLimiting__SignalRHubConnectNotificationPermitLimit: "20"
+  RateLimiting__SignalRHubConnectVideoProgressPermitLimit: "20"
+
+  # ── Security (hashing params — not secret values) ─────────────────────────
+  Security__SaltSize: "16"
+  Security__KeySize: "32"
+  Security__Iterations: "100000"

@@ -1,0 +1,106 @@
+name: ☸️ K8s Cluster Setup (CSI Driver + imagePullSecret)
+
+# ──────────────────────────────────────────────────────────────────────────────
+# NO AZURE AUTHENTICATION — no Service Principal, no App Registration needed.
+#
+# This workflow only needs:
+#   • KUBE_CONFIG_B64  — base64-encoded kubeconfig (get locally, see Setup.MD)
+#   • DOCKERHUB_USERNAME + DOCKERHUB_TOKEN — for the imagePullSecret
+#
+# Run this ONCE after you have deployed the Bicep infrastructure locally.
+# It installs the Secrets Store CSI Driver on AKS and creates the
+# Docker Hub pull secret so pods can pull images.
+#
+# All Azure work (Bicep deploy, Key Vault population) is done locally
+# using YOUR OWN `az login` session — see Setup.MD for the commands.
+# ──────────────────────────────────────────────────────────────────────────────
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  setup-k8s:
+    name: Setup AKS (CSI Driver + Docker Hub Secret)
+    runs-on: ubuntu-latest
+
+    steps:
+      # ── Checkout ──────────────────────────────────────────────────────────
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # ── Restore kubeconfig from GitHub Secret ──────────────────────────────
+      # KUBE_CONFIG_B64 is the base64-encoded ~/.kube/config file.
+      # Get it locally (after running `az aks get-credentials`):
+      #   cat ~/.kube/config | base64 | pbcopy   (macOS)
+      # Then paste as GitHub Secret: KUBE_CONFIG_B64
+      - name: Configure kubectl
+        run: |
+          mkdir -p ~/.kube
+          echo "${{ secrets.KUBE_CONFIG_B64 }}" | base64 -d > ~/.kube/config
+          chmod 600 ~/.kube/config
+          kubectl cluster-info
+
+      # ── Create lms namespace ───────────────────────────────────────────────
+      - name: Create lms namespace
+        run: |
+          kubectl create namespace lms --dry-run=client -o yaml | kubectl apply -f -
+
+      # ── Install Secrets Store CSI Driver ──────────────────────────────────
+      # Required for Key Vault secret injection into pods.
+      # syncSecret.enabled — syncs KV secrets to a K8s Secret object (envFrom)
+      - name: Install CSI Driver (secrets-store)
+        run: |
+          helm repo add secrets-store-csi-driver \
+            https://kubernetes-sigs.github.io/secrets-store-csi-driver/charts
+          helm repo update
+
+          helm upgrade --install csi-secrets-store \
+            secrets-store-csi-driver/secrets-store-csi-driver \
+            --namespace kube-system \
+            --set syncSecret.enabled=true \
+            --set enableSecretRotation=true \
+            --wait
+
+          echo "✅ Secrets Store CSI Driver installed." >> "$GITHUB_STEP_SUMMARY"
+
+      # ── Install Azure Key Vault Provider for CSI ───────────────────────────
+      - name: Install Azure KV Provider
+        run: |
+          helm repo add azure-key-vault-provider \
+            https://azure.github.io/secrets-store-csi-driver-provider-azure/charts
+
+          helm upgrade --install azure-kvp \
+            azure-key-vault-provider/csi-secrets-store-provider-azure \
+            --namespace kube-system \
+            --wait
+
+          echo "✅ Azure Key Vault CSI Provider installed." >> "$GITHUB_STEP_SUMMARY"
+
+      # ── Create Docker Hub imagePullSecret ─────────────────────────────────
+      # Allows AKS to pull the lms-api image from Docker Hub.
+      # --dry-run=client -o yaml | kubectl apply -f - makes it idempotent.
+      - name: Create Docker Hub imagePullSecret
+        run: |
+          kubectl create secret docker-registry dockerhub-pull-secret \
+            --docker-server="https://index.docker.io/v1/" \
+            --docker-username="${{ secrets.DOCKERHUB_USERNAME }}" \
+            --docker-password="${{ secrets.DOCKERHUB_TOKEN }}" \
+            --namespace lms \
+            --dry-run=client -o yaml | kubectl apply -f -
+
+          echo "✅ dockerhub-pull-secret created in namespace lms." >> "$GITHUB_STEP_SUMMARY"
+
+      # ── Verify cluster state ───────────────────────────────────────────────
+      - name: Verify
+        run: |
+          echo "### ✅ K8s Setup Complete" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "**CSI Driver pods:**" >> "$GITHUB_STEP_SUMMARY"
+          kubectl get pods -n kube-system -l app=secrets-store-csi-driver \
+            --no-headers >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "**Namespace lms:**" >> "$GITHUB_STEP_SUMMARY"
+          kubectl get all -n lms --no-headers 2>/dev/null >> "$GITHUB_STEP_SUMMARY" \
+            || echo "(empty — will be populated by backend deploy)" >> "$GITHUB_STEP_SUMMARY"

@@ -1,0 +1,26 @@
+## .dockerignore for LMSApi Docker build
+## Context root: LMSApi/
+
+# Build artifacts
+**/bin/
+**/obj/
+**/TestReport/
+
+# Local secrets / dev config
+**/appsettings.Development.json
+**/appsettings.Local.json
+**/.user
+**/*.user
+
+# Logs
+**/logs/
+
+# IDE files
+**/.vs/
+**/.idea/
+**/*.suo
+**/*.DS_Store
+
+# Git
+**/.git/
+**/.gitignore

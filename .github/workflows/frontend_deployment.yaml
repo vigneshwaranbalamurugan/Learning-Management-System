@@ -1,48 +1,68 @@
-name: Deploy Angular App
+name: 🌐 Deploy Frontend (Azure Static Web Apps)
 
+# ──────────────────────────────────────────────────────────────────────────────
+# Deploys the Angular frontend to Azure Static Web Apps.
+# Triggers on push to main (frontend path only) or on workflow_dispatch.
+# Environment variables (non-secret) are set via GitHub Variables.
+# Razorpay publishable key is a GitHub Secret.
+# ──────────────────────────────────────────────────────────────────────────────
 on:
   push:
     branches:
+      - feature/azure_storage
+    paths:
+      - 'lms-app/**'
+      - '.github/workflows/frontend_deployment.yaml'
+  pull_request:
+    types: [opened, synchronize, reopened, closed]
+    branches:
       - main
+    paths:
+      - 'lms-app/**'
   workflow_dispatch:
 
 permissions:
   contents: read
-  pages: write
   id-token: write
 
 concurrency:
-  group: "pages"
+  group: "swa-${{ github.ref }}"
   cancel-in-progress: true
 
 jobs:
-  build:
+  build-and-deploy:
+    name: Build Angular & Deploy to SWA
     runs-on: ubuntu-latest
-    environment: Development
+    environment: Production
+
     defaults:
       run:
         working-directory: lms-app
 
     steps:
+      # ── Checkout ──────────────────────────────────────────────────────────
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          submodules: true
 
-      - name: Setup Node
+      # ── Node.js ───────────────────────────────────────────────────────────
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
           cache-dependency-path: lms-app/package-lock.json
 
-      - name: Setup Pages
-        uses: actions/configure-pages@v5
-
+      # ── Install Dependencies ───────────────────────────────────────────────
       - name: Install Dependencies
         run: npm ci
 
+      # ── Generate environment.ts from secrets/vars ─────────────────────────
+      # We write this file at build time so no secrets are committed to git.
       - name: Generate Environment File
         run: |
-          cat > src/environments/environment.ts << EOF
+          cat > src/environments/environment.ts << 'EOF'
           export const environment = {
             production: true,
             apiUrl: '${{ vars.APIURL }}',
@@ -52,26 +72,19 @@ jobs:
           };
           EOF
 
+      # ── Build Angular ──────────────────────────────────────────────────────
       - name: Build Angular App
-        run: npm run build -- --configuration production --base-href /Learning-Management-System/
+        run: npm run build -- --configuration production
 
-      - name: Verify Build Output
-        run: |
-          find dist -type f | head -100
-
-      - name: Upload Artifact
-        uses: actions/upload-pages-artifact@v3
+      # ── Deploy to Azure Static Web Apps ───────────────────────────────────
+      # On PR: deploys to a preview environment automatically.
+      # On merge to main: deploys to production.
+      - name: Deploy to Azure Static Web Apps
+        uses: Azure/static-web-apps-deploy@v1
         with:
-          path: lms-app/dist/lms-app/browser
-
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-
-    steps:
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          action: ${{ github.event_name == 'pull_request' && github.event.action == 'closed' && 'close' || 'upload' }}
+          app_location: "lms-app"
+          output_location: "dist/lms-app/browser"
+          skip_app_build: true   # We already built above with correct Node version
