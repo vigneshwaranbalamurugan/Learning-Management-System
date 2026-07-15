@@ -4,16 +4,14 @@
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 
-# Copy solution and all project files first (layer-cache friendly)
-COPY LMSApi.slnx ./
+# Copy all project files first (layer-cache friendly)
 COPY LMSApi.API/LMSApi.API.csproj                       LMSApi.API/
 COPY LMSApi.BALLibrary/LMSApi.BALLibrary.csproj         LMSApi.BALLibrary/
 COPY LMSApi.DALLibrary/LMSApi.DALLibrary.csproj         LMSApi.DALLibrary/
 COPY LMSApi.ModelLibrary/LMSApi.ModelLibrary.csproj     LMSApi.ModelLibrary/
-COPY LMSApi.Tests/LMSApi.Tests.csproj                   LMSApi.Tests/
 
-# Restore NuGet packages
-RUN dotnet restore LMSApi.slnx
+# Restore NuGet packages for the API project (automatically restores dependencies)
+RUN dotnet restore LMSApi.API/LMSApi.API.csproj
 
 # Copy remaining source code
 COPY . .
