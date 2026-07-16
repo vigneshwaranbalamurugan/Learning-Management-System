@@ -149,8 +149,17 @@ jobs:
           # Hit /health via port-forward (runs in background for the duration of the check)
           kubectl port-forward svc/lms-ai-engine-svc 18001:80 -n lms &
           PF_PID=$!
-          sleep 5
-          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:18001/health)
+          
+          echo "Waiting for port-forward to open..."
+          HTTP_CODE="000"
+          for i in {1..10}; do
+            sleep 2
+            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:18001/health || echo "000")
+            if [ "$HTTP_CODE" = "200" ]; then
+              break
+            fi
+          done
+          
           kill $PF_PID 2>/dev/null || true
 
           if [ "$HTTP_CODE" = "200" ]; then
