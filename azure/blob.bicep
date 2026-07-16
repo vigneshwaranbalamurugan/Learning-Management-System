@@ -37,6 +37,39 @@ resource storageAccount 'Microsoft.Storage/storageAccounts@2023-05-01' = {
 resource blobService 'Microsoft.Storage/storageAccounts/blobServices@2023-05-01' = {
   parent: storageAccount
   name: 'default'
+  properties: {
+    cors: {
+      corsRules: [
+        {
+          allowedOrigins: [
+            '*'
+          ]
+          allowedMethods: [
+            'GET'
+            'OPTIONS'
+            'HEAD'
+          ]
+          maxAgeInSeconds: 86400
+          exposedHeaders: [
+            'Accept-Ranges'
+            'Content-Range'
+            'Content-Encoding'
+            'Content-Length'
+            'Content-Type'
+            '*'
+          ]
+          allowedHeaders: [
+            'Range'
+            'Accept'
+            'Origin'
+            'Content-Type'
+            'Authorization'
+            '*'
+          ]
+        }
+      ]
+    }
+  }
 }
 
 // Private container — access via SAS tokens (videos, PDFs)
