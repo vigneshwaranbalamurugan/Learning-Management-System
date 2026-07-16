@@ -18,12 +18,17 @@ APIURL="https://lms-api.${NGINX_IP}.nip.io/api/v1"
 HUBURL="https://lms-api.${NGINX_IP}.nip.io/hubs"
 HANGFIREURL="https://lms-api.${NGINX_IP}.nip.io/hangfire"
 
-echo "🔄 Updating GitHub Variables..."
-
+echo "🔄 Updating GitHub Variables (Repo level)..."
 gh variable set AKS_EXTERNAL_IP -b "$NGINX_IP"
 gh variable set APIURL -b "$APIURL"
 gh variable set HUBURL -b "$HUBURL"
 gh variable set HANGFIREURL -b "$HANGFIREURL"
+
+echo "🔄 Updating GitHub Variables (Development Environment level)..."
+gh variable set AKS_EXTERNAL_IP -b "$NGINX_IP" -e Development
+gh variable set APIURL -b "$APIURL" -e Development
+gh variable set HUBURL -b "$HUBURL" -e Development
+gh variable set HANGFIREURL -b "$HANGFIREURL" -e Development
 
 echo "🎉 GitHub Variables updated successfully!"
 echo ""

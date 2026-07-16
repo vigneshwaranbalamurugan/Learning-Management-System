@@ -12,8 +12,4 @@ resources:
   - service.yaml
   - ingress.yaml
 
-  # ── AI Engine ─────────────────────────────────────────────────────────────
-  - ai-engine-configmap.yaml
-  - ai-engine-pvc.yaml
-  - ai-engine-service.yaml
-  - ai-engine-deployment.yaml
+

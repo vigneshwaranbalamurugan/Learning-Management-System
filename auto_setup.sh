@@ -146,10 +146,14 @@ echo -e "${GREEN}Successfully populated 13 Key Vault secrets!${NC}"
 
 # ─── 5. Configure AKS and GitHub Secrets ───────────────────────────────────────
 echo -e "\n${YELLOW}Getting AKS Credentials...${NC}"
-az aks get-credentials --resource-group "$RG" --name lms-aks-dev --overwrite-existing
-KUBE_CONFIG_B64=$(cat ~/.kube/config | base64)
+# Isolate the config to prevent uploading stale clusters from ~/.kube/config
+KUBECONFIG=~/.kube/clean_config az aks get-credentials --resource-group "$RG" --name lms-aks-dev --overwrite-existing
+KUBE_CONFIG_B64=$(cat ~/.kube/clean_config | base64 | tr -d '\n')
 
-echo -e "${YELLOW}Updating GitHub Secrets...${NC}"
+# Also update the user's local config for their own terminal
+az aks get-credentials --resource-group "$RG" --name lms-aks-dev --overwrite-existing
+
+echo -e "${YELLOW}Updating GitHub Secrets (Repo level)...${NC}"
 gh secret set KUBE_CONFIG_B64 -b "$KUBE_CONFIG_B64"
 gh secret set AZURE_TENANT_ID -b "$TENANT_ID"
 gh secret set UAMI_CLIENT_ID -b "$UAMI_CLIENT_ID"
@@ -157,9 +161,21 @@ gh secret set AZURE_STATIC_WEB_APPS_API_TOKEN -b "$SWA_TOKEN"
 gh secret set DOCKERHUB_USERNAME -b "$DOCKERHUB_USERNAME"
 gh secret set DOCKERHUB_TOKEN -b "$DOCKERHUB_TOKEN"
 gh secret set RAZORPAYKEY -b "$RAZORPAY_KEY_ID"
+gh secret set KEY_VAULT_NAME -b "$KV_NAME"
+
+echo -e "${YELLOW}Updating GitHub Secrets (Development Environment level)...${NC}"
+gh secret set KUBE_CONFIG_B64 -b "$KUBE_CONFIG_B64" -e Development
+gh secret set AZURE_TENANT_ID -b "$TENANT_ID" -e Development
+gh secret set UAMI_CLIENT_ID -b "$UAMI_CLIENT_ID" -e Development
+gh secret set AZURE_STATIC_WEB_APPS_API_TOKEN -b "$SWA_TOKEN" -e Development
+gh secret set DOCKERHUB_USERNAME -b "$DOCKERHUB_USERNAME" -e Development
+gh secret set DOCKERHUB_TOKEN -b "$DOCKERHUB_TOKEN" -e Development
+gh secret set RAZORPAYKEY -b "$RAZORPAY_KEY_ID" -e Development
+gh secret set KEY_VAULT_NAME -b "$KV_NAME" -e Development
 
 echo -e "${YELLOW}Updating GitHub Variables...${NC}"
 gh variable set SWA_HOSTNAME -b "$SWA_HOSTNAME"
+gh variable set SWA_HOSTNAME -b "$SWA_HOSTNAME" -e Development
 
 echo -e "\n${GREEN}🎉 Setup Complete! 🎉${NC}"
 echo -e "All Azure infrastructure is deployed, Key Vault is populated, and GitHub Secrets are set!"

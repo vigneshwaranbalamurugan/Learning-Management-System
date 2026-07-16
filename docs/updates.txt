@@ -56,3 +56,7 @@ Notes
 Flash Cards
 
 3. Rag based ai tutor
+
+
+Notifications
+Responsive pages
