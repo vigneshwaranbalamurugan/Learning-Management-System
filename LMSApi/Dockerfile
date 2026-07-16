@@ -26,6 +26,12 @@ RUN dotnet publish LMSApi.API/LMSApi.API.csproj \
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
 WORKDIR /app
 
+# Install fonts required for PDF generation (PdfSharpCore)
+USER root
+RUN apt-get update \
+    && apt-get install -y fontconfig fonts-liberation \
+    && rm -rf /var/lib/apt/lists/*
+
 # .NET 8+ images have a built-in non-root user named 'app'
 # We don't need to manually create one.
 
