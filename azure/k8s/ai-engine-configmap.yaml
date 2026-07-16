@@ -15,7 +15,7 @@ data:
   TOKENIZERS_PARALLELISM: "false"
 
   # ── Groq Model Configuration ──────────────────────────────────────────────
-  GROQ_CHAT_MODEL: "llama-3.1-70b-versatile"
+  GROQ_CHAT_MODEL: "llama-3.3-70b-versatile"
   GROQ_WHISPER_MODEL: "whisper-large-v3"
 
   # Max audio file size sent to Groq Whisper (bytes). Groq hard limit = 25 MB.
