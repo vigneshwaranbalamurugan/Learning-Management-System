@@ -95,6 +95,7 @@ jobs:
           helm upgrade --install ingress-nginx ingress-nginx/ingress-nginx \
             --namespace ingress-nginx \
             --create-namespace \
+            --set controller.service.annotations."service\.beta\.kubernetes\.io/azure-load-balancer-health-probe-request-path"=/healthz \
             --wait
 
       # ── Install Cert-Manager ───────────────────────────────────────────────
@@ -107,6 +108,14 @@ jobs:
             --create-namespace \
             --set installCRDs=true \
             --wait
+
+      # ── Apply ClusterIssuer ────────────────────────────────────────────────
+      - name: Apply ClusterIssuer
+        run: |
+          # Wait a few seconds for Cert-Manager webhooks to be fully ready
+          sleep 10
+          kubectl apply -f azure/k8s/clusterissuer.yaml
+
 
       # ── Verify cluster state ───────────────────────────────────────────────
       - name: Verify
