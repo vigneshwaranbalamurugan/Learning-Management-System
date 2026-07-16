@@ -15,3 +15,4 @@ uvicorn main:app --host 0.0.0.0 --port 8001
 
 # 4. Add to appsettings.json:
 #    "AiEngine": { "BaseUrl": "http://localhost:8001", "InternalApiKey": "<same key as .env>" }
+ 
