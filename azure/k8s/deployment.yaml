@@ -51,7 +51,7 @@ spec:
               memory: "256Mi"
             limits:
               cpu: "1000m"
-              memory: "512Mi"
+              memory: "1024Mi"
 
           # ── CSI volume mount (triggers secret sync into lms-kv-secrets) ──
           volumeMounts:
