@@ -77,20 +77,33 @@ app.add_middleware(
 )
 
 
+from fastapi.responses import JSONResponse
+
 # ── Security Middleware ────────────────────────────────────────────────────────
 
 @app.middleware("http")
 async def verify_internal_api_key(request: Request, call_next):
     """
     Reject any request that doesn't carry the correct X-Internal-Api-Key header.
+    Allows /health and OpenAPI routes to bypass authentication.
     """
+    path = request.url.path
+    if path in ["/health", "/docs", "/openapi.json"]:
+        return await call_next(request)
+
     if not INTERNAL_API_KEY:
-        raise HTTPException(status_code=503, detail="Server misconfigured: INTERNAL_API_KEY not set.")
+        return JSONResponse(
+            status_code=503, 
+            content={"detail": "Server misconfigured: INTERNAL_API_KEY not set."}
+        )
 
     provided_key = request.headers.get("X-Internal-Api-Key", "")
     if provided_key != INTERNAL_API_KEY:
         logger.warning("Rejected request with invalid API key from %s", request.client)
-        raise HTTPException(status_code=401, detail="Unauthorized: invalid internal API key.")
+        return JSONResponse(
+            status_code=401, 
+            content={"detail": "Unauthorized: invalid internal API key."}
+        )
 
     return await call_next(request)
 
