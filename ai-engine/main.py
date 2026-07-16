@@ -19,6 +19,10 @@ from dotenv import load_dotenv
 # Load .env before anything else
 load_dotenv()
 
+# Force disable ChromaDB telemetry and HuggingFace warnings before imports
+os.environ["ANONYMIZED_TELEMETRY"] = "False"
+os.environ["TOKENIZERS_PARALLELISM"] = "false"
+
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from routers import ai_tutor, ai_summary

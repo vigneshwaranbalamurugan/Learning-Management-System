@@ -26,7 +26,10 @@ def _get_client() -> chromadb.PersistentClient:
     global _chroma_client
     if _chroma_client is None:
         os.makedirs(CHROMA_PERSIST_DIR, exist_ok=True)
-        _chroma_client = chromadb.PersistentClient(path=CHROMA_PERSIST_DIR)
+        _chroma_client = chromadb.PersistentClient(
+            path=CHROMA_PERSIST_DIR,
+            settings=chromadb.Settings(anonymized_telemetry=False)
+        )
         logger.info("ChromaDB client initialised at: %s", CHROMA_PERSIST_DIR)
     return _chroma_client
 

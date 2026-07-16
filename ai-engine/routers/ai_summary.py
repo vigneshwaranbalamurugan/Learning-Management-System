@@ -94,7 +94,8 @@ async def generate_summary(req: GenerateSummaryRequest):
             system_prompt=SUMMARY_SYSTEM_PROMPT,
             user_message=f"Here is the lesson content:\n\n{truncated_text}",
             temperature=0.3,
-            max_tokens=1000
+            max_tokens=1500,
+            require_json=True
         )
 
         # Parse JSON response
@@ -116,7 +117,7 @@ async def generate_summary(req: GenerateSummaryRequest):
             summary="",
             key_points=[],
             notes="",
-            status=f"error: {str(e)[:200]}"
+            status="error"
         )
 
 

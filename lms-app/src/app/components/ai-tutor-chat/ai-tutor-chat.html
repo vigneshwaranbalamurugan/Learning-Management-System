@@ -28,7 +28,7 @@
 
 <!-- Chat Panel -->
 @if (isOpen()) {
-  <div class="ai-chat-panel" id="ai-tutor-panel" role="dialog" aria-label="AI Tutor Chat">
+  <div class="ai-chat-panel" id="ai-tutor-panel" role="dialog" aria-label="AI Tutor Chat" [class.ai-chat-panel--fullscreen]="isFullscreen()">
 
     <!-- Header -->
     <div class="ai-chat-header">
@@ -44,11 +44,24 @@
           <p class="ai-chat-subtitle">Ask anything about this lesson</p>
         </div>
       </div>
-      <button class="ai-chat-close" (click)="togglePanel()" aria-label="Close AI Tutor">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
-        </svg>
-      </button>
+      <div class="ai-chat-actions">
+        <button class="ai-chat-action-btn" (click)="toggleFullscreen()" [attr.aria-label]="isFullscreen() ? 'Exit Fullscreen' : 'Fullscreen'">
+          @if (isFullscreen()) {
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M8 3v5H3M16 3v5h5M8 21v-5H3M16 21v-5h5"/>
+            </svg>
+          } @else {
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M4 8V4h4M20 8V4h-4M4 16v4h4M20 16v4h-4"/>
+            </svg>
+          }
+        </button>
+        <button class="ai-chat-action-btn ai-chat-close" (click)="togglePanel()" aria-label="Close AI Tutor">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
     </div>
 
     @if (!isSupported()) {
@@ -87,13 +100,15 @@
                 </svg>
               </div>
             }
-            <div class="ai-message-bubble">
+            <div class="ai-message-bubble" [class.ai-bubble-markdown]="msg.role === 'assistant'">
               @if (msg.isLoading) {
                 <div class="ai-typing-indicator" aria-label="AI is thinking">
                   <span></span><span></span><span></span>
                 </div>
+              } @else if (msg.role === 'user') {
+                <p style="margin:0; white-space: pre-wrap;">{{ msg.content }}</p>
               } @else {
-                <p [innerHTML]="msg.content"></p>
+                <div class="prose prose-sm max-w-none ai-markdown-content" [innerHTML]="msg.htmlContent"></div>
               }
             </div>
           </div>

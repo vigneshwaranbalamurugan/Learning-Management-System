@@ -1,23 +1,24 @@
 import {
   Component, OnInit, OnChanges, SimpleChanges,
-  Input, signal, inject, ElementRef, ViewChild, AfterViewChecked
+  Input, signal, inject, ElementRef, ViewChild
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AiService, AiChatMessage } from '@services/ai.service';
+import { marked } from 'marked';
 
 interface ChatEntry {
   role: 'user' | 'assistant';
   content: string;
+  htmlContent?: string;
   isLoading?: boolean;
 }
 
 const SUGGESTED_QUESTIONS = [
   'Explain this lesson in simple terms.',
   'What are the key concepts?',
-  'Give me a real-world example.',
   'What should I remember from this lesson?',
-  'How does this relate to what I already know?'
+  "Explain this lesson in simple terms, I'm a beginner."
 ];
 
 @Component({
@@ -27,7 +28,7 @@ const SUGGESTED_QUESTIONS = [
   templateUrl: './ai-tutor-chat.html',
   styleUrl: './ai-tutor-chat.css'
 })
-export class AiTutorChat implements OnInit, OnChanges, AfterViewChecked {
+export class AiTutorChat implements OnInit, OnChanges {
   @Input() lessonId!: number;
   @Input() lessonType!: number; // LessonType enum value
   @ViewChild('messagesEnd') messagesEnd!: ElementRef;
@@ -36,6 +37,7 @@ export class AiTutorChat implements OnInit, OnChanges, AfterViewChecked {
 
   // Panel state
   isOpen = signal(false);
+  isFullscreen = signal(false);
   isSupported = signal(true);
 
   // Chat state
@@ -61,10 +63,6 @@ export class AiTutorChat implements OnInit, OnChanges, AfterViewChecked {
     }
   }
 
-  ngAfterViewChecked(): void {
-    this.scrollToBottom();
-  }
-
   private checkSupport(): void {
     // ExternalLink = 3
     this.isSupported.set(this.lessonType !== 3);
@@ -72,6 +70,16 @@ export class AiTutorChat implements OnInit, OnChanges, AfterViewChecked {
 
   togglePanel(): void {
     this.isOpen.update(v => !v);
+    if (!this.isOpen()) {
+      this.isFullscreen.set(false);
+    } else {
+      this.scrollToBottom(100);
+    }
+  }
+
+  toggleFullscreen(): void {
+    this.isFullscreen.update(v => !v);
+    this.scrollToBottom(100);
   }
 
   askSuggested(question: string): void {
@@ -91,6 +99,7 @@ export class AiTutorChat implements OnInit, OnChanges, AfterViewChecked {
     this.userInput.set('');
     this.isLoading.set(true);
     this.errorMsg.set('');
+    this.scrollToBottom();
 
     // Build history from all non-loading messages
     const history: AiChatMessage[] = this.messages()
@@ -99,16 +108,18 @@ export class AiTutorChat implements OnInit, OnChanges, AfterViewChecked {
       .map(m => ({ role: m.role, content: m.content }));
 
     this.aiService.chatWithTutor(this.lessonId, question, history).subscribe({
-      next: (res) => {
+      next: async (res) => {
+        const parsedAnswer = await marked(res.answer);
         this.messages.update(msgs => {
           const updated = [...msgs];
           const loadingIdx = updated.findIndex(m => m.isLoading);
           if (loadingIdx !== -1) {
-            updated[loadingIdx] = { role: 'assistant', content: res.answer };
+            updated[loadingIdx] = { role: 'assistant', content: res.answer, htmlContent: parsedAnswer };
           }
           return updated;
         });
         this.isLoading.set(false);
+        this.scrollToBottom();
       },
       error: (err) => {
         this.messages.update(msgs => msgs.filter(m => !m.isLoading));
@@ -120,10 +131,12 @@ export class AiTutorChat implements OnInit, OnChanges, AfterViewChecked {
     });
   }
 
-  private scrollToBottom(): void {
-    try {
-      this.messagesEnd?.nativeElement?.scrollIntoView({ behavior: 'smooth' });
-    } catch (_) {}
+  private scrollToBottom(delayMs: number = 50): void {
+    setTimeout(() => {
+      try {
+        this.messagesEnd?.nativeElement?.scrollIntoView({ behavior: 'smooth' });
+      } catch (_) {}
+    }, delayMs);
   }
 
   onKeyDown(event: KeyboardEvent): void {
