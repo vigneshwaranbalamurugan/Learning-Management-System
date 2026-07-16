@@ -9,7 +9,7 @@ name: 🌐 Deploy Frontend (Azure Static Web Apps)
 on:
   push:
     branches:
-      - feature/azure_storage
+      - feature/ai_integration
     paths:
       - 'lms-app/**'
       - '.github/workflows/frontend_deployment.yaml'

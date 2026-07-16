@@ -1,0 +1,33 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: lms-ai-engine-config
+  namespace: lms
+data:
+  # ── ChromaDB ──────────────────────────────────────────────────────────────
+  # Must match the PVC mountPath in ai-engine-deployment.yaml
+  CHROMA_PERSIST_DIR: "/app/chroma_data"
+
+  # ── Sentence Transformers ─────────────────────────────────────────────────
+  EMBED_MODEL: "all-MiniLM-L6-v2"
+
+  # Silence HuggingFace parallelism warnings inside the container
+  TOKENIZERS_PARALLELISM: "false"
+
+  # ── Groq Model Configuration ──────────────────────────────────────────────
+  GROQ_CHAT_MODEL: "llama-3.1-70b-versatile"
+  GROQ_WHISPER_MODEL: "whisper-large-v3"
+
+  # Max audio file size sent to Groq Whisper (bytes). Groq hard limit = 25 MB.
+  WHISPER_MAX_BYTES: "24000000"
+
+  # ── RAG ───────────────────────────────────────────────────────────────────
+  # Number of top chunks to retrieve per RAG query
+  RAG_TOP_K: "5"
+
+  # ── Telemetry ─────────────────────────────────────────────────────────────
+  ANONYMIZED_TELEMETRY: "False"
+
+  # ── Runtime ───────────────────────────────────────────────────────────────
+  # Keeps Swagger UI disabled in production
+  ENV: "production"

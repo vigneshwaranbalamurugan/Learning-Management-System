@@ -71,3 +71,8 @@ data:
   Security__SaltSize: "16"
   Security__KeySize: "32"
   Security__Iterations: "100000"
+
+  # ── AI Engine (internal ClusterIP service — no public exposure) ───────────
+  # The .NET LMSApi calls the AI engine via in-cluster DNS.
+  # The X-Internal-Api-Key header value comes from Key Vault (lms-ai-engine-secrets).
+  AiEngine__BaseUrl: "http://lms-ai-engine-svc"

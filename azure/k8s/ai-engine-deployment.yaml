@@ -1,0 +1,101 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: lms-ai-engine
+  namespace: lms
+  labels:
+    app: lms-ai-engine
+spec:
+  # Single replica — ChromaDB PVC uses ReadWriteOnce (one node at a time).
+  # Scale to 2+ only after migrating to a shared vector store (e.g. Qdrant).
+  replicas: 1
+  selector:
+    matchLabels:
+      app: lms-ai-engine
+  template:
+    metadata:
+      labels:
+        app: lms-ai-engine
+        # Required label for AKS Workload Identity token injection
+        azure.workload.identity/use: "true"
+    spec:
+      serviceAccountName: lms-workload-sa
+
+      # ── imagePullSecrets: Docker Hub credentials ──────────────────────────
+      # 'dockerhub-pull-secret' is created once by the infra workflow using
+      # your DOCKERHUB_USERNAME + DOCKERHUB_TOKEN GitHub Secrets.
+      imagePullSecrets:
+        - name: dockerhub-pull-secret
+
+      # ── Volumes ───────────────────────────────────────────────────────────
+      volumes:
+        # ChromaDB persistent storage — Azure Managed Disk (1 Gi for dev)
+        - name: chroma-storage
+          persistentVolumeClaim:
+            claimName: lms-ai-engine-chroma-pvc
+
+        # CSI Volume: pulls secrets from Key Vault → K8s Secret lms-ai-engine-secrets
+        - name: ai-engine-secrets-store
+          csi:
+            driver: secrets-store.csi.k8s.io
+            readOnly: true
+            volumeAttributes:
+              secretProviderClass: lms-keyvault-secrets
+
+      containers:
+        - name: lms-ai-engine
+          # Image on Docker Hub — substituted at deploy time by the AI engine workflow.
+          # Format: <DOCKERHUB_USERNAME>/lms-ai-engine:<sha-TAG>
+          image: <DOCKERHUB_USERNAME>/lms-ai-engine:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8001
+
+          # ── Resource limits ───────────────────────────────────────────────
+          # Higher memory than lms-api due to ML model loading (sentence-transformers
+          # all-MiniLM-L6-v2 ~90 MB + ChromaDB in-process overhead).
+          resources:
+            requests:
+              cpu: "200m"
+              memory: "512Mi"
+            limits:
+              cpu: "1000m"
+              memory: "1Gi"
+
+          # ── Volume mounts ─────────────────────────────────────────────────
+          volumeMounts:
+            # ChromaDB data directory — persisted across pod restarts
+            - name: chroma-storage
+              mountPath: /app/chroma_data
+
+            # CSI secrets mount (triggers sync from Key Vault → lms-ai-engine-secrets)
+            - name: ai-engine-secrets-store
+              mountPath: "/mnt/ai-engine-secrets-store"
+              readOnly: true
+
+          # ── Environment variables ─────────────────────────────────────────
+          envFrom:
+            # Non-secret config (models, paths, tuning params)
+            - configMapRef:
+                name: lms-ai-engine-config
+            # Secrets from Key Vault (synced via CSI Driver → K8s Secret)
+            - secretRef:
+                name: lms-ai-engine-secrets
+
+          # ── Health probes ─────────────────────────────────────────────────
+          # Higher initial delay: sentence-transformers model is pre-loaded on startup
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8001
+            initialDelaySeconds: 60
+            periodSeconds: 15
+            failureThreshold: 3
+
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8001
+            initialDelaySeconds: 45
+            periodSeconds: 10
+            failureThreshold: 3

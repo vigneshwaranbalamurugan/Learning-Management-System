@@ -1,28 +1,29 @@
-name: 🚀 Deploy Backend (Docker Hub → AKS)
+name: 🤖 Deploy AI Engine (Docker Hub → AKS)
 
 # ──────────────────────────────────────────────────────────────────────────────
-# Uses Docker Hub for container images:
-#   • Build image locally in the runner
-#   • Push to Docker Hub (DOCKERHUB_USERNAME/lms-api:<tag>)
-#   • Deploy to AKS using a stored kubeconfig (KUBE_CONFIG_B64)
+# Uses Docker Hub for container images (same pattern as backend_deployment.yaml):
+#   • Build image from ai-engine/Dockerfile
+#   • Push to Docker Hub as <DOCKERHUB_USERNAME>/lms-ai-engine:<sha-tag>
+#   • Deploy to AKS using stored kubeconfig (KUBE_CONFIG_B64)
 #
-# Triggers on push to main when LMSApi/ or k8s manifests change.
+# The AI engine is INTERNAL ONLY — ClusterIP service, no public ingress.
+# LMSApi calls it via: http://lms-ai-engine-svc/
 # ──────────────────────────────────────────────────────────────────────────────
 on:
   push:
     branches:
       - feature/ai_integration
     paths:
-      - 'LMSApi/**'
-      - 'azure/k8s/**'
-      - '.github/workflows/backend_deployment.yaml'
+      - 'ai-engine/**'
+      - 'azure/k8s/ai-engine-*.yaml'
+      - '.github/workflows/ai_engine_deployment.yaml'
   workflow_dispatch:
 
 permissions:
   contents: read
 
 env:
-  IMAGE_NAME: lms-api
+  IMAGE_NAME: lms-ai-engine
 
 jobs:
   # ════════════════════════════════════════════════════════════════════════════
@@ -41,7 +42,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # ── Image tag: sha-<short commit> ─────────────────────────────────────
+      # ── Image tag: sha-<short commit> ──────────────────────────────────────
       - name: Generate image tag
         id: meta
         run: |
@@ -52,24 +53,25 @@ jobs:
           echo "**Image:** \`$FULL\`" >> "$GITHUB_STEP_SUMMARY"
 
       # ── Login to Docker Hub ───────────────────────────────────────────────
-      # DOCKERHUB_TOKEN = Docker Hub access token (not your password).
-      # Create at: hub.docker.com → Account Settings → Security → New Access Token
       - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      # ── Set up Docker Buildx (for multi-platform builds if needed) ─────────
+      # ── Set up Docker Buildx ──────────────────────────────────────────────
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      # ── Build and Push ─────────────────────────────────────────────────────
+      # ── Build and Push ────────────────────────────────────────────────────
+      # Context is ai-engine/ — the Dockerfile lives there.
+      # The sentence-transformers model is baked in at build time (Dockerfile
+      # pre-downloads all-MiniLM-L6-v2), so first-request latency is minimal.
       - name: Build and Push Docker Image
         uses: docker/build-push-action@v6
         with:
-          context: LMSApi
-          file: LMSApi/Dockerfile
+          context: ai-engine
+          file: ai-engine/Dockerfile
           push: true
           tags: |
             ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:${{ steps.meta.outputs.image_tag }}
@@ -79,12 +81,13 @@ jobs:
 
   # ════════════════════════════════════════════════════════════════════════════
   # JOB 2: Deploy to AKS using stored kubeconfig.
-  # How to get KUBE_CONFIG_B64 (run locally once after infra deploy):
+  #
+  # Prerequisites (run once after infra deploy):
   #   az aks get-credentials --resource-group lms-rg-dev --name lms-aks-dev
-  #   cat ~/.kube/config | base64 | pbcopy    # macOS — paste as GitHub Secret
+  #   cat ~/.kube/config | base64 | pbcopy    # macOS — paste as KUBE_CONFIG_B64 secret
   # ════════════════════════════════════════════════════════════════════════════
   deploy-to-aks:
-    name: Deploy to AKS
+    name: Deploy AI Engine to AKS
     runs-on: ubuntu-latest
     needs: build-and-push
     environment: Development
@@ -93,57 +96,70 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # ── Restore kubeconfig from GitHub Secret ──────────────────────────────
+      # ── Restore kubeconfig from GitHub Secret ─────────────────────────────
       - name: Configure kubectl
         run: |
           mkdir -p ~/.kube
           echo "${{ secrets.KUBE_CONFIG_B64 }}" | base64 -d > ~/.kube/config
           chmod 600 ~/.kube/config
 
-      # ── Substitute placeholders in manifests ──────────────────────────────
-      - name: Prepare K8s Manifests
+      # ── Substitute placeholders in AI engine deployment manifest ──────────
+      - name: Prepare AI Engine K8s Manifests
         run: |
           TAG="${{ needs.build-and-push.outputs.image_tag }}"
           DH_USER="${{ secrets.DOCKERHUB_USERNAME }}"
 
-          # Replace image placeholder with real Docker Hub image + tag
-          sed -i "s|<DOCKERHUB_USERNAME>|$DH_USER|g"        azure/k8s/deployment.yaml
-          sed -i "s|$IMAGE_NAME:latest|$IMAGE_NAME:$TAG|g"  azure/k8s/deployment.yaml
+          # Replace image placeholder with real Docker Hub image + sha tag
+          sed -i "s|<DOCKERHUB_USERNAME>|$DH_USER|g"                  azure/k8s/ai-engine-deployment.yaml
+          sed -i "s|$IMAGE_NAME:latest|$IMAGE_NAME:$TAG|g"            azure/k8s/ai-engine-deployment.yaml
 
-          # Replace dynamic URL placeholders
-          sed -i "s|<AKS_EXTERNAL_IP>|${{ vars.AKS_EXTERNAL_IP }}|g" azure/k8s/deployment.yaml
-          sed -i "s|<SWA_HOSTNAME>|${{ vars.SWA_HOSTNAME }}|g"        azure/k8s/deployment.yaml
-
-          # Inject UAMI client ID and Azure tenant ID
+          # Inject UAMI client ID and Azure tenant ID (shared with lms-api)
           sed -i "s|<UAMI_CLIENT_ID>|${{ secrets.UAMI_CLIENT_ID }}|g"    azure/k8s/serviceaccount.yaml
           sed -i "s|<UAMI_CLIENT_ID>|${{ secrets.UAMI_CLIENT_ID }}|g"    azure/k8s/secretproviderclass.yaml
           sed -i "s|<AZURE_TENANT_ID>|${{ secrets.AZURE_TENANT_ID }}|g"  azure/k8s/secretproviderclass.yaml
           sed -i "s|<KEY_VAULT_NAME>|${{ secrets.KEY_VAULT_NAME }}|g"    azure/k8s/secretproviderclass.yaml
 
-          # Get NGINX IP and inject it into ingress
-          NGINX_IP=$(kubectl get svc -n ingress-nginx ingress-nginx-controller -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
-          sed -i "s|<NGINX_IP>|$NGINX_IP|g" azure/k8s/ingress.yaml
+      # ── Apply only AI engine manifests ────────────────────────────────────
+      # Applied individually to avoid re-deploying lms-api unnecessarily.
+      - name: Apply AI Engine Manifests
+        run: |
+          kubectl apply -f azure/k8s/ai-engine-configmap.yaml
+          kubectl apply -f azure/k8s/ai-engine-pvc.yaml
+          kubectl apply -f azure/k8s/ai-engine-service.yaml
+          kubectl apply -f azure/k8s/secretproviderclass.yaml
+          kubectl apply -f azure/k8s/ai-engine-deployment.yaml
 
-      # ── Apply all K8s manifests ────────────────────────────────────────────
-      - name: Apply K8s Manifests
-        run: kubectl apply -k azure/k8s/
-
-      # ── Rolling restart ────────────────────────────────────────────────────
+      # ── Rolling restart & wait ─────────────────────────────────────────────
       - name: Rolling Restart & Wait
         run: |
-          kubectl rollout restart deployment/lms-api -n lms
-          kubectl rollout status deployment/lms-api -n lms --timeout=300s
+          kubectl rollout restart deployment/lms-ai-engine -n lms
+          kubectl rollout status deployment/lms-ai-engine -n lms --timeout=300s
 
-      # ── Print external IP ──────────────────────────────────────────────────
-      - name: Get External IP
+      # ── Verify health from within the cluster ─────────────────────────────
+      - name: Verify AI Engine Health
         run: |
-          echo "### ✅ Backend Deployed" >> "$GITHUB_STEP_SUMMARY"
+          echo "### ✅ AI Engine Deployed" >> "$GITHUB_STEP_SUMMARY"
           echo "**Image:** \`${{ needs.build-and-push.outputs.full_image }}\`" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "**External IP:**" >> "$GITHUB_STEP_SUMMARY"
-          kubectl get svc lms-api-svc -n lms \
-            -o jsonpath='http://{.status.loadBalancer.ingress[0].ip}' \
-            >> "$GITHUB_STEP_SUMMARY" || echo "(pending — check again in 1–2 min)"
+
+          # Wait for the pod to be ready before probing
+          kubectl wait --for=condition=ready pod \
+            -l app=lms-ai-engine -n lms --timeout=120s
+
+          # Hit /health via port-forward (runs in background for the duration of the check)
+          kubectl port-forward svc/lms-ai-engine-svc 18001:80 -n lms &
+          PF_PID=$!
+          sleep 5
+          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:18001/health)
+          kill $PF_PID 2>/dev/null || true
+
+          if [ "$HTTP_CODE" = "200" ]; then
+            echo "**Health check:** ✅ HTTP $HTTP_CODE" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "**Health check:** ❌ HTTP $HTTP_CODE — check pod logs" >> "$GITHUB_STEP_SUMMARY"
+            kubectl logs -n lms deployment/lms-ai-engine --tail=50
+            exit 1
+          fi
+
           echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "> If this is the first deploy, copy the IP and set GitHub Variable **AKS_EXTERNAL_IP**, then re-run." \
-            >> "$GITHUB_STEP_SUMMARY"
+          echo "> AI Engine is reachable at \`http://lms-ai-engine-svc/\` from within the cluster." >> "$GITHUB_STEP_SUMMARY"

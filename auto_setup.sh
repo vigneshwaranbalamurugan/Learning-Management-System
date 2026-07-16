@@ -73,6 +73,16 @@ LOCATION="centralindia"
 echo -e "\n${YELLOW}Creating Resource Group: $RG...${NC}"
 az group create --name "$RG" --location "$LOCATION" -o none
 
+echo -e "${YELLOW}Cleaning up any soft-deleted Key Vaults from previous failed runs...${NC}"
+DELETED_KV=$(az keyvault list-deleted --query "[?contains(name, 'lmskv')].name" -o tsv)
+if [ ! -z "$DELETED_KV" ]; then
+    while IFS= read -r kv; do
+        echo -e "${YELLOW}Purging soft-deleted Key Vault: $kv...${NC}"
+        # Some regions might take a moment to fully purge
+        az keyvault purge --name "$kv" || true
+    done <<< "$DELETED_KV"
+fi
+
 echo -e "${YELLOW}Deploying Bicep Templates (This takes ~15 minutes)...${NC}"
 BICEP_OUTPUT=$(az deployment group create \
   --resource-group "$RG" \

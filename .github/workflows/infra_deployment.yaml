@@ -1,18 +1,9 @@
 name: ☸️ K8s Cluster Setup (CSI Driver + imagePullSecret)
 
 # ──────────────────────────────────────────────────────────────────────────────
-# NO AZURE AUTHENTICATION — no Service Principal, no App Registration needed.
-#
 # This workflow only needs:
 #   • KUBE_CONFIG_B64  — base64-encoded kubeconfig (get locally, see Setup.MD)
 #   • DOCKERHUB_USERNAME + DOCKERHUB_TOKEN — for the imagePullSecret
-#
-# Run this ONCE after you have deployed the Bicep infrastructure locally.
-# It installs the Secrets Store CSI Driver on AKS and creates the
-# Docker Hub pull secret so pods can pull images.
-#
-# All Azure work (Bicep deploy, Key Vault population) is done locally
-# using YOUR OWN `az login` session — see Setup.MD for the commands.
 # ──────────────────────────────────────────────────────────────────────────────
 on:
   workflow_dispatch:
