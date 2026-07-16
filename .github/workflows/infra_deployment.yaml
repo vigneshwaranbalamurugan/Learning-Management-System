@@ -53,6 +53,7 @@ jobs:
             --namespace kube-system \
             --set syncSecret.enabled=true \
             --set enableSecretRotation=true \
+            --set linux.workloadIdentity.enabled=true \
             --wait
 
           echo "✅ Secrets Store CSI Driver installed." >> "$GITHUB_STEP_SUMMARY"
