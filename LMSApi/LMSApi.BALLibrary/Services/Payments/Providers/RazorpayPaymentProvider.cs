@@ -55,16 +55,15 @@ namespace LMSApi.BALLibrary.Services
 
         public bool VerifySignature(string orderId, string paymentId, string signature)
         {
-            Dictionary<string, string> attributes = new()
-            {
-                { "razorpay_order_id", orderId },
-                { "razorpay_payment_id", paymentId },
-                { "razorpay_signature", signature }
-            };
             try
             {
-                Razorpay.Api.Utils.verifyPaymentSignature(attributes);
-                return true;
+                var payload = $"{orderId}|{paymentId}";
+                var key = Encoding.UTF8.GetBytes(_settings.KeySecret);
+                var data = Encoding.UTF8.GetBytes(payload);
+                using var hmac = new HMACSHA256(key);
+                var computed = BitConverter.ToString(hmac.ComputeHash(data)).Replace("-", "").ToLowerInvariant();
+                
+                return computed == signature;
             }
             catch
             {
