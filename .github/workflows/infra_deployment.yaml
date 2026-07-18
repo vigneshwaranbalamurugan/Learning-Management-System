@@ -53,6 +53,7 @@ jobs:
             --namespace kube-system \
             --set syncSecret.enabled=true \
             --set enableSecretRotation=true \
+            --set "tokenRequests[0].audience=api://AzureADTokenExchange" \
             --set linux.workloadIdentity.enabled=true \
             --wait
 
@@ -95,7 +96,7 @@ jobs:
           helm upgrade --install ingress-nginx ingress-nginx/ingress-nginx \
             --namespace ingress-nginx \
             --create-namespace \
-            --set controller.service.annotations."service\.beta\.kubernetes\.io/azure-load-balancer-health-probe-request-path"=/healthz \
+            --set controller.service.annotations."service\\\.beta\\\.kubernetes\\\.io/azure-load-balancer-health-probe-request-path"=/healthz \
             --wait
 
       # ── Install Cert-Manager ───────────────────────────────────────────────

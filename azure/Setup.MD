@@ -130,6 +130,36 @@ kubectl logs -n ingress-nginx deployment/ingress-nginx-controller -f
 
 ---
 
+## Troubleshooting
+
+### Error: `service account tokens not found`
+If your `lms-api` or `lms-ai-engine` pods get stuck in `ContainerCreating` and you see a `FailedMount` error mentioning `service account tokens not found` when you `kubectl describe pod`, this means the CSI Driver failed to configure token requests for Azure Workload Identity during installation.
+
+**Fix:** Run the following command in your local terminal to manually patch the CSI Driver and then delete the stuck pods (they will recreate automatically):
+```bash
+# Patch the CSI driver
+kubectl patch csidriver secrets-store.csi.k8s.io --type merge -p '{"spec":{"tokenRequests":[{"audience":"api://AzureADTokenExchange"}]}}'
+
+# Restart the stuck pods
+kubectl delete pod -n lms --all
+```
+
+### Error: `The Ingress "lms-api-ingress" is invalid`
+If the "Deploy Backend" GitHub Action fails with an error stating the Ingress host `lms-api..nip.io` is invalid, this means the GitHub Action ran *before* Azure finished assigning a Public IP to your NGINX Ingress Controller.
+
+**Fix:** This is usually a timing issue on fresh clusters. Simply wait a few minutes and re-run the "Deploy Backend" GitHub Action. *(Note: The workflow has been updated to automatically wait for the IP to prevent this in the future).*
+
+### Error: API Loading Infinitely (Connection Timeout)
+If your API endpoints or `/health` route are loading infinitely in the browser or timing out via curl, Azure Load Balancer may be dropping your traffic due to a misconfigured health probe.
+
+**Fix:** Ensure the NGINX Ingress Controller has the correct health probe annotation. Run this command to fix it on a live cluster:
+```bash
+kubectl annotate svc ingress-nginx-controller -n ingress-nginx service.beta.kubernetes.io/azure-load-balancer-health-probe-request-path=/healthz --overwrite
+```
+*(Note: The GitHub Actions infrastructure script has been updated with the proper Bash escaping `\\\` to prevent this from happening on future deployments).*
+
+---
+
 ## Architecture
 
 ```

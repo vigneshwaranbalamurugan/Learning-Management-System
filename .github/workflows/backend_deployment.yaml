@@ -120,8 +120,18 @@ jobs:
           sed -i "s|<AZURE_TENANT_ID>|${{ secrets.AZURE_TENANT_ID }}|g"  azure/k8s/secretproviderclass.yaml
           sed -i "s|<KEY_VAULT_NAME>|${{ secrets.KEY_VAULT_NAME }}|g"    azure/k8s/secretproviderclass.yaml
 
-          # Get NGINX IP and inject it into ingress
-          NGINX_IP=$(kubectl get svc -n ingress-nginx ingress-nginx-controller -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+          # Wait for NGINX IP to be assigned (can take a minute or two on fresh clusters)
+          echo "Waiting for NGINX LoadBalancer IP..."
+          while true; do
+            NGINX_IP=$(kubectl get svc -n ingress-nginx ingress-nginx-controller -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+            if [ -n "$NGINX_IP" ]; then
+              echo "NGINX IP is $NGINX_IP"
+              break
+            fi
+            echo "IP is pending... waiting 10 seconds."
+            sleep 10
+          done
+
           sed -i "s|<NGINX_IP>|$NGINX_IP|g" azure/k8s/ingress.yaml
 
       # ── Apply all K8s manifests ────────────────────────────────────────────
