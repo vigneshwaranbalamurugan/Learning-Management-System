@@ -65,57 +65,57 @@ This repository contains the source code for a comprehensive, enterprise-grade L
 
 ---
 
-## 🔄 Application Flow
+## Application Flow
 
 ```mermaid
 flowchart TB
     %% Subgraph 1: User Onboarding & Auth
-    subgraph SG_Auth["🔐 1. Authentication & Role Management"]
+    subgraph SG_Auth["1. Authentication & Access Control"]
         direction TB
-        User(["👤 User Entry"]) --> Reg["Sign Up / Login"]
-        Reg --> JWT["JWT Token Generation & RBAC"]
-        JWT --> RoleCheck{"Identify User Role"}
+        User(["User Entrypoint"]) --> Reg["Sign Up / Login Request"]
+        Reg --> JWT["JWT Token Generation & Claims"]
+        JWT --> RoleCheck{"Role-Based Authorization"}
     end
 
     %% Subgraph 2: Instructor Workflow
-    subgraph SG_Instructor["👨‍🏫 2. Instructor Content Studio"]
+    subgraph SG_Instructor["2. Instructor Content Studio"]
         direction TB
-        RoleCheck -->|Instructor / Admin| CourseDraft["Create & Version Course"]
-        CourseDraft --> UploadMedia["Upload Video / PDF Lessons"]
-        UploadMedia --> AzureBlob[("☁️ Azure Blob Storage")]
-        CourseDraft --> Publish["Publish Course (Free / Premium)"]
+        RoleCheck -->|Instructor / Admin| CourseDraft["Create & Version Course Modules"]
+        CourseDraft --> UploadMedia["Upload Video & Document Assets"]
+        UploadMedia --> AzureBlob[("Azure Blob Storage")]
+        CourseDraft --> Publish["Publish Course Catalogue"]
     end
 
     %% Subgraph 3: Learner Catalog & Payments
-    subgraph SG_Payment["💳 3. Enrollment & Payment Processing"]
+    subgraph SG_Payment["3. Enrollment & Payment Pipeline"]
         direction TB
-        RoleCheck -->|Learner| Browse["Explore Course Catalog"]
-        Browse --> CheckType{"Is Premium Course?"}
-        CheckType -->|Free| DirectEnroll["Instant Enrollment"]
-        CheckType -->|Paid| Razorpay["Razorpay Payment Gateway"]
-        Razorpay --> Webhook["Razorpay Webhook Listener"]
-        Webhook -->|Payment Success| PaidEnroll["Activate Access & Sync Status"]
+        RoleCheck -->|Learner| Browse["Browse Course Catalogue"]
+        Browse --> CheckType{"Course Type?"}
+        CheckType -->|Free| DirectEnroll["Direct Enrollment"]
+        CheckType -->|Paid| Razorpay["Razorpay Order Initialization"]
+        Razorpay --> Webhook["Razorpay Webhook Handler"]
+        Webhook -->|Payment Verified| PaidEnroll["Grant Course Access & Sync State"]
     end
 
     %% Subgraph 4: AI-Powered Learning Hub
-    subgraph SG_Learning["🧠 4. Interactive AI Learning Hub"]
+    subgraph SG_Learning["4. Interactive AI Learning Engine"]
         direction TB
         DirectEnroll & PaidEnroll --> Stream["Stream Lesson Content"]
-        Stream --> SAS["Secure Azure SAS Token URL"]
-        Stream --> AITutor["🤖 AI Tutor (Llama 3.3 70B RAG)"]
-        Stream --> AIWhisper["🎙️ Whisper AI Auto-Transcription"]
-        AITutor --> ContextQA["Contextual Q&A on Lessons"]
-        AIWhisper --> SmartSummary["Smart Summaries & Notes"]
+        Stream --> SAS["Generate Azure SAS Token URL"]
+        Stream --> AITutor["AI Tutor Service (Llama 3.3 70B RAG)"]
+        Stream --> AIWhisper["Whisper AI Audio Transcription"]
+        AITutor --> ContextQA["Contextual Q&A Response"]
+        AIWhisper --> SmartSummary["Lesson Summaries & Indexing"]
     end
 
     %% Subgraph 5: Progress, Certs & Revenue Share
-    subgraph SG_Completion["🏆 5. Assessment, Certification & Payouts"]
+    subgraph SG_Completion["5. Progress, Certification & Settlement"]
         direction TB
-        Stream --> Track["Progress & Quiz System"]
-        Track -->|Save State| DB[("🐘 PostgreSQL DB")]
-        Track --> Reminders["Hangfire Deadline Reminders"]
-        Track -->|100% Complete| CertGen["Automated PDF Certificate (PdfSharpCore)"]
-        PaidEnroll -->|Revenue Sharing| Payouts["💸 Auto Instructor Payout (Razorpay Route)"]
+        Stream --> Track["Track Progress & Quiz Submissions"]
+        Track -->|Persist State| DB[("PostgreSQL Database")]
+        Track --> Reminders["Hangfire Background Job Dispatcher"]
+        Track -->|100% Completed| CertGen["Generate PDF Certificate (PdfSharpCore)"]
+        PaidEnroll -->|Revenue Distribution| Payouts["Instructor Payout (Razorpay Route)"]
     end
 
     %% High-contrast explicit styling for maximum readability on Light & Dark themes
@@ -136,32 +136,31 @@ flowchart TB
 
 ---
 
-### 📌 Detailed Step-by-Step Execution Flow
+### Detailed Step-by-Step Execution Flow
 
-#### 1. 🔐 User Onboarding & Access Control
+#### 1. User Onboarding & Access Control
 - **Authentication**: Users register or log in via the Angular frontend. Passwords are securely hashed and validated against PostgreSQL.
 - **RBAC**: JWT tokens are issued containing claims for specific roles (**Learner**, **Instructor**, or **Admin**).
 
-#### 2. 👨‍🏫 Course Authoring & Secure Media Management
+#### 2. Course Authoring & Secure Media Management
 - **Draft & Versioning**: Instructors build rich multi-module courses with draft state management and course version tracking.
 - **Cloud Media Uploads**: Video lessons, slide decks, and downloadable resources are streamed to **Azure Blob Storage**.
 - **Access Protection**: Media files are private by default and accessed strictly through short-lived **Azure Shared Access Signatures (SAS URLs)** generated dynamically per user session.
 
-#### 3. 💳 Course Discovery, Checkout & Webhook Sync
+#### 3. Course Discovery, Checkout & Webhook Sync
 - **Catalog Browsing**: Learners search, filter, and preview available free and premium courses.
 - **Razorpay Checkout**: Premium course orders initialize a secure Razorpay order ID. Learners complete payment via Cards, UPI, or NetBanking.
 - **Reliable Webhooks**: Razorpay webhooks send payment verification events back to the .NET API to asynchronously activate course access, preventing loss of access during connection drops.
 
-#### 4. 🤖 AI-Powered Personalized Learning Experience
+#### 4. AI-Powered Personalized Learning Experience
 - **Contextual AI Tutor**: Powered by **Llama 3.3 70B RAG** (Retrieval-Augmented Generation), students can ask questions about specific lessons and receive accurate, context-bound answers.
 - **Whisper AI Video Processing**: Audio from uploaded video lessons is automatically transcribed and formatted into smart key-point summaries and lesson notes.
 - **Real-Time Notifications**: **SignalR** handles live updates for newly published lessons, announcements, and peer interactions.
 
-#### 5. 🏆 Assessments, Certifications & Instructor Monetization
+#### 5. Assessments, Certifications & Instructor Monetization
 - **Progress & Quiz Engine**: Lesson completion and quiz scores are recorded in PostgreSQL. **Hangfire** handles background cron jobs to dispatch email reminders for approaching assignment deadlines.
 - **Dynamic PDF Certificates**: Upon achieving 100% course completion, an official certificate of completion is dynamically rendered using **PdfSharpCore** and made available for download.
 - **Automated Payouts**: Platform earnings are split according to configured revenue shares and disbursed automatically to instructor bank accounts via **Razorpay Route**.
-
 ---
 
 ## 🛠 Prerequisites
