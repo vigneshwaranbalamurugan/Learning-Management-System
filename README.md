@@ -1,12 +1,8 @@
 # 🎓 Learning Management System (LMS)
 
-[![Demo Video](https://img.shields.io/badge/Watch-Demo_Video-blue?style=for-the-badge&logo=googledrive)](PLACEHOLDER_FOR_DEMO_VIDEO_DRIVE_URL)
-![Angular](https://img.shields.io/badge/Angular-DD0031?style=for-the-badge&logo=angular&logoColor=white)
-![.NET](https://img.shields.io/badge/.NET-5C2D91?style=for-the-badge&logo=.net&logoColor=white)
-![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white)
-![Docker](https://img.shields.io/badge/Docker-2CA5E0?style=for-the-badge&logo=docker&logoColor=white)
-![Azure](https://img.shields.io/badge/Azure-0089D6?style=for-the-badge&logo=microsoft-azure&logoColor=white)
-![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white)
+[![Demo Video](https://img.shields.io/badge/Watch-Demo_Video-blue?style=for-the-badge&logo=googledrive)](https://drive.google.com/file/d/1s8Wf-NXyzByP6uxCdwlBIShec7yB1fYT/view?usp=sharing)
+<br>
+[![Tech Stack](https://skillicons.dev/icons?i=angular,dotnet,postgres,docker,azure,python)](https://skillicons.dev)
 
 This repository contains the source code for a comprehensive, enterprise-grade Learning Management System. The project is built with a modern tech stack featuring an Angular frontend, a robust .NET 10 backend API, and a Python microservice, integrating advanced AI capabilities for an enhanced learning experience.
 
@@ -104,9 +100,9 @@ graph TD
     %% Payouts
     Cert -->|Premium Course| Payout[Instructor Payout <br/>Razorpay Route]
     
-    classDef primary fill:#e1f5fe,stroke:#01579b,stroke-width:2px;
-    classDef secondary fill:#fff3e0,stroke:#e65100,stroke-width:2px;
-    classDef external fill:#e8f5e9,stroke:#1b5e20,stroke-width:2px;
+    classDef primary fill:#E8E8FF,stroke:#1C1C7B,stroke-width:2px;
+    classDef secondary fill:#FFF4E6,stroke:#FF8C00,stroke-width:2px;
+    classDef external fill:#DCFCE7,stroke:#16A34A,stroke-width:2px;
     
     class U,Auth,L,IC,CourseCatalog,E,Lesson,Quiz,Cert primary;
     class Payment,Payout,AzureBlob,SAS,DB secondary;
