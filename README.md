@@ -8,7 +8,7 @@
 ![Azure](https://img.shields.io/badge/Azure-%230089D6?style=for-the-badge&logo=microsoft-azure&logoColor=white)
 ![Python](https://img.shields.io/badge/Python-%233776AB?style=for-the-badge&logo=python&logoColor=white)
 
-This repository contains the source code for a comprehensive, enterprise-grade Learning Management System. The project is built with a modern tech stack featuring an Angular frontend, a robust .NET 10 backend API, and a Python microservice, integrating advanced AI capabilities for an enhanced learning experience.
+This repository contains the source code for a comprehensive Learning Management System. The project is built with a modern tech stack featuring an Angular frontend, a robust .NET 10 backend API, and a Python microservice, integrating advanced AI capabilities for an enhanced learning experience.
 
 ---
 
