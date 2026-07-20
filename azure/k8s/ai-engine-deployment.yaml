@@ -20,6 +20,8 @@ spec:
         azure.workload.identity/use: "true"
     spec:
       serviceAccountName: lms-workload-sa
+      nodeSelector:
+        workload: ai-engine
 
       # ── imagePullSecrets: Docker Hub credentials ──────────────────────────
       # 'dockerhub-pull-secret' is created once by the infra workflow using

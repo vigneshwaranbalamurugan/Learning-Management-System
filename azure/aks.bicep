@@ -30,6 +30,18 @@ resource aks 'Microsoft.ContainerService/managedClusters@2024-02-01' = {
         type: 'VirtualMachineScaleSets'
         vnetSubnetID: aksSubnetId
       }
+      {
+        name: 'ainodepool'
+        count: 1
+        vmSize: 'Standard_D4as_v5'
+        mode: 'User'
+        osType: 'Linux'
+        type: 'VirtualMachineScaleSets'
+        vnetSubnetID: aksSubnetId
+        nodeLabels: {
+          workload: 'ai-engine'
+        }
+      }
     ]
 
     // Azure CNI is required when specifying a VNet subnet for the node pool
