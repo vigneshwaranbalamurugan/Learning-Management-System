@@ -1,8 +1,6 @@
 # 🎓 Learning Management System (LMS)
 
-[![Demo Video](https://img.shields.io/badge/Watch-Demo_Video-blue?style=for-the-badge&logo=googledrive)](https://drive.google.com/file/d/1s8Wf-NXyzByP6uxCdwlBIShec7yB1fYT/view?usp=sharing)
-<br>
-[![Tech Stack](https://skillicons.dev/icons?i=angular,dotnet,postgres,docker,azure,python)](https://skillicons.dev)
+[![Demo Video](https://img.shields.io/badge/Watch-Demo_Video-blue?style=for-the-badge&logo=googledrive)](https://drive.google.com/file/d/1s8Wf-NXyzByP6uxCdwlBIShec7yB1fYT/view?usp=sharing) &nbsp;&nbsp;&nbsp; **Tech Stack:** [![Tech Stack](https://skillicons.dev/icons?i=angular,dotnet,postgres,docker,azure,python)](https://skillicons.dev)
 
 This repository contains the source code for a comprehensive, enterprise-grade Learning Management System. The project is built with a modern tech stack featuring an Angular frontend, a robust .NET 10 backend API, and a Python microservice, integrating advanced AI capabilities for an enhanced learning experience.
 
@@ -70,52 +68,99 @@ This repository contains the source code for a comprehensive, enterprise-grade L
 ## 🔄 Application Flow
 
 ```mermaid
-graph TD
-    %% User Roles
-    U((Users)) -->|Registers/Logs In| Auth[JWT Authentication]
-    Auth -->|Role: Instructor/Admin| IC[Course Creation]
-    Auth -->|Role: Learner| L[Browse Courses]
-    
-    %% Instructor Flow
-    IC -->|Uploads Media| AzureBlob[(Azure Blob Storage)]
-    IC -->|Publishes| CourseCatalog[Course Catalog]
-    
-    %% Learner Flow
-    L -->|Selects Course| CourseCatalog
-    CourseCatalog -->|Free Course| E[Enrollment]
-    CourseCatalog -->|Premium Course| Payment[Razorpay Checkout]
-    Payment -->|Webhook Sync| E
-    
-    %% Learning Experience
-    E -->|Consumes Content| Lesson[Lesson & Media]
-    Lesson -->|Secure Access| SAS[Azure SAS URLs]
-    Lesson -->|Asks Questions| AI[AI Tutor <br/>Llama RAG]
-    Lesson -->|Video Summary| Whisper[Whisper AI]
-    
-    %% Assessments & Completion
-    Lesson --> Quiz[Quizzes & Assignments]
-    Quiz -->|Tracks Progress| DB[(PostgreSQL)]
-    Quiz -->|Completes Course| Cert[Certificate Generation]
-    
-    %% Payouts
-    Cert -->|Premium Course| Payout[Instructor Payout <br/>Razorpay Route]
-    
-    classDef primary fill:#E8E8FF,stroke:#1C1C7B,stroke-width:2px;
-    classDef secondary fill:#FFF4E6,stroke:#FF8C00,stroke-width:2px;
-    classDef external fill:#DCFCE7,stroke:#16A34A,stroke-width:2px;
-    
-    class U,Auth,L,IC,CourseCatalog,E,Lesson,Quiz,Cert primary;
-    class Payment,Payout,AzureBlob,SAS,DB secondary;
-    class AI,Whisper external;
+flowchart TB
+    %% Subgraph 1: User Onboarding & Auth
+    subgraph SG_Auth["🔐 1. Authentication & Role Management"]
+        direction TB
+        User(["👤 User Entry"]) --> Reg["Sign Up / Login"]
+        Reg --> JWT["JWT Token Generation & RBAC"]
+        JWT --> RoleCheck{"Identify User Role"}
+    end
+
+    %% Subgraph 2: Instructor Workflow
+    subgraph SG_Instructor["👨‍🏫 2. Instructor Content Studio"]
+        direction TB
+        RoleCheck -->|Instructor / Admin| CourseDraft["Create & Version Course"]
+        CourseDraft --> UploadMedia["Upload Video / PDF Lessons"]
+        UploadMedia --> AzureBlob[("☁️ Azure Blob Storage")]
+        CourseDraft --> Publish["Publish Course (Free / Premium)"]
+    end
+
+    %% Subgraph 3: Learner Catalog & Payments
+    subgraph SG_Payment["💳 3. Enrollment & Payment Processing"]
+        direction TB
+        RoleCheck -->|Learner| Browse["Explore Course Catalog"]
+        Browse --> CheckType{"Is Premium Course?"}
+        CheckType -->|Free| DirectEnroll["Instant Enrollment"]
+        CheckType -->|Paid| Razorpay["Razorpay Payment Gateway"]
+        Razorpay --> Webhook["Razorpay Webhook Listener"]
+        Webhook -->|Payment Success| PaidEnroll["Activate Access & Sync Status"]
+    end
+
+    %% Subgraph 4: AI-Powered Learning Hub
+    subgraph SG_Learning["🧠 4. Interactive AI Learning Hub"]
+        direction TB
+        DirectEnroll & PaidEnroll --> Stream["Stream Lesson Content"]
+        Stream --> SAS["Secure Azure SAS Token URL"]
+        Stream --> AITutor["🤖 AI Tutor (Llama 3.3 70B RAG)"]
+        Stream --> AIWhisper["🎙️ Whisper AI Auto-Transcription"]
+        AITutor --> ContextQA["Contextual Q&A on Lessons"]
+        AIWhisper --> SmartSummary["Smart Summaries & Notes"]
+    end
+
+    %% Subgraph 5: Progress, Certs & Revenue Share
+    subgraph SG_Completion["🏆 5. Assessment, Certification & Payouts"]
+        direction TB
+        Stream --> Track["Progress & Quiz System"]
+        Track -->|Save State| DB[("🐘 PostgreSQL DB")]
+        Track --> Reminders["Hangfire Deadline Reminders"]
+        Track -->|100% Complete| CertGen["Automated PDF Certificate (PdfSharpCore)"]
+        PaidEnroll -->|Revenue Sharing| Payouts["💸 Auto Instructor Payout (Razorpay Route)"]
+    end
+
+    %% High-contrast explicit styling for maximum readability on Light & Dark themes
+    classDef authStyle fill:#1C1C7B,color:#FFFFFF,stroke:#FF8C00,stroke-width:2px,font-weight:bold;
+    classDef instructorStyle fill:#1D4ED8,color:#FFFFFF,stroke:#60A5FA,stroke-width:2px,font-weight:bold;
+    classDef paymentStyle fill:#D97706,color:#FFFFFF,stroke:#FBBF24,stroke-width:2px,font-weight:bold;
+    classDef aiStyle fill:#059669,color:#FFFFFF,stroke:#34D399,stroke-width:2px,font-weight:bold;
+    classDef completeStyle fill:#7C3AED,color:#FFFFFF,stroke:#C084FC,stroke-width:2px,font-weight:bold;
+    classDef dbStyle fill:#334155,color:#FFFFFF,stroke:#94A3B8,stroke-width:2px,font-weight:bold;
+
+    class User,Reg,JWT,RoleCheck authStyle;
+    class CourseDraft,UploadMedia,Publish instructorStyle;
+    class Browse,CheckType,DirectEnroll,Razorpay,Webhook,PaidEnroll paymentStyle;
+    class Stream,SAS,AITutor,AIWhisper,ContextQA,SmartSummary aiStyle;
+    class Track,Reminders,CertGen,Payouts completeStyle;
+    class AzureBlob,DB dbStyle;
 ```
 
-1. **User Management**: Users register and access the platform as Learners, Instructors, or Administrators with Role-Based Access Control.
-2. **Course Creation (Instructors/Admins)**: Instructors build courses, upload media to Azure Blob Storage, and publish them (Free or Premium).
-3. **Course Enrollment & Payment**: Learners browse courses. For premium courses, secure payments are processed via Razorpay. Webhooks synchronize payment status instantly.
-4. **Learning & AI Assistance**: Learners consume course content via secure Azure SAS URLs. They can interact with the **AI Tutor** (powered by Llama 3.3 70B RAG) for context-aware Q&A based on lesson content.
-5. **Assessments & Progress**: Learners complete quizzes and assignments. The system tracks progress in real-time and sends deadline reminders.
-6. **Completion**: Upon finishing a course, automated certificates are generated using PdfSharpCore.
-7. **Automated Payouts**: Revenue sharing for Instructors is handled automatically via Razorpay Route.
+---
+
+### 📌 Detailed Step-by-Step Execution Flow
+
+#### 1. 🔐 User Onboarding & Access Control
+- **Authentication**: Users register or log in via the Angular frontend. Passwords are securely hashed and validated against PostgreSQL.
+- **RBAC**: JWT tokens are issued containing claims for specific roles (**Learner**, **Instructor**, or **Admin**).
+
+#### 2. 👨‍🏫 Course Authoring & Secure Media Management
+- **Draft & Versioning**: Instructors build rich multi-module courses with draft state management and course version tracking.
+- **Cloud Media Uploads**: Video lessons, slide decks, and downloadable resources are streamed to **Azure Blob Storage**.
+- **Access Protection**: Media files are private by default and accessed strictly through short-lived **Azure Shared Access Signatures (SAS URLs)** generated dynamically per user session.
+
+#### 3. 💳 Course Discovery, Checkout & Webhook Sync
+- **Catalog Browsing**: Learners search, filter, and preview available free and premium courses.
+- **Razorpay Checkout**: Premium course orders initialize a secure Razorpay order ID. Learners complete payment via Cards, UPI, or NetBanking.
+- **Reliable Webhooks**: Razorpay webhooks send payment verification events back to the .NET API to asynchronously activate course access, preventing loss of access during connection drops.
+
+#### 4. 🤖 AI-Powered Personalized Learning Experience
+- **Contextual AI Tutor**: Powered by **Llama 3.3 70B RAG** (Retrieval-Augmented Generation), students can ask questions about specific lessons and receive accurate, context-bound answers.
+- **Whisper AI Video Processing**: Audio from uploaded video lessons is automatically transcribed and formatted into smart key-point summaries and lesson notes.
+- **Real-Time Notifications**: **SignalR** handles live updates for newly published lessons, announcements, and peer interactions.
+
+#### 5. 🏆 Assessments, Certifications & Instructor Monetization
+- **Progress & Quiz Engine**: Lesson completion and quiz scores are recorded in PostgreSQL. **Hangfire** handles background cron jobs to dispatch email reminders for approaching assignment deadlines.
+- **Dynamic PDF Certificates**: Upon achieving 100% course completion, an official certificate of completion is dynamically rendered using **PdfSharpCore** and made available for download.
+- **Automated Payouts**: Platform earnings are split according to configured revenue shares and disbursed automatically to instructor bank accounts via **Razorpay Route**.
 
 ---
 
