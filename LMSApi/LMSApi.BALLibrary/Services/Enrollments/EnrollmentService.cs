@@ -222,6 +222,15 @@ namespace LMSApi.BALLibrary.Services
             {
                 _logger.LogInformation("Payment {OrderId} already completed via webhook. Returning existing enrollment.", request.ProviderOrderId);
                 var existing = await _enrollmentRepository.GetActiveEnrollmentAsync(userId, courseId);
+                if (existing == null)
+                {
+                    // Webhook completed the payment but the enrollment commit may still be in-flight.
+                    _logger.LogWarning(
+                        "Payment {OrderId} is Completed but no active enrollment found yet for UserId={UserId}, CourseId={CourseId}. Webhook may still be processing.",
+                        request.ProviderOrderId, userId, courseId);
+                    throw new InvalidOperationException(
+                        "Your payment was already confirmed. Enrollment is being set up — please refresh in a moment.");
+                }
                 return _mapper.Map<EnrollmentResponse>(existing);
             }
 
@@ -359,9 +368,32 @@ namespace LMSApi.BALLibrary.Services
                 var saved = await _enrollmentRepository.GetActiveEnrollmentAsync(userId, courseId);
                 return _mapper.Map<EnrollmentResponse>(saved);
             }
-            catch
+            catch (Exception ex)
             {
                 await _enrollmentRepository.RollbackTransactionAsync();
+
+                // Re-fetch payment to check if a concurrent webhook completed enrollment
+                // between our signature check and CreateEnrollmentAsync.
+                var refreshedPayment = await _paymentRepository.GetByProviderOrderIdAsync(request.ProviderOrderId);
+                if (refreshedPayment?.Status == PaymentStatus.Completed)
+                {
+                    _logger.LogWarning(
+                        ex,
+                        "Webhook completed payment {OrderId} concurrently. Returning existing enrollment for UserId={UserId}, CourseId={CourseId}.",
+                        request.ProviderOrderId, userId, courseId);
+
+                    var existing = await _enrollmentRepository.GetActiveEnrollmentAsync(userId, courseId);
+                    if (existing != null)
+                        return _mapper.Map<EnrollmentResponse>(existing);
+
+                    // Enrollment commit by webhook may still be in-flight.
+                    _logger.LogWarning(
+                        "Concurrent webhook completed payment {OrderId} but enrollment not yet visible for UserId={UserId}, CourseId={CourseId}.",
+                        request.ProviderOrderId, userId, courseId);
+                    throw new InvalidOperationException(
+                        "Your payment was already confirmed. Enrollment is being set up — please refresh in a moment.");
+                }
+
                 throw;
             }
         }
